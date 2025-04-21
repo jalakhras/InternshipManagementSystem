@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "InternshipManagementSystem.Blazor.WebApp.Tiered.Client": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:11833;http://localhost:11837"
+    }
+  }
+}

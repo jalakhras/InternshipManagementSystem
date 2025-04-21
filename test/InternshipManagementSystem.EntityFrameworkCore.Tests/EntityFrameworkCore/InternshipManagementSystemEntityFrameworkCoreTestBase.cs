@@ -1,0 +1,8 @@
+﻿using Volo.Abp;
+
+namespace InternshipManagementSystem.EntityFrameworkCore;
+
+public abstract class InternshipManagementSystemEntityFrameworkCoreTestBase : InternshipManagementSystemTestBase<InternshipManagementSystemEntityFrameworkCoreTestModule>
+{
+
+}
