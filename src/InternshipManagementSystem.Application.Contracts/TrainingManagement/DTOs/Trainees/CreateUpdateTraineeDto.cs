@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InternshipManagementSystem.TrainingManagement.DTOs.Trainees
 {
@@ -11,6 +7,6 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Trainees
         public string FullName { get; set; }
         public string EmployeeNumber { get; set; }
         public Guid SpecializationId { get; set; }
+        public Guid? UserId { get; set; }
     }
-
 }

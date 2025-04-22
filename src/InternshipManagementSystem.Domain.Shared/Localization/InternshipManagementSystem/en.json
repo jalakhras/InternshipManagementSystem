@@ -9,6 +9,8 @@
     "Permission:Create": "Create",
     "Permission:Edit": "Edit",
     "Permission:Delete": "Delete",
-    "Permission:View": "View"
+    "Permission:View": "View",
+    "Permission:Users": "Users",
+    "Permission:ManageRoles": "Manage roles"
   }
 }

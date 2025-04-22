@@ -22,7 +22,7 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         );
 
         exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Create, L("Permission:Exams.Create"));
-        exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Update, L("Permission:Exams.Update"));
+        exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Edit, L("Permission:Exams.Edit"));
         exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Delete, L("Permission:Exams.Delete"));
         exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.View, L("Permission:Exams.View"));
 
@@ -33,7 +33,7 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         );
 
         questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Create, L("Permission:Questions.Create"));
-        questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Update, L("Permission:Questions.Update"));
+        questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Edit, L("Permission:Questions.Edit"));
         questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Delete, L("Permission:Questions.Delete"));
         questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.View, L("Permission:Questions.View"));
 
@@ -44,17 +44,28 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         );
 
         examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Create, L("Permission:ExamAnswers.Create"));
-        examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Update, L("Permission:ExamAnswers.Update"));
+        examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Edit, L("Permission:ExamAnswers.Edit"));
         examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Delete, L("Permission:ExamAnswers.Delete"));
         examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.View, L("Permission:ExamAnswers.View"));
         var examAttempts = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.Exams.Default,
+            InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Default,
             L("Permission:ExamAttempts")
         );
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Create, L("Permission:ExamAttempts.Create"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Update, L("Permission:ExamAttempts.Update"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Delete, L("Permission:ExamAttempts.Delete"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.View, L("Permission:ExamAttempts.View"));
+        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Create, L("Permission:ExamAttempts.Create"));
+        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Edit, L("Permission:ExamAttempts.Edit"));
+        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Delete, L("Permission:ExamAttempts.Delete"));
+        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.View, L("Permission:ExamAttempts.View"));
+
+
+        var user = trainingManagementGroup.AddChild(
+           InternshipManagementSystemPermissions.IdentityManagement.Users.Default,
+           L("Permission:Users")
+       );
+
+        user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Create, L("Permission:Create"));
+        user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Edit, L("Permission:Edit"));
+        user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Delete, L("Permission:Delete"));
+    user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles, L("Permission:ManageRoles"));
     }
 
     private static LocalizableString L(string name)

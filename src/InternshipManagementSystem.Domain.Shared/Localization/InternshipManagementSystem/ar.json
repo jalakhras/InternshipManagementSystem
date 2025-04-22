@@ -9,6 +9,12 @@
     "Permission:Create": "إنشاء",
     "Permission:Edit": "تعديل",
     "Permission:Delete": "حذف",
-    "Permission:View": "عرض"
+    "Permission:View": "عرض",
+    "Permission:Users": "المستخدمين",
+    "Permission:ManageRoles": "إدارة الأدوار",
+    "Permission:Admin": "مسؤول النظام",
+    "Permission:Supervisor": "مشرف تدريب",
+    "Permission:Trainee": "متدرب"
+
   }
 }

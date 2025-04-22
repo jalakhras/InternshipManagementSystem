@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using InternshipManagementSystem.TrainingManagement;
+﻿using InternshipManagementSystem.TrainingManagement;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -49,7 +44,8 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.SpecializationId)
                     .IsRequired()
                     .HasComment("معرّف التخصص المرتبط بالمتدرب");
-
+                b.Property(x => x.UserId)
+        .HasComment("معرّف المستخدم المرتبط بالمتدرب (اختياري)");
             });
 
             builder.Entity<Exam>(b =>

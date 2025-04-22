@@ -10,7 +10,7 @@ namespace InternshipManagementSystem.TrainingManagement
         public string FullName { get; set; }
         public string EmployeeNumber { get; set; } // الرقم الوظيفي
         public Guid SpecializationId { get; set; }
-
+        public Guid? UserId { get; set; }
         public Specialization Specialization { get; set; }
         public ICollection<ExamAttempt> ExamAttempts { get; set; }
     }
