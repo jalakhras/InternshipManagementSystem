@@ -4,6 +4,11 @@
     "AppName": "InternshipManagementSystem",
     "Menu:Home": "الصفحة الرئيسية",
     "Welcome": "مرحباً",
-    "LongWelcomeMessage": "مرحبا بكم في التطبيق. هذا مشروع بدء تشغيل يعتمد على إطار عمل ABP. لمزيد من المعلومات ، يرجى زيارة abp.io."
+    "LongWelcomeMessage": "مرحبا بكم في التطبيق. هذا مشروع بدء تشغيل يعتمد على إطار عمل ABP. لمزيد من المعلومات ، يرجى زيارة abp.io.",
+    "Permission:ExamAttempts": "محاولات الامتحان",
+    "Permission:Create": "إنشاء",
+    "Permission:Edit": "تعديل",
+    "Permission:Delete": "حذف",
+    "Permission:View": "عرض"
   }
 }

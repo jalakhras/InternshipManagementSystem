@@ -49,6 +49,7 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.SpecializationId)
                     .IsRequired()
                     .HasComment("معرّف التخصص المرتبط بالمتدرب");
+
             });
 
             builder.Entity<Exam>(b =>
