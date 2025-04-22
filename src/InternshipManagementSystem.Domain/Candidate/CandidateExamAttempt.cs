@@ -15,6 +15,16 @@ namespace InternshipManagementSystem.Candidate
 
         public Candidate Candidate { get; set; }
         public Exam Exam { get; set; }
+        public bool IsSubmitted { get; set; } 
+
+        public CandidateExamAttempt()
+        {
+            
+        }
+
+        public CandidateExamAttempt(Guid id) : base(id)
+        {
+        }
     }
 
 

@@ -4,6 +4,7 @@ using InternshipManagementSystem.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace InternshipManagementSystem.Migrations
 {
     [DbContext(typeof(InternshipManagementSystemDbContext))]
-    partial class InternshipManagementSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250422192611_Updated_Questions_And_Exams_Enhancements")]
+    partial class Updated_Questions_And_Exams_Enhancements
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,9 +209,6 @@ namespace InternshipManagementSystem.Migrations
                     b.Property<bool>("IsPassed")
                         .HasColumnType("bit")
                         .HasComment("هل اجتاز المرشح الامتحان بنجاح");
-
-                    b.Property<bool>("IsSubmitted")
-                        .HasColumnType("bit");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("datetime2")
@@ -461,10 +461,6 @@ namespace InternshipManagementSystem.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("AllowPartialCredit")
-                        .HasColumnType("bit")
-                        .HasComment("السماح بالحصول على درجات جزئية للأسئلة متعددة الخيارات");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -502,20 +498,22 @@ namespace InternshipManagementSystem.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("MediaUrl")
+                    b.Property<string>("MediaPath")
                         .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("nvarchar(1024)")
-                        .HasComment("رابط وسائط السؤال (صورة، صوت، فيديو)");
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)")
+                        .HasComment("رابط صورة أو فيديو أو ملف مرفق مع السؤال");
 
                     b.Property<string>("OptionsJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
-                        .HasComment("خيارات السؤال بصيغة JSON");
+                        .HasComment("خيارات السؤال (مخزنة بصيغة JSON)");
 
-                    b.Property<double>("Score")
-                        .HasColumnType("float")
-                        .HasComment("عدد النقاط المخصصة لهذا السؤال");
+                    b.Property<int>("Score")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1)
+                        .HasComment("العلامة المخصصة لهذا السؤال");
 
                     b.Property<string>("Text")
                         .IsRequired()
@@ -525,11 +523,11 @@ namespace InternshipManagementSystem.Migrations
 
                     b.Property<int?>("TimeLimitInSeconds")
                         .HasColumnType("int")
-                        .HasComment("الحد الزمني لهذا السؤال بالثواني (اختياري)");
+                        .HasComment("الوقت المسموح لحل السؤال (بالثواني)");
 
                     b.Property<int>("Type")
                         .HasColumnType("int")
-                        .HasComment("نوع السؤال");
+                        .HasComment("نوع السؤال (اختيارات/صح وخطأ/نصي/برمجي)");
 
                     b.HasKey("Id");
 

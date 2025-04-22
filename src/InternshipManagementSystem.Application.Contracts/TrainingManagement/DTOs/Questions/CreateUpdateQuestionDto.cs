@@ -9,5 +9,8 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
         public QuestionType Type { get; set; }
         public string OptionsJson { get; set; }
         public string CorrectAnswer { get; set; }
+        public int Score { get; set; }
+        public int? TimeLimitInSeconds { get; set; }
+        public string MediaPath { get; set; }
     }
 }

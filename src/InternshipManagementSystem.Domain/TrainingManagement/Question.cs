@@ -1,18 +1,23 @@
-﻿using InternshipManagementSystem.TrainingManagement.Enums;
+﻿using InternshipManagementSystem.TrainingManagement;
+using InternshipManagementSystem.TrainingManagement.Enums;
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
 
-namespace InternshipManagementSystem.TrainingManagement
-{
-    public class Question : AuditedAggregateRoot<Guid>
-    {
-        public Guid ExamId { get; set; }
-        public string Text { get; set; }
-        public QuestionType Type { get; set; }
-        public string OptionsJson { get; set; } // لو السؤال اختيار من متعدد
-        public string CorrectAnswer { get; set; }
 
-        public Exam Exam { get; set; }
-    }
+public class Question : AuditedAggregateRoot<Guid>
+{
+    public Guid ExamId { get; set; }
+    public string Text { get; set; }
+    public QuestionType Type { get; set; }
+    public string OptionsJson { get; set; } // لو فيه اختيارات
+    public string CorrectAnswer { get; set; }
+
+    public double Score { get; set; } // عدد النقاط للسؤال
+    public int? TimeLimitInSeconds { get; set; } // وقت محدد للسؤال (اختياري)
+    public string MediaUrl { get; set; } // رابط صورة / فيديو / صوت مرفق مع السؤال
+    public bool AllowPartialCredit { get; set; } // لو MultiSelect، هل نسمح بدرجات جزئية؟
+
+    public Exam Exam { get; set; }
 }
+

@@ -1,18 +1,15 @@
-﻿using InternshipManagementSystem.CandidateExamAttempts.DTOs;
-using InternshipManagementSystem.TrainingManagement.CandidateExamAttempts.DTOs;
-using System;
-using Volo.Abp.Application.Dtos;
+﻿using System;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
+using InternshipManagementSystem.CandidateExamAttempts.DTOs;
 
-namespace InternshipManagementSystem.TrainingManagement.CandidateExamAttempts
+namespace InternshipManagementSystem.CandidateExamAttempts
 {
-    public interface ICandidateExamAttemptAppService :
-        ICrudAppService<
-            CandidateExamAttemptDto,
-            Guid,
-            PagedAndSortedResultRequestDto,
-            CreateUpdateCandidateExamAttemptDto,
-            CreateUpdateCandidateExamAttemptDto>
+    public interface ICandidateExamAttemptAppService : IApplicationService
     {
+        Task<CandidateExamAttemptDto> CreateCandidateExamAttemptAsync(CreateCandidateExamAttemptDto input);
+        Task SubmitCandidateExamAttemptAsync(SubmitCandidateExamAttemptDto input);
+        Task<CandidateExamAttemptDto> GetAttemptForCandidateAsync(Guid candidateId, Guid examId);
+        Task<CandidateExamAttemptResultDto> GetAttemptResultAsync(Guid attemptId);
     }
 }

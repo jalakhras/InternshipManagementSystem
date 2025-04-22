@@ -1,58 +1,50 @@
-﻿using InternshipManagementSystem.CandidateExamAttempts.DTOs;
-using InternshipManagementSystem.Permissions;
-using InternshipManagementSystem.TrainingManagement.CandidateExamAttempts;
-using InternshipManagementSystem.TrainingManagement.CandidateExamAttempts.DTOs;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
-using Volo.Abp.AspNetCore.Mvc;
+using InternshipManagementSystem.Permissions;
+using InternshipManagementSystem.CandidateExamAttempts.DTOs;
+using InternshipManagementSystem.Controllers;
 
-namespace InternshipManagementSystem.Controllers.CandidateExamAttempts
+namespace InternshipManagementSystem.CandidateExamAttempts
 {
     [Route("api/candidate-exam-attempts")]
     [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Default)]
-    public class CandidateExamAttemptController : AbpController, ICandidateExamAttemptAppService
+    public class CandidateExamAttemptController : InternshipManagementSystemController, ICandidateExamAttemptAppService
     {
-        private readonly ICandidateExamAttemptAppService _candidateExamAttemptAppService;
+        private readonly ICandidateExamAttemptAppService _service;
 
-        public CandidateExamAttemptController(ICandidateExamAttemptAppService candidateExamAttemptAppService)
+        public CandidateExamAttemptController(ICandidateExamAttemptAppService service)
         {
-            _candidateExamAttemptAppService = candidateExamAttemptAppService;
+            _service = service;
         }
 
         [HttpPost]
-        [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Create)]
-        public Task<CandidateExamAttemptDto> CreateAsync(CreateUpdateCandidateExamAttemptDto input)
+        [Route("create")]
+        public Task<CandidateExamAttemptDto> CreateCandidateExamAttemptAsync(CreateCandidateExamAttemptDto input)
         {
-            return _candidateExamAttemptAppService.CreateAsync(input);
+            return _service.CreateCandidateExamAttemptAsync(input);
         }
 
-        [HttpPut("{id}")]
-        [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Edit)]
-        public Task<CandidateExamAttemptDto> UpdateAsync(Guid id, CreateUpdateCandidateExamAttemptDto input)
+        [HttpPost]
+        [Route("submit")]
+        public Task SubmitCandidateExamAttemptAsync(SubmitCandidateExamAttemptDto input)
         {
-            return _candidateExamAttemptAppService.UpdateAsync(id, input);
-        }
-
-        [HttpDelete("{id}")]
-        [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Delete)]
-        public Task DeleteAsync(Guid id)
-        {
-            return _candidateExamAttemptAppService.DeleteAsync(id);
-        }
-
-        [HttpGet("{id}")]
-        public Task<CandidateExamAttemptDto> GetAsync(Guid id)
-        {
-            return _candidateExamAttemptAppService.GetAsync(id);
+            return _service.SubmitCandidateExamAttemptAsync(input);
         }
 
         [HttpGet]
-        public Task<PagedResultDto<CandidateExamAttemptDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        [Route("{candidateId}/exam/{examId}")]
+        public Task<CandidateExamAttemptDto> GetAttemptForCandidateAsync(Guid candidateId, Guid examId)
         {
-            return _candidateExamAttemptAppService.GetListAsync(input);
+            return _service.GetAttemptForCandidateAsync(candidateId, examId);
+        }
+
+        [HttpGet]
+        [Route("{attemptId}/result")]
+        public Task<CandidateExamAttemptResultDto> GetAttemptResultAsync(Guid attemptId)
+        {
+            return _service.GetAttemptResultAsync(attemptId);
         }
     }
 }

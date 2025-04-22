@@ -58,25 +58,29 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.Title)
                     .IsRequired()
                     .HasMaxLength(256)
-                    .HasComment("عنوان الاختبار");
+                    .HasComment("عنوان الامتحان");
 
                 b.Property(x => x.Description)
-                    .HasComment("وصف الاختبار");
+                    .HasComment("وصف مختصر للامتحان");
 
                 b.Property(x => x.SpecializationId)
-                    .HasComment("التخصص المرتبط بالاختبار");
+                    .HasComment("التخصص المرتبط بالامتحان");
 
                 b.Property(x => x.Level)
-                    .HasComment("مستوى الاختبار (مبتدئ/متوسط/متقدم)");
+                    .HasComment("مستوى الامتحان (مبتدئ/متوسط/متقدم)");
 
                 b.Property(x => x.TimeLimitInMinutes)
-                    .HasComment("الوقت المحدد بالدقائق للامتحان");
+                    .HasComment("المدة الإجمالية المسموح بها لحل الامتحان");
 
                 b.Property(x => x.TotalQuestions)
-                    .HasComment("عدد الأسئلة بالاختبار");
+                    .HasComment("عدد الأسئلة الكلي");
 
                 b.Property(x => x.IsActive)
-                    .HasComment("هل الاختبار مفعل؟");
+                    .HasComment("هل الامتحان مفعل أم لا");
+
+                b.Property(x => x.AllowQuestionTimeLimit)
+                    .HasDefaultValue(false)
+                    .HasComment("هل يُسمح بتحديد وقت لكل سؤال بشكل مستقل؟");
             });
 
             builder.Entity<Question>(b =>
@@ -91,16 +95,31 @@ namespace InternshipManagementSystem.EntityFrameworkCore
 
                 b.Property(x => x.Type)
                     .IsRequired()
-                    .HasComment("نوع السؤال (اختياري/صح وخطأ/نصي)");
+                    .HasComment("نوع السؤال");
 
                 b.Property(x => x.OptionsJson)
-                    .HasComment("خيارات السؤال (مخزنة كـ JSON)");
+                    .HasComment("خيارات السؤال بصيغة JSON");
 
                 b.Property(x => x.CorrectAnswer)
                     .IsRequired()
                     .HasMaxLength(512)
                     .HasComment("الإجابة الصحيحة للسؤال");
+
+                b.Property(x => x.Score)
+                    .IsRequired()
+                    .HasComment("عدد النقاط المخصصة لهذا السؤال");
+
+                b.Property(x => x.TimeLimitInSeconds)
+                    .HasComment("الحد الزمني لهذا السؤال بالثواني (اختياري)");
+
+                b.Property(x => x.MediaUrl)
+                    .HasMaxLength(1024)
+                    .HasComment("رابط وسائط السؤال (صورة، صوت، فيديو)");
+
+                b.Property(x => x.AllowPartialCredit)
+                    .HasComment("السماح بالحصول على درجات جزئية للأسئلة متعددة الخيارات");
             });
+
 
             builder.Entity<ExamAttempt>(b =>
             {
