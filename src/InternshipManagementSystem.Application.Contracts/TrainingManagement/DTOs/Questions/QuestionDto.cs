@@ -1,4 +1,5 @@
-﻿using System;
+﻿using InternshipManagementSystem.TrainingManagement.Enums;
+using System;
 using Volo.Abp.Application.Dtos;
 
 namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
@@ -13,5 +14,8 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
         public int Score { get; set; }
         public int? TimeLimitInSeconds { get; set; }
         public Guid ExamId { get; set; }
+        public string? MediaUrl { get; set; }
+
+        public MediaType? MediaType { get; set; }
     }
 }

@@ -11,5 +11,8 @@ namespace InternshipManagementSystem.FileManagement
         Task<List<FileUploadResultDto>> UploadMultipleAsync(List<IFormFile> files, string folder = "general");
         Task DeleteFileAsync(string storedFileName, string folder = "general");
         Task<string> GetFileUrlAsync(string storedFileName, string folder = "general");
+        Task DeleteFileAsync(string fileUrl);
+
+
     }
 }

@@ -118,6 +118,12 @@ namespace InternshipManagementSystem.EntityFrameworkCore
 
                 b.Property(x => x.AllowPartialCredit)
                     .HasComment("السماح بالحصول على درجات جزئية للأسئلة متعددة الخيارات");
+                b.Property(x => x.MediaUrl)
+           .HasMaxLength(2048)
+           .HasComment("رابط الوسائط (صورة/صوت/فيديو/مستند) المرتبطة بالسؤال");
+
+                b.Property(x => x.MediaType)
+                    .HasComment("نوع الوسائط المرتبطة بالسؤال (صورة، صوت، فيديو، مستند)");
             });
 
 

@@ -15,9 +15,15 @@ public class Question : AuditedAggregateRoot<Guid>
 
     public double Score { get; set; } // عدد النقاط للسؤال
     public int? TimeLimitInSeconds { get; set; } // وقت محدد للسؤال (اختياري)
-    public string MediaUrl { get; set; } // رابط صورة / فيديو / صوت مرفق مع السؤال
+    public string? MediaUrl { get; set; } // رابط ملف وسائط مرفق بالسؤال (صورة، صوت، فيديو)
+    public MediaType? MediaType { get; set; } // نوع الملف (صورة - صوت - فيديو - مستند)
+    public string? MediaFileName { get; set; } // اسم الملف الفعلي (اختياري)
+
     public bool AllowPartialCredit { get; set; } // لو MultiSelect، هل نسمح بدرجات جزئية؟
 
     public Exam Exam { get; set; }
 }
+
+
+
 

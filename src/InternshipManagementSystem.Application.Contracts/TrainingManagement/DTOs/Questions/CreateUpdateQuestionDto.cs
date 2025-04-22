@@ -1,4 +1,6 @@
-﻿using System;
+﻿using InternshipManagementSystem.TrainingManagement.Enums;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
@@ -21,7 +23,9 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
         public int Score { get; set; } // كم علامة على هذا السؤال
 
         public int? TimeLimitInSeconds { get; set; } // وقت محدد لحل السؤال (اختياري)
-
+        public IFormFile? MediaFile { get; set; }
+        public string? MediaUrl { get; set; } // الرابط للوسائط المرفقة
+        public MediaType? MediaType { get; set; } 
         public Guid ExamId { get; set; }
     }
 }
