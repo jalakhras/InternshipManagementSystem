@@ -70,6 +70,10 @@ public class InternshipManagementSystemHttpApiHostModule : AbpModule
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
         ConfigureSwaggerServices(context, configuration);
+        Configure<AbpAspNetCoreMvcOptions>(options =>
+        {
+            options.ConventionalControllers.Create(typeof(InternshipManagementSystemApplicationModule).Assembly);
+        });
     }
 
     private void ConfigureAuthentication(ServiceConfigurationContext context)

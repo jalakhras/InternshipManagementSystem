@@ -130,7 +130,13 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.EndTime).HasComment("وقت إنهاء الامتحان");
                 b.Property(x => x.Score).HasComment("نتيجة الامتحان");
                 b.Property(x => x.IsPassed).HasComment("هل المتدرب نجح بالامتحان؟");
+                b.Property(x => x.IsGraded)
+        .HasDefaultValue(false)
+        .HasComment("هل تم تصحيح المحاولة تلقائيًا أو يدويًا");
 
+                b.Property(x => x.NeedsManualReview)
+                    .HasDefaultValue(false)
+                    .HasComment("هل تحتوي المحاولة على أسئلة تحتاج مراجعة يدوية");
                 b.HasOne(x => x.Trainee)
                  .WithMany(x => x.ExamAttempts)
                  .HasForeignKey(x => x.TraineeId)
@@ -149,6 +155,15 @@ namespace InternshipManagementSystem.EntityFrameworkCore
 
                 b.Property(x => x.Answer)
                     .HasComment("إجابة المتدرب للسؤال");
+                b.Property(x => x.IsCorrect)
+        .HasComment("هل الإجابة صحيحة (مراجعة تلقائية أو يدوية)");
+
+                b.Property(x => x.PartialScore)
+                    .HasComment("الدرجة الجزئية لهذا الجواب إن وجدت");
+
+                b.Property(x => x.ReviewComments)
+                    .HasMaxLength(1024)
+                    .HasComment("ملاحظات المدقق اليدوي للإجابة");
             });
 
             builder.Entity<InternshipManagementSystem.Candidate.Candidate>(b =>
