@@ -3,7 +3,7 @@ using Xunit;
 
 namespace InternshipManagementSystem.EntityFrameworkCore.Domains;
 
-[Collection(InternshipManagementSystemTestConsts.CollectionDefinitionName)]
+//[Collection(InternshipManagementSystemTestConsts.CollectionDefinitionName)]
 public class EfCoreSampleDomainTests : SampleDomainTests<InternshipManagementSystemEntityFrameworkCoreTestModule>
 {
 

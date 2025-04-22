@@ -3,7 +3,7 @@ using Xunit;
 
 namespace InternshipManagementSystem.EntityFrameworkCore.Applications;
 
-[Collection(InternshipManagementSystemTestConsts.CollectionDefinitionName)]
+//[Collection(InternshipManagementSystemTestConsts.CollectionDefinitionName)]
 public class EfCoreSampleAppServiceTests : SampleAppServiceTests<InternshipManagementSystemEntityFrameworkCoreTestModule>
 {
 

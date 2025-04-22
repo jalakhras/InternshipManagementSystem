@@ -12,13 +12,14 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
+using InternshipManagementSystem.TrainingManagement;
 
 namespace InternshipManagementSystem.EntityFrameworkCore;
 
 [ReplaceDbContext(typeof(IIdentityDbContext))]
 [ReplaceDbContext(typeof(ITenantManagementDbContext))]
 [ConnectionStringName("Default")]
-public class InternshipManagementSystemDbContext :
+public partial class InternshipManagementSystemDbContext :
     AbpDbContext<InternshipManagementSystemDbContext>,
     IIdentityDbContext,
     ITenantManagementDbContext
@@ -73,6 +74,7 @@ public class InternshipManagementSystemDbContext :
         builder.ConfigureOpenIddict();
         builder.ConfigureFeatureManagement();
         builder.ConfigureTenantManagement();
+        ConfigureTrainingManagement(builder);
 
         /* Configure your own tables/entities inside here */
 
