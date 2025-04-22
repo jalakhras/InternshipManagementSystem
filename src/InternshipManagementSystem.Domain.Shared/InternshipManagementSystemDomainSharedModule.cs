@@ -1,4 +1,5 @@
 ﻿using InternshipManagementSystem.Localization;
+using InternshipManagementSystem.Settings;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.FeatureManagement;
@@ -9,6 +10,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
+using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Validation.Localization;
 using Volo.Abp.VirtualFileSystem;
@@ -53,6 +55,11 @@ public class InternshipManagementSystemDomainSharedModule : AbpModule
         Configure<AbpExceptionLocalizationOptions>(options =>
         {
             options.MapCodeNamespace("InternshipManagementSystem", typeof(InternshipManagementSystemResource));
+        });
+
+        Configure<AbpSettingOptions>(options =>
+        {
+            options.DefinitionProviders.Add<InternshipManagementSystemSettingDefinitionProvider>();
         });
     }
 }

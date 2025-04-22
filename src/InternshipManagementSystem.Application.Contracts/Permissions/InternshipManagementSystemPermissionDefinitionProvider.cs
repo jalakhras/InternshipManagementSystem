@@ -57,15 +57,22 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.View, L("Permission:ExamAttempts.View"));
 
 
+        var candidatesGroup = trainingManagementGroup.AddChild(InternshipManagementSystemPermissions.Candidates.Default,L("Permission:Candidates"));
+        candidatesGroup.AddChild(InternshipManagementSystemPermissions.Candidates.Create, L("Permission:Create"));
+        candidatesGroup.AddChild(InternshipManagementSystemPermissions.Candidates.Edit, L("Permission:Update"));
+        candidatesGroup.AddChild(InternshipManagementSystemPermissions.Candidates.Delete, L("Permission:Delete"));
+        candidatesGroup.AddChild(InternshipManagementSystemPermissions.Candidates.View, L("Permission:View"));
+
+
+
         var user = trainingManagementGroup.AddChild(
            InternshipManagementSystemPermissions.IdentityManagement.Users.Default,
-           L("Permission:Users")
-       );
+           L("Permission:Users"));
 
         user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Create, L("Permission:Create"));
         user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Edit, L("Permission:Edit"));
         user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Delete, L("Permission:Delete"));
-    user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles, L("Permission:ManageRoles"));
+        user.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles, L("Permission:ManageRoles"));
     }
 
     private static LocalizableString L(string name)

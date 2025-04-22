@@ -16,9 +16,9 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using InternshipManagementSystem.Data;
 using Volo.Abp.Data;
-
+using Volo.Abp.Settings;
+using InternshipManagementSystem.Settings;
 namespace InternshipManagementSystem;
-
 [DependsOn(
     typeof(InternshipManagementSystemDomainSharedModule),
     typeof(AbpAuditLoggingDomainModule),
@@ -66,6 +66,10 @@ public class InternshipManagementSystemDomainModule : AbpModule
         Configure< AbpDataSeedOptions > (options =>
         {
             options.Contributors.Add<InternshipManagementSystemDataSeedContributor>();
+        });
+        Configure<AbpSettingOptions>(options =>
+        {
+            options.DefinitionProviders.Add<InternshipManagementSystemSettingDefinitionProvider>();
         });
 
 #if DEBUG

@@ -12,6 +12,8 @@ namespace InternshipManagementSystem.EntityFrameworkCore
         public DbSet<Question> Questions { get; set; }
         public DbSet<ExamAttempt> ExamAttempts { get; set; }
         public DbSet<ExamAnswer> ExamAnswers { get; set; }
+        public DbSet<Candidate> Candidates { get; set; }
+        public DbSet<CandidateExamAttempt> CandidateExamAttempts { get; set; }
 
         protected void ConfigureTrainingManagement(ModelBuilder builder)
         {
@@ -129,6 +131,52 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.Answer)
                     .HasComment("إجابة المتدرب للسؤال");
             });
+
+            builder.Entity<Candidate>(b =>
+            {
+                b.ToTable("AppCandidates");
+                b.ConfigureByConvention();
+
+                b.Property(x => x.FullName)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasComment("اسم المرشح الكامل");
+
+                b.Property(x => x.Email)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .HasComment("البريد الإلكتروني للمرشح");
+
+                b.Property(x => x.PhoneNumber)
+                    .HasMaxLength(32)
+                    .HasComment("رقم هاتف المرشح");
+
+                b.Property(x => x.PositionAppliedFor)
+                    .HasMaxLength(128)
+                    .HasComment("الوظيفة المتقدم لها المرشح");
+
+                b.Property(x => x.Status)
+                    .HasComment("حالة المرشح (قيد التقييم / ناجح / راسب)");
+            });
+
+            builder.Entity<CandidateExamAttempt>(b =>
+            {
+                b.ToTable("AppCandidateExamAttempts");
+                b.ConfigureByConvention();
+
+                b.Property(x => x.StartTime)
+                    .HasComment("وقت بدء محاولة الامتحان");
+
+                b.Property(x => x.EndTime)
+                    .HasComment("وقت انتهاء محاولة الامتحان");
+
+                b.Property(x => x.Score)
+                    .HasComment("نتيجة الامتحان");
+
+                b.Property(x => x.IsPassed)
+                    .HasComment("هل اجتاز المرشح الامتحان بنجاح");
+            });
+
         }
     }
 }

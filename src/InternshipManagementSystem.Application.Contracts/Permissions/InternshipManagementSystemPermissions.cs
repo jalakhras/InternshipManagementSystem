@@ -44,7 +44,7 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
         }
 
-
+      
 
 
     }
@@ -61,5 +61,13 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
             public const string ManageRoles = Default + ".ManageRoles";
         }
+    }
+    public static class Candidates
+    {
+        public const string Default = "InternshipManagementSystem.Candidates";
+        public const string Create = "InternshipManagementSystem.Candidates.Create";
+        public const string Edit = "InternshipManagementSystem.Candidates.Edit";
+        public const string Delete = "InternshipManagementSystem.Candidates.Delete";
+        public const string View = "InternshipManagementSystem.Candidates.View";
     }
 }

@@ -1,10 +1,7 @@
-﻿using InternshipManagementSystem.Identity;
-using InternshipManagementSystem.IdentityManagement;
-using InternshipManagementSystem.IdentityManagement.DTOs;
+﻿using InternshipManagementSystem.IdentityManagement;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Services;
 using Volo.Abp.Identity;
 using Volo.Abp.ObjectMapping;
 

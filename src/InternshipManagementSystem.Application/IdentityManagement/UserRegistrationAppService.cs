@@ -1,6 +1,7 @@
 ﻿using InternshipManagementSystem.Identity;
 using InternshipManagementSystem.IdentityManagement.DTOs;
 using InternshipManagementSystem.IdentityManagement.DTOs.InternshipManagementSystem.IdentityManagement.DTOs;
+using InternshipManagementSystem.Settings;
 using InternshipManagementSystem.TrainingManagement;
 using InternshipManagementSystem.TrainingManagement.IRepositories;
 using Microsoft.AspNetCore.Identity;
@@ -10,6 +11,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Identity;
 using Volo.Abp.ObjectMapping;
+using Volo.Abp.Settings;
 
 namespace InternshipManagementSystem.IdentityManagement
 {
@@ -19,21 +21,31 @@ namespace InternshipManagementSystem.IdentityManagement
         private readonly IdentityRoleManager _roleManager;
         private readonly ITraineeRepository _traineeRepository;
         private readonly IObjectMapper _objectMapper;
+        private readonly ISettingProvider _settingProvider;
 
         public UserRegistrationAppService(
             IdentityUserManager userManager,
             IdentityRoleManager roleManager,
             ITraineeRepository traineeRepository,
-            IObjectMapper objectMapper)
+            IObjectMapper objectMapper, ISettingProvider settingProvider)
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _traineeRepository = traineeRepository;
             _objectMapper = objectMapper;
+            _settingProvider = settingProvider;
         }
 
         public async Task<UserDto> RegisterAsync(RegisterUserDto input)
         {
+            if (CurrentUser?.IsAuthenticated != true)
+            {
+                var isSelfRegistrationEnabled = await _settingProvider.GetAsync<bool>(InternshipManagementSystemSettings.EnableSelfRegistration);
+                if (!isSelfRegistrationEnabled)
+                {
+                    throw new BusinessException("Self-registration is currently disabled.");
+                }
+            }
             var existingUser = await _userManager.FindByEmailAsync(input.Email);
             if (existingUser != null)
             {
