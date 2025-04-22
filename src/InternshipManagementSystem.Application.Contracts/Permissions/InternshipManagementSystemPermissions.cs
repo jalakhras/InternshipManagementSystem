@@ -44,10 +44,25 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
         }
 
-      
+        public static class Candidates
+        {
+            public const string Default = TrainingManagement.Default + ".Candidates";
+            public const string Create = Default + ".Create";
+            public const string Edit = Default + ".Edit";
+            public const string Delete = Default + ".Delete";
+            public const string View = Default + ".View";
+        }
 
-
+        public static class CandidateExamAttempts
+        {
+            public const string Default = TrainingManagement.Default + ".CandidateExamAttempts";
+            public const string Create = Default + ".Create";
+            public const string Edit = Default + ".Edit";
+            public const string Delete = Default + ".Delete";
+            public const string View = Default + ".View";
+        }
     }
+
     public static class IdentityManagement
     {
         public const string Default = GroupName + ".IdentityManagement";
@@ -61,13 +76,14 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
             public const string ManageRoles = Default + ".ManageRoles";
         }
-    }
-    public static class Candidates
-    {
-        public const string Default = "InternshipManagementSystem.Candidates";
-        public const string Create = "InternshipManagementSystem.Candidates.Create";
-        public const string Edit = "InternshipManagementSystem.Candidates.Edit";
-        public const string Delete = "InternshipManagementSystem.Candidates.Delete";
-        public const string View = "InternshipManagementSystem.Candidates.View";
+
+        public static class Roles
+        {
+            public const string Default = IdentityManagement.Default + ".Roles";
+            public const string Create = Default + ".Create";
+            public const string Edit = Default + ".Edit";
+            public const string Delete = Default + ".Delete";
+            public const string View = Default + ".View";
+        }
     }
 }

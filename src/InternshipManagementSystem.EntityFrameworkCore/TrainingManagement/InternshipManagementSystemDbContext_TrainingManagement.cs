@@ -1,7 +1,7 @@
-﻿using InternshipManagementSystem.TrainingManagement;
+﻿using InternshipManagementSystem.Candidate;
+using InternshipManagementSystem.TrainingManagement;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
-
 namespace InternshipManagementSystem.EntityFrameworkCore
 {
     public partial class InternshipManagementSystemDbContext
@@ -12,7 +12,7 @@ namespace InternshipManagementSystem.EntityFrameworkCore
         public DbSet<Question> Questions { get; set; }
         public DbSet<ExamAttempt> ExamAttempts { get; set; }
         public DbSet<ExamAnswer> ExamAnswers { get; set; }
-        public DbSet<Candidate> Candidates { get; set; }
+        public DbSet<InternshipManagementSystem.Candidate.Candidate> Candidates { get; set; }
         public DbSet<CandidateExamAttempt> CandidateExamAttempts { get; set; }
 
         protected void ConfigureTrainingManagement(ModelBuilder builder)
@@ -132,7 +132,7 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                     .HasComment("إجابة المتدرب للسؤال");
             });
 
-            builder.Entity<Candidate>(b =>
+            builder.Entity<InternshipManagementSystem.Candidate.Candidate>(b =>
             {
                 b.ToTable("AppCandidates");
                 b.ConfigureByConvention();

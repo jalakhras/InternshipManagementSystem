@@ -1,28 +1,22 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace InternshipManagementSystem.Candidates.DTOs
+namespace InternshipManagementSystem.TrainingManagement.Candidates.DTOs;
+
+public class CreateUpdateCandidateDto
 {
-    public class CreateUpdateCandidateDto
-        {
-            [Required]
-            [StringLength(128)]
-            public string FullName { get; set; }
+    [Required]
+    [StringLength(256)]
+    public string FullName { get; set; }
 
-            [Required]
-            [EmailAddress]
-            [StringLength(256)]
-            public string Email { get; set; }
+    [Required]
+    [StringLength(256)]
+    [EmailAddress]
+    public string Email { get; set; }
 
-            [Phone]
-            [StringLength(20)]
-            public string Phone { get; set; }
+    public string PhoneNumber { get; set; }
 
-            [Required]
-            [StringLength(128)]
-            public string Specialization { get; set; }
+    [Required]
+    public string AppliedPosition { get; set; } // الوظيفة التي يقدم لها
 
-            [StringLength(1024)]
-            public string Notes { get; set; }
-        }
-    }
-
+    public string Notes { get; set; } // ملاحظات إضافية
+}

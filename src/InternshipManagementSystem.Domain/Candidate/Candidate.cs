@@ -2,7 +2,7 @@
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace InternshipManagementSystem.TrainingManagement
+namespace InternshipManagementSystem.Candidate
 {
     public class Candidate : AuditedAggregateRoot<Guid>
     {
