@@ -17,5 +17,7 @@ namespace InternshipManagementSystem.TrainingManagement.ExamAttempts
         Task<List<ExamAttemptDto>> GetAttemptsByTraineeIdAsync(Guid traineeId);
 
         Task<List<ExamAttemptDto>> GetAttemptsByExamIdAsync(Guid examId);
+        Task SubmitAttemptAsync(Guid attemptId);
+
     }
 }

@@ -18,5 +18,6 @@ namespace InternshipManagementSystem.TrainingManagement
         public Exam Exam { get; set; }
         public Trainee Trainee { get; set; }
         public ICollection<ExamAnswer> ExamAnswers { get; set; }
+        public bool IsSubmitted { get; set; }
     }
 }

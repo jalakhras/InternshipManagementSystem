@@ -1,10 +1,9 @@
-﻿using System;
+﻿using InternshipManagementSystem.TrainingManagement.DTOs.ExamAttempts;
+using InternshipManagementSystem.TrainingManagement.ExamAttempts;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using InternshipManagementSystem.TrainingManagement.DTOs.ExamAttempts;
-using InternshipManagementSystem.TrainingManagement.ExamAttempts;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.Mvc;
@@ -69,5 +68,9 @@ namespace InternshipManagementSystem.TrainingManagement
             return await _examAttemptAppService.GetListAsync(input);
         }
 
+        public async Task SubmitAttemptAsync(Guid attemptId)
+        {
+            await _examAttemptAppService.SubmitAttemptAsync(attemptId);
+        }
     }
 }

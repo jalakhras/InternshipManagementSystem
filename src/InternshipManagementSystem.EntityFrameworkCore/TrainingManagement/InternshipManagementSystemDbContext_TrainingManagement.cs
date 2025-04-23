@@ -147,9 +147,8 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.EndTime).HasComment("وقت إنهاء الامتحان");
                 b.Property(x => x.Score).HasComment("نتيجة الامتحان");
                 b.Property(x => x.IsPassed).HasComment("هل المتدرب نجح بالامتحان؟");
-                b.Property(x => x.IsGraded)
-        .HasDefaultValue(false)
-        .HasComment("هل تم تصحيح المحاولة تلقائيًا أو يدويًا");
+                b.Property(x => x.IsGraded).HasDefaultValue(false).HasComment("هل تم تصحيح المحاولة تلقائيًا أو يدويًا");
+                b.Property(x => x.IsSubmitted).HasDefaultValue(false).HasComment("هل تم ارسال الاجابات");
 
                 b.Property(x => x.NeedsManualReview)
                     .HasDefaultValue(false)
@@ -163,6 +162,8 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                  .WithMany(x => x.ExamAttempts)
                  .HasForeignKey(x => x.ExamId)
                  .OnDelete(DeleteBehavior.Restrict);
+
+
             });
 
             builder.Entity<ExamAnswer>(b =>
