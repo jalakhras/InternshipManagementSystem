@@ -1,5 +1,4 @@
-﻿using InternshipManagementSystem.Candidate;
-using InternshipManagementSystem.TrainingManagement;
+﻿using InternshipManagementSystem.TrainingManagement;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -13,8 +12,9 @@ namespace InternshipManagementSystem.EntityFrameworkCore
         public DbSet<Question> Questions { get; set; }
         public DbSet<ExamAttempt> ExamAttempts { get; set; }
         public DbSet<ExamAnswer> ExamAnswers { get; set; }
-        public DbSet<InternshipManagementSystem.Candidate.Candidate> Candidates { get; set; }
+        public DbSet<Candidate> Candidates { get; set; }
         public DbSet<CandidateExamAttempt> CandidateExamAttempts { get; set; }
+        public DbSet<CandidateExamAnswer> CandidateExamAnswers { get; set; }
 
         protected void ConfigureTrainingManagement(ModelBuilder builder)
         {
@@ -191,7 +191,7 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                    .HasComment("رابط مرفق الاجابه للإجابة");
             });
 
-            builder.Entity<InternshipManagementSystem.Candidate.Candidate>(b =>
+            builder.Entity<Candidate>(b =>
             {
                 b.ToTable("AppCandidates");
                 b.ConfigureByConvention();
@@ -235,6 +235,27 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.IsPassed)
                     .HasComment("هل اجتاز المرشح الامتحان بنجاح");
             });
+
+            builder.Entity<CandidateExamAnswer>(b =>
+            {
+                b.ToTable("AppCandidateExamAnswers");
+                b.ConfigureByConvention();
+
+                b.Property(x => x.Answer).HasMaxLength(4000).HasComment("الإجابة النصية للمرشح");
+                b.Property(x => x.AnswerFileUrl).HasMaxLength(512).HasComment("رابط الملف المرفق للإجابة");
+                b.Property(x => x.AnswerFileName).HasMaxLength(256).HasComment("اسم الملف المرفق");
+
+                b.HasOne(x => x.CandidateExamAttempt)
+                    .WithMany(x => x.CandidateExamAnswers)
+                    .HasForeignKey(x => x.CandidateExamAttemptId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Question)
+                    .WithMany()
+                    .HasForeignKey(x => x.QuestionId)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
         }
     }
 }

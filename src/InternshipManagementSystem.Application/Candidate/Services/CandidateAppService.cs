@@ -10,14 +10,14 @@ namespace InternshipManagementSystem.TrainingManagement.Candidates;
 
 [Authorize(InternshipManagementSystemPermissions.TrainingManagement.Candidates.Default)]
 public class CandidateAppService : CrudAppService<
-    Candidate.Candidate,
+  Candidate,
     CandidateDto,
     Guid,
     PagedAndSortedResultRequestDto,
     CreateUpdateCandidateDto,
     CreateUpdateCandidateDto>, ICandidateAppService
 {
-    public CandidateAppService(IRepository<Candidate.Candidate, Guid> repository) : base(repository)
+    public CandidateAppService(IRepository<Candidate, Guid> repository) : base(repository)
     {
     }
 }

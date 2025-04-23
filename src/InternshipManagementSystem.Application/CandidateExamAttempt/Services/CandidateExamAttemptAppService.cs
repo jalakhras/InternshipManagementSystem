@@ -6,9 +6,8 @@ using InternshipManagementSystem.Permissions;
 using InternshipManagementSystem.CandidateExamAttempts.DTOs;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using InternshipManagementSystem.Candidate;
-using InternshipManagementSystem.TrainingManagement.CandidateExamAttempts;
 using Volo.Abp;
+using InternshipManagementSystem.TrainingManagement;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
 {
@@ -16,13 +15,13 @@ namespace InternshipManagementSystem.CandidateExamAttempts
     public class CandidateExamAttemptAppService : ApplicationService, ICandidateExamAttemptAppService
     {
         private readonly IRepository<CandidateExamAttempt, Guid> _candidateExamAttemptRepository;
-        private readonly IRepository<Candidate.Candidate, Guid> _candidateRepository;
+        private readonly IRepository<Candidate, Guid> _candidateRepository;
         private readonly IRepository<Exam, Guid> _examRepository;
         private readonly IRepository<Question, Guid> _questionRepository;
 
         public CandidateExamAttemptAppService(
             IRepository<CandidateExamAttempt, Guid> candidateExamAttemptRepository,
-            IRepository<Candidate.Candidate, Guid> candidateRepository,
+            IRepository<Candidate, Guid> candidateRepository,
             IRepository<Exam, Guid> examRepository,
             IRepository<Question, Guid> questionRepository)
         {

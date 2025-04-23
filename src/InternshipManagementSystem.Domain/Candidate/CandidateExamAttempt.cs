@@ -1,8 +1,9 @@
 ﻿using InternshipManagementSystem.TrainingManagement;
 using System;
+using System.Collections.Generic;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace InternshipManagementSystem.Candidate
+namespace InternshipManagementSystem.TrainingManagement
 {
     public class CandidateExamAttempt : AuditedAggregateRoot<Guid>
     {
@@ -15,7 +16,8 @@ namespace InternshipManagementSystem.Candidate
 
         public Candidate Candidate { get; set; }
         public Exam Exam { get; set; }
-        public bool IsSubmitted { get; set; } 
+        public bool IsSubmitted { get; set; }
+        public ICollection<CandidateExamAnswer> CandidateExamAnswers { get; set; } = new List<CandidateExamAnswer>();
 
         public CandidateExamAttempt()
         {
