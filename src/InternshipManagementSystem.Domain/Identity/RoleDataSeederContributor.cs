@@ -11,7 +11,7 @@ namespace InternshipManagementSystem.Data
         private readonly IIdentityRoleRepository _roleRepository;
         private readonly IGuidGenerator _guidGenerator;
 
-        public RoleDataSeederContributor(IIdentityRoleRepository roleRepository,IGuidGenerator guidGenerator)
+        public RoleDataSeederContributor(IIdentityRoleRepository roleRepository, IGuidGenerator guidGenerator)
         {
             _roleRepository = roleRepository;
             _guidGenerator = guidGenerator;

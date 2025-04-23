@@ -1,6 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System;
-using Volo.Abp.Identity;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 public class CreateTraineeUserDto
 {

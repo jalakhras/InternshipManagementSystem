@@ -8,5 +8,4 @@ namespace InternshipManagementSystem.TrainingManagement.Registration
     {
         Task<UserDto> RegisterAsync(CreateSupervisorUserDto input);
     }
-
 }

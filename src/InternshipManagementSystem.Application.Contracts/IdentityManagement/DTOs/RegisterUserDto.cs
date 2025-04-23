@@ -24,7 +24,7 @@ namespace InternshipManagementSystem.IdentityManagement.DTOs
             public string FullName { get; set; }
 
             [Required]
-            public UserType UserType { get; set; } 
+            public UserType UserType { get; set; }
         }
 
         public enum UserType
@@ -33,6 +33,4 @@ namespace InternshipManagementSystem.IdentityManagement.DTOs
             Supervisor
         }
     }
-
-
 }

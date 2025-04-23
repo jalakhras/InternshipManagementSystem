@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Volo.Abp.Identity;
 
 public class CreateSupervisorUserDto
 {

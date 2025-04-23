@@ -16,6 +16,5 @@ namespace InternshipManagementSystem.TrainingManagement
         public Question Question { get; set; }
         public string? AnswerFileUrl { get; set; } // مسار الملف المرفوع للإجابة
         public string? AnswerFileName { get; set; } // اسم الملف المرفوع
-
     }
 }

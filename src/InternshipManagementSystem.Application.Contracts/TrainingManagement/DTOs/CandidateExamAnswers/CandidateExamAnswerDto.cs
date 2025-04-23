@@ -12,5 +12,4 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.CandidateExamAnswer
         public string? AnswerFileUrl { get; set; }
         public string? AnswerFileName { get; set; }
     }
-    
 }

@@ -9,7 +9,6 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Trainees
         public string EmployeeNumber { get; set; }
         public Guid SpecializationId { get; set; }
         public string SpecializationName { get; set; }
-        public Guid? UserId { get; set; } 
-
+        public Guid? UserId { get; set; }
     }
 }

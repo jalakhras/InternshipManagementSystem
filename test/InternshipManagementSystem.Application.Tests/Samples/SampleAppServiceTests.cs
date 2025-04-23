@@ -11,6 +11,7 @@ namespace InternshipManagementSystem.Samples;
  * (like IIdentityUserAppService here).
  * Only test your own application services.
  */
+
 public abstract class SampleAppServiceTests<TStartupModule> : InternshipManagementSystemApplicationTestBase<TStartupModule>
     where TStartupModule : IAbpModule
 {

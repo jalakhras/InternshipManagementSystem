@@ -11,6 +11,4 @@ namespace InternshipManagementSystem.CandidateExamAttempts.DTOs
         [Required]
         public Guid ExamId { get; set; }
     }
-
- 
 }

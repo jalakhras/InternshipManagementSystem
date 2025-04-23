@@ -1,8 +1,8 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using InternshipManagementSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using InternshipManagementSystem.Data;
+using System;
+using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
 namespace InternshipManagementSystem.EntityFrameworkCore;

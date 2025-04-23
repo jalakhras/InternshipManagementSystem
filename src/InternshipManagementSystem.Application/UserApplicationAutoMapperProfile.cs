@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using InternshipManagementSystem.IdentityManagement;
 using InternshipManagementSystem.IdentityManagement.DTOs;
-using InternshipManagementSystem.TrainingManagement;
 using Volo.Abp.Identity;
 
 namespace InternshipManagementSystem

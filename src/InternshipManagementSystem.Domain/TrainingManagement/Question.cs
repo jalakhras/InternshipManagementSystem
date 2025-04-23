@@ -1,5 +1,4 @@
-﻿using InternshipManagementSystem.TrainingManagement;
-using InternshipManagementSystem.TrainingManagement.Enums;
+﻿using InternshipManagementSystem.TrainingManagement.Enums;
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 

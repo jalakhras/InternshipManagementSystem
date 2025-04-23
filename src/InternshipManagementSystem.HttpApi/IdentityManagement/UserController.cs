@@ -1,14 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using InternshipManagementSystem.IdentityManagement;
+using InternshipManagementSystem.IdentityManagement.DTOs;
+using InternshipManagementSystem.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
-using InternshipManagementSystem.Permissions;
-using InternshipManagementSystem.IdentityManagement;
-using Asp.Versioning;
-using InternshipManagementSystem.IdentityManagement.DTOs;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace InternshipManagementSystem.Controllers.IdentityManagement
 {

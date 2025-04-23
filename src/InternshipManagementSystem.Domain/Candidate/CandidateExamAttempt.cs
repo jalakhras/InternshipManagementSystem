@@ -1,5 +1,4 @@
-﻿using InternshipManagementSystem.TrainingManagement;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Volo.Abp.Domain.Entities.Auditing;
 
@@ -21,13 +20,10 @@ namespace InternshipManagementSystem.TrainingManagement
 
         public CandidateExamAttempt()
         {
-            
         }
 
         public CandidateExamAttempt(Guid id) : base(id)
         {
         }
     }
-
-
 }

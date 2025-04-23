@@ -14,6 +14,7 @@ namespace InternshipManagementSystem.EntityFrameworkCore.Samples;
  * (like default AppUser repository IRepository<AppUser, Guid> here).
  * Only test your custom repository methods.
  */
+
 public class SampleRepositoryTests : InternshipManagementSystemEntityFrameworkCoreTestBase
 {
     private readonly IRepository<IdentityUser, Guid> _appUserRepository;
@@ -31,13 +32,13 @@ public class SampleRepositoryTests : InternshipManagementSystemEntityFrameworkCo
          */
         await WithUnitOfWorkAsync(async () =>
         {
-                //Act
-                var adminUser = await (await _appUserRepository.GetQueryableAsync())
-                .Where(u => u.UserName == "admin")
-                .FirstOrDefaultAsync();
+            //Act
+            var adminUser = await (await _appUserRepository.GetQueryableAsync())
+            .Where(u => u.UserName == "admin")
+            .FirstOrDefaultAsync();
 
-                //Assert
-                adminUser.ShouldNotBeNull();
+            //Assert
+            adminUser.ShouldNotBeNull();
         });
     }
 }

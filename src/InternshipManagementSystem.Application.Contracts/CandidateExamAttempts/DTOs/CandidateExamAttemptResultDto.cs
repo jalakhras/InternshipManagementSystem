@@ -8,4 +8,3 @@ public class CandidateExamAttemptResultDto
     public double Score { get; set; }
     public bool Passed { get; set; }
 }
-

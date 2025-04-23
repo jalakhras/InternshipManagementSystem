@@ -1,13 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using InternshipManagementSystem.CandidateExamAttempts.DTOs;
 using InternshipManagementSystem.Permissions;
-using InternshipManagementSystem.CandidateExamAttempts.DTOs;
+using InternshipManagementSystem.TrainingManagement;
+using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp;
-using InternshipManagementSystem.TrainingManagement;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
 {

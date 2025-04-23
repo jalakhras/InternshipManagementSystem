@@ -8,5 +8,4 @@ namespace InternshipManagementSystem;
 )]
 public class InternshipManagementSystemDomainTestModule : AbpModule
 {
-
 }

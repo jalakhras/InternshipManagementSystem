@@ -1,13 +1,10 @@
-﻿using Volo.Abp.Data;
+﻿using Microsoft.AspNetCore.Identity;
+using System.Threading.Tasks;
+using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Guids;
 using Volo.Abp.Identity;
 using Volo.Abp.Uow;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
-using Microsoft.AspNetCore.Identity;
-using Volo.Abp.Guids;
 
 namespace InternshipManagementSystem
 {
@@ -86,6 +83,5 @@ namespace InternshipManagementSystem
                 (await _userManager.AddToRoleAsync(user, role.Name)).CheckErrors();
             }
         }
-
     }
 }

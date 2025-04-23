@@ -14,6 +14,4 @@ namespace InternshipManagementSystem.TrainingManagement
         public Specialization Specialization { get; set; }
         public ICollection<ExamAttempt> ExamAttempts { get; set; }
     }
-
-   
 }

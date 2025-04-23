@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using InternshipManagementSystem.CandidateExamAttempts.DTOs;
+using InternshipManagementSystem.Controllers;
+using InternshipManagementSystem.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
-using InternshipManagementSystem.Permissions;
-using InternshipManagementSystem.CandidateExamAttempts.DTOs;
-using InternshipManagementSystem.Controllers;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
 {

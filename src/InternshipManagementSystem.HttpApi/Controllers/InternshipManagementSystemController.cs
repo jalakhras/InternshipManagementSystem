@@ -5,6 +5,7 @@ namespace InternshipManagementSystem.Controllers;
 
 /* Inherit your controllers from this class.
  */
+
 public abstract class InternshipManagementSystemController : AbpControllerBase
 {
     protected InternshipManagementSystemController()

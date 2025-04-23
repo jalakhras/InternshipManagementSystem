@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Localization;
-using InternshipManagementSystem.Localization;
+﻿using InternshipManagementSystem.Localization;
+using Microsoft.Extensions.Localization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Ui.Branding;
 

@@ -20,5 +20,4 @@ namespace InternshipManagementSystem.TrainingManagement.Exams
             DeletePolicyName = InternshipManagementSystemPermissions.TrainingManagement.Exams.Delete;
         }
     }
-
 }

@@ -10,6 +10,4 @@
         public string Folder { get; set; }
         public string Url { get; set; }
     }
-  
-
 }

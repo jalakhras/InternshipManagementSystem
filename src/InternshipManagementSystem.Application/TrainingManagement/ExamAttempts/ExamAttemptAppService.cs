@@ -32,13 +32,14 @@ public class ExamAttemptAppService : CrudAppService<ExamAttempt, ExamAttemptDto,
         UpdatePolicyName = InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Edit;
         DeletePolicyName = InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Delete;
     }
+
     [Authorize(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.View)]
     public async Task<List<ExamAttemptDto>> GetAttemptsByTraineeIdAsync(Guid traineeId)
     {
         var queryable = await Repository.GetQueryableAsync();
         var attempts = await queryable
             .Where(x => x.TraineeId == traineeId)
-            .ToListAsync(); 
+            .ToListAsync();
 
         return ObjectMapper.Map<List<ExamAttempt>, List<ExamAttemptDto>>(attempts);
     }

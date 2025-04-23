@@ -1,5 +1,4 @@
 ﻿using InternshipManagementSystem.Identity;
-using InternshipManagementSystem.IdentityManagement.DTOs;
 using InternshipManagementSystem.IdentityManagement.DTOs.InternshipManagementSystem.IdentityManagement.DTOs;
 using InternshipManagementSystem.Settings;
 using InternshipManagementSystem.TrainingManagement;

@@ -1,6 +1,6 @@
 ﻿using InternshipManagementSystem.TrainingManagement;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using Volo.Abp.Domain.Entities.Auditing;
 
 public class Exam : AuditedAggregateRoot<Guid>

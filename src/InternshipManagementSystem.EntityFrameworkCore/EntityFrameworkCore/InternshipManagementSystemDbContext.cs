@@ -12,7 +12,6 @@ using Volo.Abp.PermissionManagement.EntityFrameworkCore;
 using Volo.Abp.SettingManagement.EntityFrameworkCore;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TenantManagement.EntityFrameworkCore;
-using InternshipManagementSystem.TrainingManagement;
 
 namespace InternshipManagementSystem.EntityFrameworkCore;
 
@@ -41,6 +40,7 @@ public partial class InternshipManagementSystemDbContext :
 
     //Identity
     public DbSet<IdentityUser> Users { get; set; }
+
     public DbSet<IdentityRole> Roles { get; set; }
     public DbSet<IdentityClaimType> ClaimTypes { get; set; }
     public DbSet<OrganizationUnit> OrganizationUnits { get; set; }
@@ -48,16 +48,17 @@ public partial class InternshipManagementSystemDbContext :
     public DbSet<IdentityLinkUser> LinkUsers { get; set; }
     public DbSet<IdentityUserDelegation> UserDelegations { get; set; }
     public DbSet<IdentitySession> Sessions { get; set; }
+
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
+
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
 
-    #endregion
+    #endregion Entities from the modules
 
     public InternshipManagementSystemDbContext(DbContextOptions<InternshipManagementSystemDbContext> options)
         : base(options)
     {
-
     }
 
     protected override void OnModelCreating(ModelBuilder builder)

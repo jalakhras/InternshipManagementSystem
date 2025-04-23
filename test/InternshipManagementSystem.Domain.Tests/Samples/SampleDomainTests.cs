@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using Shouldly;
+﻿using Shouldly;
+using System.Threading.Tasks;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
 using Xunit;
@@ -11,6 +11,7 @@ namespace InternshipManagementSystem.Samples;
  * (like IdentityUserManager here).
  * Only test your own domain services.
  */
+
 public abstract class SampleDomainTests<TStartupModule> : InternshipManagementSystemDomainTestBase<TStartupModule>
     where TStartupModule : IAbpModule
 {

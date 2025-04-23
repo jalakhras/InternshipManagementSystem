@@ -1,5 +1,5 @@
-﻿using InternshipManagementSystem.FileManagement;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -8,9 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Services;
 using Volo.Abp;
-using Microsoft.AspNetCore.Http;
+using Volo.Abp.Application.Services;
 
 namespace InternshipManagementSystem.FileManagement
 {

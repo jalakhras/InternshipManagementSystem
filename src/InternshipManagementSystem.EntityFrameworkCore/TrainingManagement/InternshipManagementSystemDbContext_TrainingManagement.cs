@@ -162,8 +162,6 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                  .WithMany(x => x.ExamAttempts)
                  .HasForeignKey(x => x.ExamId)
                  .OnDelete(DeleteBehavior.Restrict);
-
-
             });
 
             builder.Entity<ExamAnswer>(b =>
@@ -255,7 +253,6 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                     .HasForeignKey(x => x.QuestionId)
                     .OnDelete(DeleteBehavior.NoAction);
             });
-
         }
     }
 }

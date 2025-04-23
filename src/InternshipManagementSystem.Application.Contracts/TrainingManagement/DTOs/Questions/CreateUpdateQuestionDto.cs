@@ -30,6 +30,5 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
         public string? CodeStarterTemplate { get; set; }
         public string? CodeExpectedOutput { get; set; }
         public string? CodeLanguage { get; set; }
-
     }
 }

@@ -1,9 +1,9 @@
-﻿using System;
+﻿using InternshipManagementSystem.TrainingManagement.DTOs.ExamAttempts;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Services;
 using Volo.Abp.Application.Dtos;
-using InternshipManagementSystem.TrainingManagement.DTOs.ExamAttempts;
+using Volo.Abp.Application.Services;
 
 namespace InternshipManagementSystem.TrainingManagement.ExamAttempts
 {
@@ -17,7 +17,7 @@ namespace InternshipManagementSystem.TrainingManagement.ExamAttempts
         Task<List<ExamAttemptDto>> GetAttemptsByTraineeIdAsync(Guid traineeId);
 
         Task<List<ExamAttemptDto>> GetAttemptsByExamIdAsync(Guid examId);
-        Task SubmitAttemptAsync(Guid attemptId);
 
+        Task SubmitAttemptAsync(Guid attemptId);
     }
 }

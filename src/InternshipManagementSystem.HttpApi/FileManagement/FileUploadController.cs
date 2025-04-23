@@ -23,7 +23,6 @@ namespace InternshipManagementSystem.Controllers
         [HttpPost]
         [RequestSizeLimit(10 * 1024 * 1024)] // 10 MB
         [HttpPost("upload-single")]
-
         public async Task<FileUploadResultDto> UploadFileAsync(IFormFile file, [FromQuery] string folder = "general")
         {
             if (file == null)
@@ -33,6 +32,7 @@ namespace InternshipManagementSystem.Controllers
 
             return await _fileService.UploadAsync(file, folder);
         }
+
         [HttpPost("upload-multiple")]
         public async Task<List<FileUploadResultDto>> UploadMultipleAsync([FromForm] List<IFormFile> files, [FromQuery] string folder)
         {

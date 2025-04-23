@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using InternshipManagementSystem.MultiTenancy;
+using InternshipManagementSystem.Settings;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using InternshipManagementSystem.MultiTenancy;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Data;
 using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -13,12 +15,11 @@ using Volo.Abp.OpenIddict;
 using Volo.Abp.PermissionManagement.Identity;
 using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.TenantManagement;
-using InternshipManagementSystem.Data;
-using Volo.Abp.Data;
 using Volo.Abp.Settings;
-using InternshipManagementSystem.Settings;
+using Volo.Abp.TenantManagement;
+
 namespace InternshipManagementSystem;
+
 [DependsOn(
     typeof(InternshipManagementSystemDomainSharedModule),
     typeof(AbpAuditLoggingDomainModule),
@@ -63,7 +64,7 @@ public class InternshipManagementSystemDomainModule : AbpModule
             options.IsEnabled = MultiTenancyConsts.IsEnabled;
         });
 
-        Configure< AbpDataSeedOptions > (options =>
+        Configure<AbpDataSeedOptions>(options =>
         {
             options.Contributors.Add<InternshipManagementSystemDataSeedContributor>();
         });

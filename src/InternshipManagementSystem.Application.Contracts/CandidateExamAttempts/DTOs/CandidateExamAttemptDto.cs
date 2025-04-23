@@ -14,4 +14,3 @@ public class CandidateExamAttemptDto : AuditedEntityDto<Guid>
     public Guid Id { get; set; }
     public bool IsSubmitted { get; set; }
 }
-

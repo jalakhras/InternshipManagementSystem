@@ -4,7 +4,7 @@ using Volo.Abp.Settings;
 
 namespace InternshipManagementSystem.Settings
 {
-    public class SelfRegistrationSettingAppService : ApplicationService , ISelfRegistrationSettingAppService
+    public class SelfRegistrationSettingAppService : ApplicationService, ISelfRegistrationSettingAppService
     {
         private readonly ISettingProvider _settingProvider;
 
