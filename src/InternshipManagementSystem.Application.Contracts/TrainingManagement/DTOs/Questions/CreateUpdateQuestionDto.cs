@@ -25,7 +25,11 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Questions
         public int? TimeLimitInSeconds { get; set; } // وقت محدد لحل السؤال (اختياري)
         public IFormFile? MediaFile { get; set; }
         public string? MediaUrl { get; set; } // الرابط للوسائط المرفقة
-        public MediaType? MediaType { get; set; } 
+        public MediaType? MediaType { get; set; }
         public Guid ExamId { get; set; }
+        public string? CodeStarterTemplate { get; set; }
+        public string? CodeExpectedOutput { get; set; }
+        public string? CodeLanguage { get; set; }
+
     }
 }

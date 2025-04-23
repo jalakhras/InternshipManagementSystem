@@ -3,8 +3,6 @@ using InternshipManagementSystem.TrainingManagement.Enums;
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 
-
-
 public class Question : AuditedAggregateRoot<Guid>
 {
     public Guid ExamId { get; set; }
@@ -21,9 +19,9 @@ public class Question : AuditedAggregateRoot<Guid>
 
     public bool AllowPartialCredit { get; set; } // لو MultiSelect، هل نسمح بدرجات جزئية؟
 
+    public string? CodeStarterTemplate { get; set; } // الكود الابتدائي الذي يظهر للطالب
+    public string? CodeExpectedOutput { get; set; }  // المخرجات المتوقعة (للتقييم الآلي)
+    public string? CodeLanguage { get; set; }        // لغة البرمجة (مثل C#, JS, Python)
+
     public Exam Exam { get; set; }
 }
-
-
-
-

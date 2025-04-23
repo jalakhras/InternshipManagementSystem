@@ -2,6 +2,7 @@
 using InternshipManagementSystem.TrainingManagement;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
+
 namespace InternshipManagementSystem.EntityFrameworkCore
 {
     public partial class InternshipManagementSystemDbContext
@@ -124,8 +125,18 @@ namespace InternshipManagementSystem.EntityFrameworkCore
 
                 b.Property(x => x.MediaType)
                     .HasComment("نوع الوسائط المرتبطة بالسؤال (صورة، صوت، فيديو، مستند)");
-            });
+                b.Property(x => x.CodeStarterTemplate)
+    .HasMaxLength(5000)
+    .HasComment("نص الكود الابتدائي الذي يظهر للطالب (Code Starter)");
 
+                b.Property(x => x.CodeExpectedOutput)
+                    .HasMaxLength(5000)
+                    .HasComment("المخرجات المتوقعة من تنفيذ الكود");
+
+                b.Property(x => x.CodeLanguage)
+                    .HasMaxLength(64)
+                    .HasComment("لغة البرمجة المطلوبة");
+            });
 
             builder.Entity<ExamAttempt>(b =>
             {
@@ -216,7 +227,6 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.IsPassed)
                     .HasComment("هل اجتاز المرشح الامتحان بنجاح");
             });
-
         }
     }
 }
