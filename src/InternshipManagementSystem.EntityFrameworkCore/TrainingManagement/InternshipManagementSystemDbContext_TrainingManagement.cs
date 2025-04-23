@@ -181,6 +181,13 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                 b.Property(x => x.ReviewComments)
                     .HasMaxLength(1024)
                     .HasComment("ملاحظات المدقق اليدوي للإجابة");
+                b.Property(x => x.AnswerFileName)
+                    .HasMaxLength(1024)
+                    .HasComment("مرفق الاجابه للإجابة");
+
+                b.Property(x => x.AnswerFileUrl)
+                   .HasMaxLength(1024)
+                   .HasComment("رابط مرفق الاجابه للإجابة");
             });
 
             builder.Entity<InternshipManagementSystem.Candidate.Candidate>(b =>

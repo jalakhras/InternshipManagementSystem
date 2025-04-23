@@ -14,5 +14,8 @@ namespace InternshipManagementSystem.TrainingManagement
         public string ReviewComments { get; set; } // ملاحظات عند المراجعة اليدوية
         public ExamAttempt ExamAttempt { get; set; }
         public Question Question { get; set; }
+        public string? AnswerFileUrl { get; set; } // مسار الملف المرفوع للإجابة
+        public string? AnswerFileName { get; set; } // اسم الملف المرفوع
+
     }
 }
