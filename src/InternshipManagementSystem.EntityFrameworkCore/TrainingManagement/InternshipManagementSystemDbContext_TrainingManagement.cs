@@ -15,6 +15,7 @@ namespace InternshipManagementSystem.EntityFrameworkCore
         public DbSet<Candidate> Candidates { get; set; }
         public DbSet<CandidateExamAttempt> CandidateExamAttempts { get; set; }
         public DbSet<CandidateExamAnswer> CandidateExamAnswers { get; set; }
+        public DbSet<ExamLink> ExamLinks { get; set; }
 
         protected void ConfigureTrainingManagement(ModelBuilder builder)
         {
@@ -249,6 +250,43 @@ namespace InternshipManagementSystem.EntityFrameworkCore
                     .HasForeignKey(x => x.QuestionId)
                     .OnDelete(DeleteBehavior.NoAction);
             });
+
+            builder.Entity<ExamLink>(b =>
+            {
+                b.ToTable("AppExamLinks");
+                b.ConfigureByConvention();
+
+                b.Property(x => x.SecureToken)
+                    .IsRequired()
+                    .HasMaxLength(128)
+                    .HasComment("الرمز السري الفريد للوصول للرابط");
+
+                b.HasIndex(x => x.SecureToken).IsUnique();
+
+                b.Property(x => x.ExpiryDate)
+                    .IsRequired()
+                    .HasComment("تاريخ انتهاء صلاحية الرابط");
+
+                b.Property(x => x.MaxAttempts)
+                    .IsRequired()
+                    .HasComment("عدد المحاولات المسموح بها");
+
+                b.Property(x => x.CurrentAttempts)
+                    .HasComment("عدد المحاولات التي تم استخدامها");
+
+                b.HasOne(x => x.Candidate)
+                    .WithMany()
+                    .HasForeignKey(x => x.CandidateId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                b.HasOne(x => x.Exam)
+                    .WithMany()
+                    .HasForeignKey(x => x.ExamId)
+                    .IsRequired()
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
         }
     }
 }

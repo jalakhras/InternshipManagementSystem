@@ -5,6 +5,7 @@ using InternshipManagementSystem.TrainingManagement.DTOs.Exams;
 using InternshipManagementSystem.TrainingManagement.DTOs.Questions;
 using InternshipManagementSystem.TrainingManagement.DTOs.Specializations;
 using InternshipManagementSystem.TrainingManagement.DTOs.Trainees;
+using InternshipManagementSystem.TrainingManagement.ExamLinks.DTOs;
 
 namespace InternshipManagementSystem.TrainingManagement
 {
@@ -29,6 +30,10 @@ namespace InternshipManagementSystem.TrainingManagement
 
             CreateMap<ExamAnswer, ExamAnswerDto>();
             CreateMap<CreateUpdateExamAnswerDto, ExamAnswer>();
+
+            CreateMap<ExamLink, ExamLinkDto>();
+            CreateMap<CreateExamLinkInput, ExamLink>();
+
         }
     }
 }

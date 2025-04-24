@@ -84,6 +84,14 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
         }
 
+        public static class ExamLinks
+        {
+            public const string Default = TrainingManagement.Default + ".ExamLinks";
+            public const string Create = Default + ".Create";
+            public const string View = Default + ".View";
+        }
+
+
 
     }
 

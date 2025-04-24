@@ -98,6 +98,11 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
     L("ManualReviewDashboard"));
         manualReviewDashboard.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualReviewDashboard.View, L("View"));
 
+        var examLinks = trainingManagementGroup.AddChild(
+    InternshipManagementSystemPermissions.TrainingManagement.ExamLinks.Default,
+    L("ExamLinks"));
+        examLinks.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamLinks.Create, L("Create"));
+        examLinks.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamLinks.View, L("View"));
 
         // Identity Management
         var identityManagementGroup = myGroup.AddPermission(
