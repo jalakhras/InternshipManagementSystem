@@ -8,4 +8,5 @@ namespace InternshipManagementSystem.CandidateExamAnswers.DTOs
         public double Score { get; set; }
         public string? Comments { get; set; }
     }
+
 }

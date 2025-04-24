@@ -4,6 +4,7 @@ using InternshipManagementSystem.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace InternshipManagementSystem.Migrations
 {
     [DbContext(typeof(InternshipManagementSystemDbContext))]
-    partial class InternshipManagementSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250424041838_Add-NeedsManualReview-To-CandidateExamAttempt")]
+    partial class AddNeedsManualReviewToCandidateExamAttempt
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -16,6 +16,7 @@ namespace InternshipManagementSystem.TrainingManagement
         public Candidate Candidate { get; set; }
         public Exam Exam { get; set; }
         public bool IsSubmitted { get; set; }
+        public bool NeedsManualReview { get; set; }
         public ICollection<CandidateExamAnswer> CandidateExamAnswers { get; set; } = new List<CandidateExamAnswer>();
 
         public CandidateExamAttempt()
