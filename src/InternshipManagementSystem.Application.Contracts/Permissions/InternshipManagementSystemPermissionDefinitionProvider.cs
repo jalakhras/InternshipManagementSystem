@@ -69,6 +69,30 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         candidateExamAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Delete, L("Delete"));
         candidateExamAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.View, L("View"));
 
+        var candidateExamAnswersGroup = trainingManagementGroup.AddChild(
+    InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Default,
+    L("CandidateExamAnswers"));
+
+        candidateExamAnswersGroup.AddChild(
+            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Create, L("Create"));
+
+        candidateExamAnswersGroup.AddChild(
+            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Edit, L("Edit"));
+
+        candidateExamAnswersGroup.AddChild(
+            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Delete, L("Delete"));
+
+        candidateExamAnswersGroup.AddChild(
+            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.View, L("View"));
+
+        var manualGrading = trainingManagementGroup.AddChild(
+            InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.Default,
+            L("ManualGrading"));
+
+        manualGrading.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.View, L("View"));
+        manualGrading.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.Edit, L("Edit"));
+
+
         // Identity Management
         var identityManagementGroup = myGroup.AddPermission(
             InternshipManagementSystemPermissions.IdentityManagement.Default,

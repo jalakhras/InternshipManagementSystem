@@ -60,7 +60,25 @@ public static class InternshipManagementSystemPermissions
             public const string Edit = Default + ".Edit";
             public const string Delete = Default + ".Delete";
             public const string View = Default + ".View";
+
         }
+        public static class CandidateExamAnswers
+        {
+            public const string Default = TrainingManagement.Default + ".CandidateExamAnswers";
+            public const string Create = Default + ".Create";
+            public const string Edit = Default + ".Edit";
+            public const string Delete = Default + ".Delete";
+            public const string View = Default + ".View";
+        }
+
+
+        public static class ManualGrading
+        {
+            public const string Default = TrainingManagement.Default + ".ManualGrading";
+            public const string View = Default + ".View";
+            public const string Edit = Default + ".Edit";
+        }
+
     }
 
     public static class IdentityManagement

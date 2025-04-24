@@ -5,12 +5,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
 {
     [Route("api/candidate-exam-attempts")]
     [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Default)]
-    public class CandidateExamAttemptController : InternshipManagementSystemController, ICandidateExamAttemptAppService
+    public class CandidateExamAttemptController : AbpController
     {
         private readonly ICandidateExamAttemptAppService _service;
 

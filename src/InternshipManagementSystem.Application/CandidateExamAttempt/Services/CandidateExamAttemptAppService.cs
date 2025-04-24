@@ -1,6 +1,7 @@
 ﻿using InternshipManagementSystem.CandidateExamAttempts.DTOs;
 using InternshipManagementSystem.Permissions;
 using InternshipManagementSystem.TrainingManagement;
+using InternshipManagementSystem.TrainingManagement.Grading;
 using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
@@ -17,17 +18,20 @@ namespace InternshipManagementSystem.CandidateExamAttempts
         private readonly IRepository<Candidate, Guid> _candidateRepository;
         private readonly IRepository<Exam, Guid> _examRepository;
         private readonly IRepository<Question, Guid> _questionRepository;
+        private readonly ICandidateExamGradingService _gradingService;
 
         public CandidateExamAttemptAppService(
             IRepository<CandidateExamAttempt, Guid> candidateExamAttemptRepository,
             IRepository<Candidate, Guid> candidateRepository,
             IRepository<Exam, Guid> examRepository,
-            IRepository<Question, Guid> questionRepository)
+            IRepository<Question, Guid> questionRepository,
+            ICandidateExamGradingService gradingService)
         {
             _candidateExamAttemptRepository = candidateExamAttemptRepository;
             _candidateRepository = candidateRepository;
             _examRepository = examRepository;
             _questionRepository = questionRepository;
+            _gradingService = gradingService;
         }
 
         [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Create)]
@@ -64,6 +68,7 @@ namespace InternshipManagementSystem.CandidateExamAttempts
             attempt.Score = input.Score;
 
             await _candidateExamAttemptRepository.UpdateAsync(attempt);
+            await _gradingService.EvaluateCandidateExamAttemptAsync(input.AttemptId);
         }
 
         [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.View)]
@@ -94,7 +99,7 @@ namespace InternshipManagementSystem.CandidateExamAttempts
             {
                 AttemptId = attempt.Id,
                 Score = attempt.Score,
-                Passed = attempt.Score >= 60 // مثلا نعتبر النجاح فوق 60%
+                Passed = attempt.Score >= 60
             };
         }
     }

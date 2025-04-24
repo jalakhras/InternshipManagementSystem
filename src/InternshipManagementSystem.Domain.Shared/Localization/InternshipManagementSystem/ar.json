@@ -14,6 +14,16 @@
     "Permission:ManageRoles": "إدارة الأدوار",
     "Permission:Admin": "مسؤول النظام",
     "Permission:Supervisor": "مشرف تدريب",
-    "Permission:Trainee": "متدرب"
+    "Permission:Trainee": "متدرب",
+    "Permission:CandidateExamAnswers": "إجابات المرشحين",
+    "Permission:CandidateExamAnswers.Create": "إنشاء إجابة مرشح",
+    "Permission:CandidateExamAnswers.Edit": "تعديل إجابة مرشح",
+    "Permission:CandidateExamAnswers.Delete": "حذف إجابة مرشح",
+    "Permission:CandidateExamAnswers.View": "عرض إجابات المرشحين",
+    "Permission:ManualGrading": "التصحيح اليدوي",
+    "Permission:ManualGrading.View": "عرض التصحيح اليدوي",
+    "Permission:ManualGrading.Edit": "تعديل التصحيح اليدوي"
+
+
   }
 }
