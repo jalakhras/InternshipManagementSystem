@@ -93,6 +93,12 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         manualGrading.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.Edit, L("Edit"));
 
 
+        var manualReviewDashboard = trainingManagementGroup.AddChild(
+    InternshipManagementSystemPermissions.TrainingManagement.ManualReviewDashboard.Default,
+    L("ManualReviewDashboard"));
+        manualReviewDashboard.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualReviewDashboard.View, L("View"));
+
+
         // Identity Management
         var identityManagementGroup = myGroup.AddPermission(
             InternshipManagementSystemPermissions.IdentityManagement.Default,

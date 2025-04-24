@@ -78,6 +78,12 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
             public const string Edit = Default + ".Edit";
         }
+        public static class ManualReviewDashboard
+        {
+            public const string Default = TrainingManagement.Default + ".ManualReviewDashboard";
+            public const string View = Default + ".View";
+        }
+
 
     }
 

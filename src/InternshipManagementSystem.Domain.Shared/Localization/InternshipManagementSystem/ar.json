@@ -22,7 +22,10 @@
     "Permission:CandidateExamAnswers.View": "عرض إجابات المرشحين",
     "Permission:ManualGrading": "التصحيح اليدوي",
     "Permission:ManualGrading.View": "عرض التصحيح اليدوي",
-    "Permission:ManualGrading.Edit": "تعديل التصحيح اليدوي"
+    "Permission:ManualGrading.Edit": "تعديل التصحيح اليدوي",
+    "Permission:ManualReviewDashboard": "لوحة مراجعة المحاولات",
+    "Permission:ManualReviewDashboard.View": "عرض لوحة المراجعة"
+
 
 
   }
