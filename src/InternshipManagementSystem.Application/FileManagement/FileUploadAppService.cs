@@ -13,6 +13,7 @@ using Volo.Abp.Application.Services;
 
 namespace InternshipManagementSystem.FileManagement
 {
+    [RemoteService(false)]
     public class FileUploadAppService : ApplicationService, IFileUploadAppService
     {
         private readonly string _rootUploadPath;

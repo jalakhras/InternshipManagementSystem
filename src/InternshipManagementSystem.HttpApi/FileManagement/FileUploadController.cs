@@ -39,7 +39,7 @@ namespace InternshipManagementSystem.Controllers
             return await _fileService.UploadMultipleAsync(files, folder);
         }
 
-        [HttpDelete("delete")]
+        [HttpDelete]
         public async Task<IActionResult> DeleteFileAsync([FromQuery] string storedFileName, [FromQuery] string folder)
         {
             await _fileService.DeleteFileAsync(storedFileName, folder);

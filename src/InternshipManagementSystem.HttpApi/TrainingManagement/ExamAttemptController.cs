@@ -12,7 +12,7 @@ namespace InternshipManagementSystem.TrainingManagement
 {
     [RemoteService]
     [Route("api/training-management/exam-attempts")]
-    public class ExamAttemptController : AbpController, IExamAttemptAppService
+    public class ExamAttemptController : AbpController
     {
         private readonly IExamAttemptAppService _examAttemptAppService;
 
@@ -68,6 +68,8 @@ namespace InternshipManagementSystem.TrainingManagement
             return await _examAttemptAppService.GetListAsync(input);
         }
 
+        [HttpPost]
+        [Route("submit")]
         public async Task SubmitAttemptAsync(Guid attemptId)
         {
             await _examAttemptAppService.SubmitAttemptAsync(attemptId);
