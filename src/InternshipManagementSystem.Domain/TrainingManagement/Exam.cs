@@ -14,6 +14,9 @@ public class Exam : AuditedAggregateRoot<Guid>
     public bool IsActive { get; set; }
     public bool AllowQuestionTimeLimit { get; set; } // هل الامتحان يسمح بتحديد وقت لكل سؤال؟
 
+    public bool IsScheduled { get; set; } = false; // هل الامتحان مجدول أم مفتوح دائمًا
+    public DateTime? ScheduledStartTime { get; set; } // بداية وقت التوفر
+    public DateTime? ScheduledEndTime { get; set; } // نهاية وقت التوفر
     public Specialization Specialization { get; set; }
     public ICollection<Question> Questions { get; set; }
     public ICollection<ExamAttempt> ExamAttempts { get; set; }

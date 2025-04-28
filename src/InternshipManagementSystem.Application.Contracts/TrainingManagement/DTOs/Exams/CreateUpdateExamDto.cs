@@ -11,5 +11,8 @@ namespace InternshipManagementSystem.TrainingManagement.DTOs.Exams
         public int TimeLimitInMinutes { get; set; }
         public int TotalQuestions { get; set; }
         public bool IsActive { get; set; }
+        public bool IsScheduled { get; set; }
+        public DateTime? ScheduledStartTime { get; set; }
+        public DateTime? ScheduledEndTime { get; set; }
     }
 }

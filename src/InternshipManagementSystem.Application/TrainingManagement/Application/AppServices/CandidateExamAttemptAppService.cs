@@ -40,6 +40,15 @@ namespace InternshipManagementSystem.CandidateExamAttempts
             var exam = await _examRepository.GetAsync(input.ExamId);
             var candidate = await _candidateRepository.GetAsync(input.CandidateId);
 
+            if (exam.IsScheduled)
+            {
+                var now = Clock.Now;
+                if (now < exam.ScheduledStartTime || now > exam.ScheduledEndTime)
+                {
+                    throw new BusinessException("The exam is not available at this time.");
+                }
+            }
+
             var attempt = new CandidateExamAttempt(GuidGenerator.Create())
             {
                 CandidateId = input.CandidateId,
@@ -52,6 +61,7 @@ namespace InternshipManagementSystem.CandidateExamAttempts
 
             return ObjectMapper.Map<CandidateExamAttempt, CandidateExamAttemptDto>(attempt);
         }
+
 
         [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Edit)]
         public async Task SubmitCandidateExamAttemptAsync(SubmitCandidateExamAttemptDto input)
