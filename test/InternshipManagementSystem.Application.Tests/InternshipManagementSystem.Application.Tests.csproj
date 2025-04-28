@@ -17,4 +17,8 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="CandidateManagement.Tests\" />
+  </ItemGroup>
+
 </Project>
