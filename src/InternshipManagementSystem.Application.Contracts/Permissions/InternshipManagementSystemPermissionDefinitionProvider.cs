@@ -24,6 +24,11 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Delete, L("Delete"));
         exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.View, L("View"));
 
+
+        myGroup.AddPermission(InternshipManagementSystemPermissions.TrainingManagement.Admin.Access, L("AdminPanel"));
+ 
+
+
         // Questions
         var questions = trainingManagementGroup.AddChild(
             InternshipManagementSystemPermissions.TrainingManagement.Questions.Default,

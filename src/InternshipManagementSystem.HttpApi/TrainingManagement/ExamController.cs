@@ -11,7 +11,7 @@ namespace InternshipManagementSystem.TrainingManagement
 {
     [RemoteService]
     [Route("api/training-management/exams")]
-    public class ExamController : AbpController, IExamAppService
+    public class ExamController : AbpController
     {
         private readonly IExamAppService _examAppService;
 
@@ -21,33 +21,33 @@ namespace InternshipManagementSystem.TrainingManagement
         }
 
         [HttpGet]
-        public Task<PagedResultDto<ExamDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        public async Task<PagedResultDto<ExamDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-            return _examAppService.GetListAsync(input);
+            return await _examAppService.GetListAsync(input);
         }
 
         [HttpGet("{id}")]
-        public Task<ExamDto> GetAsync(Guid id)
+        public async Task<ExamDto> GetAsync(Guid id)
         {
-            return _examAppService.GetAsync(id);
+            return await _examAppService.GetAsync(id);
         }
 
         [HttpPost]
-        public Task<ExamDto> CreateAsync(CreateUpdateExamDto input)
+        public async Task<ExamDto> CreateAsync(CreateUpdateExamDto input)
         {
-            return _examAppService.CreateAsync(input);
+            return await _examAppService.CreateAsync(input);
         }
 
         [HttpPut("{id}")]
-        public Task<ExamDto> UpdateAsync(Guid id, CreateUpdateExamDto input)
+        public async Task<ExamDto> UpdateAsync(Guid id, CreateUpdateExamDto input)
         {
-            return _examAppService.UpdateAsync(id, input);
+            return await _examAppService.UpdateAsync(id, input);
         }
 
         [HttpDelete("{id}")]
-        public Task DeleteAsync(Guid id)
+        public async Task DeleteAsync(Guid id)
         {
-            return _examAppService.DeleteAsync(id);
+              await _examAppService.DeleteAsync(id);
         }
     }
 }

@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using InternshipManagementSystem.Permissions;
+using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Uow;
 
 namespace InternshipManagementSystem
@@ -16,6 +18,7 @@ namespace InternshipManagementSystem
         private readonly IIdentityRoleRepository _roleRepository;
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IGuidGenerator _guidGenerator;
+        private readonly IPermissionManager _permissionManager;
 
         public InternshipManagementSystemDataSeedContributor(
             IdentityUserManager userManager,
@@ -23,7 +26,8 @@ namespace InternshipManagementSystem
             IIdentityUserRepository userRepository,
             IIdentityRoleRepository roleRepository,
             IUnitOfWorkManager unitOfWorkManager,
-            IGuidGenerator guidGenerator)
+            IGuidGenerator guidGenerator, PermissionManager permissionManager)
+
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -31,6 +35,8 @@ namespace InternshipManagementSystem
             _roleRepository = roleRepository;
             _unitOfWorkManager = unitOfWorkManager;
             _guidGenerator = guidGenerator;
+            _permissionManager = permissionManager;
+
         }
 
         public async Task SeedAsync(DataSeedContext context)
@@ -39,6 +45,8 @@ namespace InternshipManagementSystem
 
             // 1. إنشاء الأدوار الأساسية
             await CreateRoleIfNotExistsAsync("Admin");
+            await GrantAdminPanelAccessToAdminRoleAsync();
+
             await CreateRoleIfNotExistsAsync("Supervisor");
             await CreateRoleIfNotExistsAsync("Trainee");
 
@@ -83,5 +91,19 @@ namespace InternshipManagementSystem
                 (await _userManager.AddToRoleAsync(user, role.Name)).CheckErrors();
             }
         }
+
+        private async Task GrantAdminPanelAccessToAdminRoleAsync()
+        {
+            var adminRole = await _roleRepository.FindByNormalizedNameAsync("ADMIN");
+            if (adminRole != null)
+            {
+                await _permissionManager.SetForRoleAsync(
+                    adminRole.Name,
+                    DomainPermissionNames.AdminAccess,
+                    true
+                );
+            }
+        }
+
     }
 }

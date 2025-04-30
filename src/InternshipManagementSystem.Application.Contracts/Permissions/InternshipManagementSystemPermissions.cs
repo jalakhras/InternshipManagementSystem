@@ -91,6 +91,12 @@ public static class InternshipManagementSystemPermissions
             public const string View = Default + ".View";
         }
 
+        public static class Admin
+        {
+            public const string Access = GroupName + ".Admin.Access";
+        }
+
+
 
 
     }

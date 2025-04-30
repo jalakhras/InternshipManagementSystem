@@ -1,7 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Application.Dtos;
 
-public class CreateTraineeUserDto
+public class CreateTraineeUserDto : AuditedEntityDto<Guid>
 {
     [Required]
     [StringLength(256)]

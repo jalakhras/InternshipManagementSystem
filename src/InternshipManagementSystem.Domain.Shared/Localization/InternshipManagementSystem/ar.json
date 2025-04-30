@@ -1,31 +1,92 @@
 {
   "culture": "ar",
   "texts": {
-    "AppName": "InternshipManagementSystem",
+    "AppName": "نظام إدارة التدريب",
+    "Welcome": "مرحبًا بك في نظام التدريب",
+    "LongWelcomeMessage": "هذا النظام يساعدك في إدارة الامتحانات، تقييم المتدربين، وتتبع الأداء الأكاديمي بسهولة وفعالية.",
+    "GoToAdmin": "لوحة التحكم",
+    "VisitorGuide.Title": "معلومات للزائر",
+    "VisitorGuide.Description": "في هذا النظام يمكنك الاستفادة من الوظائف التالية حسب صلاحياتك:",
+    "VisitorGuide.AdminAccess": "المشرف: إدارة المتدربين، الامتحانات، التصحيح اليدوي، والمراجعة.",
+    "VisitorGuide.TraineeAccess": "المتدرب: تقديم الامتحانات ومراجعة النتائج.",
+
+    "AdminPanel:Title": "لوحة المشرف",
+
     "Menu:Home": "الصفحة الرئيسية",
-    "Welcome": "مرحباً",
-    "LongWelcomeMessage": "مرحبا بكم في التطبيق. هذا مشروع بدء تشغيل يعتمد على إطار عمل ABP. لمزيد من المعلومات ، يرجى زيارة abp.io.",
+    "Menu:Dashboard": "لوحة القيادة",
+    "Menu:Candidates": "المرشحون",
+    "Menu:Exams": "الامتحانات",
+    "Menu:Settings": "الإعدادات",
+    "Menu:ExamAttempts": "محاولات الامتحان",
+    "Menu:Questions": "الأسئلة",
+
+
     "Permission:ExamAttempts": "محاولات الامتحان",
     "Permission:Create": "إنشاء",
     "Permission:Edit": "تعديل",
     "Permission:Delete": "حذف",
     "Permission:View": "عرض",
+
     "Permission:Users": "المستخدمين",
     "Permission:ManageRoles": "إدارة الأدوار",
     "Permission:Admin": "مسؤول النظام",
     "Permission:Supervisor": "مشرف تدريب",
     "Permission:Trainee": "متدرب",
+
     "Permission:CandidateExamAnswers": "إجابات المرشحين",
     "Permission:CandidateExamAnswers.Create": "إنشاء إجابة مرشح",
     "Permission:CandidateExamAnswers.Edit": "تعديل إجابة مرشح",
     "Permission:CandidateExamAnswers.Delete": "حذف إجابة مرشح",
     "Permission:CandidateExamAnswers.View": "عرض إجابات المرشحين",
+
     "Permission:ManualGrading": "التصحيح اليدوي",
     "Permission:ManualGrading.View": "عرض التصحيح اليدوي",
     "Permission:ManualGrading.Edit": "تعديل التصحيح اليدوي",
-    "Permission:ManualReviewDashboard": "لوحة مراجعة المحاولات",
-    "Permission:ManualReviewDashboard.View": "عرض لوحة المراجعة"
 
+    "Permission:ManualReviewDashboard": "لوحة مراجعة المحاولات",
+    "Permission:ManualReviewDashboard.View": "عرض لوحة المراجعة",
+
+    "Dashboard:Title": "لوحة القيادة",
+    "Dashboard:WelcomeMessage": "مرحباً بك في لوحة القيادة!",
+    "Dashboard:TotalAttempts": "عدد المحاولات",
+    "Dashboard:PassedCount": "عدد الناجحين",
+    "Dashboard:FailedCount": "عدد الراسبين",
+
+    "ManualReview:Title": "مراجعة المحاولات يدويًا",
+    "ManualReview:CandidateName": "اسم المرشح",
+    "ManualReview:ExamTitle": "عنوان الامتحان",
+    "ManualReview:StartTime": "وقت البدء",
+    "ManualReview:Score": "الدرجة",
+    "ManualReview:IsSubmitted": "تم التسليم",
+    "ManualReview:ReviewNow": "مراجعة الآن",
+    "ManualReview:NoAttempts": "لا توجد محاولات بحاجة للمراجعة اليدوية",
+
+    "AbpIdentity.Users": "المستخدمون",
+    "AbpIdentity.Roles": "الأدوار",
+    "AbpIdentity.Name": "الاسم",
+    "AbpIdentity.Email": "البريد الإلكتروني",
+    "AbpIdentity.IsActive": "الحالة",
+    "AbpIdentity.Actions": "الإجراءات",
+    "AbpIdentity.CreationTime": "تاريخ الإنشاء",
+
+    "Candidate:FullName": "الاسم الكامل",
+    "Candidate:EmployeeNumber": "رقم الموظف",
+    "Candidate:Specialization": "التخصص",
+
+    "Exam:Title": "عنوان الامتحان",
+    "Exam:DurationInMinutes": "مدة الامتحان (بالدقائق)",
+    "CreateExam": "إنشاء امتحان",
+    "EditExam": "تعديل الامتحان",
+    "Exam:DeleteConfirmationTitle": "هل أنت متأكد من حذف هذا الامتحان؟",
+    "Exam:DeleteConfirmationMessage": "لا يمكن التراجع عن هذا الإجراء.",
+    "Exam:Create": "إنشاء امتحان",
+    "Exam:Actions": "العمليات",
+    
+    
+    "NoData": "لا توجد بيانات",
+    "Delete": "حذف",
+    "Yes": "نعم",
+    "No": "لا"
 
 
   }

@@ -4,14 +4,16 @@ using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
 {
     [Route("api/candidate-exam-attempts")]
     [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Default)]
-    public class CandidateExamAttemptController : AbpController
+    public class CandidateExamAttemptController : AbpController, ICandidateExamAttemptAppService
     {
         private readonly ICandidateExamAttemptAppService _service;
 
@@ -46,6 +48,15 @@ namespace InternshipManagementSystem.CandidateExamAttempts
         public Task<CandidateExamAttemptResultDto> GetAttemptResultAsync(Guid attemptId)
         {
             return _service.GetAttemptResultAsync(attemptId);
+        } 
+        
+        [HttpGet]
+        [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.View)]
+        public Task<PagedResultDto<CandidateExamAttemptDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            return _service.GetListAsync(input);
         }
+
+       
     }
 }

@@ -1,16 +1,93 @@
 {
   "culture": "en",
   "texts": {
-    "AppName": "InternshipManagementSystem",
+    "AppName": "Internship Management System",
+    "Welcome": "Welcome to the Internship Management System",
+    "LongWelcomeMessage": "This system helps you manage exams, evaluate trainees, and track performance effectively.",
+    "GoToAdmin": "Admin Panel",
+    "VisitorGuide.Title": "Visitor Information",
+    "VisitorGuide.Description": "In this system, you can benefit from the following based on your role:",
+    "VisitorGuide.AdminAccess": "Admin: Manage trainees, exams, manual grading, and dashboard.",
+    "VisitorGuide.TraineeAccess": "Trainee: Take exams and review results.",
+
     "Menu:Home": "Home",
-    "Welcome": "Welcome",
-    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information, visit abp.io.",
+    "Menu:Dashboard": "Dashboard",
+    "Menu:Candidates": "Candidates",
+    "Menu:Exams": "Exams",
+    "Menu:Settings": "Settings",
+    "Menu:ExamAttempts": "Exam Attempts",
+    "Menu:Questions": "Questions",
+
+    "AdminPanel:Title": "Admin Panel",
+
+
     "Permission:ExamAttempts": "Exam Attempts",
     "Permission:Create": "Create",
     "Permission:Edit": "Edit",
     "Permission:Delete": "Delete",
     "Permission:View": "View",
+
     "Permission:Users": "Users",
-    "Permission:ManageRoles": "Manage roles"
+    "Permission:ManageRoles": "Manage Roles",
+    "Permission:Admin": "System Administrator",
+    "Permission:Supervisor": "Training Supervisor",
+    "Permission:Trainee": "Trainee",
+
+    "Permission:CandidateExamAnswers": "Candidate Exam Answers",
+    "Permission:CandidateExamAnswers.Create": "Create Candidate Answer",
+    "Permission:CandidateExamAnswers.Edit": "Edit Candidate Answer",
+    "Permission:CandidateExamAnswers.Delete": "Delete Candidate Answer",
+    "Permission:CandidateExamAnswers.View": "View Candidate Answers",
+
+    "Permission:ManualGrading": "Manual Grading",
+    "Permission:ManualGrading.View": "View Manual Grading",
+    "Permission:ManualGrading.Edit": "Edit Manual Grading",
+
+    "Permission:ManualReviewDashboard": "Manual Review Dashboard",
+    "Permission:ManualReviewDashboard.View": "View Review Dashboard",
+
+
+    "Dashboard:Title": "Dashboard",
+    "Dashboard:WelcomeMessage": "Welcome to your dashboard!",
+    "Dashboard:TotalAttempts": "Total Attempts",
+    "Dashboard:PassedCount": "Passed",
+    "Dashboard:FailedCount": "Failed",
+
+    "ManualReview:Title": "Manual Review Attempts",
+    "ManualReview:CandidateName": "Candidate Name",
+    "ManualReview:ExamTitle": "Exam Title",
+    "ManualReview:StartTime": "Start Time",
+    "ManualReview:Score": "Score",
+    "ManualReview:IsSubmitted": "Submitted",
+    "ManualReview:ReviewNow": "Review Now",
+    "ManualReview:NoAttempts": "No attempts requiring manual review",
+
+    "AbpIdentity.Users": "Users",
+    "AbpIdentity.Roles": "Roles",
+    "AbpIdentity.Name": "Name",
+    "AbpIdentity.Email": "Email",
+    "AbpIdentity.IsActive": "Status",
+    "AbpIdentity.Actions": "Actions",
+    "AbpIdentity.CreationTime": "Created On",
+
+    "Candidate:FullName": "Full Name",
+    "Candidate:EmployeeNumber": "Employee No.",
+    "Candidate:Specialization": "Specialization",
+
+    "Exam:Title": "Exam Title",
+    "Exam:DurationInMinutes": "Duration (minutes)",
+    "CreateExam": "Create Exam",
+    "EditExam": "Edit Exam",
+    "Exam:DeleteConfirmationTitle": "Are you sure you want to delete this exam?",
+    "Exam:DeleteConfirmationMessage": "This action cannot be undone.",
+    "Exam:Create": "Create Exam",
+    "Exam:Actions": "Actions",
+
+    "NoData": "No data found",
+
+    "Delete": "Delete",
+    "Yes": "Yes",
+    "No": "No"
+
   }
 }

@@ -1,4 +1,6 @@
-﻿using Volo.Abp.Account;
+﻿using InternshipManagementSystem.TrainingManagement.Grading;
+using Microsoft.Extensions.DependencyInjection;
+using Volo.Abp.Account;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -27,5 +29,9 @@ public class InternshipManagementSystemApplicationModule : AbpModule
         {
             options.AddMaps<InternshipManagementSystemApplicationModule>();
         });
+        var services = context.Services;
+
+        services.AddSingleton<ICandidateExamGradingService, CandidateExamGradingService>();
+
     }
 }

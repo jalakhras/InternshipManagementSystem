@@ -4,13 +4,17 @@ using InternshipManagementSystem.TrainingManagement;
 using InternshipManagementSystem.TrainingManagement.Grading;
 using Microsoft.AspNetCore.Authorization;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
 {
+    
     [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Default)]
     public class CandidateExamAttemptAppService : ApplicationService, ICandidateExamAttemptAppService
     {
@@ -112,5 +116,23 @@ namespace InternshipManagementSystem.CandidateExamAttempts
                 Passed = attempt.Score >= 60
             };
         }
+
+        [Authorize(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.View)]
+        public async Task<PagedResultDto<CandidateExamAttemptDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        {
+            var queryable = await _candidateExamAttemptRepository.GetQueryableAsync();
+
+            var totalCount = await AsyncExecuter.CountAsync(queryable);
+            var items = await AsyncExecuter.ToListAsync(queryable
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+            );
+
+            return new PagedResultDto<CandidateExamAttemptDto>(
+                totalCount,
+                ObjectMapper.Map<List<CandidateExamAttempt>, List<CandidateExamAttemptDto>>(items)
+            );
+        }
+
     }
 }

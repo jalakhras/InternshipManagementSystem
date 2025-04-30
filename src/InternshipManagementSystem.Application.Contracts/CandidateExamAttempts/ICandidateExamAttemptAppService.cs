@@ -1,6 +1,7 @@
 ﻿using InternshipManagementSystem.CandidateExamAttempts.DTOs;
 using System;
 using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
 namespace InternshipManagementSystem.CandidateExamAttempts
@@ -14,5 +15,6 @@ namespace InternshipManagementSystem.CandidateExamAttempts
         Task<CandidateExamAttemptDto> GetAttemptForCandidateAsync(Guid candidateId, Guid examId);
 
         Task<CandidateExamAttemptResultDto> GetAttemptResultAsync(Guid attemptId);
+        Task<PagedResultDto<CandidateExamAttemptDto>> GetListAsync(PagedAndSortedResultRequestDto input);
     }
 }
