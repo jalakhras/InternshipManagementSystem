@@ -11,14 +11,12 @@ export const EXAM_ROUTES: Routes = [
   },
   {
     path: 'new',
-    loadComponent: () =>
-      import('../placeholder/placeholder.component').then(m => m.PlaceholderComponent),
-    data: { titleKey: '::Exam:Create' },
+    loadComponent: () => import('./exam-form.component').then(m => m.ExamFormComponent),
   },
   {
+    // withComponentInputBinding() in app.config binds this to the component's
+    // `id` input, so the component needs no ActivatedRoute of its own.
     path: ':id',
-    loadComponent: () =>
-      import('../placeholder/placeholder.component').then(m => m.PlaceholderComponent),
-    data: { titleKey: '::Exam:Edit' },
+    loadComponent: () => import('./exam-form.component').then(m => m.ExamFormComponent),
   },
 ];

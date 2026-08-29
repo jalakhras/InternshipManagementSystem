@@ -1,0 +1,276 @@
+<astro-page-header
+  [title]="isNew() ? t('::Exam:Create') : (exam()?.title || t('::Exam:Edit'))"
+  [description]="isNew() ? t('::Exam:Create:Lede') : undefined">
+
+  <div slot="actions" class="head-actions">
+    @if (exam(); as e) {
+      <astro-status-chip
+        [label]="e.status === 1 ? t('::Exam:Status:Published') : e.status === 0 ? t('::Exam:Status:Draft') : t('::Exam:Status:Archived')"
+        [tone]="e.status === 1 ? 'pass' : e.status === 0 ? 'pending' : 'neutral'" />
+    }
+
+    <a class="btn btn-outline-secondary" routerLink="/exams">{{ t('::Cancel') }}</a>
+
+    @if (canEdit) {
+      <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+        {{ saving() ? t('::Saving') : t('::Save') }}
+      </button>
+    }
+
+    <!-- Publishing is a separate permission from editing, because moving a draft
+         to something a real person sits is a different act from changing a title. -->
+    @if (canPublish && !isNew() && !isPublished()) {
+      <button type="button" class="btn btn-success" (click)="openPublishPanel()">
+        <i class="bi bi-broadcast" aria-hidden="true"></i>
+        {{ t('::Exam:Publish') }}
+      </button>
+    }
+  </div>
+</astro-page-header>
+
+@if (error(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<form class="form" (ngSubmit)="save()">
+  <!-- ── What it is ────────────────────────────────────────────────────── -->
+  <section class="group">
+    <h2 class="group__title">{{ t('::Exam:Group:Identity') }}</h2>
+
+    <div class="field">
+      <label class="form-label" for="title">{{ t('::Exam:Title') }}</label>
+      <input
+        id="title"
+        type="text"
+        class="form-control"
+        required
+        maxlength="256"
+        [ngModel]="form().title"
+        (ngModelChange)="patch('title', $event)"
+        name="title" />
+    </div>
+
+    <div class="field">
+      <label class="form-label" for="description">{{ t('::Exam:Description') }}</label>
+      <textarea
+        id="description"
+        class="form-control"
+        rows="3"
+        maxlength="2048"
+        [ngModel]="form().description"
+        (ngModelChange)="patch('description', $event)"
+        name="description"></textarea>
+      <p class="hint">{{ t('::Exam:Description:Hint') }}</p>
+    </div>
+  </section>
+
+  <!-- ── Time and marking ──────────────────────────────────────────────── -->
+  <section class="group">
+    <h2 class="group__title">{{ t('::Exam:Group:Marking') }}</h2>
+
+    <div class="row-2">
+      <div class="field">
+        <label class="form-label" for="duration">{{ t('::Exam:Duration') }}</label>
+        <input
+          id="duration"
+          type="number"
+          class="form-control astro-numeric"
+          min="1"
+          max="600"
+          [ngModel]="form().timeLimitInMinutes"
+          (ngModelChange)="patch('timeLimitInMinutes', +$event)"
+          name="duration" />
+      </div>
+
+      <div class="field">
+        <label class="form-label" for="passMark">{{ t('::Exam:PassMark') }}</label>
+        <input
+          id="passMark"
+          type="number"
+          class="form-control astro-numeric"
+          min="1"
+          max="100"
+          [ngModel]="form().passingPercentage"
+          (ngModelChange)="patch('passingPercentage', +$event)"
+          name="passMark" />
+        <!-- A percentage, not an absolute mark: forms differ in length, so a fixed
+             number would mean something different on every paper. -->
+        <p class="hint">{{ t('::Exam:PassMark:Hint') }}</p>
+      </div>
+    </div>
+
+    <fieldset class="field">
+      <legend class="form-label">{{ t('::Exam:Mode') }}</legend>
+
+      <label class="choice">
+        <input
+          type="radio"
+          name="mode"
+          [checked]="form().mode === ExamMode.Assessment"
+          (change)="patch('mode', ExamMode.Assessment)" />
+        <span>
+          <strong>{{ t('::Exam:Mode:Assessment') }}</strong>
+          <small>{{ t('::Exam:Mode:Assessment:Hint') }}</small>
+        </span>
+      </label>
+
+      <label class="choice">
+        <input
+          type="radio"
+          name="mode"
+          [checked]="form().mode === ExamMode.Practice"
+          (change)="patch('mode', ExamMode.Practice)" />
+        <span>
+          <strong>{{ t('::Exam:Mode:Practice') }}</strong>
+          <small>{{ t('::Exam:Mode:Practice:Hint') }}</small>
+        </span>
+      </label>
+    </fieldset>
+  </section>
+
+  <!-- ── How the paper is assembled ────────────────────────────────────── -->
+  <section class="group">
+    <h2 class="group__title">{{ t('::Exam:Group:Assembly') }}</h2>
+    <p class="group__lede">{{ t('::Exam:Group:Assembly:Lede') }}</p>
+
+    <div class="field">
+      <label class="form-label" for="perForm">{{ t('::Exam:QuestionsPerForm') }}</label>
+      <input
+        id="perForm"
+        type="number"
+        class="form-control astro-numeric"
+        min="1"
+        max="500"
+        [ngModel]="form().questionsPerForm"
+        (ngModelChange)="patch('questionsPerForm', $event ? +$event : undefined)"
+        name="perForm" />
+      <p class="hint">{{ t('::Exam:QuestionsPerForm:Hint') }}</p>
+    </div>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="form().shuffleQuestions"
+        (change)="patch('shuffleQuestions', !form().shuffleQuestions)" />
+      <span>
+        <strong>{{ t('::Exam:ShuffleQuestions') }}</strong>
+        <small>{{ t('::Exam:ShuffleQuestions:Hint') }}</small>
+      </span>
+    </label>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="form().shuffleOptions"
+        (change)="patch('shuffleOptions', !form().shuffleOptions)" />
+      <span>
+        <strong>{{ t('::Exam:ShuffleOptions') }}</strong>
+        <small>{{ t('::Exam:ShuffleOptions:Hint') }}</small>
+      </span>
+    </label>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="form().oneQuestionAtATime"
+        (change)="patch('oneQuestionAtATime', !form().oneQuestionAtATime)" />
+      <span>
+        <strong>{{ t('::Exam:OneAtATime') }}</strong>
+        <small>{{ t('::Exam:OneAtATime:Hint') }}</small>
+      </span>
+    </label>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        [checked]="form().collectIntegritySignals"
+        (change)="patch('collectIntegritySignals', !form().collectIntegritySignals)" />
+      <span>
+        <strong>{{ t('::Exam:IntegritySignals') }}</strong>
+        <small>{{ t('::Exam:IntegritySignals:Hint') }}</small>
+      </span>
+    </label>
+  </section>
+</form>
+
+<!-- ── Publish check ───────────────────────────────────────────────────── -->
+@if (showPublishPanel()) {
+  <div class="sheet" role="dialog" aria-modal="true" [attr.aria-label]="t('::Exam:Publish')">
+    <div class="sheet__panel">
+      <header class="sheet__head">
+        <h2>{{ t('::Exam:Publish') }}</h2>
+        <button
+          type="button"
+          class="sheet__close"
+          [attr.aria-label]="t('::Close')"
+          (click)="showPublishPanel.set(false)">
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+      </header>
+
+      @if (publishCheck(); as check) {
+        <div class="sheet__body">
+          <dl class="facts">
+            <div>
+              <dt>{{ t('::Exam:Questions') }}</dt>
+              <dd class="astro-numeric">{{ check.questionCount }}</dd>
+            </div>
+            <div>
+              <dt>{{ t('::Exam:FormLength') }}</dt>
+              <dd class="astro-numeric">{{ check.formLength }}</dd>
+            </div>
+            <div>
+              <dt>{{ t('::Exam:TotalScore') }}</dt>
+              <dd class="astro-numeric">{{ check.totalScore }}</dd>
+            </div>
+          </dl>
+
+          <!-- Blockers refuse the publish. All of them, at once. -->
+          @if (check.blockers.length > 0) {
+            <div class="issues issues--blocking">
+              <h3>{{ t('::Exam:Publish:Blockers') }}</h3>
+              <ul>
+                @for (code of check.blockers; track code) {
+                  <li>{{ t('::' + code) }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <!-- Warnings describe an exam that works but was probably not intended. -->
+          @if (check.warnings.length > 0) {
+            <div class="issues issues--warning">
+              <h3>{{ t('::Exam:Publish:Warnings') }}</h3>
+              <ul>
+                @for (code of check.warnings; track code) {
+                  <li>{{ t('::' + code) }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (check.canPublish && check.warnings.length === 0) {
+            <p class="ready">{{ t('::Exam:Publish:Ready') }}</p>
+          }
+        </div>
+
+        <footer class="sheet__foot">
+          <button type="button" class="btn btn-outline-secondary" (click)="showPublishPanel.set(false)">
+            {{ t('::Cancel') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-success"
+            [disabled]="!check.canPublish || saving()"
+            (click)="publish()">
+            {{ t('::Exam:Publish:Confirm') }}
+          </button>
+        </footer>
+      } @else {
+        <div class="sheet__body">
+          <p>{{ t('::Loading') }}</p>
+        </div>
+      }
+    </div>
+  </div>
+}

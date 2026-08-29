@@ -103,3 +103,73 @@ export async function stubExams(page: Page, options: ExamStubOptions = {}): Prom
     });
   });
 }
+
+/** Options for the single-exam endpoints. */
+export interface ExamDetailStubOptions {
+  exam?: Partial<ExamRow>;
+  publishCheck?: {
+    canPublish: boolean;
+    blockers: string[];
+    warnings: string[];
+    questionCount: number;
+    totalScore: number;
+    formLength: number;
+  };
+}
+
+/**
+ * Stubs the detail, publish-check and publish endpoints.
+ *
+ * Registered before the list route matters: Playwright matches last-registered
+ * first, and `**\/api/assessment/exams**` would otherwise swallow `/exams/{id}`.
+ */
+export async function stubExamDetail(page: Page, options: ExamDetailStubOptions = {}): Promise<void> {
+  const exam: ExamRow & Record<string, unknown> = {
+    id: '11111111-1111-1111-1111-111111111111',
+    title: 'Spanish B1 Placement',
+    description: 'Placement test for the autumn intake.',
+    categoryName: 'Spanish',
+    levelName: 'B1',
+    status: 0,
+    mode: 0,
+    timeLimitInMinutes: 45,
+    passingPercentage: 60,
+    questionCount: 30,
+    creationTime: '2026-08-01T09:00:00Z',
+    shuffleQuestions: true,
+    shuffleOptions: true,
+    oneQuestionAtATime: true,
+    allowBackNavigation: true,
+    collectIntegritySignals: true,
+    isScheduled: false,
+    ...options.exam,
+  };
+
+  const check = options.publishCheck ?? {
+    canPublish: true,
+    blockers: [],
+    warnings: [],
+    questionCount: 30,
+    totalScore: 30,
+    formLength: 30,
+  };
+
+  await page.route('**/api/assessment/exams/*/publish-check', route =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(check) }),
+  );
+
+  await page.route('**/api/assessment/exams/*/publish', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ...exam, status: 1 }),
+    }),
+  );
+
+  await page.route('**/api/assessment/exams/*', route => {
+    if (route.request().method() !== 'GET') {
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(exam) });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(exam) });
+  });
+}

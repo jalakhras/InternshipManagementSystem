@@ -1,0 +1,234 @@
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+}
+
+// ── Form ─────────────────────────────────────────────────────────────────────
+.form {
+  display: grid;
+  gap: var(--astro-space-5);
+  // A form is read, not scanned. Keeping it near a comfortable measure stops the
+  // labels and their fields drifting apart on a wide screen.
+  max-inline-size: 46rem;
+}
+
+.group {
+  padding: var(--astro-space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+}
+
+.group__title {
+  margin: 0 0 var(--astro-space-1);
+  font-size: var(--astro-text-lg);
+}
+
+.group__lede {
+  margin: 0 0 var(--astro-space-4);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.field + .field,
+.row-2 + .field,
+.field + .toggle,
+.toggle + .toggle {
+  margin-block-start: var(--astro-space-4);
+}
+
+.field { border: 0; padding: 0; margin: 0; }
+
+.row-2 {
+  display: grid;
+  gap: var(--astro-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.form-label {
+  display: block;
+  margin-block-end: var(--astro-space-1);
+  font-weight: var(--astro-weight-medium);
+  font-size: var(--astro-text-sm);
+}
+
+.form-control {
+  background: var(--surface-page);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  min-block-size: var(--astro-touch-min);
+
+  &:focus {
+    background: var(--surface-page);
+    color: var(--text-primary);
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+}
+
+textarea.form-control { min-block-size: 5rem; }
+
+.hint {
+  margin: var(--astro-space-1) 0 0;
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+  max-inline-size: 60ch;
+}
+
+// ── Choices and toggles ──────────────────────────────────────────────────────
+// Each carries a sentence saying what it does. Four unexplained switches on the
+// assembly panel would be four decisions nobody can make.
+.choice,
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  cursor: pointer;
+
+  &:hover { border-color: var(--border-strong); }
+
+  input {
+    margin-block-start: 0.2rem;
+    flex: none;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    accent-color: var(--accent);
+  }
+
+  span { display: flex; flex-direction: column; gap: 2px; }
+  strong { font-weight: var(--astro-weight-medium); font-size: var(--astro-text-sm); }
+  small { color: var(--text-secondary); font-size: var(--astro-text-xs); }
+}
+
+.choice + .choice { margin-block-start: var(--astro-space-2); }
+
+// ── Publish sheet ────────────────────────────────────────────────────────────
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: var(--astro-space-4);
+  background: rgb(13 19 25 / 55%);
+}
+
+.sheet__panel {
+  inline-size: min(34rem, 100%);
+  max-block-size: 85dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
+  overflow: hidden;
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-4);
+  border-block-end: 1px solid var(--border-subtle);
+
+  h2 { margin: 0; font-size: var(--astro-text-lg); flex: 1; }
+}
+
+.sheet__close {
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  min-inline-size: auto;
+  min-block-size: auto;
+  border: 0;
+  border-radius: var(--astro-radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+
+  &:hover { background: var(--surface-sunken); color: var(--text-primary); }
+}
+
+.sheet__body {
+  padding: var(--astro-space-4);
+  overflow-y: auto;
+}
+
+.sheet__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-4);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--astro-space-3);
+  margin: 0 0 var(--astro-space-4);
+
+  dt {
+    font-size: var(--astro-text-xs);
+    color: var(--text-muted);
+    font-weight: var(--astro-weight-regular);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--astro-text-xl);
+    font-weight: var(--astro-weight-semibold);
+  }
+}
+
+.issues {
+  padding: var(--astro-space-3);
+  border-radius: var(--astro-radius-md);
+  margin-block-end: var(--astro-space-3);
+
+  h3 {
+    margin: 0 0 var(--astro-space-2);
+    font-size: var(--astro-text-sm);
+    font-weight: var(--astro-weight-semibold);
+  }
+
+  ul { margin: 0; padding-inline-start: 1.2rem; }
+  li { font-size: var(--astro-text-sm); }
+
+  // Blocking and advisory read differently at a glance, and carry an icon-free
+  // but clearly separated treatment rather than relying on hue alone.
+  &--blocking {
+    background: var(--status-fail-bg);
+    color: var(--status-fail-text);
+    border-inline-start: 3px solid var(--status-fail-mark);
+  }
+
+  &--warning {
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
+    border-inline-start: 3px solid var(--status-pending-mark);
+  }
+}
+
+.ready {
+  margin: 0;
+  padding: var(--astro-space-3);
+  border-radius: var(--astro-radius-md);
+  background: var(--status-pass-bg);
+  color: var(--status-pass-text);
+  font-size: var(--astro-text-sm);
+}
+
+.alert {
+  max-inline-size: 46rem;
+  margin-block-end: var(--astro-space-4);
+}
