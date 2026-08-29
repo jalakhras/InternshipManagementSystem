@@ -1,0 +1,186 @@
+// =============================================================================
+// Astrolabe — base layer
+//
+// Everything below is written with logical properties. The app runs right-to-left
+// by default, and a physical `margin-left` is a screen that silently breaks in
+// Arabic — the direction people notice last and complain about first.
+// =============================================================================
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  // 16px floor. Anything smaller for body copy fails people who need to read it,
+  // and Arabic loses its diacritical detail before Latin does.
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  // Painted explicitly: a transparent body borrows whatever ground the host
+  // supplies, which is how a page ends up with light text on a light surface.
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: var(--astro-font-sans);
+  font-size: var(--astro-text-md);
+  line-height: var(--astro-leading-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+// --- Direction --------------------------------------------------------------
+// `dir` is set on <html> from the active language. These rules cover the few
+// things logical properties cannot express on their own.
+
+// Directional icons have to turn round; symmetrical ones must not, or a clock
+// starts running backwards and a chart mirrors its own meaning.
+[dir="rtl"] .astro-flip {
+  transform: scaleX(-1);
+}
+
+// Latin fragments inside Arabic prose — a code sample, an email address, a
+// version — need their own embedding or the punctuation drifts to the wrong end.
+.astro-ltr {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: start;
+}
+
+// --- Numerals ---------------------------------------------------------------
+// Tabular figures wherever digits stack or tick. A proportional countdown reflows
+// on every second, and a column of scores that does not align cannot be scanned.
+.astro-numeric {
+  font-family: var(--astro-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+// --- Typography -------------------------------------------------------------
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0 0 var(--astro-space-3);
+  font-weight: var(--astro-weight-semibold);
+  line-height: var(--astro-leading-tight);
+  // Stops a heading dropping one orphaned word onto its own line, which reads as
+  // a layout mistake in both scripts.
+  text-wrap: balance;
+}
+
+h1 { font-size: var(--astro-text-3xl); letter-spacing: -0.015em; }
+h2 { font-size: var(--astro-text-2xl); letter-spacing: -0.01em; }
+h3 { font-size: var(--astro-text-xl); }
+h4 { font-size: var(--astro-text-lg); }
+h5, h6 { font-size: var(--astro-text-md); }
+
+p {
+  margin: 0 0 var(--astro-space-4);
+  // Around 70 characters. Longer and the eye loses its place returning to the
+  // start of the next line — in Arabic as much as in Latin.
+  max-width: 70ch;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 0.2em;
+
+  &:hover { color: var(--accent-hover); }
+}
+
+small { font-size: var(--astro-text-sm); }
+
+code, kbd, samp {
+  font-family: var(--astro-font-mono);
+  font-size: 0.9em;
+}
+
+// --- Focus ------------------------------------------------------------------
+// One rule, applied everywhere, never overridden. A visible focus ring is the
+// only way to operate this product without a mouse, and the exam screen has to
+// be operable that way or it excludes people outright.
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--astro-radius-sm);
+}
+
+// Removes the ring only where a pointer caused the focus, keeping it for keyboard.
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+// --- Targets ----------------------------------------------------------------
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  min-block-size: var(--astro-touch-min);
+  min-inline-size: var(--astro-touch-min);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+// --- Motion -----------------------------------------------------------------
+// Honoured wholesale rather than per-animation: someone who has asked the system
+// for less movement has asked every page, not the ones that remembered.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+// --- Skip link --------------------------------------------------------------
+// First stop for a keyboard user, so they are not walked through the whole nav
+// on every page.
+.astro-skip-link {
+  position: absolute;
+  inset-block-start: -100%;
+  inset-inline-start: var(--astro-space-4);
+  z-index: 999;
+  padding: var(--astro-space-2) var(--astro-space-4);
+  background: var(--accent);
+  color: var(--text-on-accent);
+  border-radius: 0 0 var(--astro-radius-md) var(--astro-radius-md);
+  text-decoration: none;
+
+  &:focus {
+    inset-block-start: 0;
+  }
+}
+
+// --- Screen-reader only -----------------------------------------------------
+.astro-visually-hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+// --- Overflow ---------------------------------------------------------------
+// Wide content scrolls inside its own box. The page body scrolling sideways is
+// always a bug, and on a phone it makes a form unusable.
+.astro-scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+img,
+video {
+  max-inline-size: 100%;
+  block-size: auto;
+}

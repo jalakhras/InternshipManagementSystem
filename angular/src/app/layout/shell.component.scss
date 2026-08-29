@@ -1,0 +1,286 @@
+// Shell layout.
+//
+// Logical properties throughout: `inset-inline-start` puts the sidebar on the
+// right in Arabic and the left in English with no branching, and the drawer
+// slides out of the correct edge in both.
+
+:host {
+  display: block;
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'topbar'
+    'content';
+  min-block-size: 100dvh;
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    grid-template-columns: 16rem 1fr;
+    grid-template-areas:
+      'topbar  topbar'
+      'sidebar content';
+  }
+}
+
+// ── Top bar ──────────────────────────────────────────────────────────────────
+.topbar {
+  grid-area: topbar;
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  padding-inline: var(--astro-space-4);
+  block-size: 3.5rem;
+  background: var(--surface-raised);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.topbar__spacer { flex: 1; }
+
+.topbar__menu,
+.topbar__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--astro-touch-min);
+  block-size: var(--astro-touch-min);
+  border: 0;
+  border-radius: var(--astro-radius-md);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  transition: background var(--astro-duration-fast) var(--astro-ease),
+              color var(--astro-duration-fast) var(--astro-ease);
+
+  &:hover {
+    background: var(--surface-sunken);
+    color: var(--text-primary);
+  }
+}
+
+.topbar__menu {
+  @media (min-width: 1024px) { display: none; }
+}
+
+// ── Brand ────────────────────────────────────────────────────────────────────
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  color: var(--accent);
+  text-decoration: none;
+  padding-inline: var(--astro-space-1);
+}
+
+.brand__mark {
+  flex: none;
+  // The dial is radially symmetric, so it must not flip in RTL — a mirrored
+  // instrument would be a different instrument.
+}
+
+.brand__name {
+  font-weight: var(--astro-weight-semibold);
+  font-size: var(--astro-text-lg);
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+
+  @media (max-width: 400px) { display: none; }
+}
+
+// ── Language toggle ──────────────────────────────────────────────────────────
+.lang {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+}
+
+.lang__option {
+  min-block-size: 2rem;
+  min-inline-size: auto;
+  padding-inline: var(--astro-space-3);
+  border: 0;
+  border-radius: var(--astro-radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-medium);
+  transition: background var(--astro-duration-fast) var(--astro-ease),
+              color var(--astro-duration-fast) var(--astro-ease);
+
+  &--active {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    box-shadow: var(--astro-shadow-sm);
+  }
+}
+
+// ── User menu ────────────────────────────────────────────────────────────────
+.user { position: relative; }
+
+.user__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--astro-touch-min);
+  block-size: var(--astro-touch-min);
+  border: 0;
+  border-radius: var(--astro-radius-full);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1.4rem;
+
+  &:hover { color: var(--text-primary); }
+}
+
+.user__menu {
+  position: absolute;
+  inset-block-start: calc(100% + var(--astro-space-1));
+  // Anchors to the same edge as the trigger, whichever side that is.
+  inset-inline-end: 0;
+  min-inline-size: 12rem;
+  padding: var(--astro-space-1);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  box-shadow: var(--astro-shadow-lg);
+}
+
+.user__item {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding-inline: var(--astro-space-3);
+  border: 0;
+  border-radius: var(--astro-radius-sm);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: var(--astro-text-sm);
+  text-align: start;
+  text-decoration: none;
+
+  &:hover { background: var(--surface-sunken); }
+}
+
+// ── Sidebar ──────────────────────────────────────────────────────────────────
+.sidebar {
+  grid-area: sidebar;
+  padding: var(--astro-space-4) var(--astro-space-3);
+  background: var(--surface-raised);
+  border-inline-end: 1px solid var(--border-subtle);
+  overflow-y: auto;
+
+  // Below the breakpoint it becomes a drawer, sliding from whichever edge the
+  // reading direction starts at.
+  @media (max-width: 1023px) {
+    position: fixed;
+    inset-block: 3.5rem 0;
+    inset-inline-start: 0;
+    z-index: 25;
+    inline-size: 16rem;
+    transform: translateX(-100%);
+    transition: transform var(--astro-duration-base) var(--astro-ease);
+
+    &--open { transform: translateX(0); }
+  }
+}
+
+// In RTL the drawer lives on the right, so it hides to the right.
+:host-context([dir='rtl']) .sidebar {
+  @media (max-width: 1023px) {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+    transform: translateX(100%);
+
+    &--open { transform: translateX(0); }
+  }
+}
+
+.sidebar__section + .sidebar__section {
+  margin-block-start: var(--astro-space-5);
+}
+
+.sidebar__heading {
+  margin: 0 0 var(--astro-space-2);
+  padding-inline: var(--astro-space-3);
+  font-size: var(--astro-text-2xs);
+  font-weight: var(--astro-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+  min-block-size: 2.5rem;
+  padding-inline: var(--astro-space-3);
+  border-radius: var(--astro-radius-md);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  text-decoration: none;
+  transition: background var(--astro-duration-fast) var(--astro-ease),
+              color var(--astro-duration-fast) var(--astro-ease);
+
+  i { font-size: 1.05rem; }
+
+  &:hover {
+    background: var(--surface-sunken);
+    color: var(--text-primary);
+  }
+
+  // Active state carries both a fill and a rail, so it is not signalled by
+  // colour alone — which would be invisible to a viewer who cannot distinguish it.
+  &--active {
+    background: var(--accent-subtle);
+    color: var(--accent-subtle-text);
+    font-weight: var(--astro-weight-medium);
+    box-shadow: inset 3px 0 0 0 var(--accent);
+  }
+}
+
+:host-context([dir='rtl']) .sidebar__link--active {
+  box-shadow: inset -3px 0 0 0 var(--accent);
+}
+
+// ── Scrim ────────────────────────────────────────────────────────────────────
+.scrim {
+  position: fixed;
+  inset: 3.5rem 0 0;
+  z-index: 20;
+  background: rgb(13 19 25 / 45%);
+
+  @media (min-width: 1024px) { display: none; }
+}
+
+// ── Content ──────────────────────────────────────────────────────────────────
+.content {
+  grid-area: content;
+  padding: var(--astro-space-5) var(--astro-space-4);
+  // The main region takes focus from the skip link; it should not draw a ring
+  // for that, since the visible result is the page scrolling into view.
+  outline: none;
+
+  @media (min-width: 1024px) {
+    padding: var(--astro-space-6);
+  }
+}

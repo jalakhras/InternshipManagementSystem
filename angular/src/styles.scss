@@ -1,58 +1,26 @@
-/* You can add global styles to this file, and also import other style files */
+// Astrolabe — global stylesheet.
+//
+// Order matters: Bootstrap's RTL build first, then our tokens (which override
+// Bootstrap's variables), then our base layer.
 
-@keyframes donut-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
+// Bootstrap's own right-to-left build. Bootstrap ships a separate compiled RTL
+// stylesheet rather than mirroring at runtime, so the direction is baked into
+// its grid, floats and utilities.
+@import 'bootstrap/dist/css/bootstrap.rtl.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+@import './styles/tokens';
+@import './styles/base';
+
+// Bootstrap reads its own custom properties. Pointing them at our semantic tokens
+// means a Bootstrap button and one of ours cannot drift apart, and both follow
+// the theme.
 :root {
-  --lpx-logo: url('/assets/images/logo/logo-light.png');
-  --lpx-logo-icon: url('/assets/images/logo/logo-light-thumbnail.png');
-}
-.donut {
-  display: inline-block;
-  border: 4px solid rgba(0, 0, 0, 0.1);
-  border-left-color: #7983ff;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  animation: donut-spin 1.2s linear infinite;
-
-  &.centered {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-}
-
-.abp-logo {
-  background-repeat: no-repeat;
-}
-
-.abp-support {
-  width: 178px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-support.svg');
-}
-
-.abp-community {
-  width: 215px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-community.svg');
-}
-
-.abp-blog {
-  width: 142px;
-  height: 30px;
-  background-image: url('/assets/images/getting-started/abp-blog.svg');
-}
-
-.logo-x {
-  width: 20px;
-  height: 20px;
-  background-image: url('/assets/images/getting-started/x.svg');
+  --bs-body-bg: var(--surface-page);
+  --bs-body-color: var(--text-primary);
+  --bs-body-font-family: var(--astro-font-sans);
+  --bs-border-color: var(--border-subtle);
+  --bs-primary: var(--accent);
+  --bs-link-color: var(--accent);
+  --bs-link-hover-color: var(--accent-hover);
 }

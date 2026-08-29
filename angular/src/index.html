@@ -1,16 +1,38 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>InternshipManagementSystem</title>
-    <base href="/" />
+<!doctype html>
+<!--
+  dir and lang are seeded to Arabic here and then kept in step by
+  DirectionService. Setting them in the served HTML means the very first paint is
+  already right-to-left, rather than flashing left-to-right and snapping over.
+-->
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>أسطرلاب · Astrolabe</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="منصّة التقييم والاختبارات · Assessment platform">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  </head>
-  <body class="bg-light">
-    <app-root>
-      <div class="donut centered"></div>
-    </app-root>
-  </body>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+  <!--
+    Paints the correct ground before Angular boots, so a dark-mode viewer does not
+    get a white flash on every cold load.
+  -->
+  <style>
+    :root { color-scheme: light dark; }
+    html { background: #f5f7f9; }
+    @media (prefers-color-scheme: dark) {
+      html:not([data-theme="light"]) { background: #0d1319; }
+    }
+    html[data-theme="dark"] { background: #0d1319; }
+  </style>
+</head>
+<body>
+  <app-root></app-root>
+</body>
 </html>

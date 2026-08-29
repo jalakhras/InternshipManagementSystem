@@ -1,0 +1,141 @@
+<!--
+  Angular 22 control flow (@if / @for) throughout. The older *ngIf / *ngFor
+  directives still work but are no longer the idiom, and mixing the two in one
+  codebase makes every template a small decision.
+-->
+
+<a class="astro-skip-link" href="#astro-main">
+  {{ '::SkipToContent' | abpLocalization }}
+</a>
+
+<div class="shell">
+  <!-- ── Top bar ───────────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <button
+      type="button"
+      class="topbar__menu"
+      (click)="toggleSidebar()"
+      [attr.aria-expanded]="sidebarOpen()"
+      aria-controls="astro-sidebar"
+      [attr.aria-label]="'::ToggleNavigation' | abpLocalization">
+      <i class="bi bi-list" aria-hidden="true"></i>
+    </button>
+
+    <a routerLink="/" class="brand" [attr.aria-label]="'::AppName' | abpLocalization">
+      <!--
+        The astrolabe's graduated dial: a ring with degree marks and a sighting
+        rule across it. Inline SVG so it inherits currentColor and stays crisp in
+        both themes; drawn rather than lettered so the mark works at 24px.
+      -->
+      <svg class="brand__mark" viewBox="0 0 32 32" width="28" height="28" aria-hidden="true" focusable="false">
+        <circle cx="16" cy="16" r="13" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/>
+        <circle cx="16" cy="16" r="9"  fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <!-- graduation marks, the instrument's scale -->
+        <g stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".8">
+          <line x1="16" y1="3"  x2="16" y2="6"/>
+          <line x1="29" y1="16" x2="26" y2="16"/>
+          <line x1="16" y1="29" x2="16" y2="26"/>
+          <line x1="3"  y1="16" x2="6"  y2="16"/>
+        </g>
+        <!-- the alidade: the rule you sight along to take a reading -->
+        <line x1="7.5" y1="24.5" x2="24.5" y2="7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="16" cy="16" r="2" fill="currentColor"/>
+      </svg>
+      <span class="brand__name">{{ '::AppName' | abpLocalization }}</span>
+    </a>
+
+    <div class="topbar__spacer"></div>
+
+    <!-- Language. Two options, so a toggle rather than a dropdown: one tap. -->
+    @if (languages().length > 1) {
+      <div class="lang" role="group" [attr.aria-label]="'::Language' | abpLocalization">
+        @for (lang of languages(); track lang.culture) {
+          <button
+            type="button"
+            class="lang__option"
+            [class.lang__option--active]="lang.culture === currentLanguage()"
+            [attr.aria-pressed]="lang.culture === currentLanguage()"
+            (click)="setLanguage(lang.culture)">
+            {{ lang.display }}
+          </button>
+        }
+      </div>
+    }
+
+    <button
+      type="button"
+      class="topbar__icon"
+      (click)="cycleTheme()"
+      [attr.aria-label]="'::ToggleTheme' | abpLocalization"
+      [attr.title]="'::Theme:' + dir.theme() | abpLocalization">
+      @switch (dir.theme()) {
+        @case ('light') { <i class="bi bi-sun" aria-hidden="true"></i> }
+        @case ('dark')  { <i class="bi bi-moon-stars" aria-hidden="true"></i> }
+        @default        { <i class="bi bi-circle-half" aria-hidden="true"></i> }
+      }
+    </button>
+
+    <div class="user">
+      <button
+        type="button"
+        class="user__trigger"
+        (click)="toggleUserMenu()"
+        [attr.aria-expanded]="userMenuOpen()"
+        aria-haspopup="menu">
+        <i class="bi bi-person-circle" aria-hidden="true"></i>
+      </button>
+
+      @if (userMenuOpen()) {
+        <div class="user__menu" role="menu">
+          <a class="user__item" routerLink="/account/profile" role="menuitem" (click)="toggleUserMenu()">
+            <i class="bi bi-person" aria-hidden="true"></i>
+            {{ '::MyProfile' | abpLocalization }}
+          </a>
+          <button type="button" class="user__item" role="menuitem" (click)="logout()">
+            <i class="bi bi-box-arrow-right astro-flip" aria-hidden="true"></i>
+            {{ '::Logout' | abpLocalization }}
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- ── Sidebar ───────────────────────────────────────────────────────── -->
+  <nav
+    id="astro-sidebar"
+    class="sidebar"
+    [class.sidebar--open]="sidebarOpen()"
+    [attr.aria-label]="'::MainNavigation' | abpLocalization">
+    @for (section of sections(); track section.labelKey) {
+      <div class="sidebar__section">
+        <h2 class="sidebar__heading">{{ section.labelKey | abpLocalization }}</h2>
+        <ul class="sidebar__list">
+          @for (item of section.items; track item.route) {
+            <li>
+              <a
+                class="sidebar__link"
+                [routerLink]="item.route"
+                routerLinkActive="sidebar__link--active"
+                [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+                (click)="closeSidebar()">
+                <i class="bi {{ item.icon }}" aria-hidden="true"></i>
+                <span>{{ item.labelKey | abpLocalization }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </nav>
+
+  <!-- Dismisses the drawer on small screens. Inert to assistive tech, which
+       reaches the same result with Escape or by moving focus. -->
+  @if (sidebarOpen()) {
+    <div class="scrim" (click)="closeSidebar()" aria-hidden="true"></div>
+  }
+
+  <!-- ── Content ───────────────────────────────────────────────────────── -->
+  <main id="astro-main" class="content" tabindex="-1">
+    <router-outlet />
+  </main>
+</div>

@@ -1,0 +1,58 @@
+import { Routes } from '@angular/router';
+import { authGuard, permissionGuard } from '@abp/ng.core';
+import { ShellComponent } from './layout/shell.component';
+
+/**
+ * Route table.
+ *
+ * Two trees on purpose:
+ *
+ *   · /exam/**  — the taker's journey. No shell, no login, no navigation. Someone
+ *     sitting a timed exam should see the exam and nothing else, and they have no
+ *     account to authenticate with; a link token is their entire credential.
+ *
+ *   · everything else — the staff application, behind the shell and a session.
+ *
+ * Every feature is lazy: an operator who only reviews answers should not download
+ * the exam authoring screens to find that out.
+ */
+export const APP_ROUTES: Routes = [
+  {
+    path: 'exam',
+    loadChildren: () => import('./features/take/take.routes').then(m => m.TAKE_ROUTES),
+  },
+
+  {
+    path: '',
+    component: ShellComponent,
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+      },
+      {
+        path: 'exams',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Exams.View' },
+        loadChildren: () => import('./features/exams/exam.routes').then(m => m.EXAM_ROUTES),
+      },
+      {
+        path: 'candidates',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Candidates.View' },
+        loadChildren: () =>
+          import('./features/candidates/candidate.routes').then(m => m.CANDIDATE_ROUTES),
+      },
+      {
+        path: 'review',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Review.ViewQueue' },
+        loadChildren: () => import('./features/review/review.routes').then(m => m.REVIEW_ROUTES),
+      },
+    ],
+  },
+
+  { path: '**', redirectTo: '' },
+];

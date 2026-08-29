@@ -1,0 +1,238 @@
+// =============================================================================
+// Astrolabe — design tokens
+//
+// Three layers, in this order, and nothing skips a layer:
+//   1. primitive  — raw values. Named by what they are, never by where used.
+//   2. semantic   — roles. Named by meaning, so a component never asks for a hue.
+//   3. component  — the few places a component needs its own knob.
+//
+// A component that reaches past semantic into primitive is a bug: the theme stops
+// being switchable at that point.
+//
+// Two rules this file exists to enforce:
+//   · Logical properties only. `margin-inline-start`, never `margin-left`. RTL is
+//     the default direction here, and a physical property is a screen that breaks
+//     in Arabic and nobody notices until a customer does.
+//   · Semantic colour (pass / pending / fail) is never the brand accent. In an
+//     assessment product green *means* passed, so the brand cannot also be green
+//     or the interface starts lying.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 1 · PRIMITIVES
+// -----------------------------------------------------------------------------
+:root {
+  // --- Brand: deep petrol blue -------------------------------------------------
+  // The instrument register: cool, precise, unemotional. Sits about 45° away from
+  // the semantic green so a chip and a button are never confused at a glance.
+  // Deliberately not #0369A1 — that blue is the default of every B2B SaaS — and
+  // deliberately not a violet gradient, which now reads as machine-generated.
+  --astro-brand-50:  #ecfaff;
+  --astro-brand-100: #d3f2fd;
+  --astro-brand-200: #ade6fa;
+  --astro-brand-300: #75d4f5;
+  --astro-brand-400: #35b8e7;
+  --astro-brand-500: #199bcd;
+  --astro-brand-600: #157cad;
+  --astro-brand-700: #16638c;
+  --astro-brand-800: #0d5c70;  // the anchor
+  --astro-brand-900: #114558;
+  --astro-brand-950: #0a2c3b;
+
+  // --- Neutrals ---------------------------------------------------------------
+  // Biased a few degrees toward the brand rather than pure grey. A true neutral
+  // reads as unconsidered; this one reads as chosen, and sits under the accent
+  // without fighting it.
+  --astro-ink-0:   #ffffff;
+  --astro-ink-25:  #fbfcfd;
+  --astro-ink-50:  #f5f7f9;
+  --astro-ink-100: #eceff3;
+  --astro-ink-200: #dde2e9;
+  --astro-ink-300: #c3ccd6;
+  --astro-ink-400: #94a1b0;
+  --astro-ink-500: #6b7988;
+  --astro-ink-600: #4e5c6b;
+  --astro-ink-700: #3a4653;
+  --astro-ink-800: #26303a;
+  --astro-ink-900: #171f27;
+  --astro-ink-950: #0d1319;
+
+  // --- Semantic hues ----------------------------------------------------------
+  // Reserved for outcomes. Nothing decorative may borrow these.
+  --astro-pass-50:  #e9f7ee;
+  --astro-pass-500: #1f9d55;
+  --astro-pass-600: #157f43;
+  --astro-pass-700: #106836;
+
+  --astro-pending-50:  #fdf3e3;
+  --astro-pending-500: #c07c0c;
+  --astro-pending-600: #9c6208;
+  --astro-pending-700: #7d4e07;
+
+  --astro-fail-50:  #fdecea;
+  --astro-fail-500: #d1453b;
+  --astro-fail-600: #b0342c;
+  --astro-fail-700: #8e2822;
+
+  // --- Type -------------------------------------------------------------------
+  // IBM Plex Sans Arabic is Arabic-first, not a Latin face with Arabic bolted on:
+  // the two scripts share a designer, a rhythm and a weight axis, so a bilingual
+  // screen holds together instead of looking assembled.
+  // Plex Mono carries digits wherever they line up in a column — scores, timers,
+  // durations — because proportional digits jitter as a countdown ticks.
+  --astro-font-sans: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  --astro-font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+
+  --astro-text-2xs: 0.6875rem;  // 11px — chips, dense table meta
+  --astro-text-xs:  0.75rem;    // 12px
+  --astro-text-sm:  0.875rem;   // 14px
+  --astro-text-md:  1rem;       // 16px — body floor, never smaller for prose
+  --astro-text-lg:  1.125rem;
+  --astro-text-xl:  1.375rem;
+  --astro-text-2xl: 1.75rem;
+  --astro-text-3xl: 2.25rem;
+
+  // Arabic needs more leading than Latin at the same size: the script carries more
+  // vertical detail, and Latin-tuned line-height makes it feel cramped.
+  --astro-leading-tight: 1.35;
+  --astro-leading-body:  1.75;
+
+  --astro-weight-regular: 400;
+  --astro-weight-medium:  500;
+  --astro-weight-semibold: 600;
+  --astro-weight-bold:    700;
+
+  // --- Space (4px base) --------------------------------------------------------
+  --astro-space-1: 0.25rem;
+  --astro-space-2: 0.5rem;
+  --astro-space-3: 0.75rem;
+  --astro-space-4: 1rem;
+  --astro-space-5: 1.5rem;
+  --astro-space-6: 2rem;
+  --astro-space-7: 3rem;
+  --astro-space-8: 4rem;
+
+  // --- Radius, elevation, motion ------------------------------------------------
+  --astro-radius-sm: 4px;
+  --astro-radius-md: 8px;
+  --astro-radius-lg: 12px;
+  --astro-radius-full: 999px;
+
+  --astro-shadow-sm: 0 1px 2px rgb(13 19 25 / 6%);
+  --astro-shadow-md: 0 1px 3px rgb(13 19 25 / 8%), 0 6px 16px -8px rgb(13 19 25 / 12%);
+  --astro-shadow-lg: 0 2px 6px rgb(13 19 25 / 8%), 0 16px 40px -12px rgb(13 19 25 / 18%);
+
+  --astro-duration-fast: 120ms;
+  --astro-duration-base: 200ms;
+  --astro-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  // The smallest comfortable target. Below this, people miss on a phone — and a
+  // candidate who mis-taps under a countdown loses marks to our layout.
+  --astro-touch-min: 44px;
+}
+
+// -----------------------------------------------------------------------------
+// 2 · SEMANTIC — light
+//
+// Defined on bare :root so the un-themed document is complete on its own. The
+// dark blocks below only *redefine* these names; no component ever reads a colour
+// that exists solely inside a media query.
+// -----------------------------------------------------------------------------
+:root {
+  --surface-page:    var(--astro-ink-50);
+  --surface-raised:  var(--astro-ink-0);
+  --surface-sunken:  var(--astro-ink-100);
+  --surface-overlay: var(--astro-ink-0);
+  --surface-inverse: var(--astro-ink-900);
+
+  --text-primary:   var(--astro-ink-900);
+  --text-secondary: var(--astro-ink-600);
+  --text-muted:     var(--astro-ink-500);
+  --text-inverse:   var(--astro-ink-0);
+  --text-on-accent: var(--astro-ink-0);
+
+  --border-subtle: var(--astro-ink-200);
+  --border-strong: var(--astro-ink-300);
+
+  --accent:            var(--astro-brand-800);
+  --accent-hover:      var(--astro-brand-900);
+  --accent-active:     var(--astro-brand-950);
+  --accent-subtle:     var(--astro-brand-50);
+  --accent-subtle-text: var(--astro-brand-900);
+
+  --status-pass-bg:   var(--astro-pass-50);
+  --status-pass-text: var(--astro-pass-700);
+  --status-pass-mark: var(--astro-pass-600);
+
+  --status-pending-bg:   var(--astro-pending-50);
+  --status-pending-text: var(--astro-pending-700);
+  --status-pending-mark: var(--astro-pending-600);
+
+  --status-fail-bg:   var(--astro-fail-50);
+  --status-fail-text: var(--astro-fail-700);
+  --status-fail-mark: var(--astro-fail-600);
+
+  // Focus must be visible against every surface. Removing it to tidy a design
+  // makes the product unusable for anyone navigating by keyboard.
+  --focus-ring: var(--astro-brand-500);
+  --focus-ring-offset: var(--surface-page);
+}
+
+// -----------------------------------------------------------------------------
+// 2b · SEMANTIC — dark
+//
+// Two blocks, deliberately. The media query is guarded with :not([data-theme="light"])
+// so an explicit light choice still beats a dark OS; the attribute block lets the
+// in-app toggle win in the other direction. Most visitors carry neither stamp, so
+// the media query is the one that usually runs.
+//
+// Not an inversion: the accent lightens because #0d5c70 on a dark ground fails
+// contrast, and surfaces stay slightly blue so the palette holds its identity.
+// -----------------------------------------------------------------------------
+@mixin astro-dark-tokens {
+  --surface-page:    var(--astro-ink-950);
+  --surface-raised:  var(--astro-ink-900);
+  --surface-sunken:  #10181f;
+  --surface-overlay: var(--astro-ink-800);
+  --surface-inverse: var(--astro-ink-50);
+
+  --text-primary:   var(--astro-ink-50);
+  --text-secondary: var(--astro-ink-300);
+  --text-muted:     var(--astro-ink-400);
+  --text-inverse:   var(--astro-ink-950);
+  --text-on-accent: var(--astro-ink-950);
+
+  --border-subtle: #24303a;
+  --border-strong: #35434f;
+
+  --accent:            var(--astro-brand-300);
+  --accent-hover:      var(--astro-brand-200);
+  --accent-active:     var(--astro-brand-100);
+  --accent-subtle:     rgb(21 124 173 / 16%);
+  --accent-subtle-text: var(--astro-brand-200);
+
+  --status-pass-bg:   rgb(31 157 85 / 16%);
+  --status-pass-text: #6fd898;
+  --status-pass-mark: #4cc47f;
+
+  --status-pending-bg:   rgb(192 124 12 / 18%);
+  --status-pending-text: #e9b55f;
+  --status-pending-mark: #d9a244;
+
+  --status-fail-bg:   rgb(209 69 59 / 18%);
+  --status-fail-text: #f19289;
+  --status-fail-mark: #e5786e;
+
+  --focus-ring: var(--astro-brand-300);
+  --focus-ring-offset: var(--surface-page);
+
+  --astro-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --astro-shadow-md: 0 1px 3px rgb(0 0 0 / 45%), 0 8px 20px -10px rgb(0 0 0 / 65%);
+  --astro-shadow-lg: 0 2px 6px rgb(0 0 0 / 50%), 0 20px 48px -14px rgb(0 0 0 / 75%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { @include astro-dark-tokens; }
+}
+
+:root[data-theme="dark"] { @include astro-dark-tokens; }
