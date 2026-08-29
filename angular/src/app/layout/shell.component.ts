@@ -6,11 +6,11 @@ import {
   AuthService,
   ConfigStateService,
   LanguageInfo,
-  LocalizationModule,
   PermissionService,
   SessionStateService,
 } from '@abp/ng.core';
 import { DirectionService, ThemePreference } from '../core/direction.service';
+import { TranslateService } from '../core/translate.service';
 import { NAVIGATION, NavItem, NavSection } from '../core/navigation';
 
 /**
@@ -26,7 +26,7 @@ import { NAVIGATION, NavItem, NavSection } from '../core/navigation';
 @Component({
   selector: 'astro-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, LocalizationModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
@@ -37,6 +37,9 @@ export class ShellComponent {
   private readonly auth = inject(AuthService);
 
   readonly dir = inject(DirectionService);
+
+  /** Bound so templates can call it directly; see TranslateService for why. */
+  readonly t = inject(TranslateService).t;
 
   /** Collapsed on small screens by default; the content matters more than the menu. */
   readonly sidebarOpen = signal(false);
@@ -91,10 +94,10 @@ export class ShellComponent {
   }
 
   setLanguage(culture: string): void {
-    // Writing to session state re-resolves localisation and, through
-    // DirectionService, flips `dir` on the document — so the whole layout mirrors
-    // without a reload and without losing the current route.
-    this.session.setLanguage(culture);
+    // Delegated so the switch is in one place: it has to update the session, flip
+    // the document direction and re-fetch the translations, and doing two of the
+    // three is the bug this replaced.
+    this.dir.setLanguage(culture);
   }
 
   cycleTheme(): void {

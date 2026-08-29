@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
+import { TranslateService } from '../../core/translate.service';
 import { ActivatedRoute } from '@angular/router';
-import { LocalizationModule } from '@abp/ng.core';
 
 /**
  * Stands in for a screen that arrives in phase 3b.
@@ -13,12 +13,12 @@ import { LocalizationModule } from '@abp/ng.core';
 @Component({
   selector: 'astro-placeholder',
   standalone: true,
-  imports: [LocalizationModule],
+  imports: [],
   template: `
     <div class="pending">
       <i class="bi bi-cone-striped" aria-hidden="true"></i>
-      <h1>{{ titleKey | abpLocalization }}</h1>
-      <p>{{ '::ScreenNotBuiltYet' | abpLocalization }}</p>
+      <h1>{{ t(titleKey) }}</h1>
+      <p>{{ t('::ScreenNotBuiltYet') }}</p>
     </div>
   `,
   styles: `
@@ -38,6 +38,8 @@ import { LocalizationModule } from '@abp/ng.core';
 })
 export class PlaceholderComponent {
   private readonly route = inject(ActivatedRoute);
+
+  readonly t = inject(TranslateService).t;
 
   readonly titleKey = this.route.snapshot.data['titleKey'] ?? '::Loading';
 }

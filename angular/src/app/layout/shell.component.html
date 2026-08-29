@@ -5,7 +5,7 @@
 -->
 
 <a class="astro-skip-link" href="#astro-main">
-  {{ '::SkipToContent' | abpLocalization }}
+  {{ t('::SkipToContent') }}
 </a>
 
 <div class="shell">
@@ -17,11 +17,11 @@
       (click)="toggleSidebar()"
       [attr.aria-expanded]="sidebarOpen()"
       aria-controls="astro-sidebar"
-      [attr.aria-label]="'::ToggleNavigation' | abpLocalization">
+      [attr.aria-label]="t('::ToggleNavigation')">
       <i class="bi bi-list" aria-hidden="true"></i>
     </button>
 
-    <a routerLink="/" class="brand" [attr.aria-label]="'::AppName' | abpLocalization">
+    <a routerLink="/" class="brand" [attr.aria-label]="t('::AppName')">
       <!--
         The astrolabe's graduated dial: a ring with degree marks and a sighting
         rule across it. Inline SVG so it inherits currentColor and stays crisp in
@@ -41,14 +41,14 @@
         <line x1="7.5" y1="24.5" x2="24.5" y2="7.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         <circle cx="16" cy="16" r="2" fill="currentColor"/>
       </svg>
-      <span class="brand__name">{{ '::AppName' | abpLocalization }}</span>
+      <span class="brand__name">{{ t('::AppName') }}</span>
     </a>
 
     <div class="topbar__spacer"></div>
 
     <!-- Language. Two options, so a toggle rather than a dropdown: one tap. -->
     @if (languages().length > 1) {
-      <div class="lang" role="group" [attr.aria-label]="'::Language' | abpLocalization">
+      <div class="lang" role="group" [attr.aria-label]="t('::Language')">
         @for (lang of languages(); track lang.culture) {
           <button
             type="button"
@@ -66,8 +66,8 @@
       type="button"
       class="topbar__icon"
       (click)="cycleTheme()"
-      [attr.aria-label]="'::ToggleTheme' | abpLocalization"
-      [attr.title]="'::Theme:' + dir.theme() | abpLocalization">
+      [attr.aria-label]="t('::ToggleTheme')"
+      [attr.title]="t('::Theme:' + dir.theme())">
       @switch (dir.theme()) {
         @case ('light') { <i class="bi bi-sun" aria-hidden="true"></i> }
         @case ('dark')  { <i class="bi bi-moon-stars" aria-hidden="true"></i> }
@@ -89,11 +89,11 @@
         <div class="user__menu" role="menu">
           <a class="user__item" routerLink="/account/profile" role="menuitem" (click)="toggleUserMenu()">
             <i class="bi bi-person" aria-hidden="true"></i>
-            {{ '::MyProfile' | abpLocalization }}
+            {{ t('::MyProfile') }}
           </a>
           <button type="button" class="user__item" role="menuitem" (click)="logout()">
             <i class="bi bi-box-arrow-right astro-flip" aria-hidden="true"></i>
-            {{ '::Logout' | abpLocalization }}
+            {{ t('::Logout') }}
           </button>
         </div>
       }
@@ -105,10 +105,10 @@
     id="astro-sidebar"
     class="sidebar"
     [class.sidebar--open]="sidebarOpen()"
-    [attr.aria-label]="'::MainNavigation' | abpLocalization">
+    [attr.aria-label]="t('::MainNavigation')">
     @for (section of sections(); track section.labelKey) {
       <div class="sidebar__section">
-        <h2 class="sidebar__heading">{{ section.labelKey | abpLocalization }}</h2>
+        <h2 class="sidebar__heading">{{ t(section.labelKey) }}</h2>
         <ul class="sidebar__list">
           @for (item of section.items; track item.route) {
             <li>
@@ -119,7 +119,7 @@
                 [routerLinkActiveOptions]="{ exact: item.route === '/' }"
                 (click)="closeSidebar()">
                 <i class="bi {{ item.icon }}" aria-hidden="true"></i>
-                <span>{{ item.labelKey | abpLocalization }}</span>
+                <span>{{ t(item.labelKey) }}</span>
               </a>
             </li>
           }

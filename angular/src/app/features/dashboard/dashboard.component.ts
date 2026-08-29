@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { LocalizationModule, PermissionService } from '@abp/ng.core';
+import { TranslateService } from '../../core/translate.service';
+import { PermissionService } from '@abp/ng.core';
 import { RouterLink } from '@angular/router';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 
@@ -13,14 +14,14 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 @Component({
   selector: 'astro-dashboard',
   standalone: true,
-  imports: [LocalizationModule, RouterLink],
+  imports: [RouterLink],
   template: `
     <header class="page-head">
-      <h1>{{ '::Dashboard:Title' | abpLocalization }}</h1>
-      <p class="lede">{{ '::Dashboard:Lede' | abpLocalization }}</p>
+      <h1>{{ t('::Dashboard:Title') }}</h1>
+      <p class="lede">{{ t('::Dashboard:Lede') }}</p>
     </header>
 
-    <section class="starters" [attr.aria-label]="'::Dashboard:GetStarted' | abpLocalization">
+    <section class="starters" [attr.aria-label]="t('::Dashboard:GetStarted')">
       @for (step of steps; track step.route) {
         @if (!step.permission || can(step.permission)) {
           <a class="starter" [routerLink]="step.route">
@@ -28,8 +29,8 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
               <i class="bi {{ step.icon }}"></i>
             </span>
             <span class="starter__body">
-              <span class="starter__title">{{ step.titleKey | abpLocalization }}</span>
-              <span class="starter__note">{{ step.noteKey | abpLocalization }}</span>
+              <span class="starter__title">{{ t(step.titleKey) }}</span>
+              <span class="starter__note">{{ t(step.noteKey) }}</span>
             </span>
             <i class="bi bi-chevron-right starter__go astro-flip" aria-hidden="true"></i>
           </a>
@@ -86,6 +87,8 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 })
 export class DashboardComponent {
   private readonly permission = inject(PermissionService);
+
+  readonly t = inject(TranslateService).t;
 
   /**
    * Ordered as the work actually happens: define what you measure, write the

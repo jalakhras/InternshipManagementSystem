@@ -1,5 +1,5 @@
-import { Component, input } from '@angular/core';
-import { LocalizationModule } from '@abp/ng.core';
+import { Component, inject, input } from '@angular/core';
+import { TranslateService } from '../../core/translate.service';
 
 /**
  * The three states any remote list can be in, in one place.
@@ -15,17 +15,17 @@ import { LocalizationModule } from '@abp/ng.core';
 @Component({
   selector: 'astro-data-state',
   standalone: true,
-  imports: [LocalizationModule],
+  imports: [],
   template: `
     @if (loading()) {
       <div class="state" role="status" aria-live="polite">
         <span class="spinner" aria-hidden="true"></span>
-        <p class="state__text">{{ '::Loading' | abpLocalization }}</p>
+        <p class="state__text">{{ t('::Loading') }}</p>
       </div>
     } @else if (error()) {
       <div class="state state--error" role="alert">
         <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-        <p class="state__title">{{ '::CouldNotLoad' | abpLocalization }}</p>
+        <p class="state__title">{{ t('::CouldNotLoad') }}</p>
         <!-- The actual reason, not a generic apology: it is the only thing that
              tells the reader whether retrying will help. -->
         <p class="state__text">{{ error() }}</p>
@@ -81,6 +81,8 @@ import { LocalizationModule } from '@abp/ng.core';
   `,
 })
 export class DataStateComponent {
+  readonly t = inject(TranslateService).t;
+
   readonly loading = input(false);
   readonly error = input<string | null>(null);
   readonly empty = input(false);

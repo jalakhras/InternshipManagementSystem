@@ -33,6 +33,28 @@ export class DirectionService {
     effect(() => this.applyTheme(this.theme()));
   }
 
+  /**
+   * Switches language.
+   *
+   * ABP's `LocalizationService` already listens for the session change and
+   * re-fetches the strings, so no refresh is issued here — an earlier version did,
+   * and simply produced two identical requests.
+   *
+   * What was actually missing is that nothing re-rendered: `abpLocalization` is a
+   * pure pipe and evaluates once for a constant key. See `TranslateService`.
+   *
+   * The direction is applied here rather than waiting for the fetch, so the layout
+   * mirrors on the click instead of after a round trip.
+   */
+  setLanguage(culture: string): void {
+    if (culture === this.language()) {
+      return;
+    }
+
+    this.session.setLanguage(culture);
+    this.applyLanguage(culture);
+  }
+
   setTheme(preference: ThemePreference): void {
     this.theme.set(preference);
 

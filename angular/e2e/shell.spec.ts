@@ -45,6 +45,24 @@ test.describe('Shell', () => {
     expect(ltrBox.x).toBeLessThan(viewport.width / 2);
   });
 
+
+  test('switching language changes the text, not only the direction', async ({ page }) => {
+    await stubAbp(page, { culture: 'ar' });
+    await gotoApp(page);
+
+    await expect(page.getByRole('heading', { name: 'أهلاً بك' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'English' }).click();
+
+    // The bug this guards: ABP's setLanguage patches the session store and sets
+    // the lang attribute, and nothing listens. Its own themes had a language
+    // component that re-fetched the translations; this app replaced that theme, so
+    // the layout mirrored while every string stayed Arabic until the next full
+    // page load. Asserting on dir alone would have passed the whole time.
+    await expect(page.getByRole('heading', { name: 'Welcome' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'أهلاً بك' })).toHaveCount(0);
+  });
+
   test('switching language does not lose the current route', async ({ page }) => {
     await stubAbp(page, { culture: 'ar' });
     await gotoApp(page, '/exams');

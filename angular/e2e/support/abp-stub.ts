@@ -222,26 +222,34 @@ export async function stubAbp(page: Page, options: StubOptions = {}): Promise<vo
 
   // ABP 10 fetches localisation from its own endpoint rather than only inside the
   // application configuration, and blocks the first render until it answers.
-  await page.route('**/api/abp/application-localization*', route =>
+  // Answers for the culture the request asks for, not the one this stub was built
+  // with. A stub that always returned the same language would report a language
+  // switch as working while the app still showed the old strings — which is
+  // exactly the bug this suite exists to catch, so the stub has to be honest.
+  await page.route('**/api/abp/application-localization*', route => {
+    const requested = new URL(route.request().url()).searchParams.get('cultureName') ?? culture;
+    const base = requested.split('-')[0] === 'ar' ? 'ar' : 'en';
+    const body = base === 'ar' ? AR_TEXTS : EN_TEXTS;
+
     route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
         resources: {
-          InternshipManagementSystem: { texts, baseResources: [] },
+          InternshipManagementSystem: { texts: body, baseResources: [] },
         },
         currentCulture: {
-          cultureName: culture,
-          name: culture,
-          displayName: culture === 'ar' ? 'العربية' : 'English',
-          englishName: culture === 'ar' ? 'Arabic' : 'English',
-          twoLetterIsoLanguageName: culture,
-          isRightToLeft: culture === 'ar',
+          cultureName: base,
+          name: base,
+          displayName: base === 'ar' ? 'العربية' : 'English',
+          englishName: base === 'ar' ? 'Arabic' : 'English',
+          twoLetterIsoLanguageName: base,
+          isRightToLeft: base === 'ar',
           dateTimeFormat: {},
         },
       }),
-    }),
-  );
+    });
+  });
 
   // ABP asks for these on boot; an unhandled request would leave it waiting.
   await page.route('**/api/abp/api-definition*', route =>
