@@ -6,6 +6,7 @@ using InternshipManagementSystem.Assessment.Delivery.Dtos;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.People;
 using InternshipManagementSystem.Permissions;
+using InternshipManagementSystem.Settings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -362,37 +363,24 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
     }
 
     /// <summary>
-    /// Sends the invitation in both languages. The tenant's own recipients may read
-    /// either, and guessing wrong on a one-shot exam invitation is expensive.
+    /// Sends the invitation, in the organisation's name and both languages.
+    /// <para>
+    /// The message itself is built by <see cref="InvitationEmail"/> — a pure
+    /// function, so what a candidate receives can be asserted without a mail
+    /// server. This reads the two tenant settings it needs and hands them over.
+    /// </para>
     /// </summary>
     private async Task SendInvitationAsync(Candidate candidate, Exam exam, string url, DateTime expiresAt)
     {
-        var subject = $"{exam.Title} — دعوة لأداء اختبار / Assessment invitation";
+        var message = InvitationEmail.Build(
+            await SettingProvider.GetOrNullAsync(InternshipManagementSystemSettings.OrganizationName),
+            await SettingProvider.GetOrNullAsync(InternshipManagementSystemSettings.BrandColor),
+            candidate.FullName,
+            exam.Title,
+            exam.TimeLimitInMinutes,
+            expiresAt,
+            url);
 
-        var body = $"""
-            <div dir="rtl" style="font-family:system-ui,sans-serif;line-height:1.7">
-              <p>مرحباً {candidate.FullName},</p>
-              <p>لقد تم إسناد اختبار <strong>{exam.Title}</strong> إليك.</p>
-              <ul>
-                <li>المدة: {exam.TimeLimitInMinutes} دقيقة</li>
-                <li>صلاحية الرابط حتى: {expiresAt:yyyy-MM-dd HH:mm}</li>
-              </ul>
-              <p><a href="{url}">ابدأ الاختبار</a></p>
-              <p style="color:#666;font-size:.9em">لا يبدأ العدّ التنازلي إلا عند ضغطك على زر البدء.</p>
-            </div>
-            <hr>
-            <div dir="ltr" style="font-family:system-ui,sans-serif;line-height:1.7">
-              <p>Hello {candidate.FullName},</p>
-              <p>You have been assigned <strong>{exam.Title}</strong>.</p>
-              <ul>
-                <li>Duration: {exam.TimeLimitInMinutes} minutes</li>
-                <li>Link valid until: {expiresAt:yyyy-MM-dd HH:mm}</li>
-              </ul>
-              <p><a href="{url}">Start the assessment</a></p>
-              <p style="color:#666;font-size:.9em">The timer does not start until you press start.</p>
-            </div>
-            """;
-
-        await _emailSender.SendAsync(candidate.Email, subject, body, isBodyHtml: true);
+        await _emailSender.SendAsync(candidate.Email, message.Subject, message.Body, isBodyHtml: true);
     }
 }
