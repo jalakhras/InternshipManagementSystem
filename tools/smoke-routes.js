@@ -81,6 +81,7 @@ const ROUTES = [
   ['GET', '/api/assessment/settings'],
   ['GET', '/api/app/users'],
   ['GET', '/api/app/users/roles'],
+  ['GET', '/api/assessment/attempts/running'],
 
   // No such blob. 404 here proves the route resolves and the container
   // activates — the failure this replaced was a 500 from a BLOB provider that

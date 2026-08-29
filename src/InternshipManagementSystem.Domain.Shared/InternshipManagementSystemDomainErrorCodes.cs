@@ -90,6 +90,12 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string AssignmentExpiryInPast = "IMS:Assignment:ExpiryInPast";
     public const string AssignmentGroupEmpty = "IMS:Assignment:GroupEmpty";
 
+    /// <summary>
+    /// A graded attempt is somebody's result, and removing one is a
+    /// disappearance rather than a correction.
+    /// </summary>
+    public const string AttemptGradedCannotDelete = "IMS:Attempt:GradedCannotDelete";
+
     // ---- Catalog ----
     public const string CatalogCodeAlreadyExists = "IMS:Catalog:CodeAlreadyExists";
 

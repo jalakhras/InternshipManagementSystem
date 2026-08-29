@@ -1,0 +1,154 @@
+<astro-page-header
+  [title]="t('::Monitor:Title')"
+  [description]="t('::Monitor:Lede')" />
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<div class="filters">
+  <div class="search">
+    <i class="bi bi-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="t('::Results:SearchPlaceholder')"
+      [attr.aria-label]="t('::Results:SearchPlaceholder')"
+      [ngModel]="filter()"
+      name="monitorFilter"
+      (ngModelChange)="filter.set($event)"
+      (keyup.enter)="applyFilter()" />
+  </div>
+
+  <select
+    class="form-select"
+    [attr.aria-label]="t('::Results:Exam')"
+    [ngModel]="examId()"
+    name="monitorExam"
+    (ngModelChange)="examId.set($event); applyFilter()">
+    <option value="">{{ t('::Results:Filter:AllExams') }}</option>
+    @for (exam of examOptions(); track exam.id) {
+      <option [value]="exam.id">{{ exam.title }}</option>
+    }
+  </select>
+
+  <label class="toggle">
+    <input type="checkbox" [checked]="includeExpired()" (change)="toggleExpired()" />
+    <span>
+      {{ t('::Monitor:IncludeExpired') }}
+      <small>{{ t('::Monitor:IncludeExpired:Hint') }}</small>
+    </span>
+  </label>
+</div>
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <!-- The ordinary state, and a good one. Said plainly rather than as an error. -->
+  <div class="state">
+    <i class="bi bi-hourglass" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::Monitor:NoneRunning') }}</p>
+    <p class="state__text">{{ t('::Monitor:NoneRunningNote') }}</p>
+  </div>
+} @else {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Results:Candidate') }}</th>
+          <th scope="col">{{ t('::Results:Exam') }}</th>
+          <th scope="col">{{ t('::Results:Started') }}</th>
+          <th scope="col" class="numeric">{{ t('::Monitor:Remaining') }}</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of items(); track row.attemptId) {
+          <tr>
+            <td>
+              <span class="candidate__name">{{ row.candidateName }}</span>
+              <span class="candidate__email">{{ row.candidateEmail }}</span>
+            </td>
+            <td>{{ row.examTitle }}</td>
+            <td class="muted">{{ row.startedAt | date: 'HH:mm' }}</td>
+            <td class="numeric">
+              @if (isExpired(row)) {
+                <span class="expired">{{ t('::Monitor:Expired') }}</span>
+              } @else {
+                {{ t('::Section:Minutes', minutesLeft(row).toString()) }}
+              }
+            </td>
+            <td class="actions">
+              @if (canEnd()) {
+                <button type="button" class="link" (click)="askEnd(row)">{{ t('::Monitor:End') }}</button>
+              }
+              @if (canDelete()) {
+                <button type="button" class="link link--danger" (click)="askDiscard(row)">
+                  {{ t('::Monitor:Delete') }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (ending(); as row) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Monitor:End:Title')">
+    <div class="dialog">
+      <h2 class="dialog__title">{{ t('::Monitor:End:Title') }}</h2>
+      <p class="dialog__body">{{ row.candidateName }} — {{ row.examTitle }}</p>
+      <p class="dialog__body">{{ t('::Monitor:End:Body') }}</p>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Monitor:End:Reason') }}</span>
+        <input
+          class="form-control"
+          name="endReason"
+          [placeholder]="t('::Monitor:End:Reason:Placeholder')"
+          [ngModel]="endReason()"
+          (ngModelChange)="endReason.set($event)" />
+      </label>
+
+      <div class="dialog__actions">
+        <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="confirmEnd()">
+          {{ t('::Monitor:End:Confirm') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEnd()">
+          {{ t('::Cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (discarding(); as row) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Monitor:Delete:Title')">
+    <div class="dialog">
+      <h2 class="dialog__title">{{ t('::Monitor:Delete:Title') }}</h2>
+      <p class="dialog__body">{{ row.candidateName }} — {{ row.examTitle }}</p>
+      <p class="dialog__body">{{ t('::Monitor:Delete:Body') }}</p>
+
+      <div class="dialog__actions">
+        <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="confirmDiscard()">
+          {{ t('::Monitor:Delete') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelDiscard()">
+          {{ t('::Cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,201 @@
+// Sittings in progress. Logical properties — this mirrors in Arabic.
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.filters {
+  display: flex;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-block-end: var(--astro-space-4);
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-inline-size: 14rem;
+  max-inline-size: 24rem;
+
+  > i {
+    position: absolute;
+    inset-inline-start: var(--astro-space-3);
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  input {
+    padding-inline-start: var(--astro-space-6);
+    background: var(--surface-raised);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+    min-block-size: var(--astro-touch-min);
+
+    &::placeholder { color: var(--text-muted); }
+  }
+}
+
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+
+  small {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    max-inline-size: 40ch;
+  }
+}
+
+.table {
+  --bs-table-bg: var(--surface-raised);
+  --bs-table-color: var(--text-primary);
+  --bs-table-border-color: var(--border-subtle);
+
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  overflow: hidden;
+  font-size: var(--astro-text-sm);
+
+  th, td {
+    padding: var(--astro-space-3);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    font-weight: var(--astro-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  tbody tr:hover { background: var(--surface-sunken); }
+}
+
+.numeric {
+  text-align: end !important;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.candidate__name { display: block; font-weight: var(--astro-weight-medium); }
+
+.candidate__email {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+.muted { color: var(--text-secondary); }
+
+// Past its deadline and not yet closed. Worth marking rather than showing a
+// negative number, and worth not alarming over: it closes itself within a minute.
+.expired {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  gap: var(--astro-space-3);
+  justify-content: flex-end;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--astro-brand-700);
+  cursor: pointer;
+  font-size: var(--astro-text-sm);
+  white-space: nowrap;
+}
+
+.link--danger { color: var(--astro-fail-600); }
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  display: grid;
+  place-items: center;
+  padding: var(--astro-space-4);
+  z-index: 40;
+}
+
+.dialog {
+  background: var(--surface-overlay);
+  border-radius: var(--astro-radius-lg);
+  padding: var(--astro-space-5);
+  max-inline-size: 30rem;
+  inline-size: 100%;
+}
+
+.dialog__title {
+  margin: 0 0 var(--astro-space-2);
+  font-size: var(--astro-text-lg);
+}
+
+.dialog__body {
+  margin: 0 0 var(--astro-space-3);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+  margin-block-end: var(--astro-space-3);
+}
+
+.field__label {
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+.dialog__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+  &__text  { margin: 0; max-inline-size: 44ch; }
+  &--error i { color: var(--astro-fail-600); }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}

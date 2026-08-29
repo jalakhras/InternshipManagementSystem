@@ -15,6 +15,12 @@ export const RESULT_ROUTES: Routes = [
     loadComponent: () => import('./item-analysis.component').then(m => m.ItemAnalysisComponent),
   },
   {
+    // Sittings in progress. Under results because it is the same question asked
+    // a few minutes earlier: how is this going.
+    path: 'running',
+    loadComponent: () => import('./attempt-monitor.component').then(m => m.AttemptMonitorComponent),
+  },
+  {
     path: ':attemptId',
     loadComponent: () => import('./result-detail.component').then(m => m.ResultDetailComponent),
   },

@@ -70,6 +70,17 @@ public class Attempt : AuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Count of integrity observations, surfaced to the reviewer. Never an automatic verdict.</summary>
     public int IntegrityFlagCount { get; set; }
 
+    /// <summary>
+    /// Why a person ended this sitting, when a person did.
+    /// <para>
+    /// Recorded because ending somebody's exam early is the kind of act that gets
+    /// questioned weeks later — by the candidate, by an auditor, by the
+    /// coordinator's own manager — and "the system did it" is not an answer
+    /// anybody can defend. Null on every attempt that ended by itself.
+    /// </para>
+    /// </summary>
+    public string? EndedByReason { get; set; }
+
     public ICollection<AttemptQuestion> Questions { get; set; } = new List<AttemptQuestion>();
     public ICollection<Answer> Answers { get; set; } = new List<Answer>();
 

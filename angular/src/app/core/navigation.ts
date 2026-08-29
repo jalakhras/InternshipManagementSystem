@@ -51,6 +51,7 @@ export const NAVIGATION: readonly NavSection[] = [
   {
     labelKey: '::Nav:Results',
     items: [
+      { labelKey: '::Monitor:Title', route: '/results/running', icon: 'bi-hourglass-split', permission: P.Attempts.View },
       { labelKey: '::Nav:ReviewQueue', route: '/review', icon: 'bi-pencil-square', permission: P.Review.ViewQueue },
       { labelKey: '::Nav:Results', route: '/results', icon: 'bi-bar-chart', permission: P.Results.View },
     ],

@@ -17,6 +17,15 @@ rather than a platform term.
 EF configuration, `src/InternshipManagementSystem.HttpApi/` and
 `angular/src/app/`. Where a claim was surprising, the file is named.
 
+**Pinned to `0842cc9`, and a warning about that.** Four commits landed while this
+revision was being written, and between them they closed six stories in it — the
+media URLs, the results export, the tenant logo, the blueprint editor and the last
+two dead navigation links. A seventh, the attempt monitor (`ASG-08`), is complete
+in the working tree, is not yet committed, and is recorded as BUILT because a
+person can walk it. **A status document for this repository has a shelf life
+measured in hours.** Worth knowing before acting on any single row below; the shape
+of the tables is more durable than the rows.
+
 | Status | Means |
 |---|---|
 | **BUILT** | The actor can complete this today, end to end, in the running product — a screen, on a registered route, calling a method that reaches a controller that reaches a service that does the work |
@@ -342,7 +351,7 @@ persisted column contains the sanitised value. *e2e*: bold an Arabic word and
 assert the rendering, in RTL.
 
 #### BNK-04 · Attach a chart, a recording or a clip to a question
-**MUST · PARTIAL** — *the upload works; nothing the browser renders can fetch it back*
+**MUST · BUILT** — *fixed in `3923129`, after this revision first recorded it as PARTIAL*
 
 As a **teacher**, I want to attach an image, audio or video to a question, so that
 a question about a candlestick chart can show the chart.
@@ -361,36 +370,33 @@ a question about a candlestick chart can show the chart.
    BLOB provider that had never been configured, so every read and every write had
    been throwing at container activation. Neither defect was visible to 187 green
    tests; a route smoke tool found both on its first run — see PLT-10.)*
-5. **The attached file previews in place.** *(Not built. The media field builds
-   `/api/assessment/media/{blob}` — origin-relative — and binds it into an
-   `img`/`audio`/`video` source. Both `environment.ts` and `environment.prod.ts`
-   put the app on `http://localhost:4200` and the API on `https://localhost:44373`,
-   and `angular.json` configures no proxy, so that URL resolves against the app's
-   own origin. Even same-origin it would still fail: a browser media request
-   carries no `Authorization` header, this app authenticates with bearer tokens,
-   and the staff branch of `AssessmentMediaAppService.GetAsync` tests
-   `IsGrantedAsync(Questions.Default)` — which an anonymous request never
-   satisfies, so it returns null and the controller answers 404.)*
+5. The attached file previews in place. *(Built — and this was PARTIAL for most of
+   this revision's life. Five places put a bare `/api/assessment/media/…` into an
+   `src` attribute, and the app and the API are different origins with no proxy in
+   either environment file, so every one resolved against the wrong server. Staff
+   had a second, independent failure: a browser will not attach a bearer token to
+   an `img src` however much the page would like it to.)*
 6. The media reaches the candidate through a URL the projector builds, and the
-   blob name itself is not required to be guessable. *(The mechanism is built and
-   is the good part of this story: `BuildMediaUrl` appends a signed grant naming
-   one blob and expiring five minutes after the attempt's deadline, so a candidate
-   with no account can fetch exactly their own paper's media and nothing else. It
-   is defeated by the same origin problem in criterion 5.)*
+   blob name itself is not required to be guessable. *(Built —
+   `BuildMediaUrl` appends a signed grant naming one blob and expiring five
+   minutes after the attempt's deadline, so a candidate with no account fetches
+   exactly their own paper's media and nothing else.)*
+7. Both kinds of caller are served correctly, and they need different answers.
+   *(Built — `core/media.service.ts`. A candidate's paper already carries its
+   grant, so it needs only the right origin; staff are signed in, so their files
+   are fetched with the token and handed to the page as object URLs.)*
 
 **Tests** — *unit*: the container name is a constant, not caller input.
 *integration*: upload requires `Assessment.Questions.Edit`; size and type refusals;
-`MediaGrantTests` covers the grant. *e2e*: **the missing layer, and the reason this
-survived twice.** `question-form.spec.ts` stubs `**/api/assessment/media`, so it
-asserts that our own mock is reachable; `live/journey.spec.ts` fetches the blob
-with an API client carrying a bearer token, which no `img` tag can do. The
-assertion this story actually needs is a browser rendering a question and the
-image request returning 200.
+`MediaGrantTests` covers the grant. *e2e*: `live/journey.spec.ts` now covers the
+media round trip, and that an anonymous stranger holding a blob name gets 404
+rather than the file.
 
-*Generalised as `PLT-09`, because the same defect breaks the tenant logo, the
-reviewer's view of an uploaded answer, the hotspot editor's image and the results
-export — every URL the browser fetches directly rather than through the HTTP
-interceptor.*
+*Recorded here because of how it survived two reviews rather than because it is
+still broken: `question-form.spec.ts` stubbed this exact URL, so it asserted our own
+mock was reachable, and the first live test fetched the blob with an API client
+carrying a token, which no `img` tag can do. Both sides passed and neither crossed
+the seam. See `PLT-09`.*
 
 #### BNK-05 · Score an answer by how right it is
 **MUST · BUILT**
@@ -483,10 +489,10 @@ result can say how well the student read *that* passage.
 3. A group's questions stay together and in their authored order when the exam
    shuffles. *(Built — `ExamFormBuilder.ApplyOrdering`.)*
 4. The stimulus renders once above its questions in the taker, and an audio
-   stimulus is not restarted by moving between the questions on it. *(Text renders
-   and the projector builds the stimulus DTO correctly. Image, audio and video
-   inherit BNK-04's dead URL, so a listening passage — the whole reason a language
-   centre would buy this — is a dead player.)*
+   stimulus is not restarted by moving between the questions on it. *(Built —
+   including the media, since `3923129`. A listening passage was a dead player for
+   as long as BNK-04 was broken, which is the whole reason a language centre would
+   buy this.)*
 5. A group with no questions cannot be saved, and the reason names the group.
 
 **Tests** — *unit*: ordering keeps blocks intact under shuffle, with a fixed seed.
@@ -1000,7 +1006,7 @@ complete API and no screen, which means in practice every paper is "the whole
 bank, capped and shuffled".*
 
 #### BPR-01 · Describe the paper as a recipe
-**MUST · PARTIAL** — *the API is complete; there is no screen and no client method to write one*
+**MUST · BUILT** — *fixed in `0842cc9`, after this revision first recorded it as PARTIAL*
 
 As a **teacher**, I want to say "eight medium listening questions and six easy
 grammar ones", so that every candidate's paper covers the same ground at the same
@@ -1011,18 +1017,24 @@ difficulty even though the questions differ.
    three may be left as "any". *(Server built — `GetBlueprintAsync`,
    `SetBlueprintAsync`, and `ExamController` exposes both.)*
 2. Each rule shows how many bank questions currently match it, so an unfillable
-   rule is visible while it is being written. *(The per-rule available count is
-   computed server-side and never reaches a browser.)*
-3. There is a screen. *(There is not. `exam.service.ts` has `getBlueprint` with
-   **zero callers**, and no client method for the write at all.)*
+   rule is visible while it is being written, marked on its row and counted in the
+   footer. *(Built — and this number has to be on screen while somebody is still
+   looking at it, because the builder contributes what it can and never fails, so
+   an unfillable blueprint produces a short paper silently and nobody finds out
+   until a candidate has sat it.)*
+3. There is a screen. *(Built — `/exams/:examId/blueprint`, with a `setBlueprint`
+   client method that did not exist. Until it landed, the papers screen offered
+   "fill from the blueprint" as the recommended way to build a form, there was
+   nothing to fill from, and no way to say so.)*
 4. Rules are ordered, and that order is the order their questions appear.
 
 **Tests** — *integration*: set and re-read a blueprint; matching counts per rule.
 *e2e*: add three rules, see one show zero matches, fix it.
 
-*Now that topics can be created (CAT-04) and set on a question (BNK-06), a
-blueprint keyed on competency would finally have something to key on. This is the
-cheapest remaining way to make a drawn paper defensible.*
+*This is what makes two drawn papers comparable, and it is the argument for drawing
+a paper at all rather than fixing one. It became worth building only once topics
+could be created (CAT-04) and set on a question (BNK-06) — before that a rule
+keyed on competency had nothing to key on.*
 
 #### BPR-02 · Give every candidate a different but comparable paper
 **MUST · BUILT**
@@ -1612,23 +1624,31 @@ who was ill is not made to start again.
 link works again.
 
 #### ASG-08 · End someone's attempt
-**SHOULD · NOT BUILT**
+**SHOULD · BUILT** — *complete in the working tree, uncommitted at the pinned revision*
 
 As an **administrator**, I want to end an attempt that is stuck or was started in
 error, so that it can be graded or discarded rather than sitting open.
 
 **Acceptance**
-1. Force-submitting records `AttemptEndReason.EndedByAdministrator` and grades the
-   attempt.
-2. It requires `Assessment.Attempts.ForceSubmit`.
-3. The candidate's session for that attempt stops accepting answers immediately.
+1. Sittings in progress are listed, under Results, because "how is this going" is
+   the same question asked a few minutes earlier. *(Built —
+   `/results/running`, with its own nav entry gated on `Attempts.View`.)*
+2. Force-submitting records who ended it and why, and grades the attempt. *(Built —
+   with a confirmation and a reason, and a migration recording the ender.)*
+3. An attempt started in error can be discarded outright. *(Built, behind a second
+   confirmation and `Attempts.Delete`.)*
+4. Each action carries its own permission — view, force-submit and delete are
+   separable. *(Built.)*
+5. The candidate's session for that attempt stops accepting answers immediately.
+   *(Follows from the attempt being submitted; needs a test.)*
 
-**Tests** — *integration*: end reason, grading runs, permission. *e2e*: force
+**Tests** — *integration*: end reason, grading runs, each permission. *e2e*: force
 submit while a taker session is open and confirm the next save is refused.
 
-*`Assessment.Attempts.ForceSubmit` is declared in the permission provider,
-registered, and mirrored in the Angular permission constants. Those three
-references are the only ones in the solution.*
+*This landed in the working tree while this document was being written, and it
+retires three permissions this revision had listed as declared-but-dead —
+`Attempts.View`, `.ForceSubmit` and `.Delete`. It is recorded as BUILT because a
+person can walk it today; it was not committed at `0842cc9`.*
 
 #### ASG-09 · Choose which form a sitting uses
 **SHOULD · BUILT**
@@ -1675,9 +1695,9 @@ start, so that I do not begin a timed exam by accident.
    remaining, and does not start the clock. *(Built.)*
 2. `AttemptsUsed` is not incremented by opening — it moves in `StartAsync`.
    *(Built, and this was a real defect once.)*
-3. The page carries the tenant's name and logo, not ours. *(Name: built. Logo: the
-   URL is minted with a signed grant, correctly, and then inherits PLT-09's origin
-   problem.)*
+3. The page carries the tenant's name and logo, not ours. *(Built — the logo URL is
+   minted with a signed grant and, since `3923129`, resolves against the right
+   origin.)*
 4. Starting is a deliberate action, and the page says the clock begins on it.
    *(Built.)*
 
@@ -1737,9 +1757,21 @@ that a long paper is not overwhelming.
    absent rather than disabled when it does not.
 4. Requesting a position not on this candidate's form is refused with
    `IMS:Attempt:QuestionNotOnForm`. *(Built.)*
+5. **The position the screen asks for is the position the server means.** *(Built,
+   since `08f0eb6`. It was not: the sitting screen counts from one — "question 3 of
+   20" — and the paper counts from zero, and nothing converted between them, so
+   every candidate was served the second question first, the first was unreachable,
+   and the last answered "not on this paper". Live, for every candidate, on the one
+   screen somebody uses once under time pressure and cannot retry.)*
 
 **Tests** — *integration*: the out-of-form refusal; back navigation honoured.
 *e2e*: page through, confirm progress, confirm the control's absence.
+
+*The off-by-one is the cleanest example in this document of why a stub is not a
+test. The browser suite could not see it because the stub echoed back whatever
+position it was asked for, so it agreed with any client. **A stub that answers
+anything proves nothing.** It now refuses an out-of-range position the way the
+service does.*
 
 #### TAK-05 · Not lose work
 **MUST · BUILT**
@@ -2252,6 +2284,9 @@ where they got to, so that I can see the whole class at once.
 2. Complete rows show score, percentage, pass/fail and an integrity flag count.
 3. Filtering by group, exam, form and state combine, with paging. *(Built.)*
 4. It requires `Assessment.Results.View`. *(Built and enforced at the service.)*
+5. The integrity flag count is shown only to someone entitled to it. *(Built since
+   `3923129` — "this candidate pasted four times" is an accusation, and it was
+   reaching anybody who could read a score, through both this roster and the CSV.)*
 5. The date column shows submitted-at. *(It shows started-at; `SubmittedAt` is on
    the DTO and unused. A one-word fix.)*
 
@@ -2318,7 +2353,7 @@ is now a usable substitute for many purposes and should be sold as the profile
 until sections land.*
 
 #### RES-05 · Get the results out
-**MUST · PARTIAL** — *the file is right; the button that fetches it cannot succeed*
+**MUST · BUILT** — *fixed in `3923129`, after this revision first recorded it as PARTIAL*
 
 As a **training coordinator**, I want to export results as a spreadsheet, so that
 I can put them where my centre already keeps records.
@@ -2333,21 +2368,24 @@ I can put them where my centre already keeps records.
    for the front end to reassemble.)*
 3. It requires `Assessment.Results.Export`, and the button is hidden without it.
    *(Both built.)*
-4. **Clicking the button downloads the file.** *(Not built. It is a bare
-   `<a [href]>` pointing at the origin-relative `/api/assessment/results/export?…`.
-   Every other call in the app goes through `RestService`, which prefixes the API
-   base and attaches the bearer token; this one deliberately does not, so the
-   browser requests it from the Angular origin — and even same-origin it would
-   carry no credential against an `[Authorize]` endpoint and 401. See PLT-09.)*
+4. Clicking the button downloads the file. *(Built. It was a bare `<a [href]>`
+   pointing at an origin-relative path, so the primary action on that screen sent
+   the coordinator to the dashboard and lost their filters. It now fetches with the
+   token and saves.)*
 5. An export of an attempt still awaiting review is marked as such rather than
    showing a partial score.
-6. Per-competency columns. *(Not built — the breakdown exists on screen and not in
-   the file.)*
+6. Integrity flag counts are not in the file for anyone who may only read a score.
+   *(Built — "this candidate pasted four times" is an accusation, and it was
+   leaking through both the roster and the CSV to anybody who could see a
+   percentage.)*
+7. Per-competency columns. *(Not built — the breakdown exists on screen and not in
+   the file. The last remaining item on this story.)*
 
 **Tests** — *unit*: encoding and the pending-marking rule. *integration*:
-permission; column set. *e2e*: click the button in a browser and assert a file
-arrives — which is the assertion that would have caught this, and the one the live
-suite skips by calling the endpoint with an API client instead.
+permission; column set. *e2e*: `live/journey.spec.ts` now reads the CSV at the end
+of a real journey. The assertion still worth adding is the one in a **browser** —
+click the button and assert a file arrives — because that is the half that was
+broken while the endpoint was correct.
 
 #### RES-06 · Compute the item statistics
 **MUST · PARTIAL** — *both indices exist; one is never persisted and the other is never reset*
@@ -2529,7 +2567,7 @@ two and nothing reads the other seven. This epic is the clearest example in the
 document of a control surface that outran its mechanisms.*
 
 #### BRD-01 · Put our name on it
-**MUST · PARTIAL** — *the name shows; the logo is a broken image*
+**MUST · BUILT** — *fixed in `3923129`, after this revision first recorded it as PARTIAL*
 
 As an **administrator**, I want to set our organisation's name and logo, so that
 the people we invite see us rather than a platform they have never heard of.
@@ -2544,14 +2582,16 @@ the people we invite see us rather than a platform they have never heard of.
    another tenant's. *(Built — the product name stands in, and a failure to load
    costs the branding and nothing else.)*
 4. The name appears in the staff shell. *(Built.)*
-5. **The logo appears.** *(Not built. The shell builds `/api/assessment/media/{blob}`
-   and binds it into an `img` — origin-relative, unauthenticated, and therefore a
-   broken-image icon in the top-left corner of every staff screen the moment a
-   tenant uploads one. See PLT-09.)*
+5. The logo appears. *(Built — the shell now fetches it through `MediaService` with
+   the token and binds an object URL. It was a broken-image icon in the top-left
+   corner of every staff screen the moment a tenant uploaded one.)*
 
 **Tests** — *integration*: one row per tenant; fallback; isolation. *e2e*: set a
 name and logo and assert both render — the logo assertion is the one that matters
-and does not exist.
+and still does not exist.
+
+*The brand colour is a separate story and is still applied to nothing: see
+BRD-02.*
 
 #### BRD-02 · Refuse a colour that will fail silently
 **MUST · PARTIAL** — *and the colour fails silently in the strongest sense: it is applied to nothing*
@@ -2588,11 +2628,10 @@ As a **candidate**, I want the exam page and the invitation to carry the
 organisation that invited me, so that it does not read as a phishing attempt.
 
 **Acceptance**
-1. The link preview and the exam page carry the tenant's name and logo. *(Built
-   server-side and rendered — and done properly, with the logo URL minted as a
-   signed media grant so an anonymous candidate can fetch it without an account.
-   The mechanism is right; PLT-09's origin problem is what stops the image
-   arriving.)*
+1. The link preview and the exam page carry the tenant's name and logo. *(Built,
+   and done properly: the logo URL is minted as a signed media grant, so an
+   anonymous candidate fetches it without an account and without opening the
+   container.)*
 2. **The invitation email carries them.** *(Not built. The body is a hardcoded
    bilingual HTML string interpolating candidate name, exam title, duration, expiry
    and URL. No tenant name, no logo, no colour, no support address. This is the
@@ -2675,15 +2714,21 @@ a marker is not given the answer keys to the whole bank.
 **Tests** — *integration*: each permission gates its own endpoint. *e2e*: log in
 as a role holding only `Review.Grade` and confirm the exam screens are absent.
 
-*Six declared permissions enforce nothing anywhere: `Attempts.View`,
-`Attempts.ForceSubmit`, `Attempts.Delete`, `IdentityManagement.Users.ManageRoles`,
-`Assignments.SendEmail` and `Administration.Access`. Each is a grantable checkbox
-that grants nothing, and three of them belong to stories that are NOT BUILT
-(ASG-06, ASG-08, PPL-06 erasure) — so the right move is to remove them until the
-feature lands, not to wire them up.*
+*Six declared permissions enforced nothing when this revision opened. Five have
+since been closed rather than deleted, which was the better outcome:
+`Users.ManageRoles` is now checked — and only when the role list actually changes,
+since anyone who could edit a colleague's phone number could otherwise make
+themselves an administrator; `Assignments.SendEmail` now behaves like a permission;
+and `Attempts.View`, `.ForceSubmit` and `.Delete` are enforced by the attempt
+monitor (ASG-08). **`Administration.Access` remains a grantable checkbox that
+grants nothing** and should be removed.*
+
+*Also closed in the same pass: the seeder re-granted every permission on every
+start, which looked idempotent and was not — a deliberately revoked permission came
+back after the next deployment. Each is now offered once and remembered.*
 
 #### ADM-02 · Do not offer what cannot be opened
-**MUST · PARTIAL** — *seven dead links became two*
+**MUST · BUILT** — *seven dead links became two, then none, in `3923129`*
 
 As a **reviewer**, I want the navigation to show only what I can reach, so that I
 am not sent to a dead end.
@@ -2692,25 +2737,34 @@ am not sent to a dead end.
 1. A navigation entry the user lacks permission for is not rendered, and a section
    with nothing visible in it is dropped rather than left as an empty heading.
    *(Built.)*
-2. Every rendered entry resolves to a registered route. *(Eleven of eleven sidebar
-   destinations are now registered — `/questions`, `/groups`, `/results`,
-   `/catalog`, `/users` and `/settings` all landed. **Two dead links remain:**
-   `/account/profile` in the user menu, which matches nothing because ABP's account
-   screens are deliberately not imported; and the sidebar's `/assignments`, whose
-   route file declares only `:examId` and no index child. Both fall through the
-   wildcard and silently deposit the user on the dashboard, which is the specific
-   behaviour this story exists to forbid.)*
-3. A route under construction says so rather than showing an empty table.
-4. The gating is consistent between the menu and the route. *(It is not: the
-   Settings **link** is hidden without `Administration.ManageSettings`, while the
-   Settings **route** is deliberately left ungated so it can render read-only. The
-   read-only mode is therefore unreachable from the menu by exactly the people it
-   was built for.)*
+2. Every rendered entry resolves to a registered route. *(Built. Seven of eleven
+   sidebar destinations went nowhere a month ago; two survived into this revision
+   and were fixed while it was being written — `/assignments` gained an index route
+   that asks which exam, which is the question the route implies, and the user
+   menu's "My profile" pointed at a module deliberately not registered and is
+   gone.)*
+3. **Permissions are read as they arrive, not once at construction.** *(Built, and
+   this was the subtler half. In a zoneless application the sidebar read the
+   permission set once, at construction, so a user whose configuration had not
+   landed yet saw nothing but Dashboard — permanently. The same bug hid the exam
+   form's Save button and the dashboard's cards.)*
+4. A role that passes the route guard can use the screen it reaches. *(Built. Class
+   and method `[Authorize]` combine with AND rather than override, so a "manage the
+   classes" role passed the guard, watched the screen mount, and had every request
+   refused. The catalogue and results permissions are now nested so that a workable
+   role can be expressed at all.)*
+5. The gating is consistent between the menu and the route. *(Still not, in one
+   place: the Settings **link** is hidden without `Administration.ManageSettings`
+   while the Settings **route** is deliberately ungated so it can render read-only.
+   The read-only mode is unreachable from the menu by exactly the people it was
+   built for. A one-line fix, and the only thing keeping this story from being
+   unqualified.)*
 
 **Tests** — *e2e*: enumerate every rendered navigation link and every user-menu
 link and assert each navigates somewhere that is not the wildcard redirect. This is
 the story's whole point, so the assertion must be exhaustive rather than sampled —
-had it existed, it would have failed on seven links a month ago and on two today.
+had it existed, it would have failed on seven links a month ago and on two last
+week.
 
 #### ADM-03 · Keep tenants apart
 **MUST · BUILT**
@@ -2759,7 +2813,10 @@ a new coordinator can start work.
 1. Users are created with roles set before the first save, so an account is never
    briefly role-less. *(Built at `/users`, and the roles are on the form rather
    than behind a second screen, which suits how the decision is actually made.)*
-2. Roles are edited as a whole list rather than a diff. *(Built.)*
+2. Roles are edited as a whole list rather than a diff, and changing them requires
+   `Users.ManageRoles` — checked only when the list actually changes, so editing a
+   colleague's phone number is not a route to making yourself an administrator.
+   *(Built, and this was an open privilege-escalation hole until `3923129`.)*
 3. Users are deleted. *(Built.)*
 4. **A password can be reset.** *(Not built, and it reports success. The form shows
    a password field on edit and the client sends it; `UpdateAsync` never touches
@@ -2784,10 +2841,17 @@ As an **administrator**, I want tenant-wide settings in one place, so that
 thresholds are not compiled into the product.
 
 **Acceptance**
-1. Settings are saved through a real endpoint, scoped to the tenant or to the
+1. Settings are saved through **one** endpoint, scoped to the tenant or to the
    host, and written with an invariant culture so a decimal does not change meaning
    with the server's locale. *(Built — the culture detail is the kind of thing that
-   only shows up in production, and it was thought about.)*
+   only shows up in production, and it was thought about. Two rival services,
+   `SystemGeneralSettingsAppService` and `SelfRegistrationSettingAppService`, were
+   deleted rather than guarded: the first carried no `[Authorize]` at all and ABP
+   generates a conventional controller for every application service, so
+   `PUT /api/app/system-general-settings` was **an anonymous write that let anybody
+   rename the organisation without signing in**. A duplicate source of truth is how
+   one of them ends up forgotten; the route smoke test now fails if either comes
+   back.)*
 2. The screen is readable by anyone signed in and writable only with
    `Administration.ManageSettings`, enforced on both sides. *(Built — every input
    carries a disabled binding and the service carries the attribute. Undermined by
@@ -3037,7 +3101,7 @@ numbers, so that I do not claim more for a result than it can carry.
 *e2e*: the statement is visible, not hidden behind a tooltip.
 
 #### PLT-09 · Serve a stored file to the browser that renders it
-**MUST · PARTIAL** — *new; one defect with six symptoms*
+**MUST · BUILT** — *new in this revision, recorded as PARTIAL, and fixed in `3923129` before it was published*
 
 As a **candidate, a teacher and a coordinator**, I want the images, recordings,
 logos and downloads the product shows me to actually arrive, so that the product
