@@ -23,6 +23,13 @@ public class InternshipManagementSystemSettingDefinitionProvider : SettingDefini
                     TenantSettingValueProvider.ProviderName,
                     GlobalSettingValueProvider.ProviderName),
 
+            // The same bookkeeping for the coordinator, author, marker and
+            // observer roles, and per tenant for the same reason.
+            new SettingDefinition(InternshipManagementSystemSettings.SeededRolePermissions)
+                .WithProviders(
+                    TenantSettingValueProvider.ProviderName,
+                    GlobalSettingValueProvider.ProviderName),
+
             Tenant(InternshipManagementSystemSettings.OrganizationName, null),
             Tenant(InternshipManagementSystemSettings.LogoBlobName, null),
             Tenant(InternshipManagementSystemSettings.BrandColor, null),

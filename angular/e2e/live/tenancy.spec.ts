@@ -153,7 +153,11 @@ test.describe('Three organisations on one deployment', () => {
     const candidate = await centre.post('/api/assessment/candidates', {
       data: {
         fullName: 'Tenancy Check',
-        email: `tenancy-${Date.now().toString(36)}@example.test`,
+        // Prefixed with the organisation, because the test above asserts that
+        // every address this organisation can see belongs to it. Unprefixed, the
+        // row this test leaves behind is read by that one as a leak from another
+        // organisation — so the suite passed once and failed on every run after.
+        email: `language-centre-tenancy-${Date.now().toString(36)}@example.test`,
       },
     });
 

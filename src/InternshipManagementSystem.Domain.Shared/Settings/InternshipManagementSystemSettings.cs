@@ -26,6 +26,25 @@ public static class InternshipManagementSystemSettings
     /// </summary>
     public const string SeededPermissions = Prefix + ".Internal.SeededPermissions";
 
+    /// <summary>
+    /// Which permissions the seeder has already offered each of the other roles,
+    /// recorded as <c>Role:Permission</c> pairs.
+    /// <para>
+    /// The same bookkeeping as <see cref="SeededPermissions"/> and for the same
+    /// reason — grant once, never re-grant, so a deliberate revocation survives a
+    /// deployment — but keyed by role as well as by permission. The coordinator
+    /// and the author both hold <c>Exams.View</c>; one flat list of names would
+    /// read the author's grant as proof the coordinator had already been offered
+    /// it, and the coordinator would be seeded with a hole in it.
+    /// </para>
+    /// <para>
+    /// Its own setting rather than more entries in the admin's, so the existing
+    /// marker keeps its format and a deployment that has already run does not
+    /// re-offer the admin everything on the way past.
+    /// </para>
+    /// </summary>
+    public const string SeededRolePermissions = Prefix + ".Internal.SeededRolePermissions";
+
     // ---- Presentation ----
 
     /// <summary>
