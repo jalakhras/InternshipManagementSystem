@@ -2,6 +2,14 @@
   [title]="examTitle() || t('::Nav:QuestionBank')"
   [description]="t('::Question:List:Lede')">
   @if (canCreate()) {
+    <!-- The import first, because an author with a bank already written is not
+         going to retype it — and the only way they find out they do not have to
+         is seeing this offered beside the button that would have made them. -->
+    <button slot="actions" type="button" class="btn btn-outline-secondary" (click)="openImport()">
+      <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
+      {{ t('::QuestionImport:Open') }}
+    </button>
+
     <a slot="actions" class="btn btn-primary" [routerLink]="newLink()">
       <i class="bi bi-plus-lg" aria-hidden="true"></i>
       {{ t('::Question:Add') }}
@@ -104,9 +112,17 @@
       {{ isFiltered() ? t('::Question:NoMatchesNote') : t('::Question:NoneYetNote') }}
     </p>
     @if (canCreate() && !isFiltered()) {
-      <a class="btn btn-primary" [routerLink]="newLink()">
-        {{ t('::Question:Add') }}
-      </a>
+      <div class="state__actions">
+        <!-- Somebody looking at an empty bank wants to get their file in, not to
+             type the first of eighty questions. -->
+        <button type="button" class="btn btn-primary" (click)="openImport()">
+          {{ t('::QuestionImport:Open') }}
+        </button>
+
+        <a class="btn btn-outline-secondary" [routerLink]="newLink()">
+          {{ t('::Question:Add') }}
+        </a>
+      </div>
     }
   </div>
 }
@@ -144,7 +160,7 @@
 
             <td class="muted">{{ typeName(question) }}</td>
             <td class="muted">{{ t(difficultyKey(question)) }}</td>
-            <td class="num astro-numeric">{{ question.score }}</td>
+            <td class="num"><span class="astro-numeric">{{ question.score }}</span></td>
 
             <td>
               @switch (itemHealth(question)) {
@@ -225,6 +241,175 @@
       </button>
     </nav>
   }
+}
+
+<!-- ── Import ─────────────────────────────────────────────────────────── -->
+@if (importing()) {
+  <div class="scrim" (click)="closeImport()"></div>
+
+  <div class="qimport" role="dialog" aria-modal="true" aria-labelledby="questionImportTitle">
+    <h2 class="qimport__title" id="questionImportTitle">{{ t('::QuestionImport:Title') }}</h2>
+    <p class="qimport__lede">{{ t('::QuestionImport:Lede') }}</p>
+
+    <div class="qimport__field">
+      <label class="form-label" for="questionImportFile">{{ t('::QuestionImport:ChooseFile') }}</label>
+      <input
+        id="questionImportFile"
+        type="file"
+        class="form-control"
+        accept=".csv,text/csv,text/plain"
+        (change)="chooseFile($event)" />
+      <p class="qimport__hint">{{ t('::QuestionImport:ChooseFile:Hint') }}</p>
+    </div>
+
+    <!-- Offered before the file is chosen rather than after it fails. Somebody
+         who does not know the headings is looking for this now, and a template
+         suggested only in an error message is a template found once. -->
+    <div class="qimport__field">
+      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="downloadTemplate()">
+        <i class="bi bi-download" aria-hidden="true"></i>
+        {{ t('::QuestionImport:Template') }}
+      </button>
+      <p class="qimport__hint">{{ t('::QuestionImport:Template:Hint') }}</p>
+    </div>
+
+    <ul class="qimport__rules">
+      <li>{{ t('::QuestionImport:Columns:Hint') }}</li>
+      <li>{{ t('::QuestionImport:Types:Hint') }}</li>
+      <li>{{ t('::QuestionImport:Correct:Hint') }}</li>
+    </ul>
+
+    <!-- Only on the bank screen. A bank question belongs to a domain and a
+         level, and without one it would be written and then invisible. Inside an
+         exam the question already belongs to the paper. -->
+    @if (isBank()) {
+      <div class="qimport__field">
+        <label class="form-label" for="questionImportCategory">{{ t('::Exam:Category') }}</label>
+        <select
+          id="questionImportCategory"
+          class="form-select"
+          [ngModel]="importCategoryId()"
+          (ngModelChange)="importCategoryId.set($event); importLevelId.set('')">
+          <option value="">{{ t('::Question:Filter:AllCategories') }}</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (importCategoryId()) {
+        <div class="qimport__field">
+          <label class="form-label" for="questionImportLevel">{{ t('::Exam:Level') }}</label>
+          <select
+            id="questionImportLevel"
+            class="form-select"
+            [ngModel]="importLevelId()"
+            (ngModelChange)="importLevelId.set($event)">
+            <option value="">{{ t('::Question:Level:Any') }}</option>
+            @for (level of importLevels(); track level.id) {
+              <option [value]="level.id">{{ level.name }}</option>
+            }
+          </select>
+        </div>
+      }
+    }
+
+    @if (actionError(); as message) {
+      <p class="qimport__error" role="alert">{{ message }}</p>
+    }
+
+    @if (importResult(); as result) {
+      <!-- Checked before anything is written, so the four wrong rows are seen at
+           the moment somebody can still do something about them. -->
+      <div class="qimport__summary" [class.qimport__summary--done]="importCommitted()">
+        <p class="qimport__line">
+          <strong class="astro-numeric">{{ result.created }}</strong>
+          {{ importCommitted() ? t('::QuestionImport:Added') : t('::QuestionImport:WillAdd') }}
+        </p>
+
+        @if (result.alreadyPresent > 0) {
+          <p class="qimport__line qimport__line--quiet">
+            <strong class="astro-numeric">{{ result.alreadyPresent }}</strong>
+            {{ t('::QuestionImport:AlreadyThere') }}
+          </p>
+        }
+
+        @if (result.problems.length > 0) {
+          <h3 class="qimport__heading">{{ t('::QuestionImport:Problems') }}</h3>
+
+          <ul class="qimport__problems">
+            @for (problem of result.problems; track problem.line) {
+              <li class="qimport__problem">
+                <!-- The row number and the column together: "row 14 is wrong"
+                     sends somebody to read nine cells, this sends them to one. -->
+                <span class="qimport__row astro-numeric">{{ t('::QuestionImport:Row', problem.line.toString()) }}</span>
+                <span class="qimport__column">{{ t('::' + problem.column) }}</span>
+                <span class="qimport__reason">{{ t('::' + problem.reason) }}</span>
+                <span class="qimport__content">{{ problem.content }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (!importCommitted() && result.preview.length > 0) {
+          <h3 class="qimport__heading">{{ t('::QuestionImport:Preview') }}</h3>
+
+          <ul class="qimport__preview">
+            @for (row of result.preview; track row.line) {
+              <li class="qimport__row-preview">
+                <p class="qimport__prompt">
+                  <span class="qimport__row astro-numeric">{{ t('::QuestionImport:Row', row.line.toString()) }}</span>
+                  {{ row.text }}
+                  <span class="qimport__type">{{ typeLabel(row.type) }}</span>
+                </p>
+
+                @if (row.options.length > 0) {
+                  <p class="qimport__options">{{ row.options.join(' · ') }}</p>
+                }
+
+                <!-- The answer written out, because the mistake worth catching
+                     here is a key one row off — and a number looks exactly as
+                     right when it is wrong. -->
+                <p class="qimport__answer">
+                  {{ t('::QuestionImport:Preview:Correct') }} {{ row.correctAnswers.join(' · ') }}
+                </p>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (!importCommitted() && result.created === 0) {
+          <p class="qimport__line qimport__line--quiet">{{ t('::QuestionImport:NothingToAdd') }}</p>
+        }
+      </div>
+    }
+
+    <div class="qimport__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="closeImport()">
+        {{ importCommitted() ? t('::Close') : t('::Cancel') }}
+      </button>
+
+      @if (!importCommitted()) {
+        @if (importResult()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="importChecking() || !canCommitImport()"
+            (click)="commitImport()">
+            {{ importChecking() ? t('::Working') : t('::QuestionImport:Confirm') }}
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="importChecking() || !canCheckImport()"
+            (click)="checkImport()">
+            {{ importChecking() ? t('::Working') : t('::QuestionImport:Check') }}
+          </button>
+        }
+      }
+    </div>
+  </div>
 }
 
 @if (pendingDelete(); as question) {

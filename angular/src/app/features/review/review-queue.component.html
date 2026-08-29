@@ -51,10 +51,10 @@
               <span class="submitted">{{ item.submittedAt | date: 'y/MM/dd' }}</span>
             </td>
 
-            <td class="num astro-numeric">{{ item.pendingCount }}</td>
+            <td class="num"><span class="astro-numeric">{{ item.pendingCount }}</span></td>
 
-            <td class="num astro-numeric muted">
-              {{ item.provisionalScore }} / {{ item.maxScore }}
+            <td class="num muted">
+              <span class="astro-numeric">{{ item.provisionalScore }} / {{ item.maxScore }}</span>
             </td>
 
             <td>

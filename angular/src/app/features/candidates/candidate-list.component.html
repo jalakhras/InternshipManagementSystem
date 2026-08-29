@@ -105,7 +105,7 @@
             </td>
 
             <td class="muted">{{ t(statusKey(candidate)) }}</td>
-            <td class="num astro-numeric">{{ candidate.attemptCount }}</td>
+            <td class="num"><span class="astro-numeric">{{ candidate.attemptCount }}</span></td>
 
             <td class="row-actions">
               @if (busyId() === candidate.id) {

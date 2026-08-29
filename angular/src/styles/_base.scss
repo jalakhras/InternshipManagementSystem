@@ -53,6 +53,19 @@ body {
 // --- Numerals ---------------------------------------------------------------
 // Tabular figures wherever digits stack or tick. A proportional countdown reflows
 // on every second, and a column of scores that does not align cannot be scanned.
+// Isolates a run of digits so an RTL paragraph does not reorder it: "2026/08/30
+// 21:41" stays a date followed by a time, and "3 / 10" stays three out of ten.
+//
+// Put it on the number, never on the cell that holds it. It sets direction: ltr,
+// and `text-align: end` resolves against direction — so a <td class="num
+// astro-numeric"> aligns to the opposite edge from the <th class="num"> above
+// it, and a whole column reads against the wrong heading. Same in a grid: a <dd>
+// carrying this drifts out from under its own <dt>. Both shipped.
+//
+// And never on a sentence. The monospace family has no Arabic in it, so
+// "السؤال ١ من ٣" comes out unreadable and laid out backwards. If a translated
+// string merely contains a number, steady it with `font-variant-numeric:
+// tabular-nums` instead and leave the direction alone.
 .astro-numeric {
   font-family: var(--astro-font-mono);
   font-variant-numeric: tabular-nums;
