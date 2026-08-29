@@ -1,0 +1,218 @@
+// One sitting in full. Logical properties throughout — this mirrors in Arabic.
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--astro-space-3);
+  margin-block-end: var(--astro-space-5);
+}
+
+.stat {
+  display: grid;
+  gap: 0.125rem;
+  min-inline-size: 7rem;
+  padding: var(--astro-space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+}
+
+.stat--headline .stat__value { font-size: var(--astro-text-2xl); }
+
+.stat__value {
+  font-size: var(--astro-text-xl);
+  font-weight: var(--astro-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__value--small {
+  font-size: var(--astro-text-base);
+  font-weight: var(--astro-weight-medium);
+}
+
+.stat__label {
+  font-size: var(--astro-text-xs);
+  color: var(--text-muted);
+}
+
+.outcome--pass { color: var(--astro-pass-600, var(--astro-brand-700)); }
+.outcome--fail { color: var(--astro-fail-600); }
+.outcome--pending { color: var(--text-muted); }
+
+.section {
+  margin-block-end: var(--astro-space-6);
+}
+
+.section__title {
+  margin: 0 0 var(--astro-space-3);
+  font-size: var(--astro-text-lg);
+}
+
+.section__note {
+  margin: 0;
+  color: var(--text-secondary);
+  max-inline-size: 60ch;
+}
+
+// ── Topic breakdown ──────────────────────────────────────────────────────────
+.topics {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-3);
+}
+
+.topic__head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  margin-block-end: 0.25rem;
+}
+
+.topic__name { font-weight: var(--astro-weight-medium); }
+
+.topic__figure {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.topic__raw {
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+  margin-inline-start: var(--astro-space-2);
+}
+
+.bar {
+  block-size: 0.5rem;
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+  overflow: hidden;
+}
+
+.bar__fill {
+  display: block;
+  block-size: 100%;
+  background: var(--astro-brand-600);
+}
+
+// ── Answers ──────────────────────────────────────────────────────────────────
+.answers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-2);
+}
+
+.answer {
+  padding: var(--astro-space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+
+  // A coloured edge on the start side, so the outcome is scannable down the
+  // column without colour being the only signal — the marks say it too.
+  border-inline-start-width: 3px;
+}
+
+.answer--right { border-inline-start-color: var(--astro-pass-600, var(--astro-brand-600)); }
+.answer--wrong { border-inline-start-color: var(--astro-fail-600); }
+.answer--pending { border-inline-start-color: var(--text-muted); }
+
+.answer__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--astro-space-3);
+}
+
+.answer__position {
+  min-inline-size: 1.5rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--astro-text-sm);
+}
+
+.answer__text {
+  flex: 1;
+  font-weight: var(--astro-weight-medium);
+}
+
+.answer__marks {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.answer__body {
+  margin-block-start: var(--astro-space-2);
+  padding-inline-start: 2.25rem;
+  display: flex;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+}
+
+.answer__label {
+  color: var(--text-muted);
+  font-size: var(--astro-text-sm);
+}
+
+.answer__given {
+  font-size: var(--astro-text-sm);
+  word-break: break-word;
+}
+
+.answer__given--empty { color: var(--text-muted); font-style: italic; }
+
+.answer__topic {
+  display: inline-block;
+  margin-block-start: var(--astro-space-2);
+  margin-inline-start: 2.25rem;
+  padding-inline: var(--astro-space-2);
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+.answer__comment {
+  margin: var(--astro-space-2) 0 0 0;
+  padding-inline-start: 2.25rem;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+// ── States ───────────────────────────────────────────────────────────────────
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+  &__text  { margin: 0; max-inline-size: 44ch; }
+  &--error i { color: var(--astro-fail-600); }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}

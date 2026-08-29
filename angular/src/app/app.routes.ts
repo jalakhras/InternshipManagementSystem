@@ -60,6 +60,12 @@ export const APP_ROUTES: Routes = [
           import('./features/assignments/assignment.routes').then(m => m.ASSIGNMENT_ROUTES),
       },
       {
+        path: 'results',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Results.View' },
+        loadChildren: () => import('./features/results/result.routes').then(m => m.RESULT_ROUTES),
+      },
+      {
         path: 'catalog',
         canActivate: [permissionGuard],
         data: { requiredPolicy: 'Assessment.Catalog.View' },

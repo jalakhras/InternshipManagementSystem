@@ -1,0 +1,75 @@
+<astro-page-header
+  [title]="t('::Results:ItemAnalysis')"
+  [description]="t('::Results:ItemAnalysis:Lede')">
+  <a slot="actions" class="btn btn-outline-secondary" routerLink="/results">
+    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    {{ t('::Results:Detail:Back') }}
+  </a>
+</astro-page-header>
+
+<div class="filters">
+  <select
+    class="form-select"
+    [attr.aria-label]="t('::Results:Exam')"
+    [ngModel]="examId()"
+    (ngModelChange)="setExam($event)">
+    <option value="">{{ t('::Results:Filter:AllExams') }}</option>
+    @for (exam of examOptions(); track exam.id) {
+      <option [value]="exam.id">{{ exam.title }}</option>
+    }
+  </select>
+</div>
+
+@if (error(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (!hasExam()) {
+  <div class="state">
+    <i class="bi bi-clipboard-data" aria-hidden="true"></i>
+    <p class="state__text">{{ t('::Results:ItemAnalysis:PickExam') }}</p>
+  </div>
+} @else if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi bi-hourglass" aria-hidden="true"></i>
+    <p class="state__text">{{ t('::Results:ItemAnalysis:NotEnough') }}</p>
+  </div>
+} @else {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Results:Detail:Question') }}</th>
+          <th scope="col">{{ t('::Question:Topic') }}</th>
+          <th scope="col" class="numeric">{{ t('::Results:ItemAnalysis:Answered') }}</th>
+          <th scope="col" class="numeric">{{ t('::Results:ItemAnalysis:Facility') }}</th>
+          <th scope="col" class="numeric">{{ t('::Results:ItemAnalysis:Discrimination') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.questionId) {
+          <tr [class.flagged]="!!row.flagKey">
+            <td>
+              <span class="question">{{ row.text }}</span>
+              <!-- The sentence, not the number, is what an author acts on. -->
+              @if (row.flagKey) {
+                <span class="flag">{{ t(row.flagKey) }}</span>
+              }
+            </td>
+            <td class="muted">{{ row.topicName || '—' }}</td>
+            <td class="numeric">{{ row.timesAnswered }}</td>
+            <td class="numeric">{{ percent(row.facility) }}</td>
+            <td class="numeric" [class.negative]="row.discrimination < 0">
+              {{ percent(row.discrimination) }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

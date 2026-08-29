@@ -1,0 +1,211 @@
+<astro-page-header
+  [title]="t('::Nav:Results')"
+  [description]="t('::Results:Lede')">
+  <div slot="actions" class="head-actions">
+    @if (canSeeItemAnalysis()) {
+      <a class="btn btn-outline-secondary" routerLink="/results/questions">
+        <i class="bi bi-clipboard-data" aria-hidden="true"></i>
+        {{ t('::Results:ItemAnalysis') }}
+      </a>
+    }
+    @if (canExport()) {
+      <!-- A plain link, not a fetch. The browser already knows how to save a
+           file; routing the bytes through the app so it can rebuild one is work
+           for nobody's benefit. -->
+      <a class="btn btn-primary" [href]="exportUrl()">
+        <i class="bi bi-download" aria-hidden="true"></i>
+        {{ t('::Results:Export') }}
+      </a>
+    }
+  </div>
+</astro-page-header>
+
+<!-- The cohort before the individuals: the first question is how the group did. -->
+@if (summary(); as figures) {
+  <div class="summary">
+    <div class="stat">
+      <span class="stat__value">{{ figures.sat }}</span>
+      <span class="stat__label">{{ t('::Results:Summary:Sat') }}</span>
+    </div>
+    <div class="stat stat--good">
+      <span class="stat__value">{{ figures.passed }}</span>
+      <span class="stat__label">{{ t('::Results:Summary:Passed') }}</span>
+    </div>
+    <div class="stat stat--bad">
+      <span class="stat__value">{{ figures.failed }}</span>
+      <span class="stat__label">{{ t('::Results:Summary:Failed') }}</span>
+    </div>
+    @if (figures.awaitingMarking > 0) {
+      <div class="stat stat--warn">
+        <span class="stat__value">{{ figures.awaitingMarking }}</span>
+        <span class="stat__label">{{ t('::Results:Summary:Awaiting') }}</span>
+      </div>
+    }
+    @if (figures.notStarted > 0) {
+      <div class="stat">
+        <span class="stat__value">{{ figures.notStarted }}</span>
+        <span class="stat__label">{{ t('::Results:Summary:NotStarted') }}</span>
+      </div>
+    }
+    <div class="stat">
+      <span class="stat__value">{{ figures.averageScorePercentage }}%</span>
+      <span class="stat__label">{{ t('::Results:Summary:Average') }}</span>
+    </div>
+    <div class="stat">
+      <span class="stat__value">{{ figures.medianScorePercentage }}%</span>
+      <span class="stat__label">{{ t('::Results:Summary:Median') }}</span>
+    </div>
+  </div>
+}
+
+<div class="filters">
+  <div class="search">
+    <i class="bi bi-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="t('::Results:SearchPlaceholder')"
+      [attr.aria-label]="t('::Results:SearchPlaceholder')"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      (keyup.enter)="applyFilter()" />
+  </div>
+
+  <select
+    class="form-select"
+    [attr.aria-label]="t('::Results:Exam')"
+    [ngModel]="examId()"
+    (ngModelChange)="setExam($event)">
+    <option value="">{{ t('::Results:Filter:AllExams') }}</option>
+    @for (exam of examOptions(); track exam.id) {
+      <option [value]="exam.id">{{ exam.title }}</option>
+    }
+  </select>
+
+  <select
+    class="form-select"
+    [attr.aria-label]="t('::Nav:Groups')"
+    [ngModel]="groupId()"
+    (ngModelChange)="setGroup($event)">
+    <option value="">{{ t('::Results:Filter:AllGroups') }}</option>
+    @for (group of groups(); track group.id) {
+      <option [value]="group.id">{{ group.name }}</option>
+    }
+  </select>
+
+  <div class="segmented" role="group">
+    <button
+      type="button"
+      class="segmented__option"
+      [class.segmented__option--active]="passedOnly()"
+      [attr.aria-pressed]="passedOnly()"
+      (click)="togglePassed()">
+      {{ t('::Results:Filter:PassedOnly') }}
+    </button>
+    <button
+      type="button"
+      class="segmented__option"
+      [class.segmented__option--active]="awaitingMarking()"
+      [attr.aria-pressed]="awaitingMarking()"
+      (click)="toggleAwaiting()">
+      {{ t('::Results:Filter:AwaitingMarking') }}
+    </button>
+  </div>
+</div>
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi {{ isFiltered() ? 'bi-search' : 'bi-bar-chart' }}" aria-hidden="true"></i>
+    <p class="state__title">
+      {{ isFiltered() ? t('::Results:NoMatches') : t('::Results:NoneYet') }}
+    </p>
+    @if (!isFiltered()) {
+      <p class="state__text">{{ t('::Results:NoneYetNote') }}</p>
+    }
+  </div>
+} @else {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Results:Candidate') }}</th>
+          <th scope="col">{{ t('::Results:Exam') }}</th>
+          <th scope="col">{{ t('::Results:Form') }}</th>
+          <th scope="col">{{ t('::Results:Started') }}</th>
+          <th scope="col" class="numeric">{{ t('::Results:Duration') }}</th>
+          <th scope="col" class="numeric">{{ t('::Results:Score') }}</th>
+          <th scope="col">{{ t('::Results:Outcome') }}</th>
+          <th scope="col" class="numeric">{{ t('::Results:Flags') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of items(); track row.attemptId) {
+          <tr>
+            <td>
+              <a class="candidate" [routerLink]="['/results', row.attemptId]">
+                <span class="candidate__name">{{ row.candidateName }}</span>
+                <span class="candidate__email">{{ row.candidateEmail }}</span>
+              </a>
+            </td>
+            <td>{{ row.examTitle }}</td>
+            <td>{{ row.formName || '—' }}</td>
+            <td>{{ row.startedAt | date: 'y/MM/dd HH:mm' }}</td>
+            <td class="numeric">{{ row.durationInMinutes }}</td>
+            <td class="numeric">
+              <span class="score">{{ row.scorePercentage }}%</span>
+              <span class="score__raw">{{ row.score }} / {{ row.maxScore }}</span>
+            </td>
+            <td>
+              <span
+                class="outcome"
+                [class.outcome--pass]="row.isGraded && row.isPassed"
+                [class.outcome--fail]="row.isGraded && !row.isPassed"
+                [class.outcome--pending]="!row.isGraded">
+                {{ t(outcomeKey(row)) }}
+              </span>
+            </td>
+            <td class="numeric">
+              @if (row.integrityFlagCount > 0) {
+                <span class="flags">{{ row.integrityFlagCount }}</span>
+              } @else {
+                —
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" [attr.aria-label]="t('::Nav:Results')">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)">
+        {{ t('::Previous') }}
+      </button>
+      <span class="pager__position">{{ page() + 1 }} / {{ totalPages() }}</span>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)">
+        {{ t('::Next') }}
+      </button>
+    </nav>
+  }
+}

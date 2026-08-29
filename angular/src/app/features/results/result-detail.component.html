@@ -1,0 +1,135 @@
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="reload()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (detail(); as result) {
+  <astro-page-header
+    [title]="result.summary.candidateName"
+    [description]="result.summary.examTitle">
+    <a slot="actions" class="btn btn-outline-secondary" routerLink="/results">
+      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      {{ t('::Results:Detail:Back') }}
+    </a>
+  </astro-page-header>
+
+  <div class="summary">
+    <div class="stat stat--headline">
+      <span class="stat__value">{{ result.summary.scorePercentage }}%</span>
+      <span class="stat__label">
+        {{ result.summary.score }} / {{ result.summary.maxScore }}
+      </span>
+    </div>
+
+    <div class="stat">
+      <span
+        class="stat__value outcome"
+        [class.outcome--pass]="result.summary.isGraded && result.summary.isPassed"
+        [class.outcome--fail]="result.summary.isGraded && !result.summary.isPassed"
+        [class.outcome--pending]="!result.summary.isGraded">
+        @if (!result.summary.isGraded) {
+          {{ t('::Results:Pending') }}
+        } @else {
+          {{ result.summary.isPassed ? t('::Results:Pass') : t('::Results:Fail') }}
+        }
+      </span>
+      <span class="stat__label">{{ t('::Results:Outcome') }}</span>
+    </div>
+
+    <div class="stat">
+      <span class="stat__value">{{ result.summary.durationInMinutes }}</span>
+      <span class="stat__label">{{ t('::Results:Duration') }}</span>
+    </div>
+
+    <div class="stat">
+      <span class="stat__value stat__value--small">
+        {{ result.summary.startedAt | date: 'y/MM/dd HH:mm' }}
+      </span>
+      <span class="stat__label">{{ t('::Results:Started') }}</span>
+    </div>
+
+    @if (result.summary.formName) {
+      <div class="stat">
+        <span class="stat__value stat__value--small">{{ result.summary.formName }}</span>
+        <span class="stat__label">{{ t('::Results:Form') }}</span>
+      </div>
+    }
+  </div>
+
+  <!-- Above the answers, because this is the part somebody acts on. -->
+  <section class="section">
+    <h2 class="section__title">{{ t('::Results:Detail:ByTopic') }}</h2>
+
+    @if (hasTopics()) {
+      <ul class="topics">
+        @for (topic of result.byTopic; track topic.topicName) {
+          <li class="topic">
+            <div class="topic__head">
+              <span class="topic__name">{{ topic.topicName || '—' }}</span>
+              <span class="topic__figure">
+                {{ topic.scorePercentage }}%
+                <span class="topic__raw">{{ topic.score }} / {{ topic.maxScore }}</span>
+              </span>
+            </div>
+            <!-- A bar as well as a number: a row of percentages is read one at a
+                 time, where lengths are compared at a glance. -->
+            <div
+              class="bar"
+              role="img"
+              [attr.aria-label]="topic.topicName + ' ' + topic.scorePercentage + '%'">
+              <span class="bar__fill" [style.inline-size.%]="topic.scorePercentage"></span>
+            </div>
+          </li>
+        }
+      </ul>
+    } @else {
+      <p class="section__note">{{ t('::Results:Detail:NoTopics') }}</p>
+    }
+  </section>
+
+  <section class="section">
+    <h2 class="section__title">{{ t('::Results:Detail:Answers') }}</h2>
+
+    <ol class="answers">
+      @for (answer of result.answers; track answer.questionId) {
+        <li
+          class="answer"
+          [class.answer--right]="answer.isCorrect === true"
+          [class.answer--wrong]="answer.isCorrect === false"
+          [class.answer--pending]="answer.needsManualReview">
+          <div class="answer__head">
+            <span class="answer__position">{{ answer.position + 1 }}</span>
+            <span class="answer__text">{{ answer.questionText }}</span>
+            <span class="answer__marks">{{ answer.awardedScore }} / {{ answer.maxScore }}</span>
+          </div>
+
+          <div class="answer__body">
+            <span class="answer__label">{{ t('::Results:Detail:Given') }}</span>
+            @if (answer.response) {
+              <span class="answer__given">{{ answer.response }}</span>
+            } @else if (answer.answerFileName) {
+              <span class="answer__given">{{ answer.answerFileName }}</span>
+            } @else {
+              <span class="answer__given answer__given--empty">{{ t('::Results:Detail:NoAnswer') }}</span>
+            }
+          </div>
+
+          @if (answer.topicName) {
+            <span class="answer__topic">{{ answer.topicName }}</span>
+          }
+
+          @if (answer.reviewComment) {
+            <p class="answer__comment">{{ answer.reviewComment }}</p>
+          }
+        </li>
+      }
+    </ol>
+  </section>
+}
