@@ -15,10 +15,10 @@
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.StaticFiles" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Volo.Abp.Account.Application" />
-    <PackageReference Include="Volo.Abp.AutoMapper" />
+    <PackageReference Include="Volo.Abp.BackgroundWorkers" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="Volo.Abp.Identity.Application" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Application" />
     <PackageReference Include="Volo.Abp.TenantManagement.Application" />

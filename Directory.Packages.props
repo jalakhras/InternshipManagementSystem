@@ -13,7 +13,6 @@
 
   <ItemGroup Label="ABP - Framework">
     <PackageVersion Include="Volo.Abp.Autofac" Version="$(AbpVersion)" />
-    <PackageVersion Include="Volo.Abp.AutoMapper" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Authorization" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.ObjectExtending" Version="$(AbpVersion)" />
     <PackageVersion Include="Volo.Abp.Swashbuckle" Version="$(AbpVersion)" />
@@ -134,11 +133,11 @@
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="$(MsExtVersion)" />
-    <PackageVersion Include="Microsoft.AspNetCore.StaticFiles" Version="2.3.0" />
   </ItemGroup>
 
   <ItemGroup Label="Validation">
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
     <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
   </ItemGroup>
 
