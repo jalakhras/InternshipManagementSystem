@@ -1,0 +1,164 @@
+<astro-page-header [title]="t('::Review:Attempt:Title')" [description]="t('::Review:Attempt:Lede')">
+  <a slot="actions" class="btn btn-outline-secondary" routerLink="/review">
+    <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+    {{ t('::Review:BackToQueue') }}
+  </a>
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+  </div>
+} @else {
+  @if (integrity(); as report) {
+    @if (report.observations.length > 0) {
+      <!-- Described, never scored. Leaving a tab is not cheating — a phone rings —
+           and the software's job is to say what happened, not what it meant. -->
+      <section class="observations">
+        <h2 class="observations__title">
+          <i class="bi bi-eye" aria-hidden="true"></i>
+          {{ t('::Review:Observations') }}
+        </h2>
+        <p class="observations__lede">{{ t('::Review:Observations:Lede') }}</p>
+        <ul>
+          @for (observation of report.observations; track observation) {
+            <li>{{ observation }}</li>
+          }
+        </ul>
+      </section>
+    }
+  }
+
+  @if (isDone()) {
+    <div class="done" role="status">
+      <i class="bi bi-check2-circle" aria-hidden="true"></i>
+      {{ t('::Review:AllMarked') }}
+    </div>
+  }
+
+  @for (answer of answers(); track answer.answerId) {
+    <article class="answer" [class.answer--marked]="answer.awardedScore != null">
+      <header class="answer__head">
+        <div class="answer__prompt" [innerHTML]="answer.questionText"></div>
+        <span class="answer__max astro-numeric">{{ t('::Review:OutOf', answer.maxScore.toString()) }}</span>
+      </header>
+
+      <!-- What they wrote. Kept plain: a reviewer reads it, and formatting it to
+           look like the question would blur which is which. -->
+      <div class="answer__given">
+        @if (answer.response) {
+          <pre class="answer__text">{{ answer.response }}</pre>
+        } @else if (answer.answerFileUrl) {
+          <a class="answer__file" [href]="answer.answerFileUrl" target="_blank" rel="noopener">
+            <i class="bi bi-paperclip" aria-hidden="true"></i>
+            {{ answer.answerFileName || t('::Review:AttachedFile') }}
+          </a>
+        } @else {
+          <p class="answer__blank">{{ t('::Review:NoAnswer') }}</p>
+        }
+      </div>
+
+      @if (arrivalNotes(answer).length > 0) {
+        <p class="arrival">{{ arrivalNotes(answer).join(' · ') }}</p>
+      }
+
+      @if (answer.reviewerGuidance) {
+        <!-- Written for the reviewer and never shown to a candidate. -->
+        <p class="guidance">
+          <strong>{{ t('::Review:Guidance') }}</strong>
+          {{ answer.reviewerGuidance }}
+        </p>
+      }
+
+      @if (answer.rubric.length > 0) {
+        <div class="rubric">
+          @for (criterion of answer.rubric; track criterion.id) {
+            <div class="criterion">
+              <div class="criterion__what">
+                <span class="criterion__name">{{ criterion.name }}</span>
+                @if (criterion.description) {
+                  <span class="criterion__hint">{{ criterion.description }}</span>
+                }
+              </div>
+
+              <input
+                type="number"
+                class="form-control criterion__mark astro-numeric"
+                min="0"
+                [max]="criterion.maxScore"
+                step="0.5"
+                [ngModel]="criterionMark(answer, criterion.id)"
+                (ngModelChange)="setCriterionMark(answer, criterion.id, $event)"
+                [attr.aria-label]="criterion.name" />
+
+              <span class="criterion__of astro-numeric">/ {{ criterion.maxScore }}</span>
+            </div>
+          }
+
+          <!-- Added up here rather than by the reviewer. Asking somebody to sum
+               four numbers under time pressure puts arithmetic mistakes into
+               people's results, and a wrong total looks exactly like a considered
+               one. -->
+          <p class="rubric__total">
+            {{ t('::Review:Total') }}
+            <strong class="astro-numeric">{{ total(answer) }} / {{ answer.maxScore }}</strong>
+          </p>
+        </div>
+      } @else {
+        <div class="direct">
+          <label class="form-label" [attr.for]="'mark-' + answer.answerId">{{ t('::Review:Mark') }}</label>
+          <input
+            [id]="'mark-' + answer.answerId"
+            type="number"
+            class="form-control direct__mark astro-numeric"
+            min="0"
+            [max]="answer.maxScore"
+            step="0.5"
+            [ngModel]="directMarks()[answer.answerId] ?? 0"
+            (ngModelChange)="setDirectMark(answer, $event)" />
+          <span class="direct__of astro-numeric">/ {{ answer.maxScore }}</span>
+        </div>
+      }
+
+      <div class="field">
+        <label class="form-label" [attr.for]="'comment-' + answer.answerId">
+          {{ t('::Review:Comment') }}
+        </label>
+        <textarea
+          [id]="'comment-' + answer.answerId"
+          class="form-control"
+          rows="2"
+          [ngModel]="comment(answer)"
+          (ngModelChange)="setComment(answer, $event)"></textarea>
+        <!-- Said on the field rather than assumed: a reviewer who thinks this is
+             an internal note writes a different sentence. -->
+        <p class="hint">{{ t('::Review:Comment:Hint') }}</p>
+      </div>
+
+      <div class="answer__actions">
+        @if (savedId() === answer.answerId) {
+          <span class="saved"><i class="bi bi-check2" aria-hidden="true"></i> {{ t('::Review:Saved') }}</span>
+        }
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="savingId() === answer.answerId"
+          (click)="save(answer)">
+          {{ savingId() === answer.answerId ? t('::Working') : t('::Review:Award') }}
+        </button>
+      </div>
+    </article>
+  }
+}

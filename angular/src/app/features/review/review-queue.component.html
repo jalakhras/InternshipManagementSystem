@@ -1,0 +1,109 @@
+<astro-page-header
+  [title]="t('::Nav:Review')"
+  [description]="t('::Review:Queue:Lede')" />
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::Review:Queue:Empty') }}</p>
+    <p class="state__text">{{ t('::Review:Queue:EmptyNote') }}</p>
+  </div>
+}
+
+@if (!loading() && !error() && items().length > 0) {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Review:Candidate') }}</th>
+          <th scope="col">{{ t('::Review:Exam') }}</th>
+          <th scope="col">{{ t('::Review:Waiting') }}</th>
+          <th scope="col" class="num">{{ t('::Review:Pending') }}</th>
+          <th scope="col" class="num">{{ t('::Review:SoFar') }}</th>
+          <th scope="col">{{ t('::Review:Signals') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items(); track item.attemptId) {
+          <tr>
+            <td>{{ item.candidateName }}</td>
+            <td class="muted">{{ item.examTitle }}</td>
+
+            <td>
+              <!-- A queue without this hides its own backlog: twelve rows look the
+                   same whether the oldest arrived this morning or three weeks ago. -->
+              <span class="waiting" [class.waiting--stale]="isStale(item)">
+                {{ t('::Review:Days', waitingDays(item).toString()) }}
+              </span>
+              <span class="submitted">{{ item.submittedAt | date: 'y/MM/dd' }}</span>
+            </td>
+
+            <td class="num astro-numeric">{{ item.pendingCount }}</td>
+
+            <td class="num astro-numeric muted">
+              {{ item.provisionalScore }} / {{ item.maxScore }}
+            </td>
+
+            <td>
+              @if (item.integrityFlagCount > 0) {
+                <!-- Observations for a person to weigh, never a verdict. Leaving a
+                     tab is not cheating; a phone rings. -->
+                <span class="signals" [attr.title]="t('::Review:Signals:Hint')">
+                  <i class="bi bi-eye" aria-hidden="true"></i>
+                  <span class="astro-numeric">{{ item.integrityFlagCount }}</span>
+                </span>
+              } @else {
+                <span class="muted">—</span>
+              }
+            </td>
+
+            <td class="row-actions">
+              <div class="row-actions__set">
+                <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/review', item.attemptId]">
+                  {{ t('::Review:Open') }}
+                </a>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" [attr.aria-label]="t('::Pagination')">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)">
+        <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+        {{ t('::Previous') }}
+      </button>
+
+      <span class="pager__count astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)">
+        {{ t('::Next') }}
+        <i class="bi bi-chevron-left astro-flip" aria-hidden="true"></i>
+      </button>
+    </nav>
+  }
+}

@@ -1,0 +1,93 @@
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
+
+import { ReviewService, ReviewQueueItem } from '../../core/api/review.service';
+import { TranslateService } from '../../core/translate.service';
+import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+
+/**
+ * Attempts waiting on a person.
+ *
+ * Ordered oldest first and nothing else. A queue that lets a reviewer choose
+ * what to mark next is a queue where the hard ones are never marked — and the
+ * candidate whose answer is hardest to read is the one who waits longest.
+ *
+ * Two numbers per row, because they answer different questions. How many
+ * answers are pending tells a reviewer how long this will take; the provisional
+ * score tells them whether it matters — an attempt already past the pass mark
+ * on its automatic marks alone is a different piece of work from one sitting on
+ * the line.
+ */
+@Component({
+  selector: 'astro-review-queue',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink, DatePipe, PageHeaderComponent],
+  templateUrl: './review-queue.component.html',
+  styleUrl: './review-queue.component.scss',
+})
+export class ReviewQueueComponent {
+  private readonly review = inject(ReviewService);
+
+  readonly t = inject(TranslateService).t;
+
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly items = signal<ReviewQueueItem[]>([]);
+  readonly totalCount = signal(0);
+  readonly page = signal(0);
+
+  readonly pageSize = 20;
+
+  readonly isEmpty = computed(() => !this.loading() && !this.error() && this.items().length === 0);
+  readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
+
+  constructor() {
+    this.load();
+  }
+
+  load(): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.review
+      .getQueue({ skipCount: this.page() * this.pageSize, maxResultCount: this.pageSize })
+      .subscribe({
+        next: result => {
+          this.items.set(result.items);
+          this.totalCount.set(result.totalCount);
+          this.loading.set(false);
+        },
+        error: err => {
+          const problem = err as { error?: { error?: { message?: string } }; message?: string };
+
+          this.error.set(problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError'));
+          this.loading.set(false);
+        },
+      });
+  }
+
+  goToPage(page: number): void {
+    this.page.set(page);
+    this.load();
+  }
+
+  /**
+   * How long this attempt has been waiting, in whole days.
+   * <p>
+   * Shown because a queue without it hides its own backlog: twelve rows look the
+   * same whether the oldest arrived this morning or three weeks ago, and only one
+   * of those is a problem.
+   * </p>
+   */
+  waitingDays(item: ReviewQueueItem): number {
+    const submitted = new Date(item.submittedAt).getTime();
+
+    return Math.max(Math.floor((Date.now() - submitted) / 86_400_000), 0);
+  }
+
+  isStale(item: ReviewQueueItem): boolean {
+    return this.waitingDays(item) >= 3;
+  }
+}
