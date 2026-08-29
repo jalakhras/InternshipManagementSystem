@@ -60,7 +60,17 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         catalog.AddChild(InternshipManagementSystemPermissions.Catalog.View, L("Permission:View"));
         catalog.AddChild(InternshipManagementSystemPermissions.Catalog.Manage, L("Permission:Manage"));
 
-        var users = group.AddPermission(InternshipManagementSystemPermissions.IdentityManagement.Default, L("Permission:Users"));
+        var identity = group.AddPermission(
+            InternshipManagementSystemPermissions.IdentityManagement.Default, L("Permission:Users"));
+
+        // The service authorises against Users.Default at class level, so it has to
+        // exist as a policy in its own right. Hanging the four children directly off
+        // the group left that name undefined, and ASP.NET answers an undefined
+        // policy with a 500 rather than a 403 — so the screen looked broken rather
+        // than forbidden.
+        var users = identity.AddChild(
+            InternshipManagementSystemPermissions.IdentityManagement.Users.Default, L("Permission:Users"));
+
         users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.View, L("Permission:View"));
         users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Create, L("Permission:Create"));
         users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Edit, L("Permission:Edit"));

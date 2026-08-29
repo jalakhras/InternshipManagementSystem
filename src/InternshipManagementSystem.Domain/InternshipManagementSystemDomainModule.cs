@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
+using System.IO;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.BlobStoring.FileSystem;
 using Volo.Abp.Emailing;
@@ -69,6 +70,34 @@ public class InternshipManagementSystemDomainModule : AbpModule
         Configure<AbpSettingOptions>(options =>
         {
             options.DefinitionProviders.Add<InternshipManagementSystemSettingDefinitionProvider>();
+        });
+
+        // Somewhere for uploaded media to actually go.
+        //
+        // The container and the service that writes to it were both finished and no
+        // provider was ever configured, so every upload and every read threw at
+        // activation: "No BLOB Storage provider was used". Nothing in the test suite
+        // saw it, because the tests substitute the container.
+        //
+        // The filesystem provider is the right default for a single-server
+        // deployment and for running this locally. Moving to S3 or Azure later is a
+        // configuration change here, not a rewrite: the container name is a
+        // constant and blob names are generated.
+        Configure<AbpBlobStoringOptions>(options =>
+        {
+            options.Containers.ConfigureDefault(container =>
+            {
+                container.UseFileSystem(fileSystem =>
+                {
+                    // Under the content root rather than the working directory. The
+                    // old upload path read its root from a config key set to an
+                    // empty string, and an empty string is not null — so the
+                    // fallback never fired and files landed wherever the process
+                    // happened to start.
+                    fileSystem.BasePath = Path.Combine(
+                        Directory.GetCurrentDirectory(), "App_Data", "blobs");
+                });
+            });
         });
 
 #if DEBUG
