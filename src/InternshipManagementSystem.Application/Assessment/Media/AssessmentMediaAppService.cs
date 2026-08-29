@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using InternshipManagementSystem.Assessment.Delivery;
 using InternshipManagementSystem.Assessment.Media.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -57,13 +58,16 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
     private const long MaxFileSizeBytes = 25 * 1024 * 1024;
 
     private readonly IBlobContainer<AssessmentBlobContainer> _blobs;
+    private readonly ExamSessionTokenService _sessions;
     private readonly ILogger<AssessmentMediaAppService> _logger;
 
     public AssessmentMediaAppService(
         IBlobContainer<AssessmentBlobContainer> blobs,
+        ExamSessionTokenService sessions,
         ILogger<AssessmentMediaAppService> logger)
     {
         _blobs = blobs;
+        _sessions = sessions;
         _logger = logger;
     }
 
@@ -109,13 +113,39 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
         };
     }
 
-    public async Task<Stream?> GetAsync(string blobName)
+    /// <summary>
+    /// Reads a stored blob for a caller entitled to it.
+    /// <para>
+    /// Two kinds of caller, and they cannot be authorised the same way. Staff are
+    /// signed in and are checked against the question permission. A candidate
+    /// sitting an exam is not a user of this system and never becomes one, so they
+    /// present the signed grant that came with their paper — which names one blob
+    /// and expires with the attempt.
+    /// </para>
+    /// <para>
+    /// Anonymous at the attribute level because neither branch can be written as
+    /// one, and a caller with neither gets the same answer as a caller asking for
+    /// something that is not there. Whether a given blob exists is itself worth not
+    /// saying.
+    /// </para>
+    /// </summary>
+    [AllowAnonymous]
+    public async Task<Stream?> GetAsync(string blobName, string? grant = null)
     {
         // Rejects any traversal attempt on the read side too, since blob names travel
         // through URLs and a stored name is not automatically a trusted one.
         if (blobName.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(blobName))
         {
             throw new AbpAuthorizationException("Invalid blob name.");
+        }
+
+        var entitled = _sessions.GrantsMedia(grant, blobName)
+                       || await AuthorizationService.IsGrantedAsync(
+                           InternshipManagementSystemPermissions.Questions.Default);
+
+        if (!entitled)
+        {
+            return null;
         }
 
         return await _blobs.GetOrNullAsync(blobName);

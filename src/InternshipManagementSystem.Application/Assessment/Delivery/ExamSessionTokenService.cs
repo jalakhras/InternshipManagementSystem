@@ -46,6 +46,9 @@ public class ExamSessionTokenService : ISingletonDependency
     /// </summary>
     public const string ClaimLinkId = "ims:link";
 
+    /// <summary>Which single blob a media grant covers.</summary>
+    public const string ClaimBlobName = "ims:blob";
+
     /// <summary>
     /// Shorter than this and a key is guessable by someone who knows it is a
     /// pass phrase rather than random bytes.
@@ -166,6 +169,73 @@ public class ExamSessionTokenService : ISingletonDependency
         {
             // Expired, tampered with, or malformed — all mean the same to the caller.
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Mints a grant for one stored file, to be carried in the URL itself.
+    /// <para>
+    /// A candidate is not a user of this system, so nothing in their browser can
+    /// attach a header to the request an <c>&lt;img&gt;</c> or an
+    /// <c>&lt;audio&gt;</c> element makes. The grant therefore has to live in the
+    /// address, and the address is what gets shared — so it names exactly one blob
+    /// and expires with the sitting rather than opening the container.
+    /// </para>
+    /// </summary>
+    public string IssueMediaGrant(string blobName, DateTime expiresUtc)
+    {
+        var token = new JwtSecurityToken(
+            issuer: "ims-exam-media",
+            audience: "ims-exam-media",
+            claims: [new Claim(ClaimBlobName, blobName)],
+
+            // No not-before. A grant is minted as the question is served and used
+            // in the same breath, so it buys nothing — and with one, minting a
+            // grant whose deadline has already gone throws instead of producing a
+            // token that simply does not validate, which is the answer the caller
+            // is equipped to handle.
+            expires: expiresUtc,
+            signingCredentials: new SigningCredentials(_key, SecurityAlgorithms.HmacSha256));
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    /// <summary>
+    /// Whether this grant covers this exact blob.
+    /// <para>
+    /// The blob name is compared rather than read out of the token, so a grant for
+    /// the listening clip cannot be replayed against the answer somebody uploaded.
+    /// </para>
+    /// </summary>
+    public bool GrantsMedia(string? token, string blobName)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return false;
+        }
+
+        try
+        {
+            var principal = new JwtSecurityTokenHandler().ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = "ims-exam-media",
+                ValidateAudience = true,
+                ValidAudience = "ims-exam-media",
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = _key,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromSeconds(30)
+            }, out _);
+
+            return string.Equals(
+                principal.FindFirst(ClaimBlobName)?.Value,
+                blobName,
+                StringComparison.Ordinal);
+        }
+        catch (Exception)
+        {
+            return false;
         }
     }
 

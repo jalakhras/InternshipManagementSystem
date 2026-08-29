@@ -327,7 +327,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             group = await _groups.FindAsync(slot.QuestionGroupId.Value);
         }
 
-        var dto = _projector.Project(question, slot, group, form.Count, BuildMediaUrl);
+        var dto = _projector.Project(
+            question, slot, group, form.Count,
+            blob => BuildMediaUrl(blob, attempt.DeadlineAt));
 
         var saved = await (await _answers.GetQueryableAsync())
             .FirstOrDefaultAsync(a => a.AttemptId == attempt.Id && a.QuestionId == question.Id);
@@ -645,10 +647,18 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     }
 
     /// <summary>
-    /// Signs a blob name for delivery. Media URLs are time-limited so a link copied
-    /// out of the page stops working once the attempt is over.
+    /// Signs a blob name for delivery, so a link copied out of the page stops
+    /// working once the attempt is over.
+    /// <para>
+    /// The grant travels in the query string because it has nowhere else to go: an
+    /// image or an audio clip is fetched by the browser itself, and nothing in the
+    /// page can add a header to that request. It names this one blob and expires
+    /// with this attempt.
+    /// </para>
     /// </summary>
-    private static string BuildMediaUrl(string blobName) => $"/api/assessment/media/{blobName}";
+    private string BuildMediaUrl(string blobName, DateTime deadline) =>
+        $"/api/assessment/media/{blobName}?grant=" +
+        Uri.EscapeDataString(_sessions.IssueMediaGrant(blobName, deadline.ToUniversalTime().AddMinutes(5)));
 
     /// <summary>
     /// Loads the attempt a session names, and refuses one that is not the
