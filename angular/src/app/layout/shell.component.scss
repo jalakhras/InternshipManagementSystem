@@ -40,6 +40,12 @@
   block-size: 3.5rem;
   background: var(--surface-raised);
   border-block-end: 1px solid var(--border-subtle);
+
+  // Grid items default to min-width:auto, so a flex row whose contents are wider
+  // than the column refuses to shrink and widens the column instead — which
+  // widens the page and makes the whole document scroll sideways. Measured at
+  // 452px inside a 412px viewport before this line existed.
+  min-inline-size: 0;
 }
 
 .topbar__spacer { flex: 1; }
@@ -74,6 +80,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--astro-space-2);
+  min-inline-size: 0;
   color: var(--accent);
   text-decoration: none;
   padding-inline: var(--astro-space-1);
@@ -91,7 +98,13 @@
   letter-spacing: -0.01em;
   color: var(--text-primary);
 
-  @media (max-width: 400px) { display: none; }
+  // Truncates rather than pushing the row wider, and steps aside entirely on a
+  // narrow phone where the icon alone still identifies the product.
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  @media (max-width: 480px) { display: none; }
 }
 
 // ── Language toggle ──────────────────────────────────────────────────────────
@@ -179,14 +192,16 @@
   border-inline-end: 1px solid var(--border-subtle);
   overflow-y: auto;
 
-  // Below the breakpoint it becomes a drawer, sliding from whichever edge the
-  // reading direction starts at.
+  // Below the breakpoint it becomes a drawer, anchored to the edge the reading
+  // direction starts at — right in Arabic, left in English. `inset-inline-start`
+  // already resolves to the correct side in both, so the anchor needs no override.
   @media (max-width: 1023px) {
     position: fixed;
     inset-block: 3.5rem 0;
     inset-inline-start: 0;
     z-index: 25;
     inline-size: 16rem;
+    // Hidden by moving off its own edge: left in LTR.
     transform: translateX(-100%);
     transition: transform var(--astro-duration-base) var(--astro-ease);
 
@@ -194,11 +209,16 @@
   }
 }
 
-// In RTL the drawer lives on the right, so it hides to the right.
+// Only the direction of the hide flips. `transform` is physical — translateX is
+// always screen-left to screen-right — so in RTL the drawer must move *right* to
+// leave the screen.
+//
+// The earlier version re-anchored to inset-inline-end as well, which in RTL is the
+// left edge, and then pushed it right by its own width — parking a 256px drawer
+// 216px into a 412px viewport and making every Arabic page scroll sideways. A
+// Playwright check on document scrollWidth is what caught it; no unit test could.
 :host-context([dir='rtl']) .sidebar {
   @media (max-width: 1023px) {
-    inset-inline-start: auto;
-    inset-inline-end: 0;
     transform: translateX(100%);
 
     &--open { transform: translateX(0); }

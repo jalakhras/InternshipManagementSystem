@@ -272,3 +272,7 @@ angular/src/app/proxy/
 npm-debug.log*
 yarn-error.log*
 angular/out-tsc/
+angular/test-results/
+angular/playwright-report/
+angular/blob-report/
+angular/.playwright/
