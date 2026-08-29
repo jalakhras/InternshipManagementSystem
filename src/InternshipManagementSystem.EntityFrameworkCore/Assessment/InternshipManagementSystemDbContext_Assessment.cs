@@ -111,7 +111,15 @@ public partial class InternshipManagementSystemDbContext
             b.Property(x => x.Score).HasPrecision(9, 2);
             b.Property(x => x.MediaBlobName).HasMaxLength(256);
             b.Property(x => x.MediaType).HasMaxLength(32);
-            b.Property(x => x.DifficultyIndex).HasPrecision(5, 4);
+            // Wider than the value it holds, which is always between zero and one.
+            //
+            // The running mean is updated in the database — a whole cohort answers
+            // the same questions, and read-modify-write on those rows is a race
+            // most of them lose — and EF casts the answer count to this column's
+            // own precision to compute it. At decimal(5,4) that cast overflowed
+            // the moment a question had been answered ten times, and every
+            // submission in the cohort failed with an arithmetic overflow.
+            b.Property(x => x.DifficultyIndex).HasPrecision(18, 4);
             b.Property(x => x.DiscriminationIndex).HasPrecision(5, 4);
 
             b.HasIndex(x => x.ExamId);

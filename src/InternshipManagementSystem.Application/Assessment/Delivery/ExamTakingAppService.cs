@@ -824,13 +824,13 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         // Exposure accrues per form as well as per question: a form in front of
         // enough people has circulated whatever its questions' individual counts
         // say, and that is the number a coordinator retires a paper on.
-        var form = await _forms.FindAsync(examFormId);
-
-        if (form is not null)
-        {
-            form.TimesUsed++;
-            await _forms.UpdateAsync(form, autoSave: true);
-        }
+        //
+        // Incremented in the database for the same reason as the question counts
+        // above: a whole cohort sits one paper, and read-modify-write on a shared
+        // row is a queue that most of them lose.
+        await (await _forms.GetQueryableAsync())
+            .Where(f => f.Id == examFormId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(f => f.TimesUsed, f => f.TimesUsed + 1));
 
         return built;
     }
@@ -857,17 +857,32 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     /// </summary>
     private async Task RecordExposureAsync(List<AttemptQuestion> form, List<Question> bank)
     {
-        var served = form.Select(slot => slot.QuestionId).ToHashSet();
-        var exposed = bank.Where(question => served.Contains(question.Id)).ToList();
+        var served = form.Select(slot => slot.QuestionId).ToList();
 
-        foreach (var question in exposed)
+        if (served.Count == 0)
         {
-            question.TimesServed++;
+            return;
         }
 
-        if (exposed.Count > 0)
-        {
-            await _questions.UpdateManyAsync(exposed, autoSave: true);
-        }
+        // Sorted, so every request takes these locks in the same order. A cohort
+        // starting together is served the same questions in different shuffles,
+        // and locking them in paper order is how forty requests deadlocked.
+        served = served.OrderBy(id => id).ToList();
+
+        // One statement in the database, not a read-modify-write per row.
+        //
+        // Every candidate sitting the same exam is served the same questions, so
+        // loading those rows and saving them back put forty people in a race for
+        // the same handful of concurrency stamps. A load test found what that
+        // costs: of forty candidates starting together, thirty-nine were refused
+        // with a conflict and could not sit the exam at all. In a room, that is
+        // thirty-nine people whose exam did not start.
+        //
+        // A counter is not something two writers can disagree about — "add one" is
+        // the same instruction whoever runs it first — so it does not want the
+        // optimistic check that entity tracking imposes.
+        await (await _questions.GetQueryableAsync())
+            .Where(question => served.Contains(question.Id))
+            .ExecuteUpdateAsync(setters => setters.SetProperty(q => q.TimesServed, q => q.TimesServed + 1));
     }
 }

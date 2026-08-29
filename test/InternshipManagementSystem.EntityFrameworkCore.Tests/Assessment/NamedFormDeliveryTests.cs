@@ -114,20 +114,32 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
     [Fact]
     public async Task Serving_a_form_counts_against_its_exposure()
     {
+        Guid formId = default;
+
         await AsTenantAsync(async () =>
         {
             var exam = await ExamWithBankAsync("delivery-d", 4);
             var chosen = exam.Bank.Take(2).Select(q => q.Id).ToList();
 
             var form = await PublishedFormAsync(exam.Id, "Form 1", "F1", chosen);
+            formId = form.Id;
 
             await PaperAsync(await SendAsync(exam.Id, "seen@example.test", form.Id));
             await PaperAsync(await SendAsync(exam.Id, "also@example.test", form.Id));
+        });
 
+        // Read in a second unit of work, because that is what a coordinator's next
+        // page load is. The counter is incremented by a set-based update — a whole
+        // cohort sits one paper, and read-modify-write on a shared row is a queue
+        // most of them lose — and such an update deliberately leaves the change
+        // tracker alone. Asserting inside the same unit of work would be asserting
+        // about the tracker rather than about the database.
+        await AsTenantAsync(async () =>
+        {
             // Exposure accrues per paper as well as per question: a form in front of
             // enough people has circulated whatever its questions' individual counts
             // say, and this is the number a coordinator retires a paper on.
-            (await _structure.GetFormAsync(form.Id)).TimesUsed.ShouldBe(2);
+            (await _structure.GetFormAsync(formId)).TimesUsed.ShouldBe(2);
         });
     }
 

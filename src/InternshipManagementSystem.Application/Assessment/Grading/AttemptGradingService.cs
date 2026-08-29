@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace InternshipManagementSystem.Assessment.Grading;
 
@@ -22,6 +23,7 @@ public class AttemptGradingService : ITransientDependency
     private readonly IRepository<Question, Guid> _questions;
     private readonly IRepository<Exam, Guid> _exams;
     private readonly IGraderResolver _graders;
+    private readonly IUnitOfWorkManager _unitOfWork;
     private readonly ILogger<AttemptGradingService> _logger;
 
     public AttemptGradingService(
@@ -31,6 +33,7 @@ public class AttemptGradingService : ITransientDependency
         IRepository<Question, Guid> questions,
         IRepository<Exam, Guid> exams,
         IGraderResolver graders,
+        IUnitOfWorkManager unitOfWork,
         ILogger<AttemptGradingService> logger)
     {
         _attempts = attempts;
@@ -39,6 +42,7 @@ public class AttemptGradingService : ITransientDependency
         _questions = questions;
         _exams = exams;
         _graders = graders;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -61,9 +65,15 @@ public class AttemptGradingService : ITransientDependency
 
         var answersByQuestion = answers.ToDictionary(a => a.QuestionId);
 
-        // Questions whose statistics moved while grading this attempt. Collected
-        // and saved once rather than a row at a time.
-        var touched = new List<Question>();
+        // Which questions this attempt answered right and which it answered wrong.
+        //
+        // Ids, not entities. Every candidate sitting one exam answers the same
+        // questions, so mutating those rows and saving them back put a whole
+        // cohort in a race for the same concurrency stamps — a load test found
+        // that of forty candidates submitting together, thirty-nine were refused.
+        // The statistics are applied below as two set-based updates instead.
+        var answeredCorrectly = new List<Guid>();
+        var answeredWrongly = new List<Guid>();
 
         foreach (var slot in form)
         {
@@ -120,17 +130,17 @@ public class AttemptGradingService : ITransientDependency
                 answer.IsCorrect = result.IsCorrect;
                 answer.AwardedScore = result.NeedsManualReview ? null : result.AwardedScore;
 
-                RecordOutcome(question, result.IsCorrect);
-                touched.Add(question);
+                if (result.IsCorrect is { } correct)
+                {
+                    (correct ? answeredCorrectly : answeredWrongly).Add(question.Id);
+                }
             }
 
             await _answers.UpdateAsync(answer, autoSave: false);
         }
 
-        if (touched.Count > 0)
-        {
-            await _questions.UpdateManyAsync(touched, autoSave: false);
-        }
+        await RecordOutcomesAsync(answeredCorrectly, hit: true);
+        await RecordOutcomesAsync(answeredWrongly, hit: false);
 
         await RecalculateAsync(attempt, exam, form, answers);
     }
@@ -216,22 +226,69 @@ public class AttemptGradingService : ITransientDependency
     /// Answers waiting on a human are skipped. Counting them as wrong would make
     /// every essay question look impossible until somebody marked it.
     /// </para>
+    /// <para>
+    /// Applied as one statement per outcome rather than by loading each question
+    /// and saving it back. The running mean is computed in the database from the
+    /// row's own current values, so two candidates answering the same question at
+    /// the same moment both count — where the read-modify-write version had them
+    /// race for one concurrency stamp and refused all but the first. That refusal
+    /// was not a lost statistic; it failed the whole submission.
+    /// </para>
     /// </summary>
-    private static void RecordOutcome(Question question, bool? isCorrect)
+    private async Task RecordOutcomesAsync(List<Guid> questionIds, bool hit)
     {
-        if (isCorrect is not { } correct)
+        if (questionIds.Count == 0)
         {
             return;
         }
 
-        var previousCount = question.TimesAnswered;
-        var previousMean = question.DifficultyIndex ?? 0m;
+        // An int, not a decimal. As a decimal parameter this arrives typed wide
+        // enough that SQL Server's own precision rules push the division's result
+        // type past what the column can hold, and the whole submission fails with
+        // an arithmetic overflow — which is how a working expression on paper
+        // became a 500 for every candidate submitting at once.
+        var scored = hit ? 1 : 0;
 
-        question.TimesAnswered = previousCount + 1;
+        // Sorted, so every request touches these rows in the same order. Forty
+        // candidates submit at once and are served the same questions in different
+        // shuffles; taking the locks in whatever order the paper happened to be in
+        // is how they deadlocked with each other.
+        var ordered = questionIds.OrderBy(id => id).ToList();
 
-        question.DifficultyIndex = Math.Round(
-            ((previousMean * previousCount) + (correct ? 1m : 0m)) / question.TimesAnswered,
-            4,
-            MidpointRounding.AwayFromZero);
+        // Outside the submission's transaction, and allowed to fail.
+        //
+        // These are statistics. A candidate's exam must not fail because a counter
+        // could not be written — and inside the submission's own transaction it
+        // would, because a deadlock aborts the whole thing and no amount of
+        // catching downstream can save it. The submission is the thing that
+        // matters; the difficulty index can miss one attempt.
+        try
+        {
+            using var scope = _unitOfWork.Begin(requiresNew: true, isTransactional: false);
+
+            // Both right-hand sides read the row as it stands before this
+            // statement, which is what makes the mean correct: the new count is
+            // used as the divisor explicitly rather than relying on the other
+            // assignment.
+            await (await _questions.GetQueryableAsync())
+                .Where(question => ordered.Contains(question.Id))
+                .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(
+                        q => q.DifficultyIndex,
+                        q => Math.Round(
+                            (((q.DifficultyIndex ?? 0m) * q.TimesAnswered) + scored) / (q.TimesAnswered + 1),
+                            4))
+                    .SetProperty(q => q.TimesAnswered, q => q.TimesAnswered + 1));
+
+            await scope.CompleteAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Could not record item statistics for {Count} question(s). The attempt is graded and "
+                + "unaffected; the difficulty index for those questions is short by one answer.",
+                ordered.Count);
+        }
     }
 }
