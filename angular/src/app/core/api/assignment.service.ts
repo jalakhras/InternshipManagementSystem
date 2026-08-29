@@ -108,10 +108,11 @@ export class AssignmentService {
    * closes it has lost it for good. This is the honest answer to that: not
    * keeping the credential readable somewhere, but being able to issue another.
    */
-  reissue(linkId: string): Observable<AssignmentRecipient> {
+  reissue(linkId: string, sendEmail = false): Observable<AssignmentRecipient> {
     return this.rest.request<void, AssignmentRecipient>({
       method: 'POST',
       url: `${this.base}/links/${linkId}/reissue`,
+      params: { sendEmail },
     });
   }
 

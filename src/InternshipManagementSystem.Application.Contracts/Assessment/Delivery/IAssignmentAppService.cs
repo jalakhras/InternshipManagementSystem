@@ -51,5 +51,13 @@ public interface IAssignmentAppService : IApplicationService
     /// give somebody another go at an exam they have already sat.
     /// </para>
     /// </summary>
-    Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId);
+    /// <summary>
+    /// A fresh link for the same person; the old one stops working.
+    /// <para>
+    /// Optionally mailed. "I never received it" is the commonest reason a link
+    /// has to be reissued, and answering it by reading a URL down the phone is
+    /// not an answer.
+    /// </para>
+    /// </summary>
+    Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId, bool sendEmail = false);
 }

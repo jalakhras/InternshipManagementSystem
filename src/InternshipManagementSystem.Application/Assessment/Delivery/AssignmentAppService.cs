@@ -232,8 +232,19 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
     /// state from invalid so the person holding it is told what happened.
     /// </summary>
     [Authorize(InternshipManagementSystemPermissions.Assignments.Create)]
-    public async Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId)
+    public async Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId, bool sendEmail = false)
     {
+        // Same permission as sending a new assignment, for the same reason: an
+        // organisation that lets coordinators prepare exams and reserves the
+        // mailing to one person means that here too. Reissuing itself is not
+        // sending — a coordinator reading the address out over the phone needs no
+        // permission to mail anybody.
+        if (sendEmail)
+        {
+            await AuthorizationService.CheckAsync(
+                InternshipManagementSystemPermissions.Assignments.SendEmail);
+        }
+
         var link = await _links.GetAsync(linkId);
         var candidate = await _candidates.GetAsync(link.CandidateId);
 
@@ -262,14 +273,41 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
             "Reissued the link for candidate {CandidateId} on exam {ExamId}.",
             link.CandidateId, link.ExamId);
 
-        return new AssignmentRecipientDto
+        var url = $"{clientUrl}/exam/{token}";
+
+        var recipient = new AssignmentRecipientDto
         {
             CandidateId = candidate.Id,
             CandidateName = candidate.FullName,
             Email = candidate.Email,
-            Url = $"{clientUrl}/exam/{token}",
+            Url = url,
             EmailSent = false,
         };
+
+        if (sendEmail)
+        {
+            var exam = await _exams.GetAsync(link.ExamId);
+
+            try
+            {
+                await SendInvitationAsync(candidate, exam, url, link.ExpiresAt);
+
+                link.EmailSentAt = Clock.Now;
+                await _links.UpdateAsync(link, autoSave: true);
+
+                recipient.EmailSent = true;
+            }
+            catch (Exception ex)
+            {
+                // The link is already reissued and is in the returned address —
+                // failing the whole call here would leave the coordinator holding
+                // nothing, having just invalidated the one the candidate had.
+                _logger.LogError(ex, "Could not email the reissued link to {Email}.", candidate.Email);
+                recipient.EmailError = ex.Message;
+            }
+        }
+
+        return recipient;
     }
 
     /// <summary>

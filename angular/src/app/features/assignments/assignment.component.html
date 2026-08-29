@@ -90,6 +90,22 @@
                     </button>
                   }
 
+                  <!-- Reissue and mail it. "I never received it" is the
+                       commonest reason a link has to be reissued, and answering
+                       it by reading a URL down the phone is not an answer.
+                       Separate from the plain reissue because mailing is its own
+                       permission, and reading an address out needs none. -->
+                  @if (canCreate() && canSendEmail()) {
+                    <button
+                      type="button"
+                      class="row-action"
+                      [attr.title]="t('::Link:ReissueAndSend')"
+                      [attr.aria-label]="t('::Link:ReissueAndSend') + ': ' + link.candidateName"
+                      (click)="reissue(link, true)">
+                      <i class="bi bi-envelope-arrow-up" aria-hidden="true"></i>
+                    </button>
+                  }
+
                   <!-- Reissuing leaves the deadline where it was, so somebody
                        who simply ran out of time needs this and not that. -->
                   @if (canCreate()) {
@@ -311,9 +327,7 @@
   </div>
 }
 
-@if (reissued(); as recipient) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Link:Reissue')">
-    @if (extending(); as link) {
+@if (extending(); as link) {
   <div class="scrim" (click)="cancelExtend()"></div>
 
   <div
@@ -355,11 +369,22 @@
   </div>
 }
 
-<div class="reissued">
+@if (reissued(); as recipient) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Link:Reissue')">
+    <div class="reissued">
       <h2 class="reissued__title">{{ t('::Link:Reissued:Title') }}</h2>
       <p class="reissued__body">{{ t('::Link:Reissued:Body', recipient.candidateName) }}</p>
 
       <code class="reissued__url astro-ltr">{{ recipient.url }}</code>
+
+      <!-- Whether it was mailed, said here rather than assumed. A coordinator who
+           asked for it to be sent and is instead reading the address out loud
+           needs to know which of the two happened. -->
+      @if (recipient.emailSent) {
+        <p class="reissued__sent">{{ t('::Link:Reissued:Emailed', recipient.email) }}</p>
+      } @else if (recipient.emailError) {
+        <p class="reissued__failed">{{ t('::Link:Reissued:EmailFailed', recipient.email) }}</p>
+      }
 
       <div class="reissued__actions">
         <button type="button" class="btn btn-primary" (click)="copyReissued()">

@@ -134,6 +134,52 @@ public class ReissueLinkTests : InternshipManagementSystemEntityFrameworkCoreTes
         });
     }
 
+    [Fact]
+    public async Task Reissuing_can_mail_the_new_address()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sent = await SendAsync("reissue-e");
+            var linkId = await LinkIdAsync(sent.ExamId);
+
+            // "I never received it" is the commonest reason a link is reissued.
+            // Until this existed the only answer was to read a URL down the
+            // phone, which is not an answer.
+            var reissued = await _assignments.ReissueLinkAsync(linkId, sendEmail: true);
+
+            reissued.EmailSent.ShouldBeTrue(reissued.EmailError);
+
+            var links = await _assignments.GetLinksAsync(
+                sent.ExamId, new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto());
+
+            // Recorded on the link, not only reported back — the table is where a
+            // coordinator looks a day later to see whether it ever went.
+            links.Items.Single().EmailSentAt.ShouldNotBeNull();
+        });
+    }
+
+    [Fact]
+    public async Task Reissuing_without_mailing_leaves_the_send_record_alone()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sent = await SendAsync("reissue-f");
+            var linkId = await LinkIdAsync(sent.ExamId);
+
+            var reissued = await _assignments.ReissueLinkAsync(linkId);
+
+            reissued.EmailSent.ShouldBeFalse();
+
+            // Nothing was sent, so nothing claims it was. A coordinator copying
+            // the address by hand must not leave a trail saying the candidate was
+            // emailed.
+            var links = await _assignments.GetLinksAsync(
+                sent.ExamId, new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto());
+
+            links.Items.Single().EmailSentAt.ShouldBeNull();
+        });
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private sealed record Sent(Guid ExamId, string CandidateName, string Token);

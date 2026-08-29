@@ -116,6 +116,7 @@ export class AssignmentComponent {
   readonly canSend = permissionSignal(P.Assignments.Create);
   readonly canCreate = permissionSignal(P.Assignments.Create);
   readonly canRevoke = permissionSignal(P.Assignments.Revoke);
+  readonly canSendEmail = permissionSignal(P.Assignments.SendEmail);
 
   readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.links().length === 0);
@@ -252,11 +253,11 @@ export class AssignmentComponent {
    * The token is stored hashed, so an existing link cannot be recovered — only
    * replaced. The old address stops working, which is why this asks first.
    */
-  reissue(link: ExamLinkDto): void {
+  reissue(link: ExamLinkDto, sendEmail = false): void {
     this.busyId.set(link.id);
     this.actionError.set(null);
 
-    this.assignments.reissue(link.id).subscribe({
+    this.assignments.reissue(link.id, sendEmail).subscribe({
       next: recipient => {
         this.reissued.set(recipient);
         this.busyId.set(null);

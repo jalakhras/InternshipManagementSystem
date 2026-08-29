@@ -47,8 +47,8 @@ public class AssignmentController : AbpControllerBase
     /// A fresh link for the same person. The old one stops working.
     /// </summary>
     [HttpPost("links/{linkId}/reissue")]
-    public Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId) =>
-        _assignments.ReissueLinkAsync(linkId);
+    public Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId, bool sendEmail = false) =>
+        _assignments.ReissueLinkAsync(linkId, sendEmail);
 
     /// <summary>
     /// Moves the deadline forward, for somebody who missed it. Reissuing does
