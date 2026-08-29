@@ -1,4 +1,4 @@
-﻿using InternshipManagementSystem.Localization;
+using InternshipManagementSystem.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 
@@ -8,128 +8,68 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        var myGroup = context.AddGroup(InternshipManagementSystemPermissions.GroupName, L("InternshipManagementSystem"));
+        var group = context.AddGroup(InternshipManagementSystemPermissions.GroupName, L("Permission:Assessment"));
 
-        // Training Management
-        var trainingManagementGroup = myGroup.AddPermission(
-            InternshipManagementSystemPermissions.TrainingManagement.Default,
-            L("TrainingManagement"));
+        var exams = group.AddPermission(InternshipManagementSystemPermissions.Exams.Default, L("Permission:Exams"));
+        exams.AddChild(InternshipManagementSystemPermissions.Exams.View, L("Permission:View"));
+        exams.AddChild(InternshipManagementSystemPermissions.Exams.Create, L("Permission:Create"));
+        exams.AddChild(InternshipManagementSystemPermissions.Exams.Edit, L("Permission:Edit"));
+        exams.AddChild(InternshipManagementSystemPermissions.Exams.Delete, L("Permission:Delete"));
+        exams.AddChild(InternshipManagementSystemPermissions.Exams.Publish, L("Permission:Publish"));
 
-        // Exams
-        var exams = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.Exams.Default,
-            L("Exams"));
-        exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Create, L("Create"));
-        exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Edit, L("Edit"));
-        exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.Delete, L("Delete"));
-        exams.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Exams.View, L("View"));
+        var questions = group.AddPermission(InternshipManagementSystemPermissions.Questions.Default, L("Permission:Questions"));
+        questions.AddChild(InternshipManagementSystemPermissions.Questions.View, L("Permission:View"));
+        questions.AddChild(InternshipManagementSystemPermissions.Questions.Create, L("Permission:Create"));
+        questions.AddChild(InternshipManagementSystemPermissions.Questions.Edit, L("Permission:Edit"));
+        questions.AddChild(InternshipManagementSystemPermissions.Questions.Delete, L("Permission:Delete"));
 
+        var candidates = group.AddPermission(InternshipManagementSystemPermissions.Candidates.Default, L("Permission:Candidates"));
+        candidates.AddChild(InternshipManagementSystemPermissions.Candidates.View, L("Permission:View"));
+        candidates.AddChild(InternshipManagementSystemPermissions.Candidates.Create, L("Permission:Create"));
+        candidates.AddChild(InternshipManagementSystemPermissions.Candidates.Edit, L("Permission:Edit"));
+        candidates.AddChild(InternshipManagementSystemPermissions.Candidates.Delete, L("Permission:Delete"));
 
-        myGroup.AddPermission(InternshipManagementSystemPermissions.TrainingManagement.Admin.Access, L("AdminPanel"));
- 
+        var groups = group.AddPermission(InternshipManagementSystemPermissions.Groups.Default, L("Permission:Groups"));
+        groups.AddChild(InternshipManagementSystemPermissions.Groups.View, L("Permission:View"));
+        groups.AddChild(InternshipManagementSystemPermissions.Groups.Create, L("Permission:Create"));
+        groups.AddChild(InternshipManagementSystemPermissions.Groups.Edit, L("Permission:Edit"));
+        groups.AddChild(InternshipManagementSystemPermissions.Groups.Delete, L("Permission:Delete"));
 
+        var assignments = group.AddPermission(InternshipManagementSystemPermissions.Assignments.Default, L("Permission:Assignments"));
+        assignments.AddChild(InternshipManagementSystemPermissions.Assignments.View, L("Permission:View"));
+        assignments.AddChild(InternshipManagementSystemPermissions.Assignments.Create, L("Permission:Create"));
+        assignments.AddChild(InternshipManagementSystemPermissions.Assignments.Revoke, L("Permission:Revoke"));
+        assignments.AddChild(InternshipManagementSystemPermissions.Assignments.SendEmail, L("Permission:SendEmail"));
 
-        // Questions
-        var questions = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.Questions.Default,
-            L("Questions"));
-        questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Create, L("Create"));
-        questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Edit, L("Edit"));
-        questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.Delete, L("Delete"));
-        questions.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Questions.View, L("View"));
+        var attempts = group.AddPermission(InternshipManagementSystemPermissions.Attempts.Default, L("Permission:Attempts"));
+        attempts.AddChild(InternshipManagementSystemPermissions.Attempts.View, L("Permission:View"));
+        attempts.AddChild(InternshipManagementSystemPermissions.Attempts.ForceSubmit, L("Permission:ForceSubmit"));
+        attempts.AddChild(InternshipManagementSystemPermissions.Attempts.Delete, L("Permission:Delete"));
 
-        // Exam Answers
-        var examAnswers = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Default,
-            L("ExamAnswers"));
-        examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Create, L("Create"));
-        examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Edit, L("Edit"));
-        examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.Delete, L("Delete"));
-        examAnswers.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAnswers.View, L("View"));
+        var review = group.AddPermission(InternshipManagementSystemPermissions.Review.Default, L("Permission:Review"));
+        review.AddChild(InternshipManagementSystemPermissions.Review.ViewQueue, L("Permission:ViewQueue"));
+        review.AddChild(InternshipManagementSystemPermissions.Review.Grade, L("Permission:Grade"));
+        review.AddChild(InternshipManagementSystemPermissions.Review.ViewIntegritySignals, L("Permission:ViewIntegritySignals"));
 
-        // Exam Attempts
-        var examAttempts = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Default,
-            L("ExamAttempts"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Create, L("Create"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Edit, L("Edit"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.Delete, L("Delete"));
-        examAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamAttempts.View, L("View"));
+        var results = group.AddPermission(InternshipManagementSystemPermissions.Results.Default, L("Permission:Results"));
+        results.AddChild(InternshipManagementSystemPermissions.Results.View, L("Permission:View"));
+        results.AddChild(InternshipManagementSystemPermissions.Results.Export, L("Permission:Export"));
+        results.AddChild(InternshipManagementSystemPermissions.Results.ViewItemAnalysis, L("Permission:ViewItemAnalysis"));
 
-        // Candidates
-        var candidates = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.Candidates.Default,
-            L("Candidates"));
-        candidates.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Candidates.Create, L("Create"));
-        candidates.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Candidates.Edit, L("Edit"));
-        candidates.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Candidates.Delete, L("Delete"));
-        candidates.AddChild(InternshipManagementSystemPermissions.TrainingManagement.Candidates.View, L("View"));
+        var catalog = group.AddPermission(InternshipManagementSystemPermissions.Catalog.Default, L("Permission:Catalog"));
+        catalog.AddChild(InternshipManagementSystemPermissions.Catalog.View, L("Permission:View"));
+        catalog.AddChild(InternshipManagementSystemPermissions.Catalog.Manage, L("Permission:Manage"));
 
-        // Candidate Exam Attempts
-        var candidateExamAttempts = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Default,
-            L("CandidateExamAttempts"));
-        candidateExamAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Create, L("Create"));
-        candidateExamAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Edit, L("Edit"));
-        candidateExamAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.Delete, L("Delete"));
-        candidateExamAttempts.AddChild(InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAttempts.View, L("View"));
+        var users = group.AddPermission(InternshipManagementSystemPermissions.IdentityManagement.Default, L("Permission:Users"));
+        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.View, L("Permission:View"));
+        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Create, L("Permission:Create"));
+        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Edit, L("Permission:Edit"));
+        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Delete, L("Permission:Delete"));
+        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles, L("Permission:ManageRoles"));
 
-        var candidateExamAnswersGroup = trainingManagementGroup.AddChild(
-    InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Default,
-    L("CandidateExamAnswers"));
-
-        candidateExamAnswersGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Create, L("Create"));
-
-        candidateExamAnswersGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Edit, L("Edit"));
-
-        candidateExamAnswersGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.Delete, L("Delete"));
-
-        candidateExamAnswersGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.CandidateExamAnswers.View, L("View"));
-
-        var manualGrading = trainingManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.Default,
-            L("ManualGrading"));
-
-        manualGrading.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.View, L("View"));
-        manualGrading.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualGrading.Edit, L("Edit"));
-
-
-        var manualReviewDashboard = trainingManagementGroup.AddChild(
-    InternshipManagementSystemPermissions.TrainingManagement.ManualReviewDashboard.Default,
-    L("ManualReviewDashboard"));
-        manualReviewDashboard.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ManualReviewDashboard.View, L("View"));
-
-        var examLinks = trainingManagementGroup.AddChild(
-    InternshipManagementSystemPermissions.TrainingManagement.ExamLinks.Default,
-    L("ExamLinks"));
-        examLinks.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamLinks.Create, L("Create"));
-        examLinks.AddChild(InternshipManagementSystemPermissions.TrainingManagement.ExamLinks.View, L("View"));
-
-        // Identity Management
-        var identityManagementGroup = myGroup.AddPermission(
-            InternshipManagementSystemPermissions.IdentityManagement.Default,
-            L("IdentityManagement"));
-
-        var users = identityManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.IdentityManagement.Users.Default,
-            L("Users"));
-        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Create, L("Create"));
-        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Edit, L("Edit"));
-        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.Delete, L("Delete"));
-        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.View, L("View"));
-        users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles, L("ManageRoles"));
-
-        var roles = identityManagementGroup.AddChild(
-            InternshipManagementSystemPermissions.IdentityManagement.Roles.Default,
-            L("Roles"));
-        roles.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Roles.Create, L("Create"));
-        roles.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Roles.Edit, L("Edit"));
-        roles.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Roles.Delete, L("Delete"));
-        roles.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Roles.View, L("View"));
+        var administration = group.AddPermission(InternshipManagementSystemPermissions.Administration.Default, L("Permission:Administration"));
+        administration.AddChild(InternshipManagementSystemPermissions.Administration.Access, L("Permission:Access"));
+        administration.AddChild(InternshipManagementSystemPermissions.Administration.ManageSettings, L("Permission:ManageSettings"));
     }
 
     private static LocalizableString L(string name)

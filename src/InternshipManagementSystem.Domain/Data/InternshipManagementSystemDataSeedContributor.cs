@@ -99,7 +99,7 @@ namespace InternshipManagementSystem
             {
                 await _permissionManager.SetForRoleAsync(
                     adminRole.Name,
-                    DomainPermissionNames.AdminAccess,
+                    Permissions.InternshipManagementSystemPermissions.Administration.Access,
                     true
                 );
             }

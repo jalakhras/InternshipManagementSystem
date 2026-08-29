@@ -75,7 +75,7 @@ public partial class InternshipManagementSystemDbContext :
         builder.ConfigureOpenIddict();
         builder.ConfigureFeatureManagement();
         builder.ConfigureTenantManagement();
-        ConfigureTrainingManagement(builder);
+        ConfigureAssessment(builder);
 
         /* Configure your own tables/entities inside here */
 
