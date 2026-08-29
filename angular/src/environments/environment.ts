@@ -6,7 +6,7 @@ export const environment = {
   production: false,
   application: {
     baseUrl,
-    name: 'InternshipManagementSystem',
+    name: 'Astrolabe',
     logoUrl: '',
   },
   oAuthConfig: {
