@@ -11,6 +11,12 @@ import { TranslateService } from '../../core/translate.service';
  *
  * The empty state carries an action rather than an apology: someone looking at an
  * empty list wants to know what to do next, not to be told there is nothing.
+ *
+ * This owns the stylesheet as well as the markup. Twelve screens had grown a
+ * private copy of the block below, four of them had drifted, and one had lost
+ * `.spinner` altogether — which rendered a dialog's loading state as an empty
+ * box. A spinner is also never shown bare here: `role="status"` with nothing
+ * inside it announces nothing at all, so the word always comes with it.
  */
 @Component({
   selector: 'astro-data-state',
@@ -34,7 +40,9 @@ import { TranslateService } from '../../core/translate.service';
     } @else if (empty()) {
       <div class="state">
         <i class="bi {{ emptyIcon() }}" aria-hidden="true"></i>
-        <p class="state__title">{{ emptyTitle() }}</p>
+        @if (emptyTitle()) {
+          <p class="state__title">{{ emptyTitle() }}</p>
+        }
         @if (emptyDescription()) {
           <p class="state__text">{{ emptyDescription() }}</p>
         }
@@ -43,18 +51,22 @@ import { TranslateService } from '../../core/translate.service';
     }
   `,
   styles: `
+    :host { display: block; }
+
     .state {
       display: grid;
       justify-items: center;
       gap: var(--astro-space-2);
       padding-block: var(--astro-space-7);
       text-align: center;
-      color: var(--text-secondary);
+      color: var(--text-muted);
 
-      > i { font-size: 1.75rem; color: var(--text-muted); }
+      i { font-size: 1.75rem; }
     }
 
-    .state--error > i { color: var(--status-fail-mark); }
+    // Semantic rather than the raw hue: --astro-fail-600 does not re-map, and
+    // an error icon at 2.7:1 in dark mode is one nobody sees.
+    .state--error i { color: var(--status-fail-mark); }
 
     .state__title {
       margin: 0;
@@ -65,19 +77,22 @@ import { TranslateService } from '../../core/translate.service';
     .state__text {
       margin: 0;
       max-inline-size: 44ch;
-      font-size: var(--astro-text-sm);
     }
 
     .spinner {
       inline-size: 1.5rem;
       block-size: 1.5rem;
-      border: 2px solid var(--border-strong);
+      border: 2px solid var(--border-subtle);
       border-block-start-color: var(--accent);
       border-radius: 50%;
-      animation: spin 700ms linear infinite;
+      animation: astro-spin .7s linear infinite;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes astro-spin { to { transform: rotate(360deg); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation-duration: 2s; }
+    }
   `,
 })
 export class DataStateComponent {

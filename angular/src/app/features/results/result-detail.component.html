@@ -1,29 +1,23 @@
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="reload()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="reload()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else if (detail(); as result) {
   <astro-page-header
     [title]="result.summary.candidateName"
     [description]="result.summary.examTitle">
     <a slot="actions" class="btn btn-outline-secondary" routerLink="/results">
-      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
       {{ t('::Results:Detail:Back') }}
     </a>
   </astro-page-header>
 
   <div class="summary">
     <div class="stat stat--headline">
-      <span class="stat__value">{{ result.summary.scorePercentage }}%</span>
-      <span class="stat__label">
+      <span class="stat__value astro-numeric">{{ result.summary.scorePercentage }}%</span>
+      <span class="stat__label astro-numeric">
         {{ result.summary.score }} / {{ result.summary.maxScore }}
       </span>
     </div>
@@ -44,12 +38,12 @@
     </div>
 
     <div class="stat">
-      <span class="stat__value">{{ result.summary.durationInMinutes }}</span>
+      <span class="stat__value astro-numeric">{{ result.summary.durationInMinutes }}</span>
       <span class="stat__label">{{ t('::Results:Duration') }}</span>
     </div>
 
     <div class="stat">
-      <span class="stat__value stat__value--small">
+      <span class="stat__value stat__value--small astro-numeric">
         {{ result.summary.startedAt | date: 'y/MM/dd HH:mm' }}
       </span>
       <span class="stat__label">{{ t('::Results:Started') }}</span>
@@ -73,7 +67,7 @@
           <li class="topic">
             <div class="topic__head">
               <span class="topic__name">{{ topic.topicName || '—' }}</span>
-              <span class="topic__figure">
+              <span class="topic__figure astro-numeric">
                 {{ topic.scorePercentage }}%
                 <span class="topic__raw">{{ topic.score }} / {{ topic.maxScore }}</span>
               </span>
@@ -105,9 +99,9 @@
           [class.answer--wrong]="answer.isCorrect === false"
           [class.answer--pending]="answer.needsManualReview">
           <div class="answer__head">
-            <span class="answer__position">{{ answer.position + 1 }}</span>
+            <span class="answer__position astro-numeric">{{ answer.position + 1 }}</span>
             <span class="answer__text">{{ answer.questionText }}</span>
-            <span class="answer__marks">{{ answer.awardedScore }} / {{ answer.maxScore }}</span>
+            <span class="answer__marks astro-numeric">{{ answer.awardedScore }} / {{ answer.maxScore }}</span>
           </div>
 
           <div class="answer__body">

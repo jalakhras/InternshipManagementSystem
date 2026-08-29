@@ -31,7 +31,7 @@
 }
 
 .stat__value--small {
-  font-size: var(--astro-text-base);
+  font-size: var(--astro-text-md);
   font-weight: var(--astro-weight-medium);
 }
 
@@ -40,8 +40,8 @@
   color: var(--text-muted);
 }
 
-.outcome--pass { color: var(--astro-pass-600, var(--astro-brand-700)); }
-.outcome--fail { color: var(--astro-fail-600); }
+.outcome--pass { color: var(--status-pass-text); }
+.outcome--fail { color: var(--status-fail-text); }
 .outcome--pending { color: var(--text-muted); }
 
 .section {
@@ -98,7 +98,7 @@
 .bar__fill {
   display: block;
   block-size: 100%;
-  background: var(--astro-brand-600);
+  background: var(--accent);
 }
 
 // ── Answers ──────────────────────────────────────────────────────────────────
@@ -121,8 +121,8 @@
   border-inline-start-width: 3px;
 }
 
-.answer--right { border-inline-start-color: var(--astro-pass-600, var(--astro-brand-600)); }
-.answer--wrong { border-inline-start-color: var(--astro-fail-600); }
+.answer--right { border-inline-start-color: var(--status-pass-mark); }
+.answer--wrong { border-inline-start-color: var(--status-fail-mark); }
 .answer--pending { border-inline-start-color: var(--text-muted); }
 
 .answer__head {
@@ -184,35 +184,4 @@
   padding-inline-start: 2.25rem;
   color: var(--text-secondary);
   font-size: var(--astro-text-sm);
-}
-
-// ── States ───────────────────────────────────────────────────────────────────
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
-
-  i { font-size: 1.75rem; }
-
-  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
-  &__text  { margin: 0; max-inline-size: 44ch; }
-  &--error i { color: var(--astro-fail-600); }
-}
-
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
-
-@keyframes astro-spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
 }

@@ -7,6 +7,7 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { MediaFieldComponent } from '../../shared/ui/media-field.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
 
 /**
  * What this organisation changes about the platform for itself.
@@ -28,7 +29,7 @@ import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 @Component({
   selector: 'astro-settings',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, MediaFieldComponent],
+  imports: [FormsModule, PageHeaderComponent, MediaFieldComponent, DataStateComponent],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.scss',
 })

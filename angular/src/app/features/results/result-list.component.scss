@@ -46,9 +46,9 @@
 }
 
 // Colour carries emphasis, never meaning on its own: every figure is labelled.
-.stat--good .stat__value { color: var(--astro-pass-600, var(--astro-brand-700)); }
-.stat--bad .stat__value { color: var(--astro-fail-600); }
-.stat--warn .stat__value { color: var(--astro-brand-700); }
+.stat--good .stat__value { color: var(--status-pass-text); }
+.stat--bad .stat__value { color: var(--status-fail-text); }
+.stat--warn .stat__value { color: var(--accent); }
 
 // ── Filters ──────────────────────────────────────────────────────────────────
 .filters {
@@ -184,8 +184,8 @@
   white-space: nowrap;
 }
 
-.outcome--pass { color: var(--astro-pass-600, var(--astro-brand-700)); }
-.outcome--fail { color: var(--astro-fail-600); }
+.outcome--pass { color: var(--status-pass-text); }
+.outcome--fail { color: var(--status-fail-text); }
 .outcome--pending { color: var(--text-muted); }
 
 .flags {
@@ -194,7 +194,7 @@
   padding-inline: var(--astro-space-2);
   border-radius: var(--astro-radius-full);
   background: var(--surface-sunken);
-  color: var(--astro-fail-600);
+  color: var(--status-fail-text);
   font-size: var(--astro-text-xs);
 }
 
@@ -211,35 +211,4 @@
   color: var(--text-secondary);
   font-size: var(--astro-text-sm);
   font-variant-numeric: tabular-nums;
-}
-
-// ── States ───────────────────────────────────────────────────────────────────
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
-
-  i { font-size: 1.75rem; }
-
-  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
-  &__text  { margin: 0; max-inline-size: 44ch; }
-  &--error i { color: var(--astro-fail-600); }
-}
-
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
-
-@keyframes astro-spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
 }

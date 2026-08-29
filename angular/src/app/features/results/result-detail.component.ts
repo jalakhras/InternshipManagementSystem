@@ -6,6 +6,7 @@ import { ResultService } from '../../core/api/result.service';
 import { ResultDetail } from '../../core/api/result.models';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
 
 /**
  * One person's sitting, question by question.
@@ -19,7 +20,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-result-detail',
   standalone: true,
-  imports: [RouterLink, DatePipe, PageHeaderComponent],
+  imports: [RouterLink, DatePipe, PageHeaderComponent, DataStateComponent],
   templateUrl: './result-detail.component.html',
   styleUrl: './result-detail.component.scss',
 })

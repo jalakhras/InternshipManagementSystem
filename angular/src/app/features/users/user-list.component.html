@@ -105,23 +105,14 @@
   </form>
 }
 
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else if (isEmpty()) {
-  <div class="state">
-    <i class="bi bi-person-badge" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::User:NoneYet') }}</p>
-  </div>
+  <astro-data-state [empty]="true" emptyIcon="bi-person-badge" [emptyTitle]="t('::User:NoneYet')" />
 } @else {
   <div class="astro-scroll-x">
     <table class="table">
@@ -131,15 +122,18 @@
           <th scope="col">{{ t('::User:UserName') }}</th>
           <th scope="col">{{ t('::User:Email') }}</th>
           <th scope="col">{{ t('::User:Roles') }}</th>
-          <th scope="col"></th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
         </tr>
       </thead>
       <tbody>
         @for (user of items(); track user.id) {
           <tr>
             <td>{{ user.fullName || '—' }}</td>
-            <td>{{ user.userName }}</td>
-            <td class="muted">{{ user.email }}</td>
+            <td class="astro-ltr">{{ user.userName }}</td>
+            <!-- Latin inside an Arabic table: isolated, or the dot and the @
+                 drift to the wrong end. candidate-list renders the same data
+                 the same way. -->
+            <td class="muted astro-ltr">{{ user.email }}</td>
             <td>
               @if (user.roles.length === 0) {
                 <!-- Worth showing rather than leaving blank: this account can sign
@@ -152,14 +146,16 @@
               }
             </td>
             <td class="actions">
-              @if (canEdit()) {
-                <button type="button" class="link" (click)="edit(user)">{{ t('::Edit') }}</button>
-              }
-              @if (canDelete()) {
-                <button type="button" class="link link--danger" (click)="askDelete(user)">
-                  {{ t('::Delete') }}
-                </button>
-              }
+              <span class="actions__set">
+                @if (canEdit()) {
+                  <button type="button" class="link" (click)="edit(user)">{{ t('::Edit') }}</button>
+                }
+                @if (canDelete()) {
+                  <button type="button" class="link link--danger" (click)="askDelete(user)">
+                    {{ t('::Delete') }}
+                  </button>
+                }
+              </span>
             </td>
           </tr>
         }
@@ -169,8 +165,14 @@
 }
 
 @if (pendingDelete(); as user) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::ConfirmDelete')">
-    <div class="dialog">
+  <div class="scrim">
+    <div
+      class="dialog"
+      astroModal
+      (dismiss)="cancelDelete()"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="t('::ConfirmDelete')">
       <h2 class="dialog__title">{{ t('::ConfirmDelete') }}</h2>
       <p class="dialog__body">{{ t('::User:DeleteWarning', user.userName) }}</p>
       <div class="dialog__actions">

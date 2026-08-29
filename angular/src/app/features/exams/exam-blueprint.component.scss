@@ -39,8 +39,8 @@
 // A rule the bank cannot fill. The paper comes out short and nothing errors,
 // so this has to be visible while somebody is still looking at it.
 .rule--short {
-  border-color: var(--astro-fail-600);
-  background: color-mix(in srgb, var(--astro-fail-600) 5%, var(--surface-raised));
+  border-color: var(--status-fail-mark);
+  background: color-mix(in srgb, var(--status-fail-mark) 5%, var(--surface-raised));
 }
 
 .field {
@@ -63,7 +63,7 @@
   white-space: nowrap;
   padding-block-end: 0.5rem;
 
-  strong { color: var(--astro-fail-600); font-weight: var(--astro-weight-medium); }
+  strong { color: var(--status-fail-text); font-weight: var(--astro-weight-medium); }
 }
 
 .icon {
@@ -76,7 +76,7 @@
   line-height: 1;
 }
 
-.icon--danger { color: var(--astro-fail-600); }
+.icon--danger { color: var(--status-fail-text); }
 
 .summary {
   display: flex;
@@ -88,7 +88,7 @@
 }
 
 .summary__total { font-weight: var(--astro-weight-medium); color: var(--text-primary); }
-.summary__warn { color: var(--astro-fail-600); }
+.summary__warn { color: var(--status-fail-text); }
 
 .actions {
   display: flex;
@@ -100,33 +100,4 @@
 .saved {
   color: var(--text-secondary);
   font-size: var(--astro-text-sm);
-}
-
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
-
-  i { font-size: 1.75rem; }
-
-  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
-  &__text  { margin: 0; max-inline-size: 52ch; }
-}
-
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
-
-@keyframes astro-spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
 }

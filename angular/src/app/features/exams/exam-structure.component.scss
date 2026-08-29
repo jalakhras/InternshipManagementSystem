@@ -104,8 +104,8 @@
 
 // The part with teeth: fail this section and the exam is failed.
 .chip--strong {
-  background: color-mix(in srgb, var(--astro-fail-600) 12%, transparent);
-  color: var(--astro-fail-600);
+  background: color-mix(in srgb, var(--status-fail-mark) 12%, transparent);
+  color: var(--status-fail-text);
 }
 
 .chip--muted { color: var(--text-muted); }
@@ -114,14 +114,14 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--astro-brand-700);
+  color: var(--accent);
   cursor: pointer;
   font-size: var(--astro-text-sm);
 
   &:disabled { opacity: .5; cursor: default; }
 }
 
-.link--danger { color: var(--astro-fail-600); }
+.link--danger { color: var(--status-fail-text); }
 
 // ── Passages ─────────────────────────────────────────────────────────────────
 .passages {
@@ -168,7 +168,7 @@
 // A passage nothing hangs off never reaches a candidate.
 .passage__warning {
   margin: var(--astro-space-2) 0 0;
-  color: var(--astro-fail-600);
+  color: var(--status-fail-text);
   font-size: var(--astro-text-sm);
 }
 
@@ -223,33 +223,39 @@
   }
 }
 
-// ── States ───────────────────────────────────────────────────────────────────
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
-
-  i { font-size: 1.75rem; }
-
-  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
-  &__text  { margin: 0; max-inline-size: 44ch; }
-  &--error i { color: var(--astro-fail-600); }
+// ── Delete confirmation ──────────────────────────────────────────────────────
+// The scrim is a backdrop and nothing else; the dialog is its own fixed box, so
+// the two never fight over which one is the modal. Centred with place-items on
+// the scrim rather than a translate, which needs no direction-specific sign.
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  z-index: 40;
 }
 
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
+.confirm {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  margin-inline: auto;
+  transform: translateY(-50%);
+  inline-size: min(28rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
 
-@keyframes astro-spin { to { transform: rotate(360deg); } }
+  &__title { margin: 0 0 var(--astro-space-2); font-size: var(--astro-text-lg); }
+  &__body  { margin: 0; color: var(--text-secondary); }
 
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
 }

@@ -6,6 +6,8 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * Staff accounts.
@@ -23,7 +25,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-user-list',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent],
+  imports: [FormsModule, PageHeaderComponent, DataStateComponent, ModalDirective],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.scss',
 })

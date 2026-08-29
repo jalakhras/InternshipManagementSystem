@@ -16,6 +16,8 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * An exam's named papers.
@@ -36,7 +38,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-exam-forms',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, DataStateComponent, ModalDirective],
   templateUrl: './exam-forms.component.html',
   styleUrl: './exam-forms.component.scss',
 })
@@ -74,6 +76,9 @@ export class ExamFormsComponent {
   readonly poolLoading = signal(false);
 
   readonly ExamFormStatus = ExamFormStatus;
+
+  /** What the confirmation dialog is asking about, or null when it is closed. */
+  readonly pending = signal<PendingAction | null>(null);
 
   private loadedId?: string;
 
@@ -277,16 +282,69 @@ export class ExamFormsComponent {
     });
   }
 
-  publish(form: ExamFormDto): void {
-    this.act(this.structure.publishForm(form.id));
+  /**
+   * All three are asked before they are done.
+   *
+   * Only Delete is destructive, but the other two are not small: publishing is
+   * the moment a paper becomes something a real candidate can be sent, and
+   * retiring takes a live one out of rotation mid-term. They were three
+   * identical text links in one row, and Publish sat directly beside Delete.
+   */
+  askPublish(form: ExamFormDto): void {
+    this.pending.set({ kind: 'publish', form });
   }
 
-  retire(form: ExamFormDto): void {
-    this.act(this.structure.retireForm(form.id));
+  askRetire(form: ExamFormDto): void {
+    this.pending.set({ kind: 'retire', form });
   }
 
-  remove(form: ExamFormDto): void {
-    this.act(this.structure.deleteForm(form.id));
+  askRemove(form: ExamFormDto): void {
+    this.pending.set({ kind: 'delete', form });
+  }
+
+  cancelPending(): void {
+    this.pending.set(null);
+  }
+
+  confirmPending(): void {
+    const pending = this.pending();
+
+    if (!pending) {
+      return;
+    }
+
+    const request =
+      pending.kind === 'publish'
+        ? this.structure.publishForm(pending.form.id)
+        : pending.kind === 'retire'
+          ? this.structure.retireForm(pending.form.id)
+          : this.structure.deleteForm(pending.form.id);
+
+    this.pending.set(null);
+    this.act(request);
+  }
+
+  /** The title, the confirm button and the destructiveness, in one place. */
+  pendingTitleKey(kind: PendingAction['kind']): string {
+    switch (kind) {
+      case 'publish':
+        return '::Form:Publish';
+      case 'retire':
+        return '::Form:Retire';
+      default:
+        return '::ConfirmDelete';
+    }
+  }
+
+  pendingConfirmKey(kind: PendingAction['kind']): string {
+    switch (kind) {
+      case 'publish':
+        return '::Exam:Publish:Confirm';
+      case 'retire':
+        return '::Form:Retire';
+      default:
+        return '::Delete';
+    }
   }
 
   statusKey(status: ExamFormStatus): string {
@@ -322,4 +380,9 @@ export class ExamFormsComponent {
 
     return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
   }
+}
+
+interface PendingAction {
+  readonly kind: 'publish' | 'retire' | 'delete';
+  readonly form: ExamFormDto;
 }

@@ -16,6 +16,7 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
 
 /**
  * The shape of a drawn paper: how many questions of what kind.
@@ -37,7 +38,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-exam-blueprint',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, DataStateComponent],
   templateUrl: './exam-blueprint.component.html',
   styleUrl: './exam-blueprint.component.scss',
 })

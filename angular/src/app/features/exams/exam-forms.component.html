@@ -3,7 +3,7 @@
   [description]="examTitle() || t('::Form:Lede')">
   <div slot="actions" class="head-actions">
     <a class="btn btn-outline-secondary" [routerLink]="['/exams', examId()]">
-      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
       {{ t('::Form:BackToExam') }}
     </a>
     @if (canManage()) {
@@ -50,27 +50,24 @@
   </form>
 }
 
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else if (isEmpty()) {
-  <div class="state">
-    <i class="bi bi-files" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::Form:NoneYet') }}</p>
-    <p class="state__text">{{ t('::Form:NoneYetNote') }}</p>
+  <astro-data-state
+    [empty]="true"
+    emptyIcon="bi-files"
+    [emptyTitle]="t('::Form:NoneYet')"
+    [emptyDescription]="t('::Form:NoneYetNote')">
     @if (canManage()) {
-      <button type="button" class="btn btn-primary" (click)="newForm()">{{ t('::Form:New') }}</button>
+      <button slot="empty-action" type="button" class="btn btn-primary" (click)="newForm()">
+        {{ t('::Form:New') }}
+      </button>
     }
-  </div>
+  </astro-data-state>
 } @else {
   <ul class="forms">
     @for (form of forms(); track form.id) {
@@ -78,7 +75,7 @@
         <div class="form-card__head">
           <div class="form-card__identity">
             <span class="form-card__name">{{ form.name }}</span>
-            <code class="form-card__code">{{ form.code }}</code>
+            <code class="form-card__code astro-ltr">{{ form.code }}</code>
             <span
               class="status"
               [class.status--published]="form.status === ExamFormStatus.Published"
@@ -96,18 +93,31 @@
           </div>
 
           @if (canManage()) {
+            <!-- Three actions that used to be three identical words in a row.
+                 Each now carries its own icon, and the destructive one is set
+                 apart from the pair it sat flush against. -->
             <div class="form-card__actions">
-              <button type="button" class="link" (click)="open(form)">{{ t('::Form:Edit') }}</button>
+              <button type="button" class="link" (click)="open(form)">
+                <i class="bi bi-pencil" aria-hidden="true"></i>
+                {{ t('::Form:Edit') }}
+              </button>
 
               @if (form.status === ExamFormStatus.Draft) {
-                <button type="button" class="link" [disabled]="saving()" (click)="publish(form)">
+                <button type="button" class="link" [disabled]="saving()" (click)="askPublish(form)">
+                  <i class="bi bi-check2-circle" aria-hidden="true"></i>
                   {{ t('::Form:Publish') }}
                 </button>
-                <button type="button" class="link link--danger" [disabled]="saving()" (click)="remove(form)">
+                <button
+                  type="button"
+                  class="link link--danger link--apart"
+                  [disabled]="saving()"
+                  (click)="askRemove(form)">
+                  <i class="bi bi-trash" aria-hidden="true"></i>
                   {{ t('::Delete') }}
                 </button>
               } @else if (form.status === ExamFormStatus.Published) {
-                <button type="button" class="link" [disabled]="saving()" (click)="retire(form)">
+                <button type="button" class="link" [disabled]="saving()" (click)="askRetire(form)">
+                  <i class="bi bi-archive" aria-hidden="true"></i>
                   {{ t('::Form:Retire') }}
                 </button>
               }
@@ -185,9 +195,7 @@
                   <h3 class="pane__title">{{ t('::Form:Available') }}</h3>
 
                   @if (poolLoading()) {
-                    <div class="state" role="status">
-                      <span class="spinner" aria-hidden="true"></span>
-                    </div>
+                    <astro-data-state [loading]="true" />
                   } @else {
                     <ul class="pool">
                       @for (question of pool(); track question.id) {
@@ -214,4 +222,40 @@
       </li>
     }
   </ul>
+}
+
+<!-- ── Publish / Retire / Delete ────────────────────────────────────────────
+     Publishing is what makes a paper sendable and retiring takes a live one out
+     of rotation, so all three are asked rather than done. Cancel first,
+     destructive last, matching the candidates and exams lists. -->
+@if (pending(); as ask) {
+  <div class="scrim" (click)="cancelPending()"></div>
+
+  <div
+    class="confirm"
+    astroModal
+    (dismiss)="cancelPending()"
+    [attr.role]="ask.kind === 'delete' ? 'alertdialog' : 'dialog'"
+    aria-modal="true"
+    aria-labelledby="formActionTitle">
+    <h2 class="confirm__title" id="formActionTitle">{{ t(pendingTitleKey(ask.kind)) }}</h2>
+    <p class="confirm__body">{{ ask.form.name }}</p>
+
+    @if (ask.kind === 'publish') {
+      <p class="confirm__note">{{ t('::Exam:Publish:Ready') }}</p>
+    }
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelPending()">
+        {{ t('::Cancel') }}
+      </button>
+      <button
+        type="button"
+        [class]="ask.kind === 'delete' ? 'btn btn-danger' : 'btn btn-primary'"
+        [disabled]="saving()"
+        (click)="confirmPending()">
+        {{ saving() ? t('::Working') : t(pendingConfirmKey(ask.kind)) }}
+      </button>
+    </div>
+  </div>
 }

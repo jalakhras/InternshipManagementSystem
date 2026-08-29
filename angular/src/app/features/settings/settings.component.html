@@ -7,10 +7,7 @@
 }
 
 @if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
+  <astro-data-state [loading]="true" />
 } @else {
   <form class="form" (ngSubmit)="save()">
     <!-- ── The organisation ────────────────────────────────────────────────

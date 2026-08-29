@@ -18,6 +18,8 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { MediaFieldComponent } from '../../shared/ui/media-field.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * How an exam is laid out: its parts, and the passages inside it.
@@ -40,7 +42,7 @@ import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 @Component({
   selector: 'astro-exam-structure',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent, MediaFieldComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, MediaFieldComponent, DataStateComponent, ModalDirective],
   templateUrl: './exam-structure.component.html',
   styleUrl: './exam-structure.component.scss',
 })
@@ -58,6 +60,9 @@ export class ExamStructureComponent {
   readonly error = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
   readonly saving = signal(false);
+
+  /** What the confirmation dialog is asking about, or null when it is closed. */
+  readonly pendingDelete = signal<PendingDelete | null>(null);
 
   readonly examTitle = signal('');
   readonly sections = signal<ExamSectionDto[]>([]);
@@ -180,8 +185,41 @@ export class ExamStructureComponent {
     );
   }
 
-  deleteSection(section: ExamSectionDto): void {
-    this.run(this.structure.deleteSection(section.id), () => undefined);
+  /**
+   * Asked, not done. Deleting a section takes a part out of the exam's shape —
+   * its clock, its floor and its qualifying flag go with it — and the row it
+   * sits on is one pixel from Edit. Every other list in this product confirms
+   * before it deletes; this one did not.
+   */
+  askDeleteSection(section: ExamSectionDto): void {
+    this.pendingDelete.set({ kind: 'section', id: section.id, name: section.name });
+  }
+
+  askDeleteGroup(group: QuestionGroupDto): void {
+    this.pendingDelete.set({
+      kind: 'passage',
+      id: group.id,
+      name: group.instructions || this.t('::Stimulus:Untitled'),
+    });
+  }
+
+  cancelDelete(): void {
+    this.pendingDelete.set(null);
+  }
+
+  confirmDelete(): void {
+    const pending = this.pendingDelete();
+
+    if (!pending) {
+      return;
+    }
+
+    const request =
+      pending.kind === 'section'
+        ? this.structure.deleteSection(pending.id)
+        : this.questions.deleteGroup(pending.id);
+
+    this.run(request, () => this.pendingDelete.set(null));
   }
 
   // ---------------------------------------------------------------- passages
@@ -242,10 +280,6 @@ export class ExamStructureComponent {
       draft.id ? this.questions.updateGroup(draft.id, body) : this.questions.createGroup(body),
       () => this.groupDraft.set(emptyGroup()),
     );
-  }
-
-  deleteGroup(group: QuestionGroupDto): void {
-    this.run(this.questions.deleteGroup(group.id), () => undefined);
   }
 
   // ------------------------------------------------------------------ plumbing
@@ -319,3 +353,9 @@ const emptyGroup = (): GroupDraft => ({
   stimulusMediaType: '',
   displayOrder: 0,
 });
+
+interface PendingDelete {
+  readonly kind: 'section' | 'passage';
+  readonly id: string;
+  readonly name: string;
+}

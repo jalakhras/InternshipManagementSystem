@@ -3,7 +3,7 @@
   [description]="examTitle() || t('::Blueprint:Lede')">
   <div slot="actions" class="head-actions">
     <a class="btn btn-outline-secondary" [routerLink]="['/exams', examId()]">
-      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
       {{ t('::Form:BackToExam') }}
     </a>
     @if (canEdit()) {
@@ -22,20 +22,20 @@
 }
 
 @if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
+  <astro-data-state [loading]="true" />
 } @else {
   @if (rules().length === 0) {
-    <div class="state">
-      <i class="bi bi-diagram-2" aria-hidden="true"></i>
-      <p class="state__title">{{ t('::Blueprint:NoneYet') }}</p>
-      <p class="state__text">{{ t('::Blueprint:NoneYetNote') }}</p>
+    <astro-data-state
+      [empty]="true"
+      emptyIcon="bi-diagram-2"
+      [emptyTitle]="t('::Blueprint:NoneYet')"
+      [emptyDescription]="t('::Blueprint:NoneYetNote')">
       @if (canEdit()) {
-        <button type="button" class="btn btn-primary" (click)="add()">{{ t('::Blueprint:AddRule') }}</button>
+        <button slot="empty-action" type="button" class="btn btn-primary" (click)="add()">
+          {{ t('::Blueprint:AddRule') }}
+        </button>
       }
-    </div>
+    </astro-data-state>
   } @else {
     <ul class="rules">
       @for (rule of rules(); track $index) {

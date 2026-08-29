@@ -99,27 +99,24 @@
   </form>
 }
 
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else if (isEmpty()) {
-  <div class="state">
-    <i class="bi bi-diagram-3" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::Group:NoneYet') }}</p>
-    <p class="state__text">{{ t('::Group:NoneYetNote') }}</p>
+  <astro-data-state
+    [empty]="true"
+    emptyIcon="bi-diagram-3"
+    [emptyTitle]="t('::Group:NoneYet')"
+    [emptyDescription]="t('::Group:NoneYetNote')">
     @if (canManage()) {
-      <button type="button" class="btn btn-primary" (click)="newGroup()">{{ t('::Group:New') }}</button>
+      <button slot="empty-action" type="button" class="btn btn-primary" (click)="newGroup()">
+        {{ t('::Group:New') }}
+      </button>
     }
-  </div>
+  </astro-data-state>
 } @else {
   <div class="astro-scroll-x">
     <table class="table">
@@ -130,7 +127,7 @@
           <th scope="col">{{ t('::Exam:Level') }}</th>
           <th scope="col">{{ t('::Group:Runs') }}</th>
           <th scope="col" class="numeric">{{ t('::Group:Members') }}</th>
-          <th scope="col"></th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
         </tr>
       </thead>
       <tbody>
@@ -152,25 +149,32 @@
             </td>
             <td class="muted">
               @if (group.startsOn) {
-                {{ group.startsOn | date: 'y/MM/dd' }}
-                @if (group.endsOn) {
-                  — {{ group.endsOn | date: 'y/MM/dd' }}
-                }
+                <!-- Two dates and a dash: a neutral run between numbers takes the
+                     paragraph's direction, so in Arabic the range reads end-first
+                     unless the whole span is isolated. -->
+                <span class="astro-numeric">
+                  {{ group.startsOn | date: 'y/MM/dd' }}
+                  @if (group.endsOn) {
+                    — {{ group.endsOn | date: 'y/MM/dd' }}
+                  }
+                </span>
               } @else {
                 —
               }
             </td>
-            <td class="numeric">{{ group.memberCount }}</td>
+            <td class="numeric"><span class="astro-numeric">{{ group.memberCount }}</span></td>
             <td class="actions">
-              @if (canManage()) {
-                <button type="button" class="link" (click)="openRoll(group)">{{ t('::Group:Roll') }}</button>
-                <button type="button" class="link" (click)="edit(group)">{{ t('::Edit') }}</button>
-              }
-              @if (canDelete()) {
-                <button type="button" class="link link--danger" (click)="askDelete(group)">
-                  {{ t('::Delete') }}
-                </button>
-              }
+              <span class="actions__set">
+                @if (canManage()) {
+                  <button type="button" class="link" (click)="openRoll(group)">{{ t('::Group:Roll') }}</button>
+                  <button type="button" class="link" (click)="edit(group)">{{ t('::Edit') }}</button>
+                }
+                @if (canDelete()) {
+                  <button type="button" class="link link--danger" (click)="askDelete(group)">
+                    {{ t('::Delete') }}
+                  </button>
+                }
+              </span>
             </td>
           </tr>
         }
@@ -180,8 +184,14 @@
 }
 
 @if (pendingDelete(); as group) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::ConfirmDelete')">
-    <div class="dialog">
+  <div class="scrim">
+    <div
+      class="dialog"
+      astroModal
+      (dismiss)="cancelDelete()"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="t('::ConfirmDelete')">
       <h2 class="dialog__title">{{ t('::ConfirmDelete') }}</h2>
       <p class="dialog__body">{{ t('::Group:DeleteWarning', group.name) }}</p>
       <div class="dialog__actions">
@@ -197,8 +207,14 @@
 }
 
 @if (rollFor(); as group) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Group:Roll')">
-    <div class="dialog dialog--wide">
+  <div class="scrim">
+    <div
+      class="dialog dialog--wide"
+      astroModal
+      (dismiss)="closeRoll()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="t('::Group:Roll')">
       <h2 class="dialog__title">{{ group.name }}</h2>
       <p class="dialog__body">{{ t('::Group:Roll:Note') }}</p>
 
@@ -212,9 +228,7 @@
         name="rollFilter" />
 
       @if (rollLoading()) {
-        <div class="state" role="status">
-          <span class="spinner" aria-hidden="true"></span>
-        </div>
+        <astro-data-state [loading]="true" />
       } @else {
         <ul class="roll">
           @for (person of visiblePeople(); track person.id) {
@@ -225,7 +239,7 @@
                   [checked]="isMember(person.id)"
                   (change)="toggleMember(person.id)" />
                 <span class="person__name">{{ person.fullName }}</span>
-                <span class="person__email">{{ person.email }}</span>
+                <span class="person__email astro-ltr">{{ person.email }}</span>
               </label>
             </li>
           }

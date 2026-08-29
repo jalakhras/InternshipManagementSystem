@@ -105,23 +105,31 @@
   font-style: italic;
 }
 
+// A td stays a td: turning it into a flex container takes it out of the table's
+// column sizing, which is what stacked the buttons on top of each row. The cell
+// shrinks to its content and the flex row lives on a span inside it.
 .actions {
-  display: flex;
+  inline-size: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.actions__set {
+  display: inline-flex;
   gap: var(--astro-space-3);
-  justify-content: flex-end;
 }
 
 .link {
   background: none;
   border: none;
   padding: 0;
-  color: var(--astro-brand-700);
+  color: var(--accent);
   cursor: pointer;
   font-size: var(--astro-text-sm);
   white-space: nowrap;
 }
 
-.link--danger { color: var(--astro-fail-600); }
+.link--danger { color: var(--status-fail-text); }
 
 // ── Dialogs ──────────────────────────────────────────────────────────────────
 .scrim {
@@ -197,35 +205,4 @@
 .person__email {
   color: var(--text-muted);
   font-size: var(--astro-text-xs);
-}
-
-// ── States ───────────────────────────────────────────────────────────────────
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
-
-  i { font-size: 1.75rem; }
-
-  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
-  &__text  { margin: 0; max-inline-size: 44ch; }
-  &--error i { color: var(--astro-fail-600); }
-}
-
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
-
-@keyframes astro-spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
 }

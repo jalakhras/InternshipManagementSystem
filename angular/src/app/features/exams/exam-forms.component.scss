@@ -57,7 +57,7 @@
   padding: var(--astro-space-4);
 }
 
-.form-card--open { border-color: var(--astro-brand-700); }
+.form-card--open { border-color: var(--accent); }
 
 .form-card__head {
   display: flex;
@@ -88,7 +88,7 @@
   font-size: var(--astro-text-xs);
 }
 
-.status--published { color: var(--astro-pass-600, var(--astro-brand-700)); }
+.status--published { color: var(--status-pass-text); }
 .status--retired { color: var(--text-muted); text-decoration: line-through; }
 
 .form-card__facts {
@@ -110,7 +110,7 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--astro-brand-700);
+  color: var(--accent);
   cursor: pointer;
   font-size: var(--astro-text-sm);
   white-space: nowrap;
@@ -118,7 +118,7 @@
   &:disabled { opacity: .5; cursor: default; }
 }
 
-.link--danger { color: var(--astro-fail-600); }
+.link--danger { color: var(--status-fail-text); }
 
 // ── The editor ───────────────────────────────────────────────────────────────
 .editor {
@@ -152,7 +152,7 @@
 
 .pane__title {
   margin: 0 0 var(--astro-space-2);
-  font-size: var(--astro-text-base);
+  font-size: var(--astro-text-md);
 }
 
 .pane__empty {
@@ -213,7 +213,7 @@
   &:disabled { opacity: .3; cursor: default; }
 }
 
-.icon--danger { color: var(--astro-fail-600); }
+.icon--danger { color: var(--status-fail-text); }
 
 .pool__row {
   display: flex;
@@ -245,33 +245,42 @@
   white-space: nowrap;
 }
 
-// ── States ───────────────────────────────────────────────────────────────────
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
+// The destructive one is set apart from the pair it used to sit flush against.
+.link--apart { margin-inline-start: var(--astro-space-2); }
 
-  i { font-size: 1.75rem; }
-
-  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
-  &__text  { margin: 0; max-inline-size: 44ch; }
-  &--error i { color: var(--astro-fail-600); }
+// ── Confirmation ─────────────────────────────────────────────────────────────
+// The scrim is a backdrop and nothing else; the dialog is its own fixed box, so
+// the two never fight over which one is the modal.
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  z-index: 40;
 }
 
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
+.confirm {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  margin-inline: auto;
+  transform: translateY(-50%);
+  inline-size: min(28rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  background: var(--surface-overlay);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
 
-@keyframes astro-spin { to { transform: rotate(360deg); } }
+  &__title { margin: 0 0 var(--astro-space-2); font-size: var(--astro-text-lg); }
+  &__body  { margin: 0; color: var(--text-secondary); }
+  &__note  { margin: var(--astro-space-2) 0 0; color: var(--text-muted); font-size: var(--astro-text-sm); }
 
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
 }

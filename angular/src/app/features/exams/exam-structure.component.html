@@ -2,7 +2,7 @@
   [title]="t('::Structure:Title')"
   [description]="examTitle() || t('::Structure:Lede')">
   <a slot="actions" class="btn btn-outline-secondary" [routerLink]="['/exams', examId()]">
-    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    <i class="bi bi-arrow-left" aria-hidden="true"></i>
     {{ t('::Form:BackToExam') }}
   </a>
 </astro-page-header>
@@ -11,18 +11,12 @@
   <div class="alert alert-danger" role="alert">{{ message }}</div>
 }
 
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else {
   <!-- ── Sections ──────────────────────────────────────────────────────── -->
   <section class="block">
@@ -77,7 +71,7 @@
           @if (canManage()) {
             <span class="row__actions">
               <button type="button" class="link" (click)="editSection(section)">{{ t('::Edit') }}</button>
-              <button type="button" class="link link--danger" [disabled]="saving()" (click)="deleteSection(section)">
+              <button type="button" class="link link--danger" [disabled]="saving()" (click)="askDeleteSection(section)">
                 {{ t('::Delete') }}
               </button>
             </span>
@@ -223,7 +217,7 @@
             @if (canManage()) {
               <span class="row__actions">
                 <button type="button" class="link" (click)="editGroup(group)">{{ t('::Edit') }}</button>
-                <button type="button" class="link link--danger" [disabled]="saving()" (click)="deleteGroup(group)">
+                <button type="button" class="link link--danger" [disabled]="saving()" (click)="askDeleteGroup(group)">
                   {{ t('::Delete') }}
                 </button>
               </span>
@@ -295,4 +289,33 @@
       </form>
     }
   </section>
+}
+
+<!-- ── Delete confirmation ──────────────────────────────────────────────────
+     A section carries the exam's clock, its floor and its qualifying flag, and a
+     passage carries the questions hanging off it. Both were deleted outright
+     from a text link sitting beside Edit. Cancel first, destructive last, the
+     way the candidates and exams lists already ask. -->
+@if (pendingDelete(); as pending) {
+  <div class="scrim" (click)="cancelDelete()"></div>
+
+  <div
+    class="confirm"
+    astroModal
+    (dismiss)="cancelDelete()"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="structureDeleteTitle">
+    <h2 class="confirm__title" id="structureDeleteTitle">{{ t('::ConfirmDelete') }}</h2>
+    <p class="confirm__body">{{ pending.name }}</p>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelDelete()">
+        {{ t('::Cancel') }}
+      </button>
+      <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="confirmDelete()">
+        {{ saving() ? t('::Working') : t('::Delete') }}
+      </button>
+    </div>
+  </div>
 }

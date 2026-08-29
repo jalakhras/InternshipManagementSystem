@@ -8,6 +8,7 @@ import { ExamService } from '../../core/api/exam.service';
 import { ExamDto } from '../../core/api/assessment.models';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
 
 /**
  * How each question has behaved across every sitting.
@@ -25,7 +26,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-item-analysis',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, DataStateComponent],
   templateUrl: './item-analysis.component.html',
   styleUrl: './item-analysis.component.scss',
 })

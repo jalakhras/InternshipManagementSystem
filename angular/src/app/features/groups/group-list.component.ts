@@ -14,6 +14,8 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * Classes: one group of people moving through a level together.
@@ -35,7 +37,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-group-list',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent],
+  imports: [FormsModule, DatePipe, PageHeaderComponent, DataStateComponent, ModalDirective],
   templateUrl: './group-list.component.html',
   styleUrl: './group-list.component.scss',
 })

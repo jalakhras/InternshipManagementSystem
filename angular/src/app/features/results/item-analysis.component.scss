@@ -60,46 +60,18 @@
 .flag {
   display: block;
   margin-block-start: 0.25rem;
-  color: var(--astro-fail-600);
+  color: var(--status-fail-text);
   font-size: var(--astro-text-xs);
   max-inline-size: 60ch;
 }
 
 // A tinted row as well as the sentence, so the ones to fix are findable by eye.
-.flagged { background: color-mix(in srgb, var(--astro-fail-600) 6%, transparent); }
+.flagged { background: color-mix(in srgb, var(--status-fail-mark) 6%, transparent); }
 
-.negative { color: var(--astro-fail-600); }
+.negative { color: var(--status-fail-text); }
 
 // Not a finding, and it must not read as one.
 .unknown {
   color: var(--text-muted);
   font-style: italic;
-}
-
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding-block: var(--astro-space-7);
-  text-align: center;
-  color: var(--text-muted);
-
-  i { font-size: 1.75rem; }
-
-  &__text { margin: 0; max-inline-size: 48ch; }
-}
-
-.spinner {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px solid var(--border-subtle);
-  border-block-start-color: var(--astro-brand-600);
-  border-radius: 50%;
-  animation: astro-spin .7s linear infinite;
-}
-
-@keyframes astro-spin { to { transform: rotate(360deg); } }
-
-@media (prefers-reduced-motion: reduce) {
-  .spinner { animation-duration: 2s; }
 }

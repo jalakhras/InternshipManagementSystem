@@ -2,7 +2,7 @@
   [title]="t('::Results:ItemAnalysis')"
   [description]="t('::Results:ItemAnalysis:Lede')">
   <a slot="actions" class="btn btn-outline-secondary" routerLink="/results">
-    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    <i class="bi bi-arrow-left" aria-hidden="true"></i>
     {{ t('::Results:Detail:Back') }}
   </a>
 </astro-page-header>
@@ -25,20 +25,17 @@
 }
 
 @if (!hasExam()) {
-  <div class="state">
-    <i class="bi bi-clipboard-data" aria-hidden="true"></i>
-    <p class="state__text">{{ t('::Results:ItemAnalysis:PickExam') }}</p>
-  </div>
+  <astro-data-state
+    [empty]="true"
+    emptyIcon="bi-clipboard-data"
+    [emptyTitle]="t('::Results:ItemAnalysis:PickExam')" />
 } @else if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
+  <astro-data-state [loading]="true" />
 } @else if (isEmpty()) {
-  <div class="state">
-    <i class="bi bi-hourglass" aria-hidden="true"></i>
-    <p class="state__text">{{ t('::Results:ItemAnalysis:NotEnough') }}</p>
-  </div>
+  <astro-data-state
+    [empty]="true"
+    emptyIcon="bi-hourglass"
+    [emptyTitle]="t('::Results:ItemAnalysis:NotEnough')" />
 } @else {
   <div class="astro-scroll-x">
     <table class="table">
@@ -62,13 +59,13 @@
               }
             </td>
             <td class="muted">{{ row.topicName || '—' }}</td>
-            <td class="numeric">{{ row.timesAnswered }}</td>
-            <td class="numeric">{{ percent(row.facility) }}</td>
+            <td class="numeric"><span class="astro-numeric">{{ row.timesAnswered }}</span></td>
+            <td class="numeric"><span class="astro-numeric">{{ percent(row.facility) }}</span></td>
             <td class="numeric" [class.negative]="(row.discrimination ?? 0) < 0">
               @if (row.discrimination === null) {
                 <span class="unknown">{{ t('::Results:ItemAnalysis:NotMeasurable') }}</span>
               } @else {
-                {{ percent(row.discrimination) }}
+                <span class="astro-numeric">{{ percent(row.discrimination) }}</span>
               }
             </td>
           </tr>

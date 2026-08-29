@@ -113,28 +113,18 @@
   </div>
 </div>
 
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else if (isEmpty()) {
-  <div class="state">
-    <i class="bi {{ isFiltered() ? 'bi-search' : 'bi-bar-chart' }}" aria-hidden="true"></i>
-    <p class="state__title">
-      {{ isFiltered() ? t('::Results:NoMatches') : t('::Results:NoneYet') }}
-    </p>
-    @if (!isFiltered()) {
-      <p class="state__text">{{ t('::Results:NoneYetNote') }}</p>
-    }
-  </div>
+  <astro-data-state
+    [empty]="true"
+    [emptyIcon]="isFiltered() ? 'bi-search' : 'bi-bar-chart'"
+    [emptyTitle]="isFiltered() ? t('::Results:NoMatches') : t('::Results:NoneYet')"
+    [emptyDescription]="isFiltered() ? undefined : t('::Results:NoneYetNote')" />
 } @else {
   <div class="astro-scroll-x">
     <table class="table">
@@ -161,11 +151,13 @@
             </td>
             <td>{{ row.examTitle }}</td>
             <td>{{ row.formName || '—' }}</td>
-            <td>{{ row.startedAt | date: 'y/MM/dd HH:mm' }}</td>
-            <td class="numeric">{{ row.durationInMinutes }}</td>
+            <td><span class="astro-numeric">{{ row.startedAt | date: 'y/MM/dd HH:mm' }}</span></td>
+            <td class="numeric"><span class="astro-numeric">{{ row.durationInMinutes }}</span></td>
             <td class="numeric">
-              <span class="score">{{ row.scorePercentage }}%</span>
-              <span class="score__raw">{{ row.score }} / {{ row.maxScore }}</span>
+              <span class="score astro-numeric">{{ row.scorePercentage }}%</span>
+              <!-- Two numbers with a slash between them: the slash is neutral, so in an
+                   Arabic row it takes the paragraph direction and 12 / 20 reads 20 / 12. -->
+              <span class="score__raw astro-numeric">{{ row.score }} / {{ row.maxScore }}</span>
             </td>
             <td>
               <span
@@ -178,7 +170,7 @@
             </td>
             <td class="numeric">
               @if (row.integrityFlagCount > 0) {
-                <span class="flags">{{ row.integrityFlagCount }}</span>
+                <span class="flags astro-numeric">{{ row.integrityFlagCount }}</span>
               } @else {
                 —
               }
@@ -198,7 +190,7 @@
         (click)="goToPage(page() - 1)">
         {{ t('::Previous') }}
       </button>
-      <span class="pager__position">{{ page() + 1 }} / {{ totalPages() }}</span>
+      <span class="pager__position astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
       <button
         type="button"
         class="btn btn-outline-secondary btn-sm"
