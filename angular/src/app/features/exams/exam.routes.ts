@@ -31,6 +31,11 @@ export const EXAM_ROUTES: Routes = [
       import('../questions/question-form.component').then(m => m.QuestionFormComponent),
   },
   {
+    // Papers live under their exam for the same reason questions do.
+    path: ':examId/forms',
+    loadComponent: () => import('./exam-forms.component').then(m => m.ExamFormsComponent),
+  },
+  {
     // withComponentInputBinding() in app.config binds this to the component's
     // `id` input, so the component needs no ActivatedRoute of its own.
     path: ':id',

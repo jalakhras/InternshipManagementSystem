@@ -1,0 +1,217 @@
+<astro-page-header
+  [title]="t('::Form:Title')"
+  [description]="examTitle() || t('::Form:Lede')">
+  <div slot="actions" class="head-actions">
+    <a class="btn btn-outline-secondary" [routerLink]="['/exams', examId()]">
+      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      {{ t('::Form:BackToExam') }}
+    </a>
+    @if (canManage()) {
+      <button type="button" class="btn btn-primary" (click)="newForm()">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        {{ t('::Form:New') }}
+      </button>
+    }
+  </div>
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (draftOpen()) {
+  <form class="draft" (ngSubmit)="saveDraft()">
+    <label class="field">
+      <span class="field__label">{{ t('::Form:Name') }}</span>
+      <input
+        class="form-control"
+        required
+        name="formName"
+        [ngModel]="draftName()"
+        (ngModelChange)="draftName.set($event)" />
+    </label>
+
+    <label class="field field--narrow">
+      <span class="field__label">{{ t('::Form:Code') }}</span>
+      <input
+        class="form-control"
+        required
+        name="formCode"
+        [ngModel]="draftCode()"
+        (ngModelChange)="draftCode.set($event)" />
+    </label>
+
+    <div class="draft__actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ t('::Save') }}</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelDraft()">
+        {{ t('::Cancel') }}
+      </button>
+    </div>
+  </form>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi bi-files" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::Form:NoneYet') }}</p>
+    <p class="state__text">{{ t('::Form:NoneYetNote') }}</p>
+    @if (canManage()) {
+      <button type="button" class="btn btn-primary" (click)="newForm()">{{ t('::Form:New') }}</button>
+    }
+  </div>
+} @else {
+  <ul class="forms">
+    @for (form of forms(); track form.id) {
+      <li class="form-card" [class.form-card--open]="opened()?.id === form.id">
+        <div class="form-card__head">
+          <div class="form-card__identity">
+            <span class="form-card__name">{{ form.name }}</span>
+            <code class="form-card__code">{{ form.code }}</code>
+            <span
+              class="status"
+              [class.status--published]="form.status === ExamFormStatus.Published"
+              [class.status--retired]="form.status === ExamFormStatus.Retired">
+              {{ t(statusKey(form.status)) }}
+            </span>
+          </div>
+
+          <div class="form-card__facts">
+            <span>{{ t('::Form:Questions', '' + form.questionCount) }}</span>
+            <span>{{ t('::Form:Marks', '' + form.maxScore) }}</span>
+            <!-- Exposure. A paper in front of enough people has circulated,
+                 whatever its questions' individual counts say. -->
+            <span>{{ t('::Form:TimesUsed', '' + form.timesUsed) }}</span>
+          </div>
+
+          @if (canManage()) {
+            <div class="form-card__actions">
+              <button type="button" class="link" (click)="open(form)">{{ t('::Form:Edit') }}</button>
+
+              @if (form.status === ExamFormStatus.Draft) {
+                <button type="button" class="link" [disabled]="saving()" (click)="publish(form)">
+                  {{ t('::Form:Publish') }}
+                </button>
+                <button type="button" class="link link--danger" [disabled]="saving()" (click)="remove(form)">
+                  {{ t('::Delete') }}
+                </button>
+              } @else if (form.status === ExamFormStatus.Published) {
+                <button type="button" class="link" [disabled]="saving()" (click)="retire(form)">
+                  {{ t('::Form:Retire') }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (opened(); as detail) {
+          @if (detail.id === form.id) {
+            <div class="editor">
+              <div class="editor__bar">
+                <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="saving()" (click)="generate()">
+                  <i class="bi bi-magic" aria-hidden="true"></i>
+                  {{ t('::Form:Generate') }}
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="saving()" (click)="saveQuestions()">
+                  {{ t('::Form:SavePaper') }}
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="close()">
+                  {{ t('::Close') }}
+                </button>
+              </div>
+
+              <p class="editor__note">{{ t('::Form:Generate:Hint') }}</p>
+
+              <div class="editor__panes">
+                <!-- The paper, in the order it will be asked. -->
+                <section class="pane">
+                  <h3 class="pane__title">
+                    {{ t('::Form:ThePaper', '' + chosen().length) }}
+                  </h3>
+
+                  @if (chosen().length === 0) {
+                    <p class="pane__empty">{{ t('::Form:PaperEmpty') }}</p>
+                  }
+
+                  <ol class="chosen">
+                    @for (question of chosenQuestions(); track question.id; let i = $index) {
+                      <li class="chosen__row">
+                        <span class="chosen__position">{{ i + 1 }}</span>
+                        <span class="chosen__text">{{ question.text }}</span>
+                        <span class="chosen__actions">
+                          <button
+                            type="button"
+                            class="icon"
+                            [attr.aria-label]="t('::Form:MoveUp')"
+                            [disabled]="i === 0"
+                            (click)="moveUp(i)">
+                            <i class="bi bi-arrow-up" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="icon"
+                            [attr.aria-label]="t('::Form:MoveDown')"
+                            [disabled]="i === chosen().length - 1"
+                            (click)="moveDown(i)">
+                            <i class="bi bi-arrow-down" aria-hidden="true"></i>
+                          </button>
+                          <button
+                            type="button"
+                            class="icon icon--danger"
+                            [attr.aria-label]="t('::Delete')"
+                            (click)="toggle(question.id)">
+                            <i class="bi bi-x-lg" aria-hidden="true"></i>
+                          </button>
+                        </span>
+                      </li>
+                    }
+                  </ol>
+                </section>
+
+                <!-- Everything this exam can draw: its own questions and the bank
+                     questions its domain and level make available. -->
+                <section class="pane">
+                  <h3 class="pane__title">{{ t('::Form:Available') }}</h3>
+
+                  @if (poolLoading()) {
+                    <div class="state" role="status">
+                      <span class="spinner" aria-hidden="true"></span>
+                    </div>
+                  } @else {
+                    <ul class="pool">
+                      @for (question of pool(); track question.id) {
+                        <li>
+                          <label class="pool__row" [class.pool__row--in]="isChosen(question.id)">
+                            <input
+                              type="checkbox"
+                              [checked]="isChosen(question.id)"
+                              (change)="toggle(question.id)" />
+                            <span class="pool__text">{{ question.text }}</span>
+                            @if (!question.examId) {
+                              <span class="pool__bank">{{ t('::Question:FromBank') }}</span>
+                            }
+                          </label>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </section>
+              </div>
+            </div>
+          }
+        }
+      </li>
+    }
+  </ul>
+}

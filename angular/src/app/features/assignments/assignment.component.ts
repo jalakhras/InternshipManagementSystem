@@ -5,6 +5,8 @@ import { DatePipe } from '@angular/common';
 
 import { AssignmentService, AssignmentResult, ExamLinkDto } from '../../core/api/assignment.service';
 import { CandidateService } from '../../core/api/candidate.service';
+import { StructureService } from '../../core/api/structure.service';
+import { ExamFormDto, ExamFormStatus } from '../../core/api/structure.models';
 import { ExamService } from '../../core/api/exam.service';
 import { CandidateGroupDto } from '../../core/api/candidate.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
@@ -41,6 +43,7 @@ export class AssignmentComponent {
   private readonly assignments = inject(AssignmentService);
   private readonly candidates = inject(CandidateService);
   private readonly exams = inject(ExamService);
+  private readonly structure = inject(StructureService);
 
   readonly t = inject(TranslateService).t;
 
@@ -48,6 +51,17 @@ export class AssignmentComponent {
 
   readonly examTitle = signal('');
   readonly groups = signal<CandidateGroupDto[]>([]);
+
+  /**
+   * The published papers for this exam, and which one this sitting uses.
+   *
+   * Empty is the normal case and means "draw a paper per candidate", which is
+   * right for practice. Choosing one is what makes two people's scores
+   * comparable, and it is decided here because a sitting is what a paper belongs
+   * to — the morning group and the afternoon group are one class and two papers.
+   */
+  readonly forms = signal<ExamFormDto[]>([]);
+  readonly formId = signal('');
 
   readonly links = signal<ExamLinkDto[]>([]);
   readonly totalCount = signal(0);
@@ -94,6 +108,15 @@ export class AssignmentComponent {
 
       this.candidates.getGroups().subscribe({
         next: groups => this.groups.set(groups),
+        error: () => undefined,
+      });
+
+      // Only published papers are offered. A draft has not been reviewed and a
+      // retired one was taken out of rotation on purpose; the server refuses
+      // both, and offering them here would be an error somebody has to hit
+      // before they learn it.
+      this.structure.getForms(id).subscribe({
+        next: forms => this.forms.set(forms.filter(f => f.status === ExamFormStatus.Published)),
         error: () => undefined,
       });
 
@@ -186,6 +209,7 @@ export class AssignmentComponent {
     this.assignments
       .create({
         examId: this.examId(),
+        examFormId: this.formId() || undefined,
         candidateGroupId: this.groupId() || undefined,
         expiresAt: new Date(this.expiresAt()).toISOString(),
         maxAttempts: this.maxAttempts(),

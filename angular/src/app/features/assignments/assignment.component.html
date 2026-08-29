@@ -188,6 +188,21 @@
         <p class="hint">{{ t('::Assignment:Group:Hint') }}</p>
       </div>
 
+      <!-- Only shown when there are papers to choose from. A picker with one
+           entry called "draw one" is a decision nobody asked to make. -->
+      @if (forms().length > 0) {
+        <div class="field">
+          <label class="form-label" for="sendForm">{{ t('::Assignment:Form') }}</label>
+          <select id="sendForm" class="form-select" [ngModel]="formId()" (ngModelChange)="formId.set($event)">
+            <option value="">{{ t('::Assignment:Form:Draw') }}</option>
+            @for (form of forms(); track form.id) {
+              <option [value]="form.id">{{ form.name }} ({{ form.questionCount }})</option>
+            }
+          </select>
+          <p class="hint">{{ t('::Assignment:Form:Hint') }}</p>
+        </div>
+      }
+
       <div class="row-2">
         <div class="field">
           <label class="form-label" for="expiresAt">{{ t('::Assignment:Expires') }}</label>

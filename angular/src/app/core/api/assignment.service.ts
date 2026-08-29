@@ -10,6 +10,16 @@ import { PagedResult, PagedRequest } from './assessment.models';
  * can check before sending.
  */
 export interface CreateAssignmentDto {
+  /**
+   * The named paper everybody in this sitting receives, or absent to draw one
+   * each.
+   *
+   * Named on the sitting rather than on the exam or the class, because a sitting
+   * is what a paper belongs to: the morning group and the afternoon group are
+   * one class and two papers, and a resit is a second sitting.
+   */
+  examFormId?: string;
+
   examId: string;
   candidateId?: string;
   candidateGroupId?: string;

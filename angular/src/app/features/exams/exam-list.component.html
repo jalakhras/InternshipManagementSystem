@@ -150,6 +150,17 @@
                     <i class="bi bi-list-ul" aria-hidden="true"></i>
                   </a>
 
+                  <!-- The papers this exam can be sent as. Beside the questions
+                       because they are the same decision seen twice: what is in
+                       the bank, and which of it makes up Form 2. -->
+                  <a
+                    class="row-action"
+                    [routerLink]="['/exams', exam.id, 'forms']"
+                    [attr.title]="t('::Form:Title')"
+                    [attr.aria-label]="t('::Form:Title') + ': ' + exam.title">
+                    <i class="bi bi-files" aria-hidden="true"></i>
+                  </a>
+
                   @if (canEdit()) {
                     <a
                       class="row-action"
