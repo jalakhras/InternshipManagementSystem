@@ -41,6 +41,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     private readonly IRepository<Answer, Guid> _answers;
     private readonly IRepository<IntegritySignal, Guid> _signals;
     private readonly IRepository<Topic, Guid> _topics;
+    private readonly IRepository<Assignment, Guid> _assignments;
+    private readonly IRepository<ExamForm, Guid> _forms;
+    private readonly IRepository<ExamFormQuestion, Guid> _formQuestions;
     private readonly ExamSessionTokenService _sessions;
     private readonly ExamFormBuilder _formBuilder;
     private readonly TakerQuestionProjector _projector;
@@ -58,6 +61,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         IRepository<Answer, Guid> answers,
         IRepository<IntegritySignal, Guid> signals,
         IRepository<Topic, Guid> topics,
+        IRepository<Assignment, Guid> assignments,
+        IRepository<ExamForm, Guid> forms,
+        IRepository<ExamFormQuestion, Guid> formQuestions,
         ExamSessionTokenService sessions,
         ExamFormBuilder formBuilder,
         TakerQuestionProjector projector,
@@ -65,6 +71,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         IDataFilter dataFilter)
     {
         _links = links;
+        _assignments = assignments;
+        _forms = forms;
+        _formQuestions = formQuestions;
         _exams = exams;
         _questions = questions;
         _groups = groups;
@@ -148,9 +157,12 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         // that is the running attempt; otherwise a placeholder deadline covers the
         // pre-start screen and StartAsync issues the real one.
         preview.SessionToken = active is not null
-            ? _sessions.Issue(active.Id, link.CandidateId, link.ExamId, link.TenantId, active.DeadlineAt.ToUniversalTime())
-            : _sessions.Issue(Guid.Empty, link.CandidateId, link.ExamId, link.TenantId,
-                              now.AddMinutes(exam.TimeLimitInMinutes + 30).ToUniversalTime());
+            ? _sessions.Issue(
+                active.Id, link.CandidateId, link.ExamId, link.TenantId,
+                active.DeadlineAt.ToUniversalTime(), link.Id)
+            : _sessions.Issue(
+                Guid.Empty, link.CandidateId, link.ExamId, link.TenantId,
+                now.AddMinutes(exam.TimeLimitInMinutes + 30).ToUniversalTime(), link.Id);
 
         // The plain token is needed once more, to bind the pending start to this link.
         preview.BlockReason = null;
@@ -176,8 +188,20 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             return await BuildStateAsync(await LoadOwnAttemptAsync(claims));
         }
 
-        var link = await (await _links.GetQueryableAsync())
-            .FirstOrDefaultAsync(l => l.CandidateId == claims.CandidateId && l.ExamId == claims.ExamId && !l.IsRevoked);
+        // The link this session was minted from, not "a link this candidate has to
+        // this exam". A candidate can hold more than one — a resit is exactly that
+        // — and resolving by candidate and exam took whichever row came back
+        // first, so a student opening their second link could burn an attempt on
+        // the first one.
+        //
+        // The fallback is for tokens minted before the claim existed. An exam in
+        // progress must not end because we shipped.
+        var links = await _links.GetQueryableAsync();
+
+        var link = claims.LinkId is { } linkId && linkId != Guid.Empty
+            ? await links.FirstOrDefaultAsync(l => l.Id == linkId && !l.IsRevoked)
+            : await links.FirstOrDefaultAsync(l =>
+                l.CandidateId == claims.CandidateId && l.ExamId == claims.ExamId && !l.IsRevoked);
 
         if (link is null)
         {
@@ -204,15 +228,26 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         if (running is not null)
         {
-            return await BuildStateAsync(running);
+            return await StartedStateAsync(running, link);
         }
+
+        // Which paper this sitting uses, decided when it was sent. Null means draw
+        // one for this candidate, which is what every exam did before named forms
+        // existed and still the right answer for practice.
+        var assignment = await _assignments.FindAsync(link.AssignmentId);
+        var formId = assignment?.ExamFormId;
 
         var seed = ExamSessionTokenService.NewShuffleSeed();
         var attempt = new Attempt(
             GuidGenerator.Create(), link.TenantId, exam.Id, link.CandidateId,
             now, now.AddMinutes(exam.TimeLimitInMinutes), seed)
         {
-            ExamLinkId = link.Id
+            ExamLinkId = link.Id,
+
+            // Recorded rather than inferred later: a form can be retired after
+            // somebody sat it, and a result only means what it meant if the paper
+            // behind it is known.
+            ExamFormId = formId,
         };
 
         await _attempts.InsertAsync(attempt, autoSave: true);
@@ -225,7 +260,10 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             .Where(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId))
             .ToListAsync();
 
-        var form = _formBuilder.Build(exam, bank, attempt.Id, link.TenantId, seed);
+        var form = formId is { } id
+            ? await BuildFromNamedFormAsync(id, exam, attempt.Id, link.TenantId, seed, bank)
+            : _formBuilder.Build(exam, bank, attempt.Id, link.TenantId, seed);
+
         await _attemptQuestions.InsertManyAsync(form, autoSave: true);
 
         await RecordExposureAsync(form, bank);
@@ -238,7 +276,36 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         link.AttemptsUsed++;
         await _links.UpdateAsync(link, autoSave: true);
 
-        return await BuildStateAsync(attempt);
+        return await StartedStateAsync(attempt, link);
+    }
+
+    /// <summary>
+    /// The state, plus the credential that names the attempt it describes.
+    /// <para>
+    /// The token minted on the preview screen carries the empty id, because the
+    /// attempt did not exist yet. Only the start knows the real one, and every
+    /// call after it reads the attempt out of the token — so the start has to hand
+    /// back a replacement, and the caller has to use it.
+    /// </para>
+    /// <para>
+    /// Its lifetime is the attempt's deadline rather than a fixed window: a
+    /// credential that outlives the exam it opens is a way back into a submitted
+    /// paper.
+    /// </para>
+    /// </summary>
+    private async Task<AttemptStateDto> StartedStateAsync(Attempt attempt, ExamLink link)
+    {
+        var state = await BuildStateAsync(attempt);
+
+        state.SessionToken = _sessions.Issue(
+            attempt.Id,
+            link.CandidateId,
+            link.ExamId,
+            link.TenantId,
+            attempt.DeadlineAt.ToUniversalTime(),
+            link.Id);
+
+        return state;
     }
 
     public async Task<TakerQuestionDto> GetQuestionAsync(string sessionToken, int position)
@@ -606,6 +673,61 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         }
 
         return attempt;
+    }
+
+    /// <summary>
+    /// Builds this attempt's paper from a named form.
+    /// <para>
+    /// The form's own order and its own marks, both frozen when it was published.
+    /// Nothing is shuffled and nothing is drawn: two candidates who sat "Form 2"
+    /// must have answered the same paper, which is the entire reason a named form
+    /// exists.
+    /// </para>
+    /// <para>
+    /// A question that has since been deleted is skipped rather than failing the
+    /// start. A candidate sitting down must not be stopped by an authoring change
+    /// made last week — the shortfall is visible in the marks and recoverable, and
+    /// a locked-out candidate is not.
+    /// </para>
+    /// </summary>
+    private async Task<List<AttemptQuestion>> BuildFromNamedFormAsync(
+        Guid examFormId,
+        Exam exam,
+        Guid attemptId,
+        Guid? tenantId,
+        int seed,
+        List<Question> bank)
+    {
+        var slots = await (await _formQuestions.GetQueryableAsync())
+            .Where(q => q.ExamFormId == examFormId)
+            .OrderBy(q => q.DisplayOrder)
+            .ToListAsync();
+
+        var known = bank.ToDictionary(q => q.Id);
+
+        // Through the same projector the drawn path uses, which is the point: the
+        // option order lives there. Written out by hand this method once omitted it,
+        // and a matching question with no recorded order arrives with left[i] paired
+        // to right[i] — the answer key, in the JSON handed to the candidate.
+        var paper = slots
+            .Where(slot => known.ContainsKey(slot.QuestionId))
+            .Select(slot => new PaperSlot(known[slot.QuestionId], slot.Score))
+            .ToList();
+
+        var built = _formBuilder.Project(exam, paper, attemptId, tenantId, seed);
+
+        // Exposure accrues per form as well as per question: a form in front of
+        // enough people has circulated whatever its questions' individual counts
+        // say, and that is the number a coordinator retires a paper on.
+        var form = await _forms.FindAsync(examFormId);
+
+        if (form is not null)
+        {
+            form.TimesUsed++;
+            await _forms.UpdateAsync(form, autoSave: true);
+        }
+
+        return built;
     }
 
     /// <summary>

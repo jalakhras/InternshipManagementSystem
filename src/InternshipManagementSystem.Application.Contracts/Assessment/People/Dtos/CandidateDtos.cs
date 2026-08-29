@@ -87,26 +87,6 @@ public class CandidateGroupDto : AuditedEntityDto<Guid>
 
     public int MemberCount { get; set; }
 
-    /// <summary>The papers this class sits, in the order it sits them.</summary>
-    public List<CandidateGroupFormDto> Forms { get; set; } = new();
-}
-
-public class CandidateGroupFormDto
-{
-    public Guid ExamFormId { get; set; }
-
-    public Guid ExamId { get; set; }
-
-    public string ExamTitle { get; set; } = default!;
-
-    public string FormName { get; set; } = default!;
-
-    public string FormCode { get; set; } = default!;
-
-    /// <summary>Zero for the first sitting, one for the retake, and so on.</summary>
-    public int Sequence { get; set; }
-
-    public DateTime? SittingOn { get; set; }
 }
 
 public class CreateUpdateCandidateGroupDto
@@ -125,23 +105,6 @@ public class CreateUpdateCandidateGroupDto
     public DateTime? StartsOn { get; set; }
 
     public DateTime? EndsOn { get; set; }
-}
-
-/// <summary>
-/// The papers a class sits, in order.
-/// </summary>
-public class SetGroupFormsDto
-{
-    [Required]
-    public List<GroupFormEntryDto> Forms { get; set; } = new();
-}
-
-public class GroupFormEntryDto
-{
-    [Required]
-    public Guid ExamFormId { get; set; }
-
-    public DateTime? SittingOn { get; set; }
 }
 
 public class SetGroupMembersDto

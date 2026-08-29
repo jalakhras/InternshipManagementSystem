@@ -28,9 +28,6 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
     private readonly IRepository<Attempt, Guid> _attempts;
     private readonly IRepository<Category, Guid> _categories;
     private readonly IRepository<Level, Guid> _levels;
-    private readonly IRepository<CandidateGroupForm, Guid> _groupForms;
-    private readonly IRepository<ExamForm, Guid> _forms;
-    private readonly IRepository<Exam, Guid> _exams;
 
     public CandidateAppService(
         IRepository<Candidate, Guid> candidates,
@@ -38,10 +35,7 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         IRepository<CandidateGroupMember, Guid> members,
         IRepository<Attempt, Guid> attempts,
         IRepository<Category, Guid> categories,
-        IRepository<Level, Guid> levels,
-        IRepository<CandidateGroupForm, Guid> groupForms,
-        IRepository<ExamForm, Guid> forms,
-        IRepository<Exam, Guid> exams)
+        IRepository<Level, Guid> levels)
     {
         _candidates = candidates;
         _groups = groups;
@@ -49,9 +43,6 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         _attempts = attempts;
         _categories = categories;
         _levels = levels;
-        _groupForms = groupForms;
-        _forms = forms;
-        _exams = exams;
     }
 
     // ------------------------------------------------------------- candidates
@@ -276,7 +267,6 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
 
         var categories = await LoadCategoriesAsync(groups.Select(g => g.CategoryId));
         var levels = await LoadLevelsAsync(groups.Select(g => g.LevelId));
-        var papers = await LoadFormsAsync(groups.Select(g => g.Id).ToList());
 
         return groups
             .Select(group => new CandidateGroupDto
@@ -291,7 +281,6 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
                 StartsOn = group.StartsOn,
                 EndsOn = group.EndsOn,
                 MemberCount = counts.GetValueOrDefault(group.Id),
-                Forms = papers.GetValueOrDefault(group.Id) ?? [],
                 CreationTime = group.CreationTime,
             })
             .ToList();
@@ -373,120 +362,7 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         return (await GetGroupsAsync()).First(g => g.Id == id);
     }
 
-    [Authorize(InternshipManagementSystemPermissions.Groups.Edit)]
-    public async Task<CandidateGroupDto> SetGroupFormsAsync(Guid id, SetGroupFormsDto input)
-    {
-        var group = await _groups.GetAsync(id);
-
-        var wanted = input.Forms.Select(f => f.ExamFormId).ToList();
-
-        if (wanted.Distinct().Count() != wanted.Count)
-        {
-            // The same paper twice in the order makes a retake identical to the
-            // first attempt, which removes the reason for having forms at all.
-            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.GroupFormRepeated);
-        }
-
-        var available = await (await _forms.GetQueryableAsync())
-            .Where(f => wanted.Contains(f.Id))
-            .ToDictionaryAsync(f => f.Id);
-
-        foreach (var entry in input.Forms)
-        {
-            if (!available.TryGetValue(entry.ExamFormId, out var form))
-            {
-                // Resolved through the tenant-filtered repository, so a form id
-                // learned elsewhere cannot be attached to this class.
-                throw new BusinessException(InternshipManagementSystemDomainErrorCodes.GroupFormNotAvailable);
-            }
-
-            if (form.Status != ExamFormStatus.Published)
-            {
-                // A draft has not been reviewed and a retired one was taken out of
-                // rotation deliberately. Scheduling either is scheduling a paper
-                // nobody approved.
-                throw new BusinessException(InternshipManagementSystemDomainErrorCodes.GroupFormNotPublished);
-            }
-        }
-
-        var existing = await (await _groupForms.GetQueryableAsync())
-            .Where(f => f.CandidateGroupId == id)
-            .ToListAsync();
-
-        if (existing.Count > 0)
-        {
-            await _groupForms.DeleteManyAsync(existing, autoSave: true);
-        }
-
-        // The caller's order is the sitting order: the first is what everyone
-        // sits, the second is what a retake uses.
-        var papers = input.Forms
-            .Select((entry, index) => new CandidateGroupForm(
-                GuidGenerator.Create(), CurrentTenant.Id, id, entry.ExamFormId, index)
-            {
-                SittingOn = entry.SittingOn,
-            })
-            .ToList();
-
-        if (papers.Count > 0)
-        {
-            await _groupForms.InsertManyAsync(papers, autoSave: true);
-        }
-
-        return (await GetGroupsAsync()).First(g => g.Id == group.Id);
-    }
-
     // ---------------------------------------------------------------- helpers
-
-    /// <summary>
-    /// The papers each class sits, in order, with enough of the exam and form
-    /// named that a list row reads without a second request.
-    /// </summary>
-    private async Task<Dictionary<Guid, List<CandidateGroupFormDto>>> LoadFormsAsync(List<Guid> groupIds)
-    {
-        var links = await (await _groupForms.GetQueryableAsync())
-            .Where(f => groupIds.Contains(f.CandidateGroupId))
-            .OrderBy(f => f.Sequence)
-            .ToListAsync();
-
-        if (links.Count == 0)
-        {
-            return [];
-        }
-
-        var formIds = links.Select(l => l.ExamFormId).Distinct().ToList();
-
-        var forms = await (await _forms.GetQueryableAsync())
-            .Where(f => formIds.Contains(f.Id))
-            .ToDictionaryAsync(f => f.Id);
-
-        var examIds = forms.Values.Select(f => f.ExamId).Distinct().ToList();
-
-        var exams = await (await _exams.GetQueryableAsync())
-            .Where(e => examIds.Contains(e.Id))
-            .ToDictionaryAsync(e => e.Id, e => e.Title);
-
-        return links
-            .Where(link => forms.ContainsKey(link.ExamFormId))
-            .GroupBy(link => link.CandidateGroupId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Select(link =>
-                {
-                    var form = forms[link.ExamFormId];
-
-                    return new CandidateGroupFormDto
-                    {
-                        ExamFormId = form.Id,
-                        ExamId = form.ExamId,
-                        ExamTitle = exams.GetValueOrDefault(form.ExamId) ?? string.Empty,
-                        FormName = form.Name,
-                        FormCode = form.Code,
-                        Sequence = link.Sequence,
-                        SittingOn = link.SittingOn,
-                    };
-                }).ToList());
-    }
 
     private async Task<Dictionary<Guid, string>> LoadLevelsAsync(IEnumerable<Guid?> ids)
     {

@@ -15,6 +15,22 @@ public class Assignment : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid ExamId { get; set; }
 
+    /// <summary>
+    /// The named paper this sitting uses, or null to draw one per candidate.
+    /// <para>
+    /// This is where a form becomes real. It was briefly configured on the class
+    /// instead, which read well and did nothing: no code consumed it when an
+    /// attempt started, so a coordinator could nominate Form 2 for the retake and
+    /// every student would still receive a random draw.
+    /// </para>
+    /// <para>
+    /// On the sitting rather than the class because a sitting is what a form
+    /// belongs to — the morning group and the afternoon group are one class and
+    /// two papers, and a resit is a second sitting rather than a second class.
+    /// </para>
+    /// </summary>
+    public Guid? ExamFormId { get; set; }
+
     /// <summary>Set for a single-person assignment.</summary>
     public Guid? CandidateId { get; set; }
 

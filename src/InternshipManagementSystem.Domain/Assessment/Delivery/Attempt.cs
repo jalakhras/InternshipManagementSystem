@@ -22,6 +22,17 @@ public class Attempt : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid CandidateId { get; set; }
     public Guid? ExamLinkId { get; set; }
 
+    /// <summary>
+    /// The named paper this attempt was served, or null when it was drawn.
+    /// <para>
+    /// Recorded rather than inferred. A result only means the same thing as
+    /// another if the papers behind them are known, and a form can be retired
+    /// after somebody sat it — so which paper this was has to be written down at
+    /// the time.
+    /// </para>
+    /// </summary>
+    public Guid? ExamFormId { get; set; }
+
     public DateTime StartedAt { get; set; }
 
     /// <summary>The moment this attempt stops being accepted. The single source of truth for time.</summary>

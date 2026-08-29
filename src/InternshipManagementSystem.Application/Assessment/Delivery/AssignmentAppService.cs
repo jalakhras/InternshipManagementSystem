@@ -27,6 +27,7 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
     private readonly IRepository<Assignment, Guid> _assignments;
     private readonly IRepository<ExamLink, Guid> _links;
     private readonly IRepository<Exam, Guid> _exams;
+    private readonly IRepository<ExamForm, Guid> _forms;
     private readonly IRepository<Candidate, Guid> _candidates;
     private readonly IRepository<CandidateGroupMember, Guid> _members;
     private readonly IEmailSender _emailSender;
@@ -37,6 +38,7 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
         IRepository<Assignment, Guid> assignments,
         IRepository<ExamLink, Guid> links,
         IRepository<Exam, Guid> exams,
+        IRepository<ExamForm, Guid> forms,
         IRepository<Candidate, Guid> candidates,
         IRepository<CandidateGroupMember, Guid> members,
         IEmailSender emailSender,
@@ -46,6 +48,7 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
         _assignments = assignments;
         _links = links;
         _exams = exams;
+        _forms = forms;
         _candidates = candidates;
         _members = members;
         _emailSender = emailSender;
@@ -78,6 +81,28 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
             throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamNotPublished);
         }
 
+        // Checked before anybody is emailed. A sitting sent on a paper that turns
+        // out to be a draft cannot be taken back once the links are out.
+        if (input.ExamFormId is { } formId)
+        {
+            // FindAsync rather than GetAsync: a form belonging to another tenant is
+            // filtered out and comes back null, which is the same answer as deleted
+            // and should read the same to the caller.
+            var form = await _forms.FindAsync(formId);
+
+            if (form is null || form.ExamId != exam.Id)
+            {
+                throw new BusinessException(
+                    InternshipManagementSystemDomainErrorCodes.AssignmentFormNotAvailable);
+            }
+
+            if (!form.IsUsable)
+            {
+                throw new BusinessException(
+                    InternshipManagementSystemDomainErrorCodes.AssignmentFormNotPublished);
+            }
+        }
+
         var recipients = await ResolveRecipientsAsync(input);
 
         if (recipients.Count == 0)
@@ -87,6 +112,7 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
 
         var assignment = new Assignment(GuidGenerator.Create(), CurrentTenant.Id, exam.Id, input.ExpiresAt)
         {
+            ExamFormId = input.ExamFormId,
             CandidateId = input.CandidateId,
             CandidateGroupId = input.CandidateGroupId,
             MaxAttempts = input.MaxAttempts,

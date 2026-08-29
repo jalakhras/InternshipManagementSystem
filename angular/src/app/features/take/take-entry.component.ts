@@ -87,7 +87,15 @@ export class TakeEntryComponent {
     this.error.set(null);
 
     this.take.start().subscribe({
-      next: () => this.router.navigate(['/exam', this.token(), 'sitting']),
+      next: state => {
+        // The credential for the sitting itself. Without this swap every question
+        // after the start is requested against an attempt id of all zeroes.
+        if (state.sessionToken) {
+          this.take.setSession(state.sessionToken);
+        }
+
+        this.router.navigate(['/exam', this.token(), 'sitting']);
+      },
       error: err => {
         this.starting.set(false);
         this.error.set(this.reason(err));

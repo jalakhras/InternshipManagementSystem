@@ -17,6 +17,22 @@ public class CreateAssignmentDto
     [Required]
     public Guid ExamId { get; set; }
 
+    /// <summary>
+    /// The named paper everybody in this sitting receives, or null to draw one
+    /// each.
+    /// <para>
+    /// Named here rather than on the exam or the class, because a sitting is what a
+    /// paper belongs to: the morning group and the afternoon group are one class
+    /// and two papers, and a resit is a second sitting rather than a second class.
+    /// </para>
+    /// <para>
+    /// Left null the older behaviour stands and every candidate gets their own draw
+    /// from the bank, which is right for practice and wrong for anything whose
+    /// scores get compared.
+    /// </para>
+    /// </summary>
+    public Guid? ExamFormId { get; set; }
+
     /// <summary>Set this or <see cref="CandidateGroupId"/>, not both.</summary>
     public Guid? CandidateId { get; set; }
 

@@ -35,6 +35,18 @@ public class ExamSessionTokenService : ISingletonDependency
     public const string ClaimTenantId = "ims:tenant";
 
     /// <summary>
+    /// Which link this session came from.
+    /// <para>
+    /// Carried because a candidate can hold more than one link to the same exam —
+    /// a resit is exactly that — and without it the start had to guess, resolving
+    /// by candidate and exam and taking whichever row the database returned
+    /// first. A student opening their second link could burn an attempt on the
+    /// first one.
+    /// </para>
+    /// </summary>
+    public const string ClaimLinkId = "ims:link";
+
+    /// <summary>
     /// Shorter than this and a key is guessable by someone who knows it is a
     /// pass phrase rather than random bytes.
     /// </summary>
@@ -74,13 +86,20 @@ public class ExamSessionTokenService : ISingletonDependency
     /// deadline plus a short grace period, so it cannot outlive the exam it was
     /// issued for.
     /// </summary>
-    public string Issue(Guid attemptId, Guid candidateId, Guid examId, Guid? tenantId, DateTime deadlineUtc)
+    public string Issue(
+        Guid attemptId,
+        Guid candidateId,
+        Guid examId,
+        Guid? tenantId,
+        DateTime deadlineUtc,
+        Guid linkId = default)
     {
         var claims = new List<Claim>
         {
             new(ClaimAttemptId, attemptId.ToString()),
             new(ClaimCandidateId, candidateId.ToString()),
-            new(ClaimExamId, examId.ToString())
+            new(ClaimExamId, examId.ToString()),
+            new(ClaimLinkId, linkId.ToString())
         };
 
         if (tenantId.HasValue)
@@ -126,6 +145,7 @@ public class ExamSessionTokenService : ISingletonDependency
             var candidateId = principal.FindFirst(ClaimCandidateId)?.Value;
             var examId = principal.FindFirst(ClaimExamId)?.Value;
             var tenantId = principal.FindFirst(ClaimTenantId)?.Value;
+            var linkId = principal.FindFirst(ClaimLinkId)?.Value;
 
             if (attemptId is null || candidateId is null || examId is null)
             {
@@ -136,7 +156,11 @@ public class ExamSessionTokenService : ISingletonDependency
                 Guid.Parse(attemptId),
                 Guid.Parse(candidateId),
                 Guid.Parse(examId),
-                tenantId is null ? null : Guid.Parse(tenantId));
+                tenantId is null ? null : Guid.Parse(tenantId),
+                // Absent on a token minted before this claim existed. Those sessions
+                // fall back to the old resolution rather than being rejected: an
+                // exam already in progress must not end because we shipped.
+                linkId is null ? null : Guid.Parse(linkId));
         }
         catch (Exception)
         {
@@ -160,4 +184,9 @@ public class ExamSessionTokenService : ISingletonDependency
 }
 
 /// <summary>What an exam-session credential asserts.</summary>
-public sealed record ExamSessionClaims(Guid AttemptId, Guid CandidateId, Guid ExamId, Guid? TenantId);
+public sealed record ExamSessionClaims(
+    Guid AttemptId,
+    Guid CandidateId,
+    Guid ExamId,
+    Guid? TenantId,
+    Guid? LinkId = null);

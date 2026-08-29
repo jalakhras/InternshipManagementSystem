@@ -127,6 +127,19 @@ public class AttemptStateDto
 
     public bool AllowBackNavigation { get; set; }
     public bool OneQuestionAtATime { get; set; }
+
+    /// <summary>
+    /// The credential for the rest of this sitting. Set by the start; null on the
+    /// polls that follow, which are already carrying it.
+    /// <para>
+    /// The token from the preview screen names no attempt, because at that point
+    /// there is none. Every call after the start reads the attempt out of the
+    /// token, so the caller has to swap to this one or it is asking about the
+    /// empty id — which is what it did, and every question after the start came
+    /// back "no such attempt".
+    /// </para>
+    /// </summary>
+    public string? SessionToken { get; set; }
 }
 
 /// <summary>An autosave. Sent on navigation and on a short timer while typing.</summary>

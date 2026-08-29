@@ -192,20 +192,6 @@ public partial class InternshipManagementSystemDbContext
             b.HasIndex(x => x.TenantId).IsUnique();
         });
 
-        builder.Entity<CandidateGroupForm>(b =>
-        {
-            b.ToTable(prefix + "CandidateGroupForms", schema);
-            b.ConfigureByConvention();
-
-            // One paper per position in the order. A class cannot sit two
-            // different papers as its first sitting.
-            b.HasIndex(x => new { x.CandidateGroupId, x.Sequence }).IsUnique();
-
-            // And the same paper cannot appear twice in the order, which would
-            // make a retake identical to the first attempt.
-            b.HasIndex(x => new { x.CandidateGroupId, x.ExamFormId }).IsUnique();
-        });
-
         // ---------- People and cohorts ----------
 
         builder.Entity<Candidate>(b =>

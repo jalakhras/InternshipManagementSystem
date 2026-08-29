@@ -95,6 +95,15 @@ export interface AttemptState {
   isSubmitted: boolean;
   allowBackNavigation: boolean;
   oneQuestionAtATime: boolean;
+
+  /**
+   * Returned by the start, and it replaces the one from the entry screen.
+   *
+   * That earlier token was minted before the attempt existed, so it names no
+   * attempt at all. Everything after the start reads the attempt out of the
+   * token, so keeping the old one asks the server about the empty id.
+   */
+  sessionToken?: string;
 }
 
 export interface SaveAnswer {

@@ -50,19 +50,16 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string CandidateEmailTaken = "IMS:Candidate:EmailTaken";
 
     /// <summary>
-    /// The same paper twice in a class's order makes a retake identical to the
-    /// first attempt.
+    /// A form this tenant does not own, one that no longer exists, or one that
+    /// belongs to a different exam than the sitting being sent.
     /// </summary>
-    public const string GroupFormRepeated = "IMS:Group:FormRepeated";
-
-    /// <summary>A form this tenant does not own, or one that no longer exists.</summary>
-    public const string GroupFormNotAvailable = "IMS:Group:FormNotAvailable";
+    public const string AssignmentFormNotAvailable = "IMS:Assignment:FormNotAvailable";
 
     /// <summary>
     /// A draft has not been reviewed and a retired form was taken out of rotation
-    /// deliberately. Scheduling either is scheduling a paper nobody approved.
+    /// deliberately. Sending either is sending a paper nobody approved.
     /// </summary>
-    public const string GroupFormNotPublished = "IMS:Group:FormNotPublished";
+    public const string AssignmentFormNotPublished = "IMS:Assignment:FormNotPublished";
 
     /// <summary>
     /// A question was submitted with neither an owning exam nor a domain to file it

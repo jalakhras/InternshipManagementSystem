@@ -64,11 +64,49 @@ public class ExamFormBuilder : ITransientDependency
 
         var ordered = ApplyOrdering(exam, selected, random);
 
-        return ordered
-            .Select((question, index) => new AttemptQuestion(
-                _guidGenerator.Create(), tenantId, attemptId, question.Id, index, question.Score)
+        return Project(
+            exam,
+            ordered.Select(q => new PaperSlot(q, q.Score)).ToList(),
+            attemptId,
+            tenantId,
+            random);
+    }
+
+    /// <summary>
+    /// Turns an already-chosen paper into this attempt's rows.
+    /// <para>
+    /// Split out from <see cref="Build"/> because a named form chooses its own
+    /// questions and its own marks and must not be drawn for — but everything after
+    /// the choosing is identical, and the one time it was written twice the second
+    /// copy forgot the option order and handed out the answer key with it.
+    /// </para>
+    /// </summary>
+    /// <param name="exam">The exam, for its shuffle settings.</param>
+    /// <param name="slots">The paper: each question with the marks it carries here.</param>
+    /// <param name="attemptId">Owner of the resulting rows.</param>
+    /// <param name="tenantId">Tenant the attempt belongs to.</param>
+    /// <param name="seed">The attempt's persisted shuffle seed.</param>
+    public List<AttemptQuestion> Project(
+        Exam exam,
+        IReadOnlyList<PaperSlot> slots,
+        Guid attemptId,
+        Guid? tenantId,
+        int seed) =>
+        Project(exam, slots, attemptId, tenantId, new Random(seed));
+
+    private List<AttemptQuestion> Project(
+        Exam exam,
+        IReadOnlyList<PaperSlot> slots,
+        Guid attemptId,
+        Guid? tenantId,
+        Random random)
+    {
+        return slots
+            .Select((slot, index) => new { slot.Question, slot.Score, Index = index })
+            .Select(row => new AttemptQuestion(
+                _guidGenerator.Create(), tenantId, attemptId, row.Question.Id, row.Index, row.Score)
             {
-                QuestionGroupId = question.QuestionGroupId,
+                QuestionGroupId = row.Question.QuestionGroupId,
                 // Always ordered for matching and ordering, whatever the exam says.
                 //
                 // ShuffleOptions is a presentation choice about multiple-choice
@@ -78,8 +116,8 @@ public class ExamFormBuilder : ITransientDependency
                 // left[i] pairs with right[i] in the JSON a candidate receives —
                 // the answer key, handed over on request. An ordering question
                 // comes out already in its authored sequence.
-                OptionOrder = exam.ShuffleOptions || AlwaysOrdered(question.Type)
-                    ? ShuffleOptionIds(question, random)
+                OptionOrder = exam.ShuffleOptions || AlwaysOrdered(row.Question.Type)
+                    ? ShuffleOptionIds(row.Question, random)
                     : null
             })
             .ToList();
@@ -190,3 +228,14 @@ public class ExamFormBuilder : ITransientDependency
     private static bool AlwaysOrdered(string type) =>
         type is QuestionTypes.Matching or QuestionTypes.Ordering;
 }
+
+/// <summary>
+/// One place on a paper: the question, and what it is worth there.
+/// <para>
+/// The marks are separate from the question because a named form freezes its own —
+/// the same question can be worth two marks on the placement paper and five on the
+/// final, and reading them off the question would silently rescore a published
+/// form when somebody edited it.
+/// </para>
+/// </summary>
+public sealed record PaperSlot(Question Question, decimal Score);

@@ -64,7 +64,12 @@ public class TakerQuestionProjectorTests
         {
             Language = "csharp",
             StarterTemplate = "// write here",
-            ExpectedOutput = "42"
+
+            // Long and distinctive on purpose. This was "42", and the assertion
+            // below searches the whole serialised payload — so the test failed
+            // roughly one run in three, when the question's random id happened to
+            // contain those two digits.
+            ExpectedOutput = "forty-two-and-nothing-else"
         });
 
         var question = Question(QuestionTypes.Code, payload);
@@ -74,7 +79,7 @@ public class TakerQuestionProjectorTests
         var wire = Wire(dto);
 
         wire.ShouldContain("write here");
-        wire.ShouldNotContain("42");
+        wire.ShouldNotContain("forty-two-and-nothing-else");
         wire.ShouldNotContain("expectedOutput");
     }
 
