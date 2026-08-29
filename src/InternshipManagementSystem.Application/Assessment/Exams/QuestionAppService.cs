@@ -77,6 +77,11 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
             query = query.Where(q => q.ExamId == null);
         }
 
+        if (input.ExamSectionId is { } sectionId)
+        {
+            query = query.Where(q => q.ExamSectionId == sectionId);
+        }
+
         if (input.CategoryId is { } categoryId)
         {
             query = query.Where(q => q.CategoryId == categoryId);
@@ -313,6 +318,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         question.Text = RichTextSanitiser.Sanitise(input.Text);
         question.CategoryId = input.CategoryId;
         question.LevelId = input.LevelId;
+        question.ExamSectionId = input.ExamSectionId;
         question.QuestionGroupId = input.QuestionGroupId;
         question.Payload = input.Payload;
         question.TopicId = input.TopicId;
@@ -332,6 +338,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         ExamId = q.ExamId,
         CategoryId = q.CategoryId,
         LevelId = q.LevelId,
+        ExamSectionId = q.ExamSectionId,
         QuestionGroupId = q.QuestionGroupId,
         Text = q.Text,
         Type = q.Type,

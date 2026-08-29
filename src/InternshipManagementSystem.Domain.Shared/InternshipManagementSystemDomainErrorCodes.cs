@@ -19,6 +19,24 @@ public static class InternshipManagementSystemDomainErrorCodes
     /// </summary>
     public const string ExamFormHasDuplicateQuestions = "IMS:ExamForm:DuplicateQuestions";
 
+    /// <summary>Two forms of one exam sharing a code makes a result untraceable to a paper.</summary>
+    public const string ExamFormCodeTaken = "IMS:ExamForm:CodeTaken";
+
+    /// <summary>
+    /// A published form cannot be edited: two candidates who sat "Form 2" must
+    /// have answered the same paper.
+    /// </summary>
+    public const string ExamFormNotEditable = "IMS:ExamForm:NotEditable";
+
+    /// <summary>A question this exam cannot draw does not belong on its paper.</summary>
+    public const string ExamFormQuestionNotAvailable = "IMS:ExamForm:QuestionNotAvailable";
+
+    /// <summary>
+    /// Somebody sat it. Deleting it would leave their result pointing at a paper
+    /// that no longer exists.
+    /// </summary>
+    public const string ExamFormAlreadyUsed = "IMS:ExamForm:AlreadyUsed";
+
     /// <summary>
     /// A question was submitted with neither an owning exam nor a domain to file it
     /// under, which would leave it invisible to both.

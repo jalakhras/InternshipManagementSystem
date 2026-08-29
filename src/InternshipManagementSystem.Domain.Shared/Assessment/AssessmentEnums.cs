@@ -85,3 +85,35 @@ public enum IntegritySignalType : byte
     /// <summary>The page was reloaded mid-attempt.</summary>
     PageReloaded = 5
 }
+
+public enum ExamFormStatus
+{
+    Draft = 0,
+    Published = 1,
+    Retired = 2,
+}
+
+/// <summary>
+/// How an exam decides which questions a particular candidate sees.
+/// </summary>
+public enum ExamDeliveryMode
+{
+    /// <summary>
+    /// The blueprint draws for each candidate as they start. Nobody reviews the
+    /// result and no two candidates sit the same paper. Cheapest to run, and the
+    /// only sensible choice for practice.
+    /// </summary>
+    DrawPerCandidate = 0,
+
+    /// <summary>
+    /// Everyone on this exam sits one named form. What a certification body does,
+    /// because the paper has to be approved before anyone sees it.
+    /// </summary>
+    FixedForm = 1,
+
+    /// <summary>
+    /// Candidates are spread across the published forms in turn. Keeps the review
+    /// guarantee while making a leaked paper worth a fraction of the sitting.
+    /// </summary>
+    RotateForms = 2,
+}

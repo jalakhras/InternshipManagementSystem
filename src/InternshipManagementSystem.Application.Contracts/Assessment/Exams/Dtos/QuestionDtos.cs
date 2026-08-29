@@ -26,6 +26,9 @@ public class QuestionDto : AuditedEntityDto<Guid>
 
     /// <summary>The level or role a bank question is written for. Null suits every level.</summary>
     public Guid? LevelId { get; set; }
+
+    /// <summary>The part of the exam this question sits in, on a sectioned exam.</summary>
+    public Guid? ExamSectionId { get; set; }
     public Guid? QuestionGroupId { get; set; }
 
     public string Text { get; set; } = default!;
@@ -76,6 +79,12 @@ public class CreateUpdateQuestionDto
 
     /// <summary>The level a bank question targets. Leave null for one that suits any level.</summary>
     public Guid? LevelId { get; set; }
+
+    /// <summary>
+    /// The part of the exam this question belongs to — Listening, Grammar, and so
+    /// on. Null on an exam that is not divided into sections, which is most.
+    /// </summary>
+    public Guid? ExamSectionId { get; set; }
     /// <summary>
     /// The exam that owns this question, or null when it goes into the shared bank.
     /// <para>
@@ -139,6 +148,9 @@ public class QuestionListRequestDto : PagedAndSortedResultRequestDto
 
     /// <summary>Restrict to questions in the shared bank, i.e. owned by no exam.</summary>
     public bool? BankOnly { get; set; }
+
+    /// <summary>Restrict to one part of the exam.</summary>
+    public Guid? ExamSectionId { get; set; }
 
     public Guid? TopicId { get; set; }
     public string? Type { get; set; }
