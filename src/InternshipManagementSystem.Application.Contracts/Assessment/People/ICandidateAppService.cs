@@ -51,4 +51,14 @@ public interface ICandidateAppService : IApplicationService
 
     /// <summary>Replaces a cohort's membership with exactly these people.</summary>
     Task<CandidateGroupDto> SetGroupMembersAsync(Guid id, SetGroupMembersDto input);
+
+    /// <summary>
+    /// Sets which papers this class sits, in the order given.
+    /// <para>
+    /// The order is the point: the first is what everyone sits, the second is
+    /// what a retake uses. That is what turns the retake guarantee from a
+    /// property of the schema into a decision somebody made.
+    /// </para>
+    /// </summary>
+    Task<CandidateGroupDto> SetGroupFormsAsync(Guid id, SetGroupFormsDto input);
 }

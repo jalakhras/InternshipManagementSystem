@@ -53,6 +53,14 @@ public class CandidateController : AbpControllerBase
     public Task<CandidateGroupDto> SetGroupMembersAsync(Guid id, [FromBody] SetGroupMembersDto input) =>
         _candidates.SetGroupMembersAsync(id, input);
 
+    /// <summary>
+    /// Which papers this class sits, in the order it sits them. The first is
+    /// everyone's; the second is what a retake uses.
+    /// </summary>
+    [HttpPut("groups/{id}/forms")]
+    public Task<CandidateGroupDto> SetGroupFormsAsync(Guid id, [FromBody] SetGroupFormsDto input) =>
+        _candidates.SetGroupFormsAsync(id, input);
+
     [HttpPost("import")]
     public Task<ImportCandidatesResultDto> ImportAsync([FromBody] ImportCandidatesDto input) =>
         _candidates.ImportAsync(input);

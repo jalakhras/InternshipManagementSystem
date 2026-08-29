@@ -1,0 +1,80 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace InternshipManagementSystem.Migrations
+{
+    /// <inheritdoc />
+    public partial class Add_Class_Cohorts_And_Their_Forms : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<DateTime>(
+                name: "EndsOn",
+                table: "AppCandidateGroups",
+                type: "datetime2",
+                nullable: true);
+
+            migrationBuilder.AddColumn<DateTime>(
+                name: "StartsOn",
+                table: "AppCandidateGroups",
+                type: "datetime2",
+                nullable: true);
+
+            migrationBuilder.CreateTable(
+                name: "AppCandidateGroupForms",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CandidateGroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ExamFormId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Sequence = table.Column<int>(type: "int", nullable: false),
+                    SittingOn = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppCandidateGroupForms", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AppCandidateGroupForms_AppCandidateGroups_CandidateGroupId",
+                        column: x => x.CandidateGroupId,
+                        principalTable: "AppCandidateGroups",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppCandidateGroupForms_CandidateGroupId_ExamFormId",
+                table: "AppCandidateGroupForms",
+                columns: new[] { "CandidateGroupId", "ExamFormId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppCandidateGroupForms_CandidateGroupId_Sequence",
+                table: "AppCandidateGroupForms",
+                columns: new[] { "CandidateGroupId", "Sequence" },
+                unique: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "AppCandidateGroupForms");
+
+            migrationBuilder.DropColumn(
+                name: "EndsOn",
+                table: "AppCandidateGroups");
+
+            migrationBuilder.DropColumn(
+                name: "StartsOn",
+                table: "AppCandidateGroups");
+        }
+    }
+}

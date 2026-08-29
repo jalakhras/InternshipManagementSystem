@@ -25,7 +25,31 @@ public class CandidateGroup : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid? LevelId { get; set; }
 
+    /// <summary>
+    /// When this class begins, and when it ends. Both optional.
+    /// <para>
+    /// A class is a cohort in time as much as a list of people — "Evening A1,
+    /// autumn" is a different class from "Evening A1, spring" with a different
+    /// roll and different results, and without dates the two are one row that
+    /// keeps being edited.
+    /// </para>
+    /// </summary>
+    public DateTime? StartsOn { get; set; }
+
+    public DateTime? EndsOn { get; set; }
+
     public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// The papers this class sits, in the order it sits them.
+    /// <para>
+    /// This is what makes the retake guarantee real. A form exists so that
+    /// sitting an exam again means a genuinely different paper rather than a
+    /// redraw that might repeat half the questions — and that only holds if
+    /// somebody decided in advance which paper the second sitting uses.
+    /// </para>
+    /// </summary>
+    public ICollection<CandidateGroupForm> Forms { get; set; } = new List<CandidateGroupForm>();
 
     public ICollection<CandidateGroupMember> Members { get; set; } = new List<CandidateGroupMember>();
 
