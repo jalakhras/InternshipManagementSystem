@@ -44,6 +44,13 @@ public class AssignmentController : AbpControllerBase
         _assignments.GetLinksAsync(examId, input);
 
     /// <summary>Kills a link that leaked or went to the wrong person.</summary>
+    /// <summary>
+    /// A fresh link for the same person. The old one stops working.
+    /// </summary>
+    [HttpPost("links/{linkId}/reissue")]
+    public Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId) =>
+        _assignments.ReissueLinkAsync(linkId);
+
     [HttpPost("links/{linkId}/revoke")]
     public Task RevokeLinkAsync(Guid linkId) => _assignments.RevokeLinkAsync(linkId);
 }

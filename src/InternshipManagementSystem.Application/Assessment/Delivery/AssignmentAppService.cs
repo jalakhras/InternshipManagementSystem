@@ -230,6 +230,47 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
     /// Kills a link that leaked or went to the wrong person. Revoked is a distinct
     /// state from invalid so the person holding it is told what happened.
     /// </summary>
+    [Authorize(InternshipManagementSystemPermissions.Assignments.Create)]
+    public async Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId)
+    {
+        var link = await _links.GetAsync(linkId);
+        var candidate = await _candidates.GetAsync(link.CandidateId);
+
+        var token = ExamSessionTokenService.NewLinkToken();
+
+        link.TokenHash = ExamSessionTokenService.HashLinkToken(token);
+
+        // Revoked links stay revoked unless somebody deliberately reissues one;
+        // reissuing is that deliberate act, so it also brings the link back.
+        link.IsRevoked = false;
+
+        // The old address stops working now. Two live links for one sitting are
+        // two ways to spend the same attempt, and the second one to arrive is the
+        // one somebody will use.
+        //
+        // FirstOpenedAt is cleared with it: it described the link that no longer
+        // exists, and leaving it would tell a coordinator this person has already
+        // opened an address they have never been sent.
+        link.FirstOpenedAt = null;
+
+        await _links.UpdateAsync(link, autoSave: true);
+
+        var clientUrl = _configuration["App:ClientUrl"]?.TrimEnd('/') ?? string.Empty;
+
+        _logger.LogInformation(
+            "Reissued the link for candidate {CandidateId} on exam {ExamId}.",
+            link.CandidateId, link.ExamId);
+
+        return new AssignmentRecipientDto
+        {
+            CandidateId = candidate.Id,
+            CandidateName = candidate.FullName,
+            Email = candidate.Email,
+            Url = $"{clientUrl}/exam/{token}",
+            EmailSent = false,
+        };
+    }
+
     [Authorize(InternshipManagementSystemPermissions.Assignments.Revoke)]
     public async Task RevokeLinkAsync(Guid linkId)
     {

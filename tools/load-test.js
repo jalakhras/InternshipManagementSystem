@@ -172,18 +172,43 @@ async function prepare() {
     throw new Error(`No exam in "${TENANT}". Run: node tools/seed-tenants.js`);
   }
 
-  // A fresh candidate per virtual sitter, so nobody is refused for having used
-  // their attempts and every journey is a first sitting.
-  const stamp = Date.now().toString(36);
+  // A fixed pool, reused between runs.
+  //
+  // This used to mint a fresh candidate per virtual sitter on every run, and
+  // those candidates then sat an exam — which the product will not let you
+  // delete, correctly, because a score has to belong to somebody. Six hundred
+  // rows called "Load m3f2x-17" accumulated in one organisation's candidate list
+  // before anybody noticed.
+  //
+  // Reusing them is also more honest: attempts are per link, and each run issues
+  // a new link, so the same person can sit again without being refused.
+  const existing = await json(
+    'GET',
+    '/api/assessment/candidates?filter=load-&maxResultCount=1000',
+    as,
+  );
+
+  const pool = new Map(
+    existing.value.items
+      .filter(c => c.email.startsWith('load-'))
+      .map(c => [c.email, c.id]),
+  );
+
   const ids = [];
 
   for (let i = 0; i < CANDIDATES; i++) {
-    const created = await json('POST', '/api/assessment/candidates', {
-      ...as,
-      body: { fullName: `Load ${stamp}-${i}`, email: `load-${stamp}-${i}@example.test` },
-    });
+    const email = `load-${i}@example.test`;
 
-    ids.push(created.value.id);
+    if (!pool.has(email)) {
+      const created = await json('POST', '/api/assessment/candidates', {
+        ...as,
+        body: { fullName: `Load tester ${i + 1}`, email },
+      });
+
+      pool.set(email, created.value.id);
+    }
+
+    ids.push(pool.get(email));
   }
 
   const links = [];

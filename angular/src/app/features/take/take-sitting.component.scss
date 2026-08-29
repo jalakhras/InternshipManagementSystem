@@ -1,9 +1,18 @@
 // A full-height column: a fixed bar, the paper scrolling between, and the
 // actions always reachable. Nothing about it moves as the answer grows, because
 // a button that shifts under a thumb costs a click somebody is timed on.
+//
+// Flex rather than grid, because one of the children is conditional. As a grid
+// this declared four rows for three children — the error banner only appears
+// when a save has failed — so the footer inherited the 1fr row, stretched to
+// half the viewport, and stretched its two buttons with it. The candidate saw an
+// exam with a 580-pixel-tall "Next" button and no visible Finish.
+//
+// A flex column cannot make that mistake: the paper takes the space, and nothing
+// else does, however many children there happen to be.
 .sitting {
-  display: grid;
-  grid-template-rows: auto auto 1fr auto;
+  display: flex;
+  flex-direction: column;
   min-block-size: 100dvh;
   background: var(--surface-page);
 }
@@ -21,7 +30,15 @@
   background: var(--surface-raised);
 }
 
-.progress { color: var(--text-secondary); font-size: .9375rem; }
+// Never squeezed and never wrapped. "Question 3 of 20" is the one thing on this
+// bar that tells a candidate how much is left, and it was being clipped by the
+// edge of the screen.
+.progress {
+  flex: none;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-size: .9375rem;
+}
 
 .clock {
   display: flex;
@@ -115,6 +132,11 @@
   position: sticky;
   inset-block-end: 0;
   display: flex;
+
+  // Centred, so a button is the height of a button whatever the row around it
+  // does. Left to stretch, these filled the whole footer.
+  align-items: center;
+
   justify-content: space-between;
   gap: var(--astro-space-3);
   inline-size: min(48rem, 100%);

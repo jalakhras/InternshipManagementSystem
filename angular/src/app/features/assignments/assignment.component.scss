@@ -495,3 +495,78 @@
 @media (max-width: 40rem) {
   .recipient { grid-template-columns: 1fr; }
 }
+
+// ── Who it goes to ───────────────────────────────────────────────────────────
+// Shown before the send button, not after it. A link, once sent, is a link
+// somebody has, and pressing send on a list nobody has seen is how forty people
+// get an exam meant for eight.
+.who {
+  list-style: none;
+  margin: var(--astro-space-2) 0 0;
+  padding: var(--astro-space-2);
+  max-block-size: 12rem;
+  overflow-y: auto;
+  background: var(--surface-sunken);
+  border-radius: var(--astro-radius-md);
+  display: grid;
+  gap: 0.125rem;
+}
+
+.who__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+}
+
+.who__name { font-weight: var(--astro-weight-medium); }
+
+.who__email {
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+.hint--warn { color: var(--astro-fail-600); }
+
+// ── A reissued link ──────────────────────────────────────────────────────────
+// Shown once, like the first one. There is nowhere to read it back from: the
+// token is stored hashed, and that is the point of storing it hashed.
+.reissued {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Logical properties do not cover translate, so the sign is written out.
+  transform: translate(-50%, -50%);
+  inline-size: min(34rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  background: var(--surface-overlay);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
+}
+
+.reissued__title {
+  margin: 0 0 var(--astro-space-2);
+  font-size: var(--astro-text-lg);
+}
+
+.reissued__body {
+  margin: 0 0 var(--astro-space-3);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.reissued__url {
+  display: block;
+  padding: var(--astro-space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--astro-radius-md);
+  font-size: var(--astro-text-sm);
+  word-break: break-all;
+}
+
+.reissued__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  margin-block-start: var(--astro-space-4);
+}

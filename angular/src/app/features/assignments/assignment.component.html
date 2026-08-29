@@ -74,16 +74,32 @@
             <td class="row-actions">
               @if (busyId() === link.id) {
                 <span class="muted">{{ t('::Working') }}</span>
-              } @else if (canRevoke() && !link.isRevoked) {
+              } @else {
                 <div class="row-actions__set">
-                  <button
-                    type="button"
-                    class="row-action row-action--danger"
-                    [attr.title]="t('::Link:Revoke')"
-                    [attr.aria-label]="t('::Link:Revoke') + ': ' + link.candidateName"
-                    (click)="revoke(link)">
-                    <i class="bi bi-slash-circle" aria-hidden="true"></i>
-                  </button>
+                  <!-- The token is stored hashed, so an existing link cannot be
+                       recovered — only replaced. This is what a coordinator who
+                       closed the panel and lost the address actually needs. -->
+                  @if (canCreate()) {
+                    <button
+                      type="button"
+                      class="row-action"
+                      [attr.title]="t('::Link:Reissue')"
+                      [attr.aria-label]="t('::Link:Reissue') + ': ' + link.candidateName"
+                      (click)="reissue(link)">
+                      <i class="bi bi-link-45deg" aria-hidden="true"></i>
+                    </button>
+                  }
+
+                  @if (canRevoke() && !link.isRevoked) {
+                    <button
+                      type="button"
+                      class="row-action row-action--danger"
+                      [attr.title]="t('::Link:Revoke')"
+                      [attr.aria-label]="t('::Link:Revoke') + ': ' + link.candidateName"
+                      (click)="revoke(link)">
+                      <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                    </button>
+                  }
                 </div>
               }
             </td>
@@ -179,7 +195,7 @@
 
       <div class="field">
         <label class="form-label" for="sendGroup">{{ t('::Assignment:Group') }}</label>
-        <select id="sendGroup" class="form-select" [ngModel]="groupId()" (ngModelChange)="groupId.set($event)">
+        <select id="sendGroup" class="form-select" [ngModel]="groupId()" (ngModelChange)="setGroup($event)">
           <option value="">{{ t('::Assignment:ChooseGroup') }}</option>
           @for (group of groups(); track group.id) {
             <option [value]="group.id">{{ group.name }} ({{ group.memberCount }})</option>
@@ -187,6 +203,32 @@
         </select>
         <p class="hint">{{ t('::Assignment:Group:Hint') }}</p>
       </div>
+
+      <!-- Who it goes to, by name.
+           A link, once sent, is a link somebody has — so the list is shown before
+           the button rather than after it. -->
+      @if (groupId()) {
+        <div class="field">
+          <span class="form-label">
+            {{ t('::Assignment:WillReceive', recipients().length.toString()) }}
+          </span>
+
+          @if (loadingRecipients()) {
+            <p class="hint">{{ t('::Loading') }}</p>
+          } @else if (recipients().length === 0) {
+            <p class="hint hint--warn">{{ t('::Assignment:GroupEmpty') }}</p>
+          } @else {
+            <ul class="who">
+              @for (person of recipients(); track person.id) {
+                <li class="who__row">
+                  <span class="who__name">{{ person.fullName }}</span>
+                  <span class="who__email astro-ltr">{{ person.email }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      }
 
       <!-- Only shown when there are papers to choose from. A picker with one
            entry called "draw one" is a decision nobody asked to make. -->
@@ -253,5 +295,25 @@
         </button>
       </div>
     }
+  </div>
+}
+
+@if (reissued(); as recipient) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Link:Reissue')">
+    <div class="reissued">
+      <h2 class="reissued__title">{{ t('::Link:Reissued:Title') }}</h2>
+      <p class="reissued__body">{{ t('::Link:Reissued:Body', recipient.candidateName) }}</p>
+
+      <code class="reissued__url astro-ltr">{{ recipient.url }}</code>
+
+      <div class="reissued__actions">
+        <button type="button" class="btn btn-primary" (click)="copyReissued()">
+          {{ copied() === recipient.candidateId ? t('::Copied') : t('::Copy') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeReissued()">
+          {{ t('::Close') }}
+        </button>
+      </div>
+    </div>
   </div>
 }

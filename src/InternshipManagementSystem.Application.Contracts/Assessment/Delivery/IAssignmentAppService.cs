@@ -21,4 +21,25 @@ public interface IAssignmentAppService : IApplicationService
 
     /// <summary>Stops a link working, for a leak or a mistaken send.</summary>
     Task RevokeLinkAsync(Guid linkId);
+
+    /// <summary>
+    /// Issues a fresh link for the same person and the same sitting.
+    /// <para>
+    /// A token is stored hashed and cannot be recovered — only its first few
+    /// characters survive, which is enough to tell two apart and not enough to
+    /// use. So the panel that appears after sending is the only place the link
+    /// can be copied, and a coordinator who closes it has lost it.
+    /// </para>
+    /// <para>
+    /// This is the honest answer to that: not to keep the credential lying about
+    /// in readable form, but to be able to issue another. The old link stops
+    /// working the moment this one is made, because two live links for one
+    /// sitting is two ways to spend an attempt.
+    /// </para>
+    /// <para>
+    /// Attempts already used are carried over. Reissuing a link is not a way to
+    /// give somebody another go at an exam they have already sat.
+    /// </para>
+    /// </summary>
+    Task<AssignmentRecipientDto> ReissueLinkAsync(Guid linkId);
 }

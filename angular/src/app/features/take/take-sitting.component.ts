@@ -252,6 +252,20 @@ export class TakeSittingComponent {
   onAnswered(response: string): void {
     this.pendingResponse = response;
 
+    // Counted as answered the moment they answer it, not when the server says so.
+    //
+    // The submit confirmation reads this count, and saving is debounced by most
+    // of a second — so answering the last question and pressing Finish straight
+    // away produced "you have 1 unanswered" about a question the candidate was
+    // looking at and had just filled in. Alarming, wrong, and at the worst
+    // possible moment.
+    //
+    // From the candidate's point of view they have answered it. If the save
+    // fails they are told separately, and the response is kept and retried.
+    if (response.trim().length > 0) {
+      this.markAnswered();
+    }
+
     // Debounced, so typing does not become one request per character, and
     // flushed on leaving regardless.
     clearTimeout(this.saveTimer);
@@ -327,6 +341,8 @@ export class TakeSittingComponent {
   // --------------------------------------------------------------- submitting
 
   askToSubmit(): void {
+    // Whatever is in the box goes first, so the confirmation counts what they
+    // have actually done rather than what the server has heard so far.
     this.flush();
     this.confirmingSubmit.set(true);
   }

@@ -100,6 +100,21 @@ export class AssignmentService {
     });
   }
 
+  /**
+   * A fresh link for the same person. The old address stops working.
+   *
+   * A token is stored hashed and cannot be recovered, so the panel that appears
+   * after sending is the only place a link can be copied — and a coordinator who
+   * closes it has lost it for good. This is the honest answer to that: not
+   * keeping the credential readable somewhere, but being able to issue another.
+   */
+  reissue(linkId: string): Observable<AssignmentRecipient> {
+    return this.rest.request<void, AssignmentRecipient>({
+      method: 'POST',
+      url: `${this.base}/links/${linkId}/reissue`,
+    });
+  }
+
   revoke(linkId: string): Observable<void> {
     return this.rest.request<void, void>({
       method: 'POST',

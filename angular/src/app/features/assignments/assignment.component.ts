@@ -2,12 +2,17 @@ import { Component, computed, effect, inject, input, signal } from '@angular/cor
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 
-import { AssignmentService, AssignmentResult, ExamLinkDto } from '../../core/api/assignment.service';
+import {
+  AssignmentRecipient,
+  AssignmentResult,
+  AssignmentService,
+  ExamLinkDto,
+} from '../../core/api/assignment.service';
 import { CandidateService } from '../../core/api/candidate.service';
 import { StructureService } from '../../core/api/structure.service';
 import { ExamFormDto, ExamFormStatus } from '../../core/api/structure.models';
 import { ExamService } from '../../core/api/exam.service';
-import { CandidateGroupDto } from '../../core/api/candidate.models';
+import { CandidateDto, CandidateGroupDto } from '../../core/api/candidate.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
@@ -71,6 +76,20 @@ export class AssignmentComponent {
   readonly forms = signal<ExamFormDto[]>([]);
   readonly formId = signal('');
 
+  /**
+   * Who this sitting would actually go to.
+   *
+   * Choosing a class and being told only its name meant pressing send on a list
+   * nobody had seen — and a link, once sent, is a link somebody has. The names
+   * load the moment a class is chosen, so the decision is made while looking at
+   * the people it affects.
+   */
+  readonly recipients = signal<CandidateDto[]>([]);
+  readonly loadingRecipients = signal(false);
+
+  /** A link reissued from the table, held on screen until it has been copied. */
+  readonly reissued = signal<AssignmentRecipient | null>(null);
+
   readonly ROTATE = ROTATE;
 
   readonly links = signal<ExamLinkDto[]>([]);
@@ -94,6 +113,7 @@ export class AssignmentComponent {
   readonly copied = signal<string | null>(null);
 
   readonly canSend = permissionSignal(P.Assignments.Create);
+  readonly canCreate = permissionSignal(P.Assignments.Create);
   readonly canRevoke = permissionSignal(P.Assignments.Revoke);
 
   readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
@@ -195,10 +215,77 @@ export class AssignmentComponent {
 
   // -------------------------------------------------------------------- send
 
+  /**
+   * Loads the people a chosen class would send to.
+   *
+   * Five hundred is far past any real class, and the count beside the name is
+   * the number that matters — the list is there so somebody recognises the
+   * names, not so they can audit a cohort.
+   */
+  setGroup(groupId: string): void {
+    this.groupId.set(groupId);
+    this.recipients.set([]);
+
+    if (!groupId) {
+      return;
+    }
+
+    this.loadingRecipients.set(true);
+
+    this.candidates.getList({ groupId, skipCount: 0, maxResultCount: 500 }).subscribe({
+      next: page => {
+        this.recipients.set(page.items);
+        this.loadingRecipients.set(false);
+      },
+      error: () => {
+        // The names are a courtesy; the count on the picker is still right, and
+        // failing the whole panel over them would stop somebody sending an exam.
+        this.loadingRecipients.set(false);
+      },
+    });
+  }
+
+  /**
+   * Issues a fresh link for one person, and shows it.
+   *
+   * The token is stored hashed, so an existing link cannot be recovered — only
+   * replaced. The old address stops working, which is why this asks first.
+   */
+  reissue(link: ExamLinkDto): void {
+    this.busyId.set(link.id);
+    this.actionError.set(null);
+
+    this.assignments.reissue(link.id).subscribe({
+      next: recipient => {
+        this.reissued.set(recipient);
+        this.busyId.set(null);
+        this.load();
+      },
+      error: err => {
+        this.actionError.set(this.reason(err));
+        this.busyId.set(null);
+      },
+    });
+  }
+
+  closeReissued(): void {
+    this.reissued.set(null);
+  }
+
+  copyReissued(): void {
+    const recipient = this.reissued();
+
+    if (recipient) {
+      void navigator.clipboard?.writeText(recipient.url);
+      this.copied.set(recipient.candidateId);
+    }
+  }
+
   openSend(): void {
     this.sending.set(true);
     this.result.set(null);
     this.groupId.set('');
+    this.recipients.set([]);
     this.expiresAt.set(this.defaultExpiry());
     this.maxAttempts.set(1);
     this.sendEmail.set(true);
