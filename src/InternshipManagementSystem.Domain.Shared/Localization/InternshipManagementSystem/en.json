@@ -1,6 +1,7 @@
 {
   "culture": "en",
   "texts": {
+    "Actions": "Actions",
     "AppName": "Astrolabe",
     "AppTagline": "Assessment platform",
     "Cancel": "Cancel",
@@ -187,6 +188,7 @@
     "Permission:ViewQueue": "View queue",
     "Previous": "Previous",
     "Question:Accepts": "Accepts {0} — {1}",
+    "Question:Add": "Add question",
     "Question:AddOption": "Add option",
     "Question:Answer": "The answer",
     "Question:AutoGraded": "Marked automatically",

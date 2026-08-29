@@ -71,6 +71,7 @@
           <th scope="col" class="num">{{ t('::Exam:Duration') }}</th>
           <th scope="col" class="num">{{ t('::Exam:PassMark') }}</th>
           <th scope="col">{{ t('::Exam:Created') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
         </tr>
       </thead>
       <tbody>
@@ -114,6 +115,19 @@
             <td class="num astro-numeric">{{ exam.timeLimitInMinutes }}</td>
             <td class="num astro-numeric">{{ exam.passingPercentage }}%</td>
             <td class="muted">{{ exam.creationTime | date: 'y/MM/dd' }}</td>
+
+            <td class="row-actions">
+              <!-- The question bank is reached from the exam that owns it. Without
+                   this the builder exists but nothing in the product points at it. -->
+              @if (canAddQuestions) {
+                <a
+                  class="btn btn-sm btn-outline-secondary"
+                  [routerLink]="['/exams', exam.id, 'questions', 'new']">
+                  <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                  {{ t('::Question:Add') }}
+                </a>
+              }
+            </td>
           </tr>
         }
       </tbody>

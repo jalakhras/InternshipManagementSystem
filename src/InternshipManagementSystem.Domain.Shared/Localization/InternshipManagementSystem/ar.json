@@ -1,6 +1,7 @@
 {
   "culture": "ar",
   "texts": {
+    "Actions": "إجراءات",
     "AppName": "أسطرلاب",
     "AppTagline": "منصّة التقييم والاختبارات",
     "Cancel": "إلغاء",
@@ -187,6 +188,7 @@
     "Permission:ViewQueue": "عرض الطابور",
     "Previous": "السابق",
     "Question:Accepts": "يقبل {0} — {1}",
+    "Question:Add": "إضافة سؤال",
     "Question:AddOption": "إضافة خيار",
     "Question:Answer": "الإجابة",
     "Question:AutoGraded": "يُصحَّح آليًا",

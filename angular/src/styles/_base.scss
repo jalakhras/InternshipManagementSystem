@@ -177,6 +177,13 @@ input[type="button"] {
 .astro-scroll-x {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+
+  // Containment is not an optimisation here, it is the fix. In Arabic the
+  // content overflows towards the left, and Blink still counts that overflow in
+  // the document's scrollable area even though this box clips it — so a table
+  // one column too wide scrolls the whole page sideways instead of only itself.
+  // Paint containment keeps the overflow inside where it belongs.
+  contain: paint;
 }
 
 img,

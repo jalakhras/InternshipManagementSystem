@@ -45,6 +45,10 @@ export class ExamListComponent {
 
   readonly canCreate = this.permission.getGrantedPolicy(P.Exams.Create);
 
+  // Writing questions is its own permission: a coordinator who may create an
+  // exam is not necessarily the person who writes its questions.
+  readonly canAddQuestions = this.permission.getGrantedPolicy(P.Questions.Create);
+
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.items().length === 0);
 
   /** True when a filter is set, so the empty state can say "no matches" rather than "none yet". */

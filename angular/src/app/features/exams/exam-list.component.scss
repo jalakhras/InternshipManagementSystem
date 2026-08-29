@@ -146,3 +146,11 @@
   color: var(--text-secondary);
   font-size: var(--astro-text-sm);
 }
+
+// The row action sits at the inline end of the row and does not stretch the
+// table: logical properties keep it on the correct side in both directions.
+.row-actions {
+  inline-size: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
