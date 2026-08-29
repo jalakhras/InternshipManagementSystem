@@ -152,20 +152,37 @@ export class ChoiceEditorComponent {
     if (this.weighted()) {
       if (options.some(o => o.weight === undefined || o.weight === null)) {
         found.push('IMS:Question:WeightMissing');
-      }
+      } else {
+        if (options.some(o => o.weight! < -1 || o.weight! > 1)) {
+          found.push('IMS:Question:WeightOutOfRange');
+        }
 
-      if (options.some(o => o.weight !== undefined && (o.weight < -1 || o.weight > 1))) {
-        found.push('IMS:Question:WeightOutOfRange');
-      }
+        const total = options.reduce((sum, o) => sum + (o.weight ?? 0), 0);
+        const credited = options.filter(o => (o.weight ?? 0) > 0);
+        const best = credited.reduce((sum, o) => sum + (o.weight ?? 0), 0);
 
-      if (options.some(o => o.isCorrect !== (o.weight === 1))) {
-        found.push('IMS:Question:WeightConflictsWithCorrectFlag');
-      }
+        if (this.isSingleAnswer()) {
+          // One pick, so the best answer is worth the whole question by itself.
+          if (options.some(o => o.isCorrect !== (o.weight === 1))) {
+            found.push('IMS:Question:WeightConflictsWithCorrectFlag');
+          }
+        } else {
+          // On a multi-select the best answer is a set whose parts add up to the
+          // question. Requiring each part to be worth the whole was the mistake
+          // that let two of them sum to twice the marks and made ticking every
+          // box score full — see the note on the server's validator.
+          if (options.some(o => o.isCorrect !== (o.weight ?? 0) > 0)) {
+            found.push('IMS:Question:WeightConflictsWithCorrectFlag');
+          }
 
-      // Weighted mode switches off the all-or-nothing rule, so without something
-      // priced below zero, selecting everything is never worse than choosing well.
-      if (!this.isSingleAnswer() && options.every(o => (o.weight ?? 0) >= 0)) {
-        found.push('IMS:Question:AllWeightsPositive');
+          if (Math.abs(best - 1) > 0.001) {
+            found.push('IMS:Question:WeightsDoNotSumToOne');
+          }
+
+          if (total >= 1) {
+            found.push('IMS:Question:SelectingEverythingScoresFull');
+          }
+        }
       }
     }
 
@@ -216,8 +233,10 @@ export class ChoiceEditorComponent {
         o.id === id
           // The correct flag follows the weight rather than being set separately:
           // the server refuses a question where the two disagree, and two controls
-          // for one fact is how they come to disagree.
-          ? { ...o, weight, isCorrect: weight === 1 }
+          // for one fact is how they come to disagree. What counts as correct
+          // differs by type — the whole question on a single choice, a share of it
+          // on a multi-select.
+          ? { ...o, weight, isCorrect: this.isSingleAnswer() ? weight === 1 : weight > 0 }
           : o,
       ),
     );
@@ -246,11 +265,41 @@ export class ChoiceEditorComponent {
     this.weighted.set(on);
 
     if (on) {
-      // Seeded from what the author has already said: the option they marked
-      // correct becomes the best answer, the rest start at nothing. Leaving the
-      // weights blank would show four validation warnings the moment the toggle
-      // is pressed.
-      this.options.update(list => list.map(o => ({ ...o, weight: o.isCorrect ? 1 : 0 })));
+      // Seeded from what the author has already said, so the toggle does not open
+      // onto a page of warnings. On a single choice the correct option is worth
+      // the question; on a multi-select the correct ones divide it between them,
+      // and one wrong option is priced below zero because otherwise ticking every
+      // box would score full marks.
+      this.options.update(list => {
+        const correct = list.filter(o => o.isCorrect).length;
+
+        if (this.isSingleAnswer() || correct === 0) {
+          return list.map(o => ({ ...o, weight: o.isCorrect ? 1 : 0 }));
+        }
+
+        const share = Math.round((1 / correct) * 100) / 100;
+        let remaining = 1;
+        let seenCorrect = 0;
+        let pricedOne = false;
+
+        return list.map(o => {
+          if (o.isCorrect) {
+            seenCorrect++;
+            // The last correct option takes whatever rounding left over, so the
+            // credited weights add up to exactly the question.
+            const weight = seenCorrect === correct ? Math.round(remaining * 100) / 100 : share;
+            remaining -= weight;
+            return { ...o, weight };
+          }
+
+          if (!pricedOne) {
+            pricedOne = true;
+            return { ...o, weight: -0.5 };
+          }
+
+          return { ...o, weight: 0 };
+        });
+      });
     }
 
     this.emit();

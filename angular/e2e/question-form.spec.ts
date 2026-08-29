@@ -176,12 +176,15 @@ test.describe('Question builder', () => {
     await page.getByLabel('Mark as correct').first().check();
     await page.getByText('Score by degree of correctness').click();
 
-    // Weighted mode switches off the all-or-nothing rule, so a negative weight is
-    // the only thing left standing between the bank and "tick every box".
-    await expect(page.getByText('No option is priced below zero')).toBeVisible();
+    // Seeded so the toggle does not open onto a page of warnings: the correct
+    // options divide the question between them and one wrong option is priced
+    // below zero, because otherwise ticking every box scores full marks.
+    await expect(page.getByText('Penalised')).toBeVisible();
 
-    await page.getByLabel('Weight 2').fill('-0.5');
+    // Raising the penalty to zero brings the total back to the whole question,
+    // and selecting everything would score full marks again.
+    await page.getByLabel('Weight 2').fill('0');
 
-    await expect(page.getByText('No option is priced below zero')).toHaveCount(0);
+    await expect(page.getByText('Selecting every option would score full marks')).toBeVisible();
   });
 });

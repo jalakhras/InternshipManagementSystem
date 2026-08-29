@@ -227,16 +227,39 @@ public class QuestionPayloadValidatorTests
     }
 
     [Fact]
-    public void A_weighted_multi_select_needs_something_priced_below_zero()
+    public void A_weighted_multi_select_where_ticking_everything_wins_is_refused()
     {
-        // Otherwise selecting every option scores at least as well as choosing
-        // carefully — the oldest exploit in multiple choice, arriving through the
-        // door that weighted mode opens by switching off the all-or-nothing rule.
-        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", true, 1m), ("b", false, 0.5m)))
-            .ShouldContain("IMS:Question:AllWeightsPositive");
+        // The exploit a security review found in the first version of this rule.
+        // Two correct options at 1.0 each summed to twice the marks, the award was
+        // clamped back to full, and selecting every box scored full marks on any
+        // multi-select with two right answers — which is every multi-select worth
+        // writing. The first rule only asked whether a penalty existed; a -0.1
+        // beside two 1.0s satisfied it.
+        var exploitable = Weighted(("a", true, 1m), ("b", true, 1m), ("c", false, -0.1m));
 
-        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", true, 1m), ("b", false, -0.5m)))
-            .ShouldNotContain("IMS:Question:AllWeightsPositive");
+        _validator.Blocking(QuestionTypes.MultiSelect, exploitable)
+            .ShouldContain("IMS:Question:SelectingEverythingScoresFull");
+    }
+
+    [Fact]
+    public void The_credited_options_of_a_multi_select_must_add_up_to_the_question()
+    {
+        // Short of the whole and nobody can score full marks.
+        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", true, 0.4m), ("b", true, 0.4m), ("c", false, -0.3m)))
+            .ShouldContain("IMS:Question:WeightsDoNotSumToOne");
+
+        // Adding up to exactly the question, with the rest priced below zero.
+        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", true, 0.4m), ("b", true, 0.4m), ("c", true, 0.2m), ("d", false, -0.6m)))
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void On_a_multi_select_credited_means_marked_correct()
+    {
+        // Not "weighted exactly one" — that is the single-choice rule, and applying
+        // it here is what created the exploit above.
+        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", false, 0.5m), ("b", true, 0.5m), ("c", false, -0.4m)))
+            .ShouldContain("IMS:Question:WeightConflictsWithCorrectFlag");
     }
 
     [Fact]

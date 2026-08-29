@@ -81,9 +81,16 @@ tenant-defined already, which is the same idea without the consulting engagement
 
 Item banking treats a question as an object reused across many forms, with usage
 tracked **across forms**, because over-exposure erodes validity
-([Assessment Systems](https://assess.com/what-is-item-banking/)). The working
-rule is a bank of roughly **three times** the form length before rotation is
-worth anything.
+([Assessment Systems](https://assess.com/what-is-item-banking/)).
+
+A correction to an earlier draft of this document: it stated a working rule of
+"a bank roughly three times the form length", attributed to that page. **The page
+does not say that.** The number came from a secondary source and was written here
+as though it were the primary one. The publish-time warning built on it still
+catches the real problem — a bank barely larger than the form draws nearly the
+same paper every time — but the threshold is ours, not anyone's standard, and it
+should eventually be replaced by an exposure rate per item, which is what the
+literature actually measures.
 
 This was our deepest structural gap and it is now closed: `Question.ExamId` is
 nullable, and a bank question is owned by a domain and level instead. Three

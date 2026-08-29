@@ -34,16 +34,37 @@ public class ExamSessionTokenService : ISingletonDependency
     public const string ClaimExamId = "ims:exam";
     public const string ClaimTenantId = "ims:tenant";
 
+    /// <summary>
+    /// Shorter than this and a key is guessable by someone who knows it is a
+    /// pass phrase rather than random bytes.
+    /// </summary>
+    private const int MinimumKeyLength = 32;
+
     private readonly SymmetricSecurityKey _key;
 
     public ExamSessionTokenService(IConfiguration configuration)
     {
-        // Falls back to the app's encryption pass phrase so a dev machine works out
-        // of the box; production sets ExamSession:SigningKey explicitly.
-        var secret = configuration["ExamSession:SigningKey"]
-                     ?? configuration["StringEncryption:DefaultPassPhrase"]
-                     ?? throw new InvalidOperationException(
-                         "Set ExamSession:SigningKey (or StringEncryption:DefaultPassPhrase) before issuing exam sessions.");
+        // No fallback, and no null check.
+        //
+        // This used to fall back to the app's encryption pass phrase "so a dev
+        // machine works out of the box", guarded by `?? throw`. That guard tests
+        // for null. The pass phrase is committed as an empty string, which is not
+        // null — so every exam session in every environment was signed with
+        // SHA-256 of the empty string, the most published hash constant there is.
+        // Anyone could mint a token for any attempt in any tenant.
+        //
+        // A signing key is not a convenience, and sharing one with the
+        // string-encryption secret is its own mistake: two different purposes,
+        // two different rotation schedules, one compromise.
+        var secret = configuration["ExamSession:SigningKey"];
+
+        if (string.IsNullOrWhiteSpace(secret) || secret.Trim().Length < MinimumKeyLength)
+        {
+            throw new InvalidOperationException(
+                $"ExamSession:SigningKey must be set to at least {MinimumKeyLength} characters before " +
+                "exam sessions can be issued. It signs the credential that lets a candidate reach " +
+                "their attempt, so a weak or shared value is a way into every attempt in every tenant.");
+        }
 
         _key = new SymmetricSecurityKey(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
     }

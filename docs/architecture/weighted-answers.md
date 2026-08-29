@@ -42,9 +42,15 @@ pulls a multi-select sum down and wastes a single-choice pick. It never scores
 below what leaving the question blank would score, because a scoring system that
 punishes attempting is a scoring system that teaches candidates not to attempt.
 
-**`IsCorrect` and `weight == 1.0` are the same fact**, enforced by the validator.
-One canonical best answer, so the reviewer's key, the item statistics and the
-grader cannot drift apart.
+**`IsCorrect` marks the best answer**, enforced by the validator, so the
+reviewer's key, the item statistics and the grader cannot drift apart. What that
+means differs by type, and getting it wrong here was expensive: on a single
+choice the best answer is one option worth the whole question, but on a
+multi-select it is a *set* whose parts add up to the whole question. The first
+version of this validator required every credited option to be worth 1.0 —
+so two of them summed to twice the marks, the award was clamped back down to
+full, and ticking every box scored full marks on any multi-select with two right
+answers. A security review found it within the hour.
 
 ### Why not a new question type
 
@@ -145,8 +151,9 @@ sets `IsCorrect = awarded >= maxScore`, which is exactly "reached full marks".
 |---|---|---|
 | `WeightMissing` | weighted and any option has no weight | The grader cannot price the question; treating the gap as zero would hide an authoring slip. |
 | `WeightOutOfRange` | any weight outside −1..1 | One careless option could dominate or invert the question's marks. |
-| `WeightConflictsWithCorrectFlag` | `IsCorrect` without weight 1.0, or weight 1.0 without `IsCorrect` | Keeps one canonical best answer, so the key, the statistics and the grader agree. |
-| `AllWeightsPositive` (multi only) | weighted and no option priced below zero | Selecting everything would never be worse than choosing carefully. This is the same exploit the all-or-nothing rule was written to close, arriving by a different door. |
+| `WeightConflictsWithCorrectFlag` | single: `IsCorrect` without weight 1.0, or the reverse. multi: `IsCorrect` without a positive weight, or the reverse | Keeps one canonical key. Credited means *part of* the best answer on a multi-select, not *the whole* of it. |
+| `WeightsDoNotSumToOne` (multi only) | the credited weights do not add to 1.0 | Short of it and nobody can reach full marks; over it and a partial answer does. |
+| `SelectingEverythingScoresFull` (multi only) | all weights sum to 1.0 or more | The condition that actually closes "tick every box". An earlier rule asked only whether *a* penalty existed, which let a −0.1 sit beside two options worth 1.0 each and called it safe. |
 
 The existing `NoCorrectOption` check already refuses a question with no
 `IsCorrect` option, which together with the invariant above guarantees a weighted

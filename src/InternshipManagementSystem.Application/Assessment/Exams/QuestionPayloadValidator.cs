@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using InternshipManagementSystem.Assessment.Grading;
@@ -61,7 +62,7 @@ public class QuestionPayloadValidator : ITransientDependency
                     errors.Add("IMS:Question:DuplicateOptionId");
                 }
 
-                CheckWeights(spec, errors, requireAPenalty: false);
+                CheckWeights(spec, errors, multiSelect: false);
 
                 break;
             }
@@ -90,7 +91,7 @@ public class QuestionPayloadValidator : ITransientDependency
 
                 // A weighted multi-select needs something priced below zero for the
                 // same reason: see CheckWeights.
-                CheckWeights(spec, errors, requireAPenalty: true);
+                CheckWeights(spec, errors, multiSelect: true);
 
                 break;
             }
@@ -270,8 +271,17 @@ public class QuestionPayloadValidator : ITransientDependency
     /// Nothing here fires on a question that does not use it, so every question
     /// written before weights existed validates exactly as it did.
     /// </para>
+    /// <para>
+    /// The rules differ by type because "the best answer" means different things.
+    /// On a single-choice question it is one option worth the whole question. On a
+    /// multi-select it is a <em>set</em> whose parts add up to the whole question —
+    /// so requiring each part to be worth 1.0 there was wrong, and dangerous:
+    /// two such options summed to twice the marks, the total was clamped back down
+    /// to full, and ticking every box scored full marks on any question with two
+    /// correct answers. Which is every multi-select worth writing.
+    /// </para>
     /// </summary>
-    private static void CheckWeights(ChoicePayload spec, List<string> errors, bool requireAPenalty)
+    private static void CheckWeights(ChoicePayload spec, List<string> errors, bool multiSelect)
     {
         if (spec.Weighted != true)
         {
@@ -284,6 +294,7 @@ public class QuestionPayloadValidator : ITransientDependency
             // a silently harsher question, and nothing on the saved payload would
             // show that it had happened.
             errors.Add("IMS:Question:WeightMissing");
+            return;
         }
 
         if (spec.Options.Any(o => o.Weight is { } w && (w < -1m || w > 1m)))
@@ -291,20 +302,43 @@ public class QuestionPayloadValidator : ITransientDependency
             errors.Add("IMS:Question:WeightOutOfRange");
         }
 
-        // One canonical best answer. Without this the reviewer's key, the item
-        // statistics and the grader can each read a different option as correct.
-        if (spec.Options.Any(o => o.IsCorrect != (o.Weight == 1m)))
-        {
-            errors.Add("IMS:Question:WeightConflictsWithCorrectFlag");
-        }
+        var credited = spec.Options.Where(o => o.Weight > 0m).ToList();
+        var total = spec.Options.Sum(o => o.Weight ?? 0m);
+        var best = credited.Sum(o => o.Weight ?? 0m);
 
-        if (requireAPenalty && spec.Options.All(o => (o.Weight ?? 0m) >= 0m))
+        if (multiSelect)
         {
-            // With nothing priced below zero, selecting every option scores at
-            // least as well as choosing carefully. That is the same hole the
-            // all-or-nothing rule closes for unweighted questions, arriving by a
-            // different door — and weighted mode switches that rule off.
-            errors.Add("IMS:Question:AllWeightsPositive");
+            // Credited means part of the best set, and the best set is worth the
+            // question. One canonical answer key, so the reviewer's rendering, the
+            // item statistics and the grader cannot disagree.
+            if (spec.Options.Any(o => o.IsCorrect != o.Weight > 0m))
+            {
+                errors.Add("IMS:Question:WeightConflictsWithCorrectFlag");
+            }
+
+            // Short of the whole and nobody can score full marks; over it and a
+            // partial answer does.
+            if (Math.Abs(best - 1m) > 0.001m)
+            {
+                errors.Add("IMS:Question:WeightsDoNotSumToOne");
+            }
+
+            // The condition that actually closes "tick every box": the sum of
+            // everything must fall short of the whole question. A rule that only
+            // asked whether *a* penalty existed let a −0.1 sit beside two options
+            // worth 1.0 each and called it safe.
+            if (total >= 1m)
+            {
+                errors.Add("IMS:Question:SelectingEverythingScoresFull");
+            }
+        }
+        else
+        {
+            // One pick, so the best answer is worth the whole question by itself.
+            if (spec.Options.Any(o => o.IsCorrect != (o.Weight == 1m)))
+            {
+                errors.Add("IMS:Question:WeightConflictsWithCorrectFlag");
+            }
         }
     }
 }

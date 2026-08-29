@@ -104,4 +104,66 @@ public class RichTextSanitiserTests
 
         RichTextSanitiser.Sanitise(arabic).ShouldBe(arabic);
     }
+
+    // ------------------------------------------------ what a review actually broke
+
+    [Theory]
+    [InlineData("<<a>img src=x onerror=alert(1)>")]
+    [InlineData("<<a>script>alert(document.domain)<<a>/script>")]
+    [InlineData("<<xyz>svg onload=alert(1)>")]
+    [InlineData("<b><<a>img src=x onerror=alert(1)></b>")]
+    public void A_stray_angle_bracket_cannot_reassemble_into_a_tag(string attack)
+    {
+        // Every one of these came back out of the old regex sanitiser as a live
+        // element — the second as a verbatim script tag. Unwrapping a disallowed
+        // tag kept the text on both sides and never rescanned, so the stray "<"
+        // joined onto what followed. The fix was not a better pattern; it was
+        // parsing the HTML instead of matching it.
+        var result = RichTextSanitiser.Sanitise(attack);
+
+        // What matters is that no live element comes out. The parser escapes the
+        // stray bracket, so "&lt;img onerror=…&gt;" is the literal text an author
+        // typed — it renders as characters and runs nothing. Asserting the absence
+        // of the substring "onerror" would be asserting against inert text.
+        result.ShouldNotContain("<script", Case.Insensitive);
+        result.ShouldNotContain("<img", Case.Insensitive);
+        result.ShouldNotContain("<svg", Case.Insensitive);
+    }
+
+    [Fact]
+    public void A_malformed_discarded_tag_does_not_swallow_the_rest_of_the_question()
+    {
+        // The old implementation cut from an unterminated discarded tag to the end
+        // of the document, silently destroying whatever an author had written after
+        // it. Losing a question's second half is not a security bug, but it is a
+        // question that goes out wrong.
+        var result = RichTextSanitiser.Sanitise("<p>before</p><embed<p>after</p>");
+
+        result.ShouldContain("before");
+        result.ShouldContain("after");
+    }
+
+    [Theory]
+    [InlineData("<p onclick=alert(1)>text</p>")]
+    [InlineData("<p ONCLICK='alert(1)'>text</p>")]
+    [InlineData("<p onclick\n=alert(1)>text</p>")]
+    [InlineData("<div style='position:fixed;inset:0'>text</div>")]
+    public void No_attribute_survives_except_direction(string attack)
+    {
+        var result = RichTextSanitiser.Sanitise(attack);
+
+        result.ShouldNotContain("onclick=", Case.Insensitive);
+        result.ShouldNotContain("style=", Case.Insensitive);
+        result.ShouldContain("text");
+    }
+
+    [Fact]
+    public void Nested_and_overlapping_discarded_tags_leave_nothing_executable()
+    {
+        var result = RichTextSanitiser.Sanitise(
+            "<script><script>alert(1)</script></script><style>@import url(x)</style>");
+
+        result.ShouldNotContain("alert");
+        result.ShouldNotContain("@import");
+    }
 }
