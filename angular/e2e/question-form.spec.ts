@@ -1,0 +1,134 @@
+import { expect, test } from '@playwright/test';
+import { ALL_POLICIES, gotoApp, stubAbp } from './support/abp-stub';
+import { stubQuestions } from './support/question-stub';
+
+/**
+ * Writing a question.
+ *
+ * The behaviour under test is the thing that makes thirteen types tolerable: one
+ * frame, one changing slot, and warnings that arrive while typing rather than at
+ * save time.
+ */
+test.describe('Question builder', () => {
+  test('opens on the type picker, saying which types a person must mark', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await expect(page.getByRole('button', { name: /Single choice/ })).toBeVisible();
+
+    // Whether a machine or a person marks it decides the work this question
+    // creates later, so it is said at the moment of choosing rather than
+    // discovered when the review queue fills up.
+    const written = page.getByRole('button', { name: /Written answer/ });
+    await expect(written).toContainText('Marked by a person');
+
+    const single = page.getByRole('button', { name: /Single choice/ });
+    await expect(single).toContainText('Marked automatically');
+  });
+
+  test('choosing a type swaps only the answer slot', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    // The frame is the same for every type: prompt, marks, difficulty, timer,
+    // explanation. Only the middle changes.
+    await expect(page.getByLabel('Question text')).toBeVisible();
+    await expect(page.getByLabel('Marks')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Medium' })).toBeVisible();
+
+    // And the slot now holds the choice editor.
+    await expect(page.getByRole('button', { name: 'Add option' })).toBeVisible();
+  });
+
+  test('warns while typing that no option is marked correct', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    // The server refuses this too, but discovering it after writing four options
+    // is a worse experience than seeing it while typing.
+    await expect(page.getByText('No correct option is marked')).toBeVisible();
+  });
+
+  test('marking a correct option clears the others on a single-choice question', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    const marks = page.getByLabel('Mark as correct');
+    await marks.first().check();
+    await marks.last().check();
+
+    // Two correct options on a single-choice question means nobody can pass it.
+    // The editor makes that state unreachable rather than warning about it.
+    await expect(marks.first()).not.toBeChecked();
+    await expect(marks.last()).toBeChecked();
+    await expect(page.getByText('No correct option is marked')).toHaveCount(0);
+  });
+
+  test('multi-select warns when every option is correct', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Multiple answers/ }).click();
+
+    const marks = page.getByLabel('Mark as correct');
+    await marks.first().check();
+    await marks.last().check();
+
+    // Selecting everything would be right, so the question measures nothing —
+    // and it is the exact shape the old scoring bug rewarded with full marks.
+    await expect(page.getByText('Every option is correct')).toBeVisible();
+  });
+
+  test('the numeric editor shows the range it accepts', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Numeric answer/ }).click();
+
+    await page.getByLabel('Correct value').fill('1250');
+    await page.getByLabel('Tolerance').fill('0.5');
+
+    // The author sees what they built rather than computing it from two fields.
+    await expect(page.getByText('1249.5 — 1250.5')).toBeVisible();
+  });
+
+  test('the rubric flags a total that does not match the question marks', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Written answer/ }).click();
+
+    await page.getByLabel('Marks').fill('10');
+    await page.getByRole('button', { name: 'Add criterion' }).click();
+
+    // Not an error — a reviewer can still award within the total — but it usually
+    // means a criterion was added and the marks not adjusted, which is far cheaper
+    // to notice here than in the review queue.
+    await expect(page.getByText('does not add up to the question', { exact: false })).toBeVisible();
+  });
+
+  test('does not scroll sideways on a phone', async ({ page }) => {
+    await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    const overflows = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    );
+
+    expect(overflows).toBe(false);
+  });
+});

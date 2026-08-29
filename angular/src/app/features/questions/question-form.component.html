@@ -1,0 +1,158 @@
+@if (error(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<!-- ── Type picker ─────────────────────────────────────────────────────────
+     Chosen first, because the type decides the shape of everything below it.
+     Ordered as an author reaches for them rather than alphabetically: a picker
+     sorted A–Z makes someone read thirteen entries to find multiple choice. -->
+@if (showTypePicker()) {
+  <section class="picker">
+    <h2 class="picker__title">{{ t('::Question:ChooseType') }}</h2>
+
+    <div class="picker__grid">
+      @for (type of types(); track type.type) {
+        <button type="button" class="type" (click)="chooseType(type.type)">
+          <span class="type__icon" aria-hidden="true"><i class="bi {{ type.icon }}"></i></span>
+          <span class="type__body">
+            <span class="type__name">{{ t(type.nameKey) }}</span>
+            <!-- Whether a machine or a person marks it changes the work this
+                 question creates later, so it is said here rather than discovered
+                 when the review queue fills up. -->
+            <span class="type__grading" [class.type__grading--manual]="!type.isAutoGraded">
+              {{ type.isAutoGraded ? t('::Question:AutoGraded') : t('::Question:HumanGraded') }}
+            </span>
+          </span>
+        </button>
+      }
+    </div>
+  </section>
+} @else {
+  <form class="form" (ngSubmit)="save()">
+    <!-- ── The prompt ──────────────────────────────────────────────────── -->
+    <section class="group">
+      <header class="group__head">
+        @if (selectedType(); as type) {
+          <span class="chosen">
+            <i class="bi {{ type.icon }}" aria-hidden="true"></i>
+            {{ t(type.nameKey) }}
+          </span>
+        }
+        <button type="button" class="link" (click)="showTypePicker.set(true)">
+          {{ t('::Question:ChangeType') }}
+        </button>
+      </header>
+
+      <div class="field">
+        <label class="form-label" for="text">{{ t('::Question:Text') }}</label>
+        <textarea
+          id="text"
+          class="form-control"
+          rows="3"
+          required
+          [ngModel]="form().text"
+          (ngModelChange)="patch('text', $event)"
+          name="text"></textarea>
+      </div>
+    </section>
+
+    <!-- ── The type-specific slot ──────────────────────────────────────── -->
+    <section class="group">
+      <h2 class="group__title">{{ t('::Question:Answer') }}</h2>
+
+      <!-- One slot, thirteen possible occupants. Everything around it is the same
+           for all of them, which is what makes them feel like one screen. -->
+      <ng-container #editorHost />
+
+      @if (!hasEditor()) {
+        <!-- A type this build ships no editor for still saves: the server accepts
+             types it does not know and reports them as human-graded, so refusing
+             here would be stricter than the platform itself. -->
+        <div class="field">
+          <label class="form-label" for="rawPayload">{{ t('::Question:RawPayload') }}</label>
+          <textarea
+            id="rawPayload"
+            class="form-control astro-ltr"
+            rows="6"
+            [ngModel]="form().payload"
+            (ngModelChange)="patch('payload', $event)"
+            name="rawPayload"></textarea>
+          <p class="hint">{{ t('::Question:RawPayload:Hint') }}</p>
+        </div>
+      }
+    </section>
+
+    <!-- ── Marking and classification ──────────────────────────────────── -->
+    <section class="group">
+      <h2 class="group__title">{{ t('::Question:Group:Marking') }}</h2>
+
+      <div class="row-3">
+        <div class="field">
+          <label class="form-label" for="score">{{ t('::Question:Score') }}</label>
+          <input
+            id="score"
+            type="number"
+            step="0.5"
+            min="0.5"
+            class="form-control astro-numeric"
+            [ngModel]="form().score"
+            (ngModelChange)="patch('score', +$event)"
+            name="score" />
+        </div>
+
+        <fieldset class="field">
+          <legend class="form-label">{{ t('::Question:Difficulty') }}</legend>
+          <div class="segmented">
+            @for (level of difficulties; track level.value) {
+              <button
+                type="button"
+                class="segmented__option"
+                [class.segmented__option--active]="form().difficulty === level.value"
+                [attr.aria-pressed]="form().difficulty === level.value"
+                (click)="patch('difficulty', level.value)">
+                {{ t(level.labelKey) }}
+              </button>
+            }
+          </div>
+          <!-- Difficulty is not decoration: the blueprint draws by it, so a bank
+               that is all one level cannot produce a balanced form. -->
+          <p class="hint">{{ t('::Question:Difficulty:Hint') }}</p>
+        </fieldset>
+
+        <div class="field">
+          <label class="form-label" for="timer">{{ t('::Question:Timer') }}</label>
+          <input
+            id="timer"
+            type="number"
+            min="5"
+            max="7200"
+            class="form-control astro-numeric"
+            [ngModel]="form().timeLimitInSeconds"
+            (ngModelChange)="patch('timeLimitInSeconds', $event ? +$event : undefined)"
+            name="timer" />
+          <p class="hint">{{ t('::Question:Timer:Hint') }}</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="form-label" for="explanation">{{ t('::Question:Explanation') }}</label>
+        <textarea
+          id="explanation"
+          class="form-control"
+          rows="2"
+          [ngModel]="form().explanation"
+          (ngModelChange)="patch('explanation', $event)"
+          name="explanation"></textarea>
+        <!-- Only ever shown in Practice mode, after submission. A learner who sees
+             only a score has not learned anything. -->
+        <p class="hint">{{ t('::Question:Explanation:Hint') }}</p>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? t('::Saving') : t('::Save') }}
+      </button>
+    </div>
+  </form>
+}

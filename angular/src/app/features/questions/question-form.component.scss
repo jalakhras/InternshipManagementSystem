@@ -1,0 +1,183 @@
+:host { display: block; min-inline-size: 0; }
+
+// ── Type picker ──────────────────────────────────────────────────────────────
+.picker__title {
+  margin: 0 0 var(--astro-space-4);
+  font-size: var(--astro-text-lg);
+}
+
+.picker__grid {
+  display: grid;
+  gap: var(--astro-space-2);
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+}
+
+.type {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-3);
+  min-block-size: var(--astro-touch-min);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-raised);
+  text-align: start;
+  transition: border-color var(--astro-duration-fast) var(--astro-ease),
+              box-shadow var(--astro-duration-fast) var(--astro-ease);
+
+  &:hover {
+    border-color: var(--accent);
+    box-shadow: var(--astro-shadow-sm);
+  }
+}
+
+.type__icon {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  flex: none;
+  border-radius: var(--astro-radius-sm);
+  background: var(--accent-subtle);
+  color: var(--accent-subtle-text);
+}
+
+.type__body { display: flex; flex-direction: column; gap: 2px; min-inline-size: 0; }
+
+.type__name {
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-medium);
+  color: var(--text-primary);
+}
+
+.type__grading {
+  font-size: var(--astro-text-2xs);
+  color: var(--status-pass-text);
+
+  // Human-marked types create work later. Saying so at the point of choosing is
+  // cheaper than discovering it as a full review queue.
+  &--manual { color: var(--status-pending-text); }
+}
+
+// ── Form ─────────────────────────────────────────────────────────────────────
+.form {
+  display: grid;
+  gap: var(--astro-space-5);
+  max-inline-size: 48rem;
+}
+
+.group {
+  padding: var(--astro-space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+}
+
+.group__head {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  margin-block-end: var(--astro-space-4);
+}
+
+.group__title {
+  margin: 0 0 var(--astro-space-4);
+  font-size: var(--astro-text-lg);
+}
+
+.chosen {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-1) var(--astro-space-3);
+  border-radius: var(--astro-radius-full);
+  background: var(--accent-subtle);
+  color: var(--accent-subtle-text);
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-medium);
+}
+
+.link {
+  min-block-size: auto;
+  min-inline-size: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: var(--astro-text-sm);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.field + .field,
+.row-3 + .field { margin-block-start: var(--astro-space-4); }
+
+.field { border: 0; padding: 0; margin: 0; min-inline-size: 0; }
+
+.row-3 {
+  display: grid;
+  gap: var(--astro-space-4);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.form-label {
+  display: block;
+  margin-block-end: var(--astro-space-1);
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-medium);
+}
+
+.form-control {
+  background: var(--surface-page);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  min-block-size: var(--astro-touch-min);
+
+  &:focus {
+    background: var(--surface-page);
+    color: var(--text-primary);
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+}
+
+textarea.form-control { min-block-size: 4.5rem; }
+
+.hint {
+  margin: var(--astro-space-1) 0 0;
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+  max-inline-size: 60ch;
+}
+
+// ── Segmented ────────────────────────────────────────────────────────────────
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+}
+
+.segmented__option {
+  min-block-size: 2.25rem;
+  min-inline-size: auto;
+  padding-inline: var(--astro-space-3);
+  border: 0;
+  border-radius: calc(var(--astro-radius-md) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  white-space: nowrap;
+
+  &--active {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-weight: var(--astro-weight-medium);
+    box-shadow: var(--astro-shadow-sm);
+  }
+}
+
+.actions { display: flex; justify-content: flex-end; }
+
+.alert { max-inline-size: 48rem; margin-block-end: var(--astro-space-4); }

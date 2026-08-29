@@ -1,0 +1,90 @@
+:host { display: block; }
+
+.lede,
+.hint {
+  color: var(--text-secondary);
+  font-size: var(--astro-text-xs);
+}
+
+.lede { margin: 0 0 var(--astro-space-3); max-inline-size: 60ch; }
+
+.empty {
+  margin: 0 0 var(--astro-space-3);
+  padding: var(--astro-space-3);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  color: var(--text-muted);
+  font-size: var(--astro-text-sm);
+}
+
+.criteria {
+  display: flex;
+  flex-direction: column;
+  gap: var(--astro-space-2);
+  margin-block-end: var(--astro-space-2);
+}
+
+.criterion {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+}
+
+.criterion__name { flex: 1; min-inline-size: 0; }
+.criterion__score { inline-size: 5rem; flex: none; text-align: end; }
+
+.form-control {
+  background: var(--surface-page);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  min-block-size: 2.25rem;
+
+  &:focus {
+    background: var(--surface-page);
+    color: var(--text-primary);
+    border-color: var(--accent);
+    box-shadow: none;
+  }
+}
+
+.criterion__remove {
+  inline-size: 2rem;
+  block-size: 2rem;
+  min-inline-size: auto;
+  min-block-size: auto;
+  flex: none;
+  border: 0;
+  border-radius: var(--astro-radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+
+  &:hover { background: var(--surface-sunken); color: var(--status-fail-mark); }
+}
+
+.total {
+  display: flex;
+  align-items: baseline;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+  margin: 0 0 var(--astro-space-3);
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+
+  // Not an error — a reviewer can still award within the question's total — so it
+  // is stated in the pending tone rather than the failing one.
+  &--mismatch { color: var(--status-pending-text); }
+}
+
+.total__note { font-size: var(--astro-text-xs); }
+
+.field { margin-block-start: var(--astro-space-4); }
+
+.form-label {
+  display: block;
+  margin-block-end: var(--astro-space-1);
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-medium);
+}
+
+textarea.form-control { min-block-size: 4rem; }

@@ -14,6 +14,18 @@ export const EXAM_ROUTES: Routes = [
     loadComponent: () => import('./exam-form.component').then(m => m.ExamFormComponent),
   },
   {
+    // Questions live under their exam: a question has no meaning apart from one,
+    // and the route says so.
+    path: ':examId/questions/new',
+    loadComponent: () =>
+      import('../questions/question-form.component').then(m => m.QuestionFormComponent),
+  },
+  {
+    path: ':examId/questions/:questionId',
+    loadComponent: () =>
+      import('../questions/question-form.component').then(m => m.QuestionFormComponent),
+  },
+  {
     // withComponentInputBinding() in app.config binds this to the component's
     // `id` input, so the component needs no ActivatedRoute of its own.
     path: ':id',
