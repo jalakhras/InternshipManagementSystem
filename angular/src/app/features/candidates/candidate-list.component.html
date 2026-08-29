@@ -1,0 +1,276 @@
+<astro-page-header
+  [title]="t('::Nav:Candidates')"
+  [description]="t('::Candidate:List:Lede')">
+  @if (canCreate()) {
+    <!-- Pasting is the primary action, not adding one person. A centre's students
+         are already in a spreadsheet, and that is the first thing they will try. -->
+    <button slot="actions" type="button" class="btn btn-primary" (click)="openImport()">
+      <i class="bi bi-clipboard-plus" aria-hidden="true"></i>
+      {{ t('::Candidate:Import') }}
+    </button>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<div class="filters">
+  <div class="search">
+    <i class="bi bi-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="t('::Candidate:SearchPlaceholder')"
+      [attr.aria-label]="t('::Candidate:SearchPlaceholder')"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      (keyup.enter)="applyFilter()" />
+  </div>
+
+  <select
+    class="form-select group-filter"
+    [attr.aria-label]="t('::Candidate:Filter:Group')"
+    [ngModel]="groupId()"
+    (ngModelChange)="setGroup($event)">
+    <option value="">{{ t('::Candidate:Filter:AllGroups') }}</option>
+    @for (group of groups(); track group.id) {
+      <option [value]="group.id">{{ group.name }} ({{ group.memberCount }})</option>
+    }
+  </select>
+</div>
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi {{ isFiltered() ? 'bi-search' : 'bi-people' }}" aria-hidden="true"></i>
+    <p class="state__title">
+      {{ isFiltered() ? t('::Candidate:NoMatches') : t('::Candidate:NoneYet') }}
+    </p>
+    <p class="state__text">
+      {{ isFiltered() ? t('::Candidate:NoMatchesNote') : t('::Candidate:NoneYetNote') }}
+    </p>
+    @if (canCreate() && !isFiltered()) {
+      <button type="button" class="btn btn-primary" (click)="openImport()">
+        {{ t('::Candidate:Import') }}
+      </button>
+    }
+  </div>
+}
+
+@if (!loading() && !error() && items().length > 0) {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Candidate:Name') }}</th>
+          <th scope="col">{{ t('::Candidate:Email') }}</th>
+          <th scope="col">{{ t('::Candidate:Groups') }}</th>
+          <th scope="col">{{ t('::Candidate:Status') }}</th>
+          <th scope="col" class="num">{{ t('::Candidate:Attempts') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (candidate of items(); track candidate.id) {
+          <tr>
+            <td>
+              <span class="name">{{ candidate.fullName }}</span>
+              @if (candidate.reference) {
+                <!-- The organisation's own identifier. A coordinator searching for
+                     a student number needs to see it matched. -->
+                <span class="reference astro-numeric">{{ candidate.reference }}</span>
+              }
+            </td>
+
+            <td class="muted astro-ltr">{{ candidate.email }}</td>
+
+            <td class="muted">
+              @if (candidate.groupNames.length > 0) {
+                {{ candidate.groupNames.join('، ') }}
+              } @else {
+                —
+              }
+            </td>
+
+            <td class="muted">{{ t(statusKey(candidate)) }}</td>
+            <td class="num astro-numeric">{{ candidate.attemptCount }}</td>
+
+            <td class="row-actions">
+              @if (busyId() === candidate.id) {
+                <span class="muted">{{ t('::Working') }}</span>
+              } @else if (canDelete()) {
+                <div class="row-actions__set">
+                  <button
+                    type="button"
+                    class="row-action row-action--danger"
+                    [attr.title]="t('::Delete')"
+                    [attr.aria-label]="t('::Delete') + ': ' + candidate.fullName"
+                    (click)="pendingDelete.set(candidate)">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" [attr.aria-label]="t('::Pagination')">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)">
+        <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+        {{ t('::Previous') }}
+      </button>
+
+      <span class="pager__count astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)">
+        {{ t('::Next') }}
+        <i class="bi bi-chevron-left astro-flip" aria-hidden="true"></i>
+      </button>
+    </nav>
+  }
+}
+
+<!-- ── Import ─────────────────────────────────────────────────────────── -->
+@if (importing()) {
+  <div class="scrim" (click)="closeImport()"></div>
+
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <h2 class="panel__title" id="importTitle">{{ t('::Candidate:Import:Title') }}</h2>
+    <p class="panel__lede">{{ t('::Candidate:Import:Lede') }}</p>
+
+    <div class="field">
+      <label class="form-label" for="importText">{{ t('::Candidate:Import:Paste') }}</label>
+      <textarea
+        id="importText"
+        class="form-control paste"
+        rows="10"
+        spellcheck="false"
+        [ngModel]="importText()"
+        (ngModelChange)="importText.set($event); importResult.set(null)"
+        [placeholder]="t('::Candidate:Import:Placeholder')"></textarea>
+      <p class="hint">{{ t('::Candidate:Import:Hint') }}</p>
+    </div>
+
+    @if (groups().length > 0) {
+      <div class="field">
+        <label class="form-label" for="importGroup">{{ t('::Candidate:Import:IntoGroup') }}</label>
+        <select
+          id="importGroup"
+          class="form-select"
+          [ngModel]="importGroupId()"
+          (ngModelChange)="importGroupId.set($event)">
+          <option value="">{{ t('::Candidate:Import:NoGroup') }}</option>
+          @for (group of groups(); track group.id) {
+            <option [value]="group.id">{{ group.name }}</option>
+          }
+        </select>
+      </div>
+    }
+
+    @if (importResult(); as result) {
+      <!-- Checked before anything is written, so the three wrong rows are seen at
+           the moment somebody can still do something about them. -->
+      <div class="summary" [class.summary--done]="importCommitted()">
+        <p class="summary__line">
+          <strong class="astro-numeric">{{ result.created }}</strong>
+          {{ importCommitted() ? t('::Candidate:Import:Added') : t('::Candidate:Import:WillAdd') }}
+        </p>
+
+        @if (result.alreadyPresent > 0) {
+          <p class="summary__line summary__line--quiet">
+            <strong class="astro-numeric">{{ result.alreadyPresent }}</strong>
+            {{ t('::Candidate:Import:AlreadyThere') }}
+          </p>
+        }
+
+        @if (result.addedToGroup > 0) {
+          <p class="summary__line summary__line--quiet">
+            <strong class="astro-numeric">{{ result.addedToGroup }}</strong>
+            {{ t('::Candidate:Import:IntoGroupCount') }}
+          </p>
+        }
+
+        @if (result.problems.length > 0) {
+          <ul class="problems">
+            @for (problem of result.problems; track problem.line) {
+              <li class="problem">
+                <span class="problem__line astro-numeric">{{ problem.line }}</span>
+                <span class="problem__reason">{{ t('::' + problem.reason) }}</span>
+                <span class="problem__content">{{ problem.content }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+    }
+
+    <div class="panel__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="closeImport()">
+        {{ importCommitted() ? t('::Close') : t('::Cancel') }}
+      </button>
+
+      @if (!importCommitted()) {
+        @if (importResult()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="importChecking() || !canCommitImport()"
+            (click)="commitImport()">
+            {{ importChecking() ? t('::Working') : t('::Candidate:Import:Confirm') }}
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="importChecking() || !importText().trim()"
+            (click)="checkImport()">
+            {{ importChecking() ? t('::Working') : t('::Candidate:Import:Check') }}
+          </button>
+        }
+      }
+    </div>
+  </div>
+}
+
+@if (pendingDelete(); as candidate) {
+  <div class="scrim" (click)="pendingDelete.set(null)"></div>
+
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="deleteCandidateTitle">
+    <h2 class="confirm__title" id="deleteCandidateTitle">{{ t('::Candidate:Delete:Title') }}</h2>
+    <p class="confirm__body">{{ candidate.fullName }}</p>
+    <p class="confirm__note">{{ t('::Candidate:Delete:Note') }}</p>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="pendingDelete.set(null)">
+        {{ t('::Cancel') }}
+      </button>
+      <button type="button" class="btn btn-danger" (click)="confirmDelete()">
+        {{ t('::Delete') }}
+      </button>
+    </div>
+  </div>
+}

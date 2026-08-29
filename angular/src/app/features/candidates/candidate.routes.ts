@@ -1,14 +1,12 @@
 import { Routes } from '@angular/router';
 
 /**
- * Candidates routes. The screens land here in phase 3b; the route exists now so the
- * shell's navigation is wired end to end and nothing links into a void.
+ * Candidates and the cohorts they belong to.
  */
 export const CANDIDATE_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('../placeholder/placeholder.component').then(m => m.PlaceholderComponent),
-    data: { titleKey: '::Nav:Candidates' },
+      import('./candidate-list.component').then(m => m.CandidateListComponent),
   },
 ];
