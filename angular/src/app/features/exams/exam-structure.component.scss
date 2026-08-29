@@ -1,0 +1,255 @@
+// An exam's parts and its passages. Logical properties — this mirrors in Arabic.
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.block {
+  margin-block-end: var(--astro-space-6);
+  padding: var(--astro-space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+}
+
+.block__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  margin-block-end: var(--astro-space-3);
+}
+
+.block__title {
+  margin: 0;
+  font-size: var(--astro-text-lg);
+}
+
+.block__lede {
+  margin: var(--astro-space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  max-inline-size: 70ch;
+}
+
+.block__empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--astro-text-sm);
+}
+
+// ── Section rows ─────────────────────────────────────────────────────────────
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-2);
+  border-radius: var(--astro-radius-md);
+  flex-wrap: wrap;
+
+  &:hover { background: var(--surface-sunken); }
+}
+
+.row__order {
+  min-inline-size: 1.5rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--astro-text-sm);
+}
+
+.row__main {
+  flex: 1;
+  min-inline-size: 10rem;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.row__name { font-weight: var(--astro-weight-medium); }
+
+.row__note {
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+.row__facts {
+  display: flex;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+}
+
+.row__actions {
+  margin-inline-start: auto;
+  display: flex;
+  gap: var(--astro-space-3);
+}
+
+.chip {
+  padding-inline: var(--astro-space-2);
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-xs);
+  white-space: nowrap;
+}
+
+// The part with teeth: fail this section and the exam is failed.
+.chip--strong {
+  background: color-mix(in srgb, var(--astro-fail-600) 12%, transparent);
+  color: var(--astro-fail-600);
+}
+
+.chip--muted { color: var(--text-muted); }
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--astro-brand-700);
+  cursor: pointer;
+  font-size: var(--astro-text-sm);
+
+  &:disabled { opacity: .5; cursor: default; }
+}
+
+.link--danger { color: var(--astro-fail-600); }
+
+// ── Passages ─────────────────────────────────────────────────────────────────
+.passages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-3);
+}
+
+.passage {
+  padding: var(--astro-space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--astro-radius-md);
+}
+
+.passage__head {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+}
+
+.passage__label { font-weight: var(--astro-weight-medium); }
+
+.passage__text {
+  margin: var(--astro-space-2) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  max-inline-size: 80ch;
+  // A passage is long by nature; showing all of it buries the questions.
+  max-block-size: 8rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.passage__questions {
+  margin: var(--astro-space-2) 0 0;
+  padding-inline-start: var(--astro-space-5);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+// A passage nothing hangs off never reaches a candidate.
+.passage__warning {
+  margin: var(--astro-space-2) 0 0;
+  color: var(--astro-fail-600);
+  font-size: var(--astro-text-sm);
+}
+
+// ── Drafts ───────────────────────────────────────────────────────────────────
+.draft {
+  margin-block-start: var(--astro-space-3);
+  padding: var(--astro-space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--astro-radius-md);
+  display: grid;
+  gap: var(--astro-space-3);
+}
+
+.draft__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--astro-space-3);
+}
+
+.draft__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field--wide { grid-column: 1 / -1; }
+
+.field__label {
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+.field__hint {
+  font-size: var(--astro-text-xs);
+  color: var(--text-muted);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+
+  small {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+  }
+}
+
+// ── States ───────────────────────────────────────────────────────────────────
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+  &__text  { margin: 0; max-inline-size: 44ch; }
+  &--error i { color: var(--astro-fail-600); }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}

@@ -44,4 +44,23 @@ public interface IQuestionAppService : IApplicationService
     Task<List<QuestionGroupDto>> GetGroupsAsync(Guid examId);
 
     Task<QuestionGroupDto> CreateGroupAsync(CreateUpdateQuestionGroupDto input);
+
+    /// <summary>
+    /// Corrects a stimulus in place.
+    /// <para>
+    /// A reading passage is several hundred words somebody typed once. Without
+    /// this, a typo in it is permanent and the only remedy is a new passage and
+    /// six questions moved onto it by hand.
+    /// </para>
+    /// </summary>
+    Task<QuestionGroupDto> UpdateGroupAsync(Guid id, CreateUpdateQuestionGroupDto input);
+
+    /// <summary>
+    /// Removes a stimulus. The questions under it survive as loose questions.
+    /// <para>
+    /// Deleting six questions because the passage above them was wrong is the
+    /// kind of loss that makes people stop trusting a delete button.
+    /// </para>
+    /// </summary>
+    Task DeleteGroupAsync(Guid id);
 }

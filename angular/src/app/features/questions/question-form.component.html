@@ -98,6 +98,30 @@
     <section class="group">
       <h2 class="group__title">{{ t('::Question:Group:Marking') }}</h2>
 
+      <!-- A question can hang off a shared passage: the reading text, the
+           listening clip, the chart. The candidate sees it beside the question
+           rather than repeated in the prompt. Only offered inside an exam,
+           because a passage belongs to a paper. -->
+      @if (passages().length > 0) {
+        <div class="field">
+          <label class="form-label" for="questionPassage">{{ t('::Stimulus:Field') }}</label>
+          <select
+            id="questionPassage"
+            class="form-select"
+            name="questionPassage"
+            [ngModel]="form().questionGroupId ?? ''"
+            (ngModelChange)="patch('questionGroupId', $event || undefined)">
+            <option value="">{{ t('::Stimulus:Field:None') }}</option>
+            @for (passage of passages(); track passage.id) {
+              <option [value]="passage.id">
+                {{ passage.instructions || t('::Stimulus:Untitled') }}
+              </option>
+            }
+          </select>
+          <p class="hint">{{ t('::Stimulus:Field:Hint') }}</p>
+        </div>
+      }
+
       <!-- ── Filing ──────────────────────────────────────────────────────
            Where this question lives. Inside an exam it is optional and mostly
            useful for the topic breakdown on a result; in the bank the domain is

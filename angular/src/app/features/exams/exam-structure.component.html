@@ -1,0 +1,298 @@
+<astro-page-header
+  [title]="t('::Structure:Title')"
+  [description]="examTitle() || t('::Structure:Lede')">
+  <a slot="actions" class="btn btn-outline-secondary" [routerLink]="['/exams', examId()]">
+    <i class="bi bi-arrow-right" aria-hidden="true"></i>
+    {{ t('::Form:BackToExam') }}
+  </a>
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else {
+  <!-- ── Sections ──────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block__head">
+      <div>
+        <h2 class="block__title">{{ t('::Section:Title') }}</h2>
+        <p class="block__lede">{{ t('::Section:Lede') }}</p>
+      </div>
+      @if (canManage()) {
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="newSection()">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          {{ t('::Section:New') }}
+        </button>
+      }
+    </div>
+
+    @if (noSections()) {
+      <p class="block__empty">{{ t('::Section:NoneYet') }}</p>
+    }
+
+    <ul class="rows">
+      @for (section of sections(); track section.id) {
+        <li class="row">
+          <span class="row__order">{{ section.displayOrder + 1 }}</span>
+          <span class="row__main">
+            <span class="row__name">{{ section.name }}</span>
+            @if (section.instructions) {
+              <span class="row__note">{{ section.instructions }}</span>
+            }
+          </span>
+
+          <span class="row__facts">
+            @if (section.topicName) {
+              <span class="chip">{{ section.topicName }}</span>
+            }
+            @if (section.timeLimitInMinutes) {
+              <span class="chip">{{ t('::Section:Minutes', '' + section.timeLimitInMinutes) }}</span>
+            }
+            @if (section.questionsPerForm) {
+              <span class="chip">{{ t('::Form:Questions', '' + section.questionsPerForm) }}</span>
+            }
+            <!-- The part with teeth: fail this and you fail the exam. -->
+            @if (section.isQualifying) {
+              <span class="chip chip--strong">{{ t('::Section:Qualifying') }}</span>
+            }
+            @if (section.minimumPercentage) {
+              <span class="chip">{{ t('::Section:Floor', '' + section.minimumPercentage) }}</span>
+            }
+            <span class="chip chip--muted">{{ t('::Section:Available', '' + section.questionCount) }}</span>
+          </span>
+
+          @if (canManage()) {
+            <span class="row__actions">
+              <button type="button" class="link" (click)="editSection(section)">{{ t('::Edit') }}</button>
+              <button type="button" class="link link--danger" [disabled]="saving()" (click)="deleteSection(section)">
+                {{ t('::Delete') }}
+              </button>
+            </span>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (sectionDraft().open) {
+      <form class="draft" (ngSubmit)="saveSection()">
+        <div class="draft__grid">
+          <label class="field field--wide">
+            <span class="field__label">{{ t('::Section:Name') }}</span>
+            <input
+              class="form-control"
+              required
+              name="sectionName"
+              [placeholder]="t('::Section:Name:Placeholder')"
+              [ngModel]="sectionDraft().name"
+              (ngModelChange)="patchSection('name', $event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Question:Topic') }}</span>
+            <select
+              class="form-select"
+              name="sectionTopic"
+              [ngModel]="sectionDraft().topicId"
+              (ngModelChange)="patchSection('topicId', $event)">
+              <option value="">{{ t('::Question:Topic:None') }}</option>
+              @for (topic of topics(); track topic.id) {
+                <option [value]="topic.id">{{ topic.name }}</option>
+              }
+            </select>
+            <span class="field__hint">{{ t('::Section:Topic:Hint') }}</span>
+          </label>
+
+          <label class="field field--wide">
+            <span class="field__label">{{ t('::Section:Instructions') }}</span>
+            <textarea
+              class="form-control"
+              rows="2"
+              name="sectionInstructions"
+              [ngModel]="sectionDraft().instructions"
+              (ngModelChange)="patchSection('instructions', $event)"></textarea>
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Section:TimeLimit') }}</span>
+            <input
+              type="number"
+              min="1"
+              max="600"
+              class="form-control astro-numeric"
+              name="sectionMinutes"
+              [ngModel]="sectionDraft().timeLimitInMinutes"
+              (ngModelChange)="patchSection('timeLimitInMinutes', $event ? +$event : null)" />
+            <span class="field__hint">{{ t('::Section:TimeLimit:Hint') }}</span>
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Section:QuestionsPerForm') }}</span>
+            <input
+              type="number"
+              min="1"
+              max="500"
+              class="form-control astro-numeric"
+              name="sectionCount"
+              [ngModel]="sectionDraft().questionsPerForm"
+              (ngModelChange)="patchSection('questionsPerForm', $event ? +$event : null)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Section:Minimum') }}</span>
+            <input
+              type="number"
+              min="1"
+              max="100"
+              class="form-control astro-numeric"
+              name="sectionFloor"
+              [ngModel]="sectionDraft().minimumPercentage"
+              (ngModelChange)="patchSection('minimumPercentage', $event ? +$event : null)" />
+            <span class="field__hint">{{ t('::Section:Minimum:Hint') }}</span>
+          </label>
+
+          <label class="check field--wide">
+            <input
+              type="checkbox"
+              name="sectionQualifying"
+              [ngModel]="sectionDraft().isQualifying"
+              (ngModelChange)="patchSection('isQualifying', $event)" />
+            <span>
+              <strong>{{ t('::Section:Qualifying') }}</strong>
+              <small>{{ t('::Section:Qualifying:Hint') }}</small>
+            </span>
+          </label>
+        </div>
+
+        <div class="draft__actions">
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">{{ t('::Save') }}</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelSection()">
+            {{ t('::Cancel') }}
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+
+  <!-- ── Passages ──────────────────────────────────────────────────────── -->
+  <section class="block">
+    <div class="block__head">
+      <div>
+        <h2 class="block__title">{{ t('::Stimulus:Title') }}</h2>
+        <p class="block__lede">{{ t('::Stimulus:Lede') }}</p>
+      </div>
+      @if (canManage()) {
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="newGroup()">
+          <i class="bi bi-plus-lg" aria-hidden="true"></i>
+          {{ t('::Stimulus:New') }}
+        </button>
+      }
+    </div>
+
+    @if (noGroups()) {
+      <p class="block__empty">{{ t('::Stimulus:NoneYet') }}</p>
+    }
+
+    <ul class="passages">
+      @for (group of groups(); track group.id) {
+        <li class="passage">
+          <div class="passage__head">
+            <span class="passage__label">
+              @if (group.instructions) {
+                {{ group.instructions }}
+              } @else {
+                {{ t('::Stimulus:Untitled') }}
+              }
+            </span>
+            <span class="chip chip--muted">
+              {{ t('::Stimulus:Questions', '' + group.questions.length) }}
+            </span>
+
+            @if (canManage()) {
+              <span class="row__actions">
+                <button type="button" class="link" (click)="editGroup(group)">{{ t('::Edit') }}</button>
+                <button type="button" class="link link--danger" [disabled]="saving()" (click)="deleteGroup(group)">
+                  {{ t('::Delete') }}
+                </button>
+              </span>
+            }
+          </div>
+
+          @if (group.stimulusText) {
+            <p class="passage__text">{{ group.stimulusText }}</p>
+          }
+
+          @if (group.stimulusBlobName) {
+            <span class="chip">{{ group.stimulusMediaType || t('::Stimulus:Media') }}</span>
+          }
+
+          @if (group.questions.length > 0) {
+            <ol class="passage__questions">
+              @for (question of group.questions; track question.id) {
+                <li>{{ question.text }}</li>
+              }
+            </ol>
+          } @else {
+            <!-- A passage with no questions is invisible to a candidate. Said here
+                 rather than left for somebody to notice in a live sitting. -->
+            <p class="passage__warning">{{ t('::Stimulus:NoQuestions') }}</p>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (groupDraft().open) {
+      <form class="draft" (ngSubmit)="saveGroup()">
+        <label class="field">
+          <span class="field__label">{{ t('::Stimulus:Instructions') }}</span>
+          <input
+            class="form-control"
+            name="groupInstructions"
+            [placeholder]="t('::Stimulus:Instructions:Placeholder')"
+            [ngModel]="groupDraft().instructions"
+            (ngModelChange)="patchGroup('instructions', $event)" />
+        </label>
+
+        <label class="field">
+          <span class="field__label">{{ t('::Stimulus:Text') }}</span>
+          <textarea
+            class="form-control"
+            rows="8"
+            name="groupText"
+            [placeholder]="t('::Stimulus:Text:Placeholder')"
+            [ngModel]="groupDraft().stimulusText"
+            (ngModelChange)="patchGroup('stimulusText', $event)"></textarea>
+          <span class="field__hint">{{ t('::Stimulus:Text:Hint') }}</span>
+        </label>
+
+        <div class="field">
+          <span class="field__label">{{ t('::Stimulus:Media') }}</span>
+          <astro-media-field
+            [blobName]="groupDraft().stimulusBlobName || undefined"
+            [mediaType]="groupDraft().stimulusMediaType || undefined"
+            (changed)="setStimulusMedia($event)" />
+          <span class="field__hint">{{ t('::Stimulus:Media:Hint') }}</span>
+        </div>
+
+        <div class="draft__actions">
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">{{ t('::Save') }}</button>
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelGroup()">
+            {{ t('::Cancel') }}
+          </button>
+        </div>
+      </form>
+    }
+  </section>
+}

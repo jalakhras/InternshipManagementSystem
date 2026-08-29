@@ -7,6 +7,8 @@ import {
   QuestionDto,
   QuestionListRequest,
   QuestionTypeDescriptor,
+  QuestionGroupDto,
+  CreateUpdateQuestionGroupDto,
 } from './assessment.models';
 
 /**
@@ -77,5 +79,40 @@ export class QuestionService {
       method: 'GET',
       url: `${this.base}/types`,
     });
+  }
+
+  /**
+   * Shared stimuli and the questions under each.
+   *
+   * A stimulus is a reading passage, a listening clip or a video that several
+   * questions hang off. It is how an English exam actually works, and how a
+   * trading exam asks four things about one chart.
+   */
+  getGroups(examId: string): Observable<QuestionGroupDto[]> {
+    return this.rest.request<void, QuestionGroupDto[]>({
+      method: 'GET',
+      url: `${this.base}/groups/${examId}`,
+    });
+  }
+
+  createGroup(body: CreateUpdateQuestionGroupDto): Observable<QuestionGroupDto> {
+    return this.rest.request<CreateUpdateQuestionGroupDto, QuestionGroupDto>({
+      method: 'POST',
+      url: `${this.base}/groups`,
+      body,
+    });
+  }
+
+  updateGroup(id: string, body: CreateUpdateQuestionGroupDto): Observable<QuestionGroupDto> {
+    return this.rest.request<CreateUpdateQuestionGroupDto, QuestionGroupDto>({
+      method: 'PUT',
+      url: `${this.base}/groups/${id}`,
+      body,
+    });
+  }
+
+  /** The questions under it survive as loose questions. */
+  deleteGroup(id: string): Observable<void> {
+    return this.rest.request<void, void>({ method: 'DELETE', url: `${this.base}/groups/${id}` });
   }
 }

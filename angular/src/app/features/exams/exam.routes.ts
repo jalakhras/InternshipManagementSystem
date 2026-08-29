@@ -31,6 +31,12 @@ export const EXAM_ROUTES: Routes = [
       import('../questions/question-form.component').then(m => m.QuestionFormComponent),
   },
   {
+    // Sections and passages: how the exam is laid out, as distinct from what is
+    // in it.
+    path: ':examId/structure',
+    loadComponent: () => import('./exam-structure.component').then(m => m.ExamStructureComponent),
+  },
+  {
     // Papers live under their exam for the same reason questions do.
     path: ':examId/forms',
     loadComponent: () => import('./exam-forms.component').then(m => m.ExamFormsComponent),

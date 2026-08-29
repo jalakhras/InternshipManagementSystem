@@ -257,13 +257,36 @@ export interface QuestionTypeDescriptor {
   icon: string;
 }
 
+/**
+ * A shared stimulus and the questions hanging off it.
+ *
+ * A reading passage with six questions under it, a listening clip with four, a
+ * chart with three. It is how a language exam actually works, and the taker sees
+ * the passage once beside every question rather than repeated in each prompt.
+ */
 export interface QuestionGroupDto {
   id: string;
   examId: string;
+
+  /** What to do with it: "Read the passage and answer questions 1–6." */
   instructions?: string;
+
+  /** The passage itself, when it is text. */
   stimulusText?: string;
+
+  /** The clip, video or image, when it is not. */
   stimulusBlobName?: string;
   stimulusMediaType?: string;
+
   displayOrder: number;
   questions: QuestionDto[];
+}
+
+export interface CreateUpdateQuestionGroupDto {
+  examId: string;
+  instructions?: string | null;
+  stimulusText?: string | null;
+  stimulusBlobName?: string | null;
+  stimulusMediaType?: string | null;
+  displayOrder: number;
 }

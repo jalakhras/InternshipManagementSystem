@@ -68,6 +68,13 @@ public class QuestionController : AbpControllerBase
     [HttpGet("groups/{examId}")]
     public Task<List<QuestionGroupDto>> GetGroupsAsync(Guid examId) => _questions.GetGroupsAsync(examId);
 
+    [HttpPut("groups/{id}")]
+    public Task<QuestionGroupDto> UpdateGroupAsync(Guid id, [FromBody] CreateUpdateQuestionGroupDto input) =>
+        _questions.UpdateGroupAsync(id, input);
+
+    [HttpDelete("groups/{id}")]
+    public Task DeleteGroupAsync(Guid id) => _questions.DeleteGroupAsync(id);
+
     [HttpPost("groups")]
     public Task<QuestionGroupDto> CreateGroupAsync([FromBody] CreateUpdateQuestionGroupDto input) =>
         _questions.CreateGroupAsync(input);

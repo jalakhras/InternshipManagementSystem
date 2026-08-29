@@ -15,6 +15,7 @@ import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 
 import { CatalogService } from '../../core/api/catalog.service';
 import { CategoryDto } from '../../core/api/catalog.models';
+import { QuestionGroupDto } from '../../core/api/assessment.models';
 import { QuestionService } from '../../core/api/question.service';
 import {
   CreateUpdateQuestionDto,
@@ -84,6 +85,14 @@ export class QuestionFormComponent {
   readonly categories = signal<CategoryDto[]>([]);
 
   /**
+   * The passages this exam has, so a question can join one.
+   *
+   * Only inside an exam: a passage belongs to a paper, and a bank question that
+   * pointed at one would be undrawable by every other exam at its level.
+   */
+  readonly passages = signal<QuestionGroupDto[]>([]);
+
+  /**
    * Levels under the chosen domain. A level belongs to one ladder, so offering
    * every organisation's at once is how a beginners' safety item ends up at B2.
    */
@@ -145,6 +154,18 @@ export class QuestionFormComponent {
     // nothing else — somebody fixing a typo in a prompt should not be stopped.
     this.catalog.getCategories().subscribe({
       next: categories => this.categories.set(categories),
+    });
+
+    effect(() => {
+      const exam = this.examId();
+
+      if (!exam) {
+        return;
+      }
+
+      this.questions.getGroups(exam).subscribe({
+        next: groups => this.passages.set(groups),
+      });
     });
 
     // Mounts the editor for the chosen type.

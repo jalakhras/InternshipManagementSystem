@@ -271,6 +271,42 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
     }
 
     [Authorize(InternshipManagementSystemPermissions.Questions.Create)]
+    [Authorize(InternshipManagementSystemPermissions.Questions.Edit)]
+    public async Task<QuestionGroupDto> UpdateGroupAsync(Guid id, CreateUpdateQuestionGroupDto input)
+    {
+        var group = await _groups.GetAsync(id);
+
+        group.Instructions = input.Instructions;
+        group.StimulusText = input.StimulusText;
+        group.StimulusBlobName = input.StimulusBlobName;
+        group.StimulusMediaType = input.StimulusMediaType;
+        group.DisplayOrder = input.DisplayOrder;
+
+        await _groups.UpdateAsync(group, autoSave: true);
+
+        return ToDto(group);
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Questions.Delete)]
+    public async Task DeleteGroupAsync(Guid id)
+    {
+        // The questions under it are unhooked rather than deleted. Six questions
+        // lost because the passage above them was wrong is the kind of damage
+        // that makes people stop trusting a delete button — and they are still
+        // perfectly good questions, just loose ones now.
+        var attached = await (await _questions.GetQueryableAsync())
+            .Where(q => q.QuestionGroupId == id)
+            .ToListAsync();
+
+        foreach (var question in attached)
+        {
+            question.QuestionGroupId = null;
+        }
+
+        await _questions.UpdateManyAsync(attached, autoSave: true);
+        await _groups.DeleteAsync(id, autoSave: true);
+    }
+
     public async Task<QuestionGroupDto> CreateGroupAsync(CreateUpdateQuestionGroupDto input)
     {
         var group = new QuestionGroup(GuidGenerator.Create(), CurrentTenant.Id, input.ExamId)
@@ -284,17 +320,19 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
         await _groups.InsertAsync(group, autoSave: true);
 
-        return new QuestionGroupDto
-        {
-            Id = group.Id,
-            ExamId = group.ExamId,
-            Instructions = group.Instructions,
-            StimulusText = group.StimulusText,
-            StimulusBlobName = group.StimulusBlobName,
-            StimulusMediaType = group.StimulusMediaType,
-            DisplayOrder = group.DisplayOrder,
-        };
+        return ToDto(group);
     }
+
+    private static QuestionGroupDto ToDto(QuestionGroup group) => new()
+    {
+        Id = group.Id,
+        ExamId = group.ExamId,
+        Instructions = group.Instructions,
+        StimulusText = group.StimulusText,
+        StimulusBlobName = group.StimulusBlobName,
+        StimulusMediaType = group.StimulusMediaType,
+        DisplayOrder = group.DisplayOrder,
+    };
 
     // ------------------------------------------------------------------ helpers
 
