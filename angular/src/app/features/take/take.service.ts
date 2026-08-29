@@ -69,8 +69,18 @@ export class TakeService {
    * extra requests.
    * </p>
    */
-  getQuestion(position: number): Observable<TakerQuestion> {
-    return this.http.get<TakerQuestion>(`${this.base}/question/${position}`, {
+  /**
+   * One question, by the position a candidate sees.
+   *
+   * The screen counts from one — "question 3 of 20" — and the paper counts from
+   * zero. The conversion lives here, at the boundary, because it went missing:
+   * the sitting screen passed its own numbering straight through, so every
+   * candidate was served the *second* question first, could never reach the
+   * first, and hit "not on this paper" on the last one. The stubbed browser
+   * tests answered whatever position they were asked for and saw nothing.
+   */
+  getQuestion(displayPosition: number): Observable<TakerQuestion> {
+    return this.http.get<TakerQuestion>(`${this.base}/question/${displayPosition - 1}`, {
       headers: this.headers(),
     });
   }

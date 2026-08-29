@@ -59,6 +59,19 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
 
     if (method === 'GET' && path.startsWith('/question/')) {
       const position = Number(path.split('/').pop());
+
+      // Refused the way the real service refuses it, rather than inventing a
+      // question that does not exist on this paper.
+      if (!Number.isInteger(position) || position < 0 || position >= total) {
+        return route.fulfill({
+          status: 403,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: { code: 'IMS:Attempt:QuestionNotOnForm', message: 'Not on this paper.' },
+          }),
+        });
+      }
+
       return json(question(position));
     }
 
@@ -122,12 +135,24 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
     };
   }
 
+  /**
+   * One question, at a zero-based position — the same numbering the real API
+   * uses.
+   *
+   * It used to echo whatever number it was asked for, which made the stub agree
+   * with any client. That is how a real off-by-one survived: the sitting screen
+   * sent its own one-based display position straight through, so against the
+   * real server every candidate was served the second question first and could
+   * never reach the first. A stub that answers anything proves nothing.
+   */
   function question(position: number) {
+    const number = position + 1;
+
     return {
-      id: `q${position}`,
+      id: `q${number}`,
       position,
       totalQuestions: total,
-      text: `Question ${position}: which level is support?`,
+      text: `Question ${number}: which level is support?`,
       type: 'single-choice',
       score: 1,
       options: [

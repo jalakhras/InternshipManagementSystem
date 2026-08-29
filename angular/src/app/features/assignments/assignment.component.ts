@@ -1,6 +1,5 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
 
 import { AssignmentService, AssignmentResult, ExamLinkDto } from '../../core/api/assignment.service';
@@ -35,7 +34,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-assignment',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, PageHeaderComponent],
+  imports: [FormsModule, DatePipe, PageHeaderComponent],
   templateUrl: './assignment.component.html',
   styleUrl: './assignment.component.scss',
 })

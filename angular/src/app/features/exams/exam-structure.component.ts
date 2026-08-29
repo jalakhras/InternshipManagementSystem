@@ -1,6 +1,7 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { Observable } from 'rxjs';
 
 import { StructureService } from '../../core/api/structure.service';
 import {
@@ -249,10 +250,7 @@ export class ExamStructureComponent {
 
   // ------------------------------------------------------------------ plumbing
 
-  private run<T>(
-    request: { subscribe(observer: { next: (v: T) => void; error: (e: unknown) => void }): unknown },
-    done: () => void,
-  ): void {
+  private run<T>(request: Observable<T>, done: () => void): void {
     this.saving.set(true);
     this.actionError.set(null);
 

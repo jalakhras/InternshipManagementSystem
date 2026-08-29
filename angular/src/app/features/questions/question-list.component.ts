@@ -17,6 +17,9 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
+/** Stands in for "the bank" in the loaded-once check, which is otherwise keyed by exam id. */
+const BANK = '__bank__';
+
 /**
  * An exam's questions.
  *
@@ -38,9 +41,6 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
   templateUrl: './question-list.component.html',
   styleUrl: './question-list.component.scss',
 })
-/** Stands in for "the bank" in the loaded-once check, which is otherwise keyed by exam id. */
-const BANK = '__bank__';
-
 export class QuestionListComponent {
   private readonly questions = inject(QuestionService);
   private readonly exams = inject(ExamService);

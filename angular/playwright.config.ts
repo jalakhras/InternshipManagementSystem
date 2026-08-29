@@ -44,13 +44,31 @@ export default defineConfig({
   projects: [
     {
       name: 'desktop',
+      testIgnore: '**/live/**',
       use: { ...devices['Desktop Chrome'] },
     },
     {
       // Candidates sit exams on phones. A layout that only works at 1440px is a
       // layout that does not work.
       name: 'mobile',
+      testIgnore: '**/live/**',
       use: { ...devices['Pixel 7'] },
+    },
+    {
+      // Against a real API and a real database.
+      //
+      // Opt-in — `npx playwright test --project=live` — because it needs the
+      // host running and the database seeded, and because it writes rows.
+      //
+      // It exists because every defect found on 2026-08-29 was invisible to the
+      // stubbed suite and to 187 unit and integration tests: a session token
+      // never replaced after the start, a media route that did not exist, a BLOB
+      // container with no provider, an [Authorize] naming an undefined policy.
+      // None of those live inside a layer. They live between layers, and only a
+      // wired-up application has those.
+      name: 'live',
+      testMatch: '**/live/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 

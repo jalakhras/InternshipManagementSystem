@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Observable } from 'rxjs';
 
 import { CatalogService } from '../../core/api/catalog.service';
 import {
@@ -385,7 +386,7 @@ export class CatalogComponent {
 
   // ------------------------------------------------------------------ plumbing
 
-  private run<T>(request: { subscribe: (o: RunObserver<T>) => unknown }, done: (value: T) => void): void {
+  private run<T>(request: Observable<T>, done: (value: T) => void): void {
     this.saving.set(true);
     this.actionError.set(null);
 
@@ -407,11 +408,6 @@ export class CatalogComponent {
 
     return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
   }
-}
-
-interface RunObserver<T> {
-  next: (value: T) => void;
-  error: (err: unknown) => void;
 }
 
 export interface TopicRow {
