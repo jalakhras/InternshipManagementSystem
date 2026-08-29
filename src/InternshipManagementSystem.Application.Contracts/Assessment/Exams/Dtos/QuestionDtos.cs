@@ -76,7 +76,16 @@ public class CreateUpdateQuestionDto
 
     /// <summary>The level a bank question targets. Leave null for one that suits any level.</summary>
     public Guid? LevelId { get; set; }
-    [Required]
+    /// <summary>
+    /// The exam that owns this question, or null when it goes into the shared bank.
+    /// <para>
+    /// Deliberately not <c>[Required]</c>. It was, and the attribute outlived the
+    /// day the field became optional — so every attempt to write a bank question
+    /// was refused by validation before the service saw it, and the shared bank
+    /// could not be created through the API at all. The rule that actually applies
+    /// is "belongs to an exam or to a domain", and the service enforces it.
+    /// </para>
+    /// </summary>
     public Guid? ExamId { get; set; }
 
     public Guid? QuestionGroupId { get; set; }

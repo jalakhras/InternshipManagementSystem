@@ -124,6 +124,8 @@
     "IMS:Exam:PracticeWithoutExplanations": "Practice mode without explanations reveals the answer without teaching anything.",
     "IMS:Exam:ScheduleEndsBeforeItStarts": "The end must come after the start.",
     "IMS:Exam:ScheduleNeedsBothDates": "A schedule needs both a start and an end.",
+    "IMS:ExamForm:DuplicateQuestions": "The same question appears twice on this form. It would be scored twice and read twice.",
+    "IMS:ExamForm:NoQuestions": "A form cannot be published with no questions on it.",
     "IMS:ExamLink:AttemptsExhausted": "You have used all the attempts allowed.",
     "IMS:ExamLink:Expired": "This link has expired.",
     "IMS:ExamLink:Invalid": "This link is not valid.",

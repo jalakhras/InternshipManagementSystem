@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -155,29 +156,41 @@ public class Question : AuditedAggregateRoot<Guid>, IMultiTenant
     }
 
     /// <summary>
-    /// Whether this question is available to an exam in the given domain and level.
+    /// Which questions an exam may draw: its own, plus the bank questions its
+    /// domain and level make available.
     /// <para>
-    /// A bank question with no level suits every level in its domain; one with a
-    /// level is offered only to exams at that level.
+    /// An expression rather than a method, because it has to run in the database.
+    /// The delivery path builds a paper from a query and the publish check counts
+    /// against one, and neither can call a method on an entity that has not been
+    /// loaded yet.
+    /// </para>
+    /// <para>
+    /// A bank question with no level suits every level in its domain, which is
+    /// common for anything measuring a foundation skill.
     /// </para>
     /// </summary>
-    public bool IsDrawableBy(Guid examId, Guid? examCategoryId, Guid? examLevelId)
+    public static Expression<Func<Question, bool>> DrawableBy(
+        Guid examId,
+        Guid? examCategoryId,
+        Guid? examLevelId)
     {
-        if (!IsActive)
-        {
-            return false;
-        }
-
-        if (ExamId == examId)
-        {
-            return true;
-        }
-
-        if (ExamId is not null || CategoryId is null || CategoryId != examCategoryId)
-        {
-            return false;
-        }
-
-        return LevelId is null || LevelId == examLevelId;
+        return question =>
+            question.IsActive &&
+            (question.ExamId == examId ||
+             (question.ExamId == null &&
+              question.CategoryId != null &&
+              question.CategoryId == examCategoryId &&
+              (question.LevelId == null || question.LevelId == examLevelId)));
     }
+
+    /// <summary>
+    /// The same rule, for a question already in memory.
+    /// <para>
+    /// Compiled from the expression above rather than written twice. Two copies
+    /// of one rule is how a paper comes to contain a question the publish check
+    /// said was not there.
+    /// </para>
+    /// </summary>
+    public bool IsDrawableBy(Guid examId, Guid? examCategoryId, Guid? examLevelId) =>
+        DrawableBy(examId, examCategoryId, examLevelId).Compile()(this);
 }

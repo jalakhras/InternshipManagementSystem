@@ -124,6 +124,8 @@
     "IMS:Exam:PracticeWithoutExplanations": "وضع التدريب بلا شروح يكشف الإجابة دون أن يعلّم شيئاً.",
     "IMS:Exam:ScheduleEndsBeforeItStarts": "تاريخ النهاية يجب أن يكون بعد البداية.",
     "IMS:Exam:ScheduleNeedsBothDates": "الجدولة تحتاج تاريخ بداية وتاريخ نهاية.",
+    "IMS:ExamForm:DuplicateQuestions": "السؤال نفسه مكرر في هذا النموذج، فسيُحتسب مرتين ويُقرأ مرتين.",
+    "IMS:ExamForm:NoQuestions": "لا يمكن نشر نموذج بلا أسئلة.",
     "IMS:ExamLink:AttemptsExhausted": "استنفدت عدد المحاولات المسموح بها.",
     "IMS:ExamLink:Expired": "انتهت صلاحية هذا الرابط.",
     "IMS:ExamLink:Invalid": "هذا الرابط غير صحيح.",

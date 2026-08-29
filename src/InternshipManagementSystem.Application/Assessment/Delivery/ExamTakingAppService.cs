@@ -123,7 +123,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             Mode = exam.Mode,
             QuestionCount = exam.QuestionsPerForm
                             ?? await (await _questions.GetQueryableAsync())
-                                     .CountAsync(q => q.ExamId == exam.Id && q.IsActive)
+                                     .CountAsync(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId))
         };
 
         if (link.FirstOpenedAt is null)
@@ -218,12 +218,17 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         await _attempts.InsertAsync(attempt, autoSave: true);
 
         await LoadBlueprintAsync(exam);
+        // Everything this exam may draw, not only what it owns. Filtering on
+        // ExamId alone meant the shared bank existed in the schema and never
+        // reached a paper: three forms for one level drew from three empty pools.
         var bank = await (await _questions.GetQueryableAsync())
-            .Where(q => q.ExamId == exam.Id && q.IsActive)
+            .Where(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId))
             .ToListAsync();
 
         var form = _formBuilder.Build(exam, bank, attempt.Id, link.TenantId, seed);
         await _attemptQuestions.InsertManyAsync(form, autoSave: true);
+
+        await RecordExposureAsync(form, bank);
 
         attempt.MaxScore = form.Sum(f => f.Score);
         await _attempts.UpdateAsync(attempt, autoSave: true);
@@ -601,5 +606,41 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         }
 
         return attempt;
+    }
+
+    /// <summary>
+    /// Counts each question that made it onto this paper.
+    /// <para>
+    /// Exposure is the number of candidates who have seen a question, and it is
+    /// what erodes its value once it circulates — a question that has been in
+    /// front of enough people measures who has met it rather than who knows the
+    /// answer. This is the only place it can be counted: a question is exposed
+    /// when it is served, not when it is answered, because a candidate who skips
+    /// it has still read it.
+    /// </para>
+    /// <para>
+    /// The column existed and nothing wrote to it, which made the over-exposure
+    /// warning at publish unreachable — it compared against a number that was
+    /// always zero. A business review found that by reading the code.
+    /// </para>
+    /// <para>
+    /// Counted here rather than in a nightly job so the number is true the moment
+    /// an author looks at it, and updated without saving each row on its own.
+    /// </para>
+    /// </summary>
+    private async Task RecordExposureAsync(List<AttemptQuestion> form, List<Question> bank)
+    {
+        var served = form.Select(slot => slot.QuestionId).ToHashSet();
+        var exposed = bank.Where(question => served.Contains(question.Id)).ToList();
+
+        foreach (var question in exposed)
+        {
+            question.TimesServed++;
+        }
+
+        if (exposed.Count > 0)
+        {
+            await _questions.UpdateManyAsync(exposed, autoSave: true);
+        }
     }
 }

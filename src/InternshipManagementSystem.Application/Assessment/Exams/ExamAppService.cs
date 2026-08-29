@@ -95,7 +95,19 @@ public class ExamAppService : ApplicationService, IExamAppService
                             TimeLimitInMinutes = exam.TimeLimitInMinutes,
                             PassingPercentage = exam.PassingPercentage,
                             QuestionsPerForm = exam.QuestionsPerForm,
-                            QuestionCount = questions.Count(q => q.ExamId == exam.Id && q.IsActive),
+                            // The same rule as the publish check and the delivery,
+                            // written out because an Expression cannot be invoked
+                            // inside a query the database has to translate. Kept
+                            // beside Question.DrawableBy on purpose: if one of them
+                            // changes and the other does not, the list will say a
+                            // number the paper disagrees with.
+                            QuestionCount = questions.Count(q =>
+                                q.IsActive &&
+                                (q.ExamId == exam.Id ||
+                                 (q.ExamId == null &&
+                                  q.CategoryId != null &&
+                                  q.CategoryId == exam.CategoryId &&
+                                  (q.LevelId == null || q.LevelId == exam.LevelId)))),
                             ShuffleQuestions = exam.ShuffleQuestions,
                             ShuffleOptions = exam.ShuffleOptions,
                             OneQuestionAtATime = exam.OneQuestionAtATime,
@@ -166,8 +178,12 @@ public class ExamAppService : ApplicationService, IExamAppService
     {
         var exam = await _exams.GetAsync(id);
 
+        // Everything the exam can draw. Counting only what it owns refused an exam
+        // whose whole paper comes from the shared bank, and the reason it gave
+        // named a problem the author could not see: the questions were right
+        // there in the bank listing.
         var bank = await (await _questions.GetQueryableAsync())
-            .Where(q => q.ExamId == id && q.IsActive)
+            .Where(Question.DrawableBy(id, exam.CategoryId, exam.LevelId))
             .ToListAsync();
 
         var rules = await (await _blueprint.GetQueryableAsync())
@@ -310,8 +326,12 @@ public class ExamAppService : ApplicationService, IExamAppService
             return [];
         }
 
+        // The blueprint is checked against everything the exam can draw, so the
+        // publish check and the delivery agree about what the bank holds.
+        var exam = await _exams.GetAsync(examId);
+
         var bank = await (await _questions.GetQueryableAsync())
-            .Where(q => q.ExamId == examId && q.IsActive)
+            .Where(Question.DrawableBy(examId, exam.CategoryId, exam.LevelId))
             .Select(q => new { q.TopicId, q.Difficulty, q.Type })
             .ToListAsync();
 
@@ -406,7 +426,7 @@ public class ExamAppService : ApplicationService, IExamAppService
     private async Task<ExamDto> MapAsync(Exam exam)
     {
         var questionCount = await (await _questions.GetQueryableAsync())
-            .CountAsync(q => q.ExamId == exam.Id && q.IsActive);
+            .CountAsync(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId));
 
         var categoryName = exam.CategoryId is { } cid
             ? (await _categories.FindAsync(cid))?.Name

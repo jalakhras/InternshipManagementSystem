@@ -60,10 +60,14 @@ questions together and in sequence. A reading passage with six questions, or an
 audio clip with four, is a schema capability today with no authoring screen and no
 delivery rendering. That is a much cheaper thing to finish than to start.
 
-Two smaller ones worth knowing: six of the thirteen question types (`matching`,
+Three smaller ones worth knowing: six of the thirteen question types (`matching`,
 `ordering`, `hotspot`, `fill-in-the-blank`, `code`, `scale`) have no payload
-editor and fall back to raw JSON; and `angular/src/app/core/navigation.ts` links
-to seven routes that are not registered, so the sidebar has dead entries.
+editor and fall back to raw JSON, which §7.3 shows breaks the owner's authoring
+constraint; `angular/src/app/core/navigation.ts` links to seven routes that are
+not registered, so the sidebar has dead entries; and two of the twenty-seven
+declared error codes — both added with `ExamForm` — have no entry in `en.json` or
+`ar.json`, so publishing an empty or duplicated form shows the reader a raw code
+instead of a sentence.
 
 What genuinely is finished and good: exam authoring with a publish gate that
 reports every blocker and warning in one pass; thirteen graders behind a payload

@@ -61,6 +61,10 @@ public class AttemptGradingService : ITransientDependency
 
         var answersByQuestion = answers.ToDictionary(a => a.QuestionId);
 
+        // Questions whose statistics moved while grading this attempt. Collected
+        // and saved once rather than a row at a time.
+        var touched = new List<Question>();
+
         foreach (var slot in form)
         {
             if (!questions.TryGetValue(slot.QuestionId, out var question))
@@ -115,9 +119,17 @@ public class AttemptGradingService : ITransientDependency
                 answer.NeedsManualReview = result.NeedsManualReview;
                 answer.IsCorrect = result.IsCorrect;
                 answer.AwardedScore = result.NeedsManualReview ? null : result.AwardedScore;
+
+                RecordOutcome(question, result.IsCorrect);
+                touched.Add(question);
             }
 
             await _answers.UpdateAsync(answer, autoSave: false);
+        }
+
+        if (touched.Count > 0)
+        {
+            await _questions.UpdateManyAsync(touched, autoSave: false);
         }
 
         await RecalculateAsync(attempt, exam, form, answers);
@@ -184,5 +196,42 @@ public class AttemptGradingService : ITransientDependency
         var queryable = await _questions.GetQueryableAsync();
         var list = await queryable.Where(q => ids.Contains(q.Id)).ToListAsync();
         return list.ToDictionary(q => q.Id);
+    }
+
+    /// <summary>
+    /// Folds one graded answer into a question's running difficulty.
+    /// <para>
+    /// The difficulty index is the share of takers who got a question right, and
+    /// it is what tells an author whether a question is hard or broken: near zero
+    /// usually means the key is wrong rather than the question is difficult, and
+    /// near one means it separates nobody.
+    /// </para>
+    /// <para>
+    /// A running mean rather than a recount over every answer ever given, so
+    /// grading one attempt costs one update instead of a scan of the whole
+    /// history. The arithmetic is exact: the previous mean times the previous
+    /// count, plus this outcome, over the new count.
+    /// </para>
+    /// <para>
+    /// Answers waiting on a human are skipped. Counting them as wrong would make
+    /// every essay question look impossible until somebody marked it.
+    /// </para>
+    /// </summary>
+    private static void RecordOutcome(Question question, bool? isCorrect)
+    {
+        if (isCorrect is not { } correct)
+        {
+            return;
+        }
+
+        var previousCount = question.TimesAnswered;
+        var previousMean = question.DifficultyIndex ?? 0m;
+
+        question.TimesAnswered = previousCount + 1;
+
+        question.DifficultyIndex = Math.Round(
+            ((previousMean * previousCount) + (correct ? 1m : 0m)) / question.TimesAnswered,
+            4,
+            MidpointRounding.AwayFromZero);
     }
 }

@@ -935,6 +935,9 @@ approved is what candidates sit.
 3. Publishing freezes `MaxScore`. *(Built and tested.)*
 4. A published form's question list cannot be changed; an attempt to change it is
    refused, not silently ignored.
+5. Both refusals show a sentence rather than a code. *(Neither
+   `IMS:ExamForm:NoQuestions` nor `IMS:ExamForm:DuplicateQuestions` is present in
+   `en.json` or `ar.json` — see PLT-04.)*
 
 **Tests** — *unit*: `ExamFormTests` — extend for the naming in (2) and the
 immutability in (4). *integration*: an edit to a published form is refused.
@@ -2176,10 +2179,17 @@ to do next.
 2. Every code resolves to a localised message in Arabic and English.
 3. No raw code is ever displayed to a user.
 4. A new code without a localisation entry fails a test.
+5. `IMS:ExamForm:NoQuestions` and `IMS:ExamForm:DuplicateQuestions` have entries in
+   both languages. *(They do not. Of the 27 codes declared today, those two — both
+   added with `ExamForm` — are missing from `en.json` and `ar.json`, so publishing
+   an empty or duplicated form raises a failure that shows the reader a raw code.
+   This is the exact defect criterion 4 exists to prevent, found by writing the
+   check this story asks for.)*
 
-**Tests** — *unit*: every constant in `InternshipManagementSystemDomainErrorCodes`
-has an entry in both localisation files — this test does not exist yet and should.
-*e2e*: trigger three failures and read three sentences.
+**Tests** — *unit*: assert every constant in
+`InternshipManagementSystemDomainErrorCodes` has an entry in both localisation
+files. The test does not exist and currently fails on two codes. *e2e*: trigger
+three failures and read three sentences.
 
 #### PLT-05 · Never hand over the answer
 **MUST · BUILT**
@@ -2309,10 +2319,12 @@ above them can be configured by a customer without them.
 **Seventeen of the seventy-two MUST stories are BUILT.** The remaining fifty-five
 are the first sellable release.
 
-**Three MUST stories are defects rather than features** and are cheap: BNK-07 (the
-bank is not drawn into a paper), ADM-02 (seven navigation links go nowhere) and
-BNK-01 / PLT-01 (six question types present a raw JSON box, breaking the owner's
-authoring constraint).
+**Four MUST stories are defects rather than features** and all four are cheap:
+BNK-07 (the shared bank is never drawn into a candidate's paper), ADM-02 (seven
+navigation links go nowhere), BNK-01 / PLT-01 (six question types present a raw
+JSON box, breaking the owner's authoring constraint), and PLT-04 (two of the
+twenty-seven error codes have no localised message in either language, so the
+person who hits them is shown `IMS:ExamForm:NoQuestions`).
 
 **Eight application services have no tests.** PLT-07 names them. Every one is on
 the critical path of the first release, and `ExamTakingAppService` — the largest
