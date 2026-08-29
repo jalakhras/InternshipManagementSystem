@@ -1,0 +1,246 @@
+<astro-page-header
+  [title]="t('::Nav:Groups')"
+  [description]="t('::Group:Lede')">
+  @if (canManage()) {
+    <button slot="actions" type="button" class="btn btn-primary" (click)="newGroup()">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      {{ t('::Group:New') }}
+    </button>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (draft().open) {
+  <form class="draft" (ngSubmit)="save()">
+    <h2 class="draft__title">
+      {{ draft().id ? t('::Group:Edit') : t('::Group:New') }}
+    </h2>
+
+    <div class="draft__grid">
+      <label class="field">
+        <span class="field__label">{{ t('::Group:Name') }}</span>
+        <input
+          class="form-control"
+          required
+          name="groupName"
+          [ngModel]="draft().name"
+          (ngModelChange)="patch('name', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Exam:Category') }}</span>
+        <select
+          class="form-select"
+          name="groupCategory"
+          [ngModel]="draft().categoryId"
+          (ngModelChange)="setCategory($event)">
+          <option value="">{{ t('::Exam:Category:None') }}</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Exam:Level') }}</span>
+        <select
+          class="form-select"
+          name="groupLevel"
+          [disabled]="!draft().categoryId"
+          [ngModel]="draft().levelId"
+          (ngModelChange)="patch('levelId', $event)">
+          <option value="">{{ t('::Exam:Level:None') }}</option>
+          @for (level of levels(); track level.id) {
+            <option [value]="level.id">{{ level.name }}</option>
+          }
+        </select>
+        <!-- Optional, and the screen says what is given up: a class with no level
+             is a list of names rather than part of a curriculum. -->
+        <span class="field__hint">{{ t('::Group:Level:Hint') }}</span>
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Group:StartsOn') }}</span>
+        <input
+          type="date"
+          class="form-control"
+          name="groupStarts"
+          [ngModel]="draft().startsOn"
+          (ngModelChange)="patch('startsOn', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Group:EndsOn') }}</span>
+        <input
+          type="date"
+          class="form-control"
+          name="groupEnds"
+          [ngModel]="draft().endsOn"
+          (ngModelChange)="patch('endsOn', $event)" />
+      </label>
+
+      <label class="field field--wide">
+        <span class="field__label">{{ t('::Catalog:Description') }}</span>
+        <input
+          class="form-control"
+          name="groupDescription"
+          [ngModel]="draft().description"
+          (ngModelChange)="patch('description', $event)" />
+      </label>
+    </div>
+
+    <div class="draft__actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ t('::Save') }}</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">{{ t('::Cancel') }}</button>
+    </div>
+  </form>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi bi-diagram-3" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::Group:NoneYet') }}</p>
+    <p class="state__text">{{ t('::Group:NoneYetNote') }}</p>
+    @if (canManage()) {
+      <button type="button" class="btn btn-primary" (click)="newGroup()">{{ t('::Group:New') }}</button>
+    }
+  </div>
+} @else {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Group:Name') }}</th>
+          <th scope="col">{{ t('::Exam:Category') }}</th>
+          <th scope="col">{{ t('::Exam:Level') }}</th>
+          <th scope="col">{{ t('::Group:Runs') }}</th>
+          <th scope="col" class="numeric">{{ t('::Group:Members') }}</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (group of groups(); track group.id) {
+          <tr>
+            <td>
+              <span class="name">{{ group.name }}</span>
+              @if (group.description) {
+                <span class="description">{{ group.description }}</span>
+              }
+            </td>
+            <td class="muted">{{ group.categoryName || '—' }}</td>
+            <td>
+              @if (group.levelName) {
+                {{ group.levelName }}
+              } @else {
+                <span class="unset">{{ t('::Group:NoLevel') }}</span>
+              }
+            </td>
+            <td class="muted">
+              @if (group.startsOn) {
+                {{ group.startsOn | date: 'y/MM/dd' }}
+                @if (group.endsOn) {
+                  — {{ group.endsOn | date: 'y/MM/dd' }}
+                }
+              } @else {
+                —
+              }
+            </td>
+            <td class="numeric">{{ group.memberCount }}</td>
+            <td class="actions">
+              @if (canManage()) {
+                <button type="button" class="link" (click)="openRoll(group)">{{ t('::Group:Roll') }}</button>
+                <button type="button" class="link" (click)="edit(group)">{{ t('::Edit') }}</button>
+              }
+              @if (canDelete()) {
+                <button type="button" class="link link--danger" (click)="askDelete(group)">
+                  {{ t('::Delete') }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (pendingDelete(); as group) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::ConfirmDelete')">
+    <div class="dialog">
+      <h2 class="dialog__title">{{ t('::ConfirmDelete') }}</h2>
+      <p class="dialog__body">{{ t('::Group:DeleteWarning', group.name) }}</p>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="confirmDelete()">
+          {{ t('::Delete') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelDelete()">
+          {{ t('::Cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (rollFor(); as group) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Group:Roll')">
+    <div class="dialog dialog--wide">
+      <h2 class="dialog__title">{{ group.name }}</h2>
+      <p class="dialog__body">{{ t('::Group:Roll:Note') }}</p>
+
+      <input
+        type="search"
+        class="form-control"
+        [placeholder]="t('::Candidate:SearchPlaceholder')"
+        [attr.aria-label]="t('::Candidate:SearchPlaceholder')"
+        [ngModel]="rollFilter()"
+        (ngModelChange)="rollFilter.set($event)"
+        name="rollFilter" />
+
+      @if (rollLoading()) {
+        <div class="state" role="status">
+          <span class="spinner" aria-hidden="true"></span>
+        </div>
+      } @else {
+        <ul class="roll">
+          @for (person of visiblePeople(); track person.id) {
+            <li>
+              <label class="person">
+                <input
+                  type="checkbox"
+                  [checked]="isMember(person.id)"
+                  (change)="toggleMember(person.id)" />
+                <span class="person__name">{{ person.fullName }}</span>
+                <span class="person__email">{{ person.email }}</span>
+              </label>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="dialog__actions">
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="saveRoll()">
+          {{ t('::Save') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="closeRoll()">
+          {{ t('::Cancel') }}
+        </button>
+        <span class="counted">{{ t('::Group:Selected', '' + chosen().size) }}</span>
+      </div>
+    </div>
+  </div>
+}

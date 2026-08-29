@@ -96,4 +96,19 @@ export class CandidateService {
   deleteGroup(id: string): Observable<void> {
     return this.rest.request<void, void>({ method: 'DELETE', url: `${this.base}/groups/${id}` });
   }
+
+  /**
+   * Replaces a class's roll outright.
+   *
+   * Whole-list rather than add-one/remove-one, because the coordinator is working
+   * from a register: they know who is in the class, not which two changed since
+   * last week.
+   */
+  setGroupMembers(id: string, candidateIds: string[]): Observable<CandidateGroupDto> {
+    return this.rest.request<{ candidateIds: string[] }, CandidateGroupDto>({
+      method: 'PUT',
+      url: `${this.base}/groups/${id}/members`,
+      body: { candidateIds },
+    });
+  }
 }

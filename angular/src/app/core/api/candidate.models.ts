@@ -50,12 +50,27 @@ export interface CandidateListRequest extends PagedRequest {
   status?: CandidateStatus;
 }
 
+/**
+ * A class: one group of people moving through a level together.
+ *
+ * The level is what makes it part of the curriculum rather than a list of names
+ * beside it — a class at A1 is offered A1 papers, and its results mean something
+ * against the other A1 classes.
+ */
 export interface CandidateGroupDto {
   id: string;
   name: string;
   description?: string;
   categoryId?: string;
   categoryName?: string;
+
+  levelId?: string;
+  levelName?: string;
+
+  /** When the class runs. Blank for a standing group that is not a course. */
+  startsOn?: string | null;
+  endsOn?: string | null;
+
   memberCount: number;
   creationTime: string;
 }
@@ -64,6 +79,9 @@ export interface CreateUpdateCandidateGroupDto {
   name: string;
   description?: string;
   categoryId?: string;
+  levelId?: string;
+  startsOn?: string | null;
+  endsOn?: string | null;
 }
 
 export interface ImportCandidatesDto {

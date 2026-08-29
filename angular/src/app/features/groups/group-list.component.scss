@@ -1,0 +1,231 @@
+// Classes. Logical properties throughout — this table mirrors in Arabic.
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+// ── The inline editor ────────────────────────────────────────────────────────
+.draft {
+  margin-block-end: var(--astro-space-5);
+  padding: var(--astro-space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+}
+
+.draft__title {
+  margin: 0 0 var(--astro-space-3);
+  font-size: var(--astro-text-lg);
+}
+
+.draft__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--astro-space-3);
+}
+
+.draft__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  margin-block-start: var(--astro-space-3);
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field--wide { grid-column: 1 / -1; }
+
+.field__label {
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+.field__hint {
+  font-size: var(--astro-text-xs);
+  color: var(--text-muted);
+}
+
+// ── Table ────────────────────────────────────────────────────────────────────
+.table {
+  --bs-table-bg: var(--surface-raised);
+  --bs-table-color: var(--text-primary);
+  --bs-table-border-color: var(--border-subtle);
+
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  overflow: hidden;
+  font-size: var(--astro-text-sm);
+
+  th, td {
+    padding: var(--astro-space-3);
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    font-weight: var(--astro-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  tbody tr:hover { background: var(--surface-sunken); }
+}
+
+.numeric {
+  text-align: end !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.name {
+  display: block;
+  font-weight: var(--astro-weight-medium);
+}
+
+.description {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+.muted { color: var(--text-secondary); }
+
+// A class with no level is allowed and worth noticing: it is a list of names
+// rather than part of a curriculum.
+.unset {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  gap: var(--astro-space-3);
+  justify-content: flex-end;
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--astro-brand-700);
+  cursor: pointer;
+  font-size: var(--astro-text-sm);
+  white-space: nowrap;
+}
+
+.link--danger { color: var(--astro-fail-600); }
+
+// ── Dialogs ──────────────────────────────────────────────────────────────────
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  display: grid;
+  place-items: center;
+  padding: var(--astro-space-4);
+  z-index: 40;
+}
+
+.dialog {
+  background: var(--surface-overlay);
+  border-radius: var(--astro-radius-lg);
+  padding: var(--astro-space-5);
+  max-inline-size: 28rem;
+  inline-size: 100%;
+}
+
+.dialog--wide {
+  max-inline-size: 34rem;
+  max-block-size: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dialog__title {
+  margin: 0 0 var(--astro-space-2);
+  font-size: var(--astro-text-lg);
+}
+
+.dialog__body {
+  margin: 0 0 var(--astro-space-3);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.dialog__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  align-items: center;
+  margin-block-start: var(--astro-space-3);
+}
+
+.counted {
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  margin-inline-start: auto;
+}
+
+.roll {
+  list-style: none;
+  margin: var(--astro-space-3) 0 0;
+  padding: 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.person {
+  display: flex;
+  align-items: baseline;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-2);
+  border-radius: var(--astro-radius-md);
+  cursor: pointer;
+
+  &:hover { background: var(--surface-sunken); }
+}
+
+.person__name { font-weight: var(--astro-weight-medium); }
+
+.person__email {
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+// ── States ───────────────────────────────────────────────────────────────────
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+  &__text  { margin: 0; max-inline-size: 44ch; }
+  &--error i { color: var(--astro-fail-600); }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
