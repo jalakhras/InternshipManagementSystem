@@ -46,9 +46,19 @@
   background: var(--surface-sunken);
 }
 
+// The value sits under its own label. .astro-numeric belongs on the number
+// inside, never on the <dd>: it sets direction: ltr, which in an RTL grid pulls
+// the value to the opposite edge from the <dt> above it — so "3" ended up under
+// the neighbouring column's heading, and every figure on the entry screen was
+// reading against the wrong label.
 .fact {
   dt { margin: 0 0 .125rem; color: var(--text-muted); font-size: .8125rem; }
-  dd { margin: 0; font-weight: 600; }
+
+  dd {
+    margin: 0;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 .rules {

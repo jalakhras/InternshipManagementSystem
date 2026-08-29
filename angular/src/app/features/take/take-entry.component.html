@@ -50,19 +50,19 @@
         <dl class="facts">
           <div class="fact">
             <dt>{{ t('::Take:Duration') }}</dt>
-            <dd class="astro-numeric">{{ t('::Take:Minutes', exam.timeLimitInMinutes.toString()) }}</dd>
+            <dd>{{ t('::Take:Minutes', exam.timeLimitInMinutes.toString()) }}</dd>
           </div>
           <div class="fact">
             <dt>{{ t('::Take:Questions') }}</dt>
-            <dd class="astro-numeric">{{ exam.questionCount }}</dd>
+            <dd><span class="astro-numeric">{{ exam.questionCount }}</span></dd>
           </div>
           <div class="fact">
             <dt>{{ t('::Take:AttemptsLeft') }}</dt>
-            <dd class="astro-numeric">{{ attemptsLeft() }} / {{ exam.attemptsAllowed }}</dd>
+            <dd><span class="astro-numeric">{{ attemptsLeft() }} / {{ exam.attemptsAllowed }}</span></dd>
           </div>
           <div class="fact">
             <dt>{{ t('::Take:OpenUntil') }}</dt>
-            <dd>{{ exam.expiresAt | date: 'y/MM/dd HH:mm' }}</dd>
+            <dd><span class="astro-numeric">{{ exam.expiresAt | date: 'y/MM/dd HH:mm' }}</span></dd>
           </div>
         </dl>
 
