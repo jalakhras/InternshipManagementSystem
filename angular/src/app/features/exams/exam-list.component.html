@@ -1,0 +1,146 @@
+<astro-page-header
+  [title]="t('::Nav:Exams')"
+  [description]="t('::Exam:List:Lede')">
+  @if (canCreate) {
+    <a slot="actions" class="btn btn-primary" routerLink="/exams/new">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      {{ t('::Exam:Create') }}
+    </a>
+  }
+</astro-page-header>
+
+<div class="filters">
+  <div class="search">
+    <i class="bi bi-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="t('::Exam:SearchPlaceholder')"
+      [attr.aria-label]="t('::Exam:SearchPlaceholder')"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      (keyup.enter)="applyFilter()" />
+  </div>
+
+  <!-- A segmented control rather than a dropdown: four options, all worth seeing,
+       and the current one should be readable without opening anything. -->
+  <div class="segmented" role="group" [attr.aria-label]="t('::Exam:Status')">
+    @for (option of statusOptions; track option.labelKey) {
+      <button
+        type="button"
+        class="segmented__option"
+        [class.segmented__option--active]="status() === option.value"
+        [attr.aria-pressed]="status() === option.value"
+        (click)="setStatus(option.value)">
+        {{ t(option.labelKey) }}
+      </button>
+    }
+  </div>
+</div>
+
+<astro-data-state
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="isEmpty()"
+  [emptyTitle]="isFiltered() ? t('::Exam:NoMatches') : t('::Exam:NoneYet')"
+  [emptyDescription]="isFiltered() ? t('::Exam:NoMatchesNote') : t('::Exam:NoneYetNote')"
+  [emptyIcon]="isFiltered() ? 'bi-search' : 'bi-file-earmark-plus'">
+
+  <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+    {{ t('::Retry') }}
+  </button>
+
+  <!-- The empty state carries the action that fills it. Someone looking at an
+       empty list wants to know what to do next, not to be told there is nothing. -->
+  @if (canCreate && !isFiltered()) {
+    <a slot="empty-action" class="btn btn-primary" routerLink="/exams/new">
+      {{ t('::Exam:Create') }}
+    </a>
+  }
+</astro-data-state>
+
+@if (!loading() && !error() && items().length > 0) {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Exam:Title') }}</th>
+          <th scope="col">{{ t('::Exam:Category') }}</th>
+          <th scope="col">{{ t('::Exam:Status') }}</th>
+          <th scope="col" class="num">{{ t('::Exam:Questions') }}</th>
+          <th scope="col" class="num">{{ t('::Exam:Duration') }}</th>
+          <th scope="col" class="num">{{ t('::Exam:PassMark') }}</th>
+          <th scope="col">{{ t('::Exam:Created') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (exam of items(); track exam.id) {
+          <tr>
+            <td>
+              <a class="title" [routerLink]="['/exams', exam.id]">{{ exam.title }}</a>
+              @if (exam.mode === 1) {
+                <!-- Practice mode changes what the taker sees afterwards, so it is
+                     worth surfacing in the list rather than only in the editor. -->
+                <span class="mode">{{ t('::Exam:Mode:Practice') }}</span>
+              }
+            </td>
+
+            <td class="muted">
+              {{ exam.categoryName || '—' }}
+              @if (exam.levelName) {
+                <span class="level">{{ exam.levelName }}</span>
+              }
+            </td>
+
+            <td>
+              <astro-status-chip
+                [label]="statusLabel(exam.status)"
+                [tone]="statusTone(exam.status)"
+                [iconOverride]="statusIcon(exam.status)" />
+            </td>
+
+            <td class="num">
+              <span class="astro-numeric">{{ formSummary(exam) }}</span>
+              @if (drawsFromPool(exam)) {
+                <!-- Two candidates sit different papers. That is the whole
+                     anti-leak mechanism, so it earns a marker. -->
+                <i
+                  class="bi bi-shuffle draws"
+                  [attr.title]="t('::Exam:DrawsFromPool')"
+                  [attr.aria-label]="t('::Exam:DrawsFromPool')"></i>
+              }
+            </td>
+
+            <td class="num astro-numeric">{{ exam.timeLimitInMinutes }}</td>
+            <td class="num astro-numeric">{{ exam.passingPercentage }}%</td>
+            <td class="muted">{{ exam.creationTime | date: 'y/MM/dd' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" [attr.aria-label]="t('::Pagination')">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)">
+        <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+        {{ t('::Previous') }}
+      </button>
+
+      <span class="pager__count astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)">
+        {{ t('::Next') }}
+        <i class="bi bi-chevron-left astro-flip" aria-hidden="true"></i>
+      </button>
+    </nav>
+  }
+}

@@ -296,6 +296,12 @@
 .content {
   grid-area: content;
   padding: var(--astro-space-5) var(--astro-space-4);
+
+  // Same reason as the top bar, and the one that actually bites on a data screen:
+  // a grid item defaults to min-width:auto, so the column grows to fit its widest
+  // descendant instead of constraining it. A seven-column table then widens the
+  // page rather than scrolling inside its own container.
+  min-inline-size: 0;
   // The main region takes focus from the skip link; it should not draw a ring
   // for that, since the visible result is the page scrolling into view.
   outline: none;

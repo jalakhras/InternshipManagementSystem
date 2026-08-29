@@ -1,4 +1,6 @@
 import { Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * Stubs the ABP endpoints the app needs before it will render anything.
@@ -24,73 +26,32 @@ export interface StubOptions {
   anonymous?: boolean;
 }
 
-const AR_TEXTS: Record<string, string> = {
-  AppName: 'أسطرلاب',
-  'Nav:Overview': 'نظرة عامة',
-  'Nav:Dashboard': 'الرئيسية',
-  'Nav:Assessments': 'التقييم',
-  'Nav:Exams': 'الاختبارات',
-  'Nav:QuestionBank': 'بنك الأسئلة',
-  'Nav:People': 'الأشخاص',
-  'Nav:Candidates': 'المتقدّمون',
-  'Nav:Groups': 'المجموعات',
-  'Nav:Assignments': 'الإسنادات',
-  'Nav:Results': 'النتائج',
-  'Nav:ReviewQueue': 'التصحيح اليدوي',
-  'Nav:Configuration': 'الإعداد',
-  'Nav:Catalog': 'التصنيفات',
-  'Nav:Users': 'المستخدمون',
-  'Nav:Settings': 'الإعدادات',
-  'Dashboard:Title': 'أهلاً بك',
-  'Dashboard:Lede': 'أربع خطوات تفصلك عن أول اختبار في يد أول متقدّم.',
-  'Dashboard:Step:Catalog': 'عرِّف تصنيفاتك',
-  'Dashboard:Step:CatalogNote': 'سمِّ ما تقيسه بلغتك.',
-  'Dashboard:Step:Exam': 'أنشئ اختباراً',
-  'Dashboard:Step:ExamNote': 'حدّد المدة ونسبة النجاح.',
-  'Dashboard:Step:Candidates': 'أضِف الأشخاص',
-  'Dashboard:Step:CandidatesNote': 'فرداً أو مجموعة.',
-  'Dashboard:Step:Assign': 'أرسِل الاختبار',
-  'Dashboard:Step:AssignNote': 'رابط خاص لكل شخص.',
-  SkipToContent: 'تخطَّ إلى المحتوى',
-  ToggleTheme: 'تبديل المظهر',
-  ToggleNavigation: 'إظهار القائمة أو إخفاؤها',
-  MainNavigation: 'التنقّل الرئيسي',
-  Logout: 'تسجيل الخروج',
-};
+/**
+ * Loaded from the server's own resource files rather than copied here.
+ *
+ * A hand-maintained copy drifts, and the way it fails is quietly: a screen renders
+ * raw keys, the assertion looks for the English text, and the test reports a bug in
+ * the app. That happened twice before this was changed. Reading the real files also
+ * means a missing translation fails a test, which is the right place to find out.
+ */
+const LOCALE_DIR = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'src',
+  'InternshipManagementSystem.Domain.Shared',
+  'Localization',
+  'InternshipManagementSystem',
+);
 
-const EN_TEXTS: Record<string, string> = {
-  AppName: 'Astrolabe',
-  'Nav:Overview': 'Overview',
-  'Nav:Dashboard': 'Home',
-  'Nav:Assessments': 'Assessment',
-  'Nav:Exams': 'Exams',
-  'Nav:QuestionBank': 'Question bank',
-  'Nav:People': 'People',
-  'Nav:Candidates': 'Candidates',
-  'Nav:Groups': 'Groups',
-  'Nav:Assignments': 'Assignments',
-  'Nav:Results': 'Results',
-  'Nav:ReviewQueue': 'Manual review',
-  'Nav:Configuration': 'Configuration',
-  'Nav:Catalog': 'Catalog',
-  'Nav:Users': 'Users',
-  'Nav:Settings': 'Settings',
-  'Dashboard:Title': 'Welcome',
-  'Dashboard:Lede': "Four steps between here and your first exam in someone's hands.",
-  'Dashboard:Step:Catalog': 'Name what you measure',
-  'Dashboard:Step:CatalogNote': 'Job role, language, track.',
-  'Dashboard:Step:Exam': 'Create an exam',
-  'Dashboard:Step:ExamNote': 'Set the duration and pass mark.',
-  'Dashboard:Step:Candidates': 'Add people',
-  'Dashboard:Step:CandidatesNote': 'One at a time, or a whole group.',
-  'Dashboard:Step:Assign': 'Send it out',
-  'Dashboard:Step:AssignNote': 'A private link each.',
-  SkipToContent: 'Skip to content',
-  ToggleTheme: 'Switch appearance',
-  ToggleNavigation: 'Show or hide the menu',
-  MainNavigation: 'Main navigation',
-  Logout: 'Sign out',
-};
+function loadTexts(culture: 'ar' | 'en'): Record<string, string> {
+  const raw = readFileSync(join(LOCALE_DIR, culture + '.json'), 'utf8');
+  return JSON.parse(raw).texts as Record<string, string>;
+}
+
+const AR_TEXTS = loadTexts('ar');
+const EN_TEXTS = loadTexts('en');
 
 /** Everything a signed-in administrator would hold. */
 export const ALL_POLICIES = [
