@@ -43,15 +43,20 @@ import { ChoiceOption, ChoicePayload, newId, readPayload, writePayload } from '.
             <!-- The weight is what the option is worth, not a rank. Shown as a
                  number rather than a slider because an author setting 0.6 means
                  0.6, and a slider makes them aim at it. -->
+            <!-- Priced in marks, because that is how an author thinks: this
+                 answer is worth 3 of the question's 5. The share is what gets
+                 stored. -->
             <input
               type="number"
               class="form-control option__weight astro-numeric"
-              step="0.1"
-              min="-1"
-              max="1"
-              [ngModel]="option.weight ?? 0"
-              (ngModelChange)="setWeight(option.id, $event)"
+              [step]="markStep()"
+              [min]="-questionScore()"
+              [max]="questionScore()"
+              [ngModel]="marksFor(option)"
+              (ngModelChange)="setMarks(option.id, $event)"
               [attr.aria-label]="t('::Question:Weight') + ' ' + (i + 1)" />
+
+            <span class="option__of">{{ t('::Question:Weight:OutOf', questionScore().toString()) }}</span>
 
             <span class="option__band">{{ t(bandKey(option)) }}</span>
           }
@@ -113,6 +118,17 @@ export class ChoiceEditorComponent {
 
   readonly payload = input<string>('');
   readonly type = input<string>('single-choice');
+
+  /**
+   * The question's marks, so an option can be priced in them.
+   * <p>
+   * What is stored is still a share of the question, not a number of marks. An
+   * author who later raises the question from 5 marks to 10 means every option to
+   * scale with it — they priced the answers relative to each other, and storing
+   * "3 marks" would silently turn a 60% answer into a 30% one.
+   * </p>
+   */
+  readonly questionScore = input<number>(1);
   readonly payloadChange = output<string>();
 
   readonly options = signal<ChoiceOption[]>([]);
@@ -225,8 +241,25 @@ export class ChoiceEditorComponent {
     this.emit();
   }
 
-  setWeight(id: string, value: number | string): void {
-    const weight = Number(value);
+  /** Half marks, or a tenth on a question worth one. */
+  markStep(): number {
+    return this.questionScore() >= 2 ? 0.5 : 0.1;
+  }
+
+  /** What this option is worth in the question's own marks. */
+  marksFor(option: ChoiceOption): number {
+    const marks = (option.weight ?? 0) * this.questionScore();
+
+    return Math.round(marks * 100) / 100;
+  }
+
+  setMarks(id: string, value: number | string): void {
+    const score = this.questionScore();
+
+    // A question worth nothing cannot price anything. Guarded rather than left to
+    // produce Infinity, which would be stored and would fail validation with a
+    // message about a range rather than about the real problem.
+    const weight = score > 0 ? Math.round((Number(value) / score) * 1000) / 1000 : 0;
 
     this.options.update(list =>
       list.map(o =>

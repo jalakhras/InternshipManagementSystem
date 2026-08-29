@@ -11,6 +11,13 @@ namespace InternshipManagementSystem.Assessment.Grading.Graders;
 /// </summary>
 public class NumericGrader : IQuestionGrader
 {
+    /// <summary>
+    /// The furthest an answer can sit from the key before the difference itself
+    /// overflows. Decimal arithmetic throws rather than saturating, and the input
+    /// is a string a candidate typed.
+    /// </summary>
+    private const decimal MaxComparable = 1_000_000_000_000_000m;
+
     public string QuestionType => QuestionTypes.Numeric;
 
     public GradeResult Grade(string payload, string? response, decimal maxScore)
@@ -34,6 +41,18 @@ public class NumericGrader : IQuestionGrader
         }
 
         var tolerance = Math.Abs(spec.Tolerance);
+
+        // Subtracted inside a checked comparison rather than directly. Unlike
+        // double, decimal throws on overflow, and decimal.MinValue is something a
+        // candidate can type into an answer box: the subtraction would raise, the
+        // submission would roll back, and the attempt would end up unsubmittable
+        // and then force-closed ungraded. An answer that cannot be within the
+        // tolerance of anything is simply wrong.
+        if (given < spec.CorrectValue - MaxComparable || given > spec.CorrectValue + MaxComparable)
+        {
+            return GradeResult.Wrong();
+        }
+
         return Math.Abs(given - spec.CorrectValue) <= tolerance
             ? GradeResult.Correct(maxScore)
             : GradeResult.Wrong();

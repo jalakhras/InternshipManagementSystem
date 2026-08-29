@@ -1,4 +1,6 @@
 using System;
+using InternshipManagementSystem.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -27,6 +29,13 @@ namespace InternshipManagementSystem.Assessment.Media;
 /// caller's filename is kept only as a label. There is no path the caller can steer.
 /// </para>
 /// </summary>
+/// <remarks>
+/// Every other assessment service carries a class-level <c>[Authorize]</c>; this
+/// one was missed, and ABP registers conventional controllers for the whole
+/// assembly. All three methods were anonymous HTTP endpoints — read any blob by
+/// name forever, or delete the stimulus image out of a live exam.
+/// </remarks>
+[Authorize]
 public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaAppService
 {
     /// <summary>
@@ -58,6 +67,7 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
         _logger = logger;
     }
 
+    [Authorize(InternshipManagementSystemPermissions.Questions.Edit)]
     public async Task<MediaUploadResultDto> UploadAsync(IFormFile file)
     {
         if (file is null || file.Length == 0)
@@ -110,8 +120,17 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
         return await _blobs.GetOrNullAsync(blobName);
     }
 
+    [Authorize(InternshipManagementSystemPermissions.Questions.Edit)]
     public async Task DeleteAsync(string blobName)
     {
+        // The same guard the read side has. It was missing here, so the one method
+        // that destroys something was the one that accepted a traversal — which is
+        // the wrong way round for the two of them to differ.
+        if (blobName.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(blobName))
+        {
+            throw new AbpAuthorizationException("Invalid blob name.");
+        }
+
         await _blobs.DeleteAsync(blobName);
     }
 }

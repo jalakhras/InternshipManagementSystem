@@ -69,7 +69,18 @@ public class ExamFormBuilder : ITransientDependency
                 _guidGenerator.Create(), tenantId, attemptId, question.Id, index, question.Score)
             {
                 QuestionGroupId = question.QuestionGroupId,
-                OptionOrder = exam.ShuffleOptions ? ShuffleOptionIds(question, random) : null
+                // Always ordered for matching and ordering, whatever the exam says.
+                //
+                // ShuffleOptions is a presentation choice about multiple-choice
+                // options. For these two types the stored order is not decoration:
+                // the projector builds both sides of a matching question from one
+                // list, and only the recorded order pulls them apart. With none,
+                // left[i] pairs with right[i] in the JSON a candidate receives —
+                // the answer key, handed over on request. An ordering question
+                // comes out already in its authored sequence.
+                OptionOrder = exam.ShuffleOptions || AlwaysOrdered(question.Type)
+                    ? ShuffleOptionIds(question, random)
+                    : null
             })
             .ToList();
     }
@@ -171,4 +182,11 @@ public class ExamFormBuilder : ITransientDependency
 
         return items;
     }
+
+    /// <summary>
+    /// Types whose display order carries the answer, so it can never be left to
+    /// the authored sequence.
+    /// </summary>
+    private static bool AlwaysOrdered(string type) =>
+        type is QuestionTypes.Matching or QuestionTypes.Ordering;
 }

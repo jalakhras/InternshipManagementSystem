@@ -258,6 +258,7 @@
     "Question:Weight:Acceptable": "مقبولة",
     "Question:Weight:Best": "أفضل إجابة",
     "Question:Weight:Neutral": "غير محتسبة",
+    "Question:Weight:OutOf": "من {0}",
     "Question:Weight:Penalised": "معاقَبة",
     "Question:Weighted": "التقييم بدرجات الصحة",
     "Question:Weighted:Hint": "للأسئلة التي تحتمل أكثر من إجابة مقبولة وواحدة أفضل. الخيار قد يستحق الدرجة كاملة أو جزءًا منها أو لا شيء أو أقل من لا شيء.",

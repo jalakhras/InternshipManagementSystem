@@ -87,7 +87,30 @@ public class AttemptGradingService : ITransientDependency
             }
             else
             {
-                var result = grader.Grade(question.Payload, answer.Response, slot.Score);
+                // A grader that throws goes to a human, exactly as a missing one
+                // does. It has to: the response is a string a candidate chose, and
+                // an unhandled exception here rolls back the whole submission. The
+                // attempt then cannot be submitted at all, and when the deadline
+                // worker force-submits it, it commits IsSubmitted before grading
+                // and swallows the failure — leaving an attempt submitted,
+                // ungraded, scored zero, and in nobody's review queue. A candidate
+                // who knows they have failed could reach that state on purpose.
+                GradeResult result;
+
+                try
+                {
+                    result = grader.Grade(question.Payload, answer.Response, slot.Score);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex,
+                        "Grader for {Type} failed on answer {AnswerId}; routed to manual review.",
+                        question.Type,
+                        answer.Id);
+
+                    result = GradeResult.Manual("The automatic grader could not score this answer.");
+                }
 
                 answer.NeedsManualReview = result.NeedsManualReview;
                 answer.IsCorrect = result.IsCorrect;

@@ -125,3 +125,10 @@
   font-size: .8125rem;
   color: var(--astro-ink-3);
 }
+
+.option__of {
+  flex: 0 0 auto;
+  font-size: .8125rem;
+  color: var(--astro-ink-3);
+  white-space: nowrap;
+}

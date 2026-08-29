@@ -173,8 +173,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         if (claims.AttemptId != Guid.Empty)
         {
-            var existing = await _attempts.GetAsync(claims.AttemptId);
-            return await BuildStateAsync(existing);
+            return await BuildStateAsync(await LoadOwnAttemptAsync(claims));
         }
 
         var link = await (await _links.GetQueryableAsync())
@@ -242,7 +241,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var claims = RequireSession(sessionToken);
         using var _ = _dataFilter.Disable<IMultiTenant>();
 
-        var attempt = await _attempts.GetAsync(claims.AttemptId);
+        var attempt = await LoadOwnAttemptAsync(claims);
         var form = await LoadFormAsync(attempt.Id);
 
         var slot = form.FirstOrDefault(f => f.Position == position)
@@ -272,7 +271,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var claims = RequireSession(sessionToken);
         using var _ = _dataFilter.Disable<IMultiTenant>();
 
-        var attempt = await _attempts.GetAsync(claims.AttemptId);
+        var attempt = await LoadOwnAttemptAsync(claims);
         var now = Clock.Now;
 
         if (attempt.IsSubmitted)
@@ -330,7 +329,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var claims = RequireSession(sessionToken);
         using var _ = _dataFilter.Disable<IMultiTenant>();
 
-        var attempt = await _attempts.GetAsync(claims.AttemptId);
+        var attempt = await LoadOwnAttemptAsync(claims);
         return await BuildStateAsync(attempt);
     }
 
@@ -339,7 +338,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var claims = RequireSession(sessionToken);
         using var _ = _dataFilter.Disable<IMultiTenant>();
 
-        var attempt = await _attempts.GetAsync(claims.AttemptId);
+        var attempt = await LoadOwnAttemptAsync(claims);
         await RecordSignalAsync(attempt, input.Type, input.QuestionId, input.Magnitude);
     }
 
@@ -348,7 +347,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var claims = RequireSession(sessionToken);
         using var _ = _dataFilter.Disable<IMultiTenant>();
 
-        var attempt = await _attempts.GetAsync(claims.AttemptId);
+        var attempt = await LoadOwnAttemptAsync(claims);
 
         if (attempt.IsSubmitted)
         {
@@ -374,7 +373,11 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var claims = RequireSession(sessionToken);
         using var _ = _dataFilter.Disable<IMultiTenant>();
 
-        return await BuildResultAsync(claims.AttemptId);
+        // Loaded through the same check rather than by id: a result is the one
+        // thing a candidate most wants to read for somebody else.
+        var own = await LoadOwnAttemptAsync(claims);
+
+        return await BuildResultAsync(own.Id);
     }
 
     // ---------------------------------------------------------------- helpers
@@ -574,4 +577,29 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     /// out of the page stops working once the attempt is over.
     /// </summary>
     private static string BuildMediaUrl(string blobName) => $"/api/assessment/media/{blobName}";
+
+    /// <summary>
+    /// Loads the attempt a session names, and refuses one that is not the
+    /// session's own.
+    /// <para>
+    /// The token's signature used to be the only thing standing between a
+    /// candidate and every attempt in every tenant: these endpoints disable the
+    /// tenant filter by necessity, and an attempt id was taken on trust. Checking
+    /// the candidate and the tenant as well costs two comparisons and turns any
+    /// future weakness in the token into a contained failure instead of a total
+    /// one. Defence in depth is exactly this: the cheap second check that only
+    /// matters on the day the first one fails.
+    /// </para>
+    /// </summary>
+    private async Task<Attempt> LoadOwnAttemptAsync(ExamSessionClaims claims)
+    {
+        var attempt = await _attempts.GetAsync(claims.AttemptId);
+
+        if (attempt.CandidateId != claims.CandidateId || attempt.TenantId != claims.TenantId)
+        {
+            throw new AbpAuthorizationException("This session does not belong to that attempt.");
+        }
+
+        return attempt;
+    }
 }

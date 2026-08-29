@@ -258,6 +258,7 @@
     "Question:Weight:Acceptable": "Acceptable",
     "Question:Weight:Best": "Best answer",
     "Question:Weight:Neutral": "Not credited",
+    "Question:Weight:OutOf": "of {0}",
     "Question:Weight:Penalised": "Penalised",
     "Question:Weighted": "Score by degree of correctness",
     "Question:Weighted:Hint": "For questions where several answers are defensible and one is best. An option can be worth full marks, a share of them, nothing, or less than nothing.",

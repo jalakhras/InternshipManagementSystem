@@ -37,7 +37,7 @@ test.describe('Question builder', () => {
     // The frame is the same for every type: prompt, marks, difficulty, timer,
     // explanation. Only the middle changes.
     await expect(page.getByLabel('Question text')).toBeVisible();
-    await expect(page.getByLabel('Marks')).toBeVisible();
+    await expect(page.getByRole('spinbutton', { name: 'Marks' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Medium' })).toBeVisible();
 
     // And the slot now holds the choice editor.
@@ -111,7 +111,7 @@ test.describe('Question builder', () => {
 
     await page.getByRole('button', { name: /Written answer/ }).click();
 
-    await page.getByLabel('Marks').fill('10');
+    await page.getByRole('spinbutton', { name: 'Marks' }).fill('10');
     await page.getByRole('button', { name: 'Add criterion' }).click();
 
     // Not an error — a reviewer can still award within the total — but it usually
@@ -160,10 +160,12 @@ test.describe('Question builder', () => {
     await page.getByLabel('Mark as correct').first().check();
     await page.getByText('Score by degree of correctness').click();
 
-    await page.getByLabel('Weight 2').fill('0.6');
+    // Priced in the question's own marks: three of five, not "0.6". The share is
+    // what gets stored, so raising the question to ten later keeps this answer at
+    // sixty per cent of it rather than freezing it at three.
+    await page.getByRole('spinbutton', { name: 'Marks' }).fill('5');
+    await page.getByLabel('Weight 2').fill('3');
 
-    // The band names what the number means, so nobody has to hold the scale in
-    // their head while authoring.
     await expect(page.getByText('Acceptable')).toBeVisible();
   });
 
