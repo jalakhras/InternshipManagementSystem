@@ -16,6 +16,8 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * The catalogue everything else is filed against.
@@ -39,7 +41,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-catalog',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent],
+  imports: [FormsModule, PageHeaderComponent, DataStateComponent, ModalDirective],
   templateUrl: './catalog.component.html',
   styleUrl: './catalog.component.scss',
 })

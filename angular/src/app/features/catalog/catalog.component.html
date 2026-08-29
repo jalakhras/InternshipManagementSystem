@@ -19,18 +19,12 @@
   <div class="alert alert-danger" role="alert">{{ message }}</div>
 }
 
-@if (loading()) {
-  <div class="state" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <p class="state__text">{{ t('::Loading') }}</p>
-  </div>
-} @else if (error(); as message) {
-  <div class="state state--error" role="alert">
-    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
-    <p class="state__text">{{ message }}</p>
-    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
-  </div>
+@if (loading() || error()) {
+  <astro-data-state [loading]="loading()" [error]="error()">
+    <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </astro-data-state>
 } @else {
   <div class="panes">
     <!-- The domains. Deliberately the narrower pane: an organisation has a handful
@@ -47,18 +41,17 @@
         </label>
       </div>
 
-      @if (isEmpty()) {
-        <div class="state">
-          <i class="bi bi-tags" aria-hidden="true"></i>
-          <p class="state__title">{{ t('::Catalog:NoneYet') }}</p>
-          <p class="state__text">{{ t('::Catalog:NoneYetNote') }}</p>
-          @if (canManage()) {
-            <button type="button" class="btn btn-primary" (click)="newCategory()">
-              {{ t('::Catalog:NewCategory') }}
-            </button>
-          }
-        </div>
-      }
+      <astro-data-state
+        [empty]="isEmpty()"
+        emptyIcon="bi-tags"
+        [emptyTitle]="t('::Catalog:NoneYet')"
+        [emptyDescription]="t('::Catalog:NoneYetNote')">
+        @if (canManage()) {
+          <button slot="empty-action" type="button" class="btn btn-primary" (click)="newCategory()">
+            {{ t('::Catalog:NewCategory') }}
+          </button>
+        }
+      </astro-data-state>
 
       <ul class="category-list">
         @for (category of categories(); track category.id) {
@@ -185,10 +178,10 @@
 
           <ul class="rows">
             @for (level of category.levels; track level.id) {
-              <li class="row" [class.row--inactive]="!level.isActive">
+              <li class="catalog__row" [class.catalog__row--inactive]="!level.isActive">
                 <span class="row__order">{{ level.displayOrder }}</span>
                 <span class="row__name">{{ level.name }}</span>
-                <code class="row__code">{{ level.code }}</code>
+                <code class="row__code astro-ltr">{{ level.code }}</code>
                 @if (!level.categoryId) {
                   <span class="badge badge--muted">{{ t('::Catalog:Everywhere') }}</span>
                 }
@@ -281,11 +274,11 @@
           <ul class="rows">
             @for (row of topicRows(); track row.topic.id) {
               <li
-                class="row"
-                [class.row--inactive]="!row.topic.isActive"
+                class="catalog__row"
+                [class.catalog__row--inactive]="!row.topic.isActive"
                 [style.padding-inline-start.rem]="row.depth * 1.25">
                 <span class="row__name">{{ row.topic.name }}</span>
-                <code class="row__code">{{ row.topic.code }}</code>
+                <code class="row__code astro-ltr">{{ row.topic.code }}</code>
                 @if (canManage()) {
                   <span class="row__actions">
                     <button type="button" class="link" (click)="newTopic(row.topic.id)">
@@ -352,18 +345,24 @@
           }
         </div>
       } @else {
-        <div class="state">
-          <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
-          <p class="state__text">{{ t('::Catalog:PickOne') }}</p>
-        </div>
+        <astro-data-state
+          [empty]="true"
+          emptyIcon="bi-arrow-left-right"
+          [emptyTitle]="t('::Catalog:PickOne')" />
       }
     </section>
   </div>
 }
 
 @if (pendingDelete(); as pending) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::ConfirmDelete')">
-    <div class="dialog">
+  <div class="scrim">
+    <div
+      class="dialog"
+      astroModal
+      (dismiss)="cancelDelete()"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="t('::ConfirmDelete')">
       <h2 class="dialog__title">{{ t('::ConfirmDelete') }}</h2>
       <p class="dialog__body">{{ t('::Catalog:DeleteWarning', pending.name) }}</p>
       <div class="dialog__actions">
@@ -379,8 +378,14 @@
 }
 
 @if (vocabularyOpen()) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Catalog:Vocabulary')">
-    <div class="dialog dialog--wide">
+  <div class="scrim">
+    <div
+      class="dialog dialog--wide"
+      astroModal
+      (dismiss)="closeVocabulary()"
+      role="dialog"
+      aria-modal="true"
+      [attr.aria-label]="t('::Catalog:Vocabulary')">
       <h2 class="dialog__title">{{ t('::Catalog:Vocabulary') }}</h2>
       <p class="dialog__body">{{ t('::Catalog:VocabularyNote') }}</p>
 
@@ -441,9 +446,7 @@
           </div>
         </form>
       } @else {
-        <div class="state" role="status">
-          <span class="spinner" aria-hidden="true"></span>
-        </div>
+        <astro-data-state [loading]="true" />
       }
     </div>
   </div>

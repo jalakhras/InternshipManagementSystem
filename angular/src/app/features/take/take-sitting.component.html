@@ -2,7 +2,7 @@
   <!-- The clock is the only permanently visible thing besides the question, and
        it counts what the server says is left rather than what this browser thinks. -->
   <header class="bar">
-    <span class="progress astro-numeric">
+    <span class="sitting__progress">
       {{ t('::Take:Progress', position().toString(), (state()?.totalQuestions ?? 0).toString()) }}
     </span>
 

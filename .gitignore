@@ -281,3 +281,6 @@ angular/.playwright/
 # that lets a candidate reach their attempt, so a committed one is a way into
 # every attempt in every tenant.
 **/appsettings.secrets.json
+
+# Uploaded exam media. Runtime data, not source.
+src/InternshipManagementSystem.HttpApi.Host/App_Data/blobs/

@@ -3,6 +3,14 @@
  * throughout, so the list sits on the reading-start edge in both directions
  * without a second stylesheet.
  */
+
+// Angular component hosts are inline by default, which leaves them outside normal
+// block sizing and lets a two-column grid escape the column.
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
 .head-actions {
   display: flex;
   gap: var(--astro-space-2);
@@ -92,7 +100,7 @@
 
 .category--selected {
   background: var(--surface-sunken);
-  border-color: var(--astro-brand-700);
+  border-color: var(--accent);
 }
 
 /* Dimmed rather than hidden: an inactive domain is still there, and the author
@@ -124,7 +132,7 @@
 
 .group__title {
   margin: 0;
-  font-size: var(--astro-text-base);
+  font-size: var(--astro-text-md);
 }
 
 .group__note,
@@ -142,7 +150,12 @@
   gap: 0.125rem;
 }
 
-.row {
+// catalog__row, not row: Bootstrap's grid row is `.row`, and it carries
+// negative inline margins of half a gutter on each side. Every level and every
+// term in this screen was hanging twelve pixels outside the panel that was
+// supposed to contain it — nothing here declared a margin, so the vendor's went
+// unopposed. The rule below never had a bug in it; the name did.
+.catalog__row {
   display: flex;
   align-items: center;
   gap: var(--astro-space-2);
@@ -151,9 +164,9 @@
   flex-wrap: wrap;
 }
 
-.row:hover { background: var(--surface-sunken); }
+.catalog__row:hover { background: var(--surface-sunken); }
 
-.row--inactive { opacity: 0.6; }
+.catalog__row--inactive { opacity: 0.6; }
 
 .row__order {
   min-inline-size: 1.5rem;
@@ -180,12 +193,12 @@
   background: none;
   border: none;
   padding: 0;
-  color: var(--astro-brand-700);
+  color: var(--accent);
   cursor: pointer;
   font-size: var(--astro-text-sm);
 }
 
-.link--danger { color: var(--astro-fail-600); }
+.link--danger { color: var(--status-fail-text); }
 
 .badge {
   font-size: var(--astro-text-xs);
@@ -216,7 +229,7 @@
 
 .draft__title {
   margin: 0;
-  font-size: var(--astro-text-base);
+  font-size: var(--astro-text-md);
 }
 
 .field {
@@ -299,20 +312,3 @@
   color: var(--text-secondary);
   font-size: var(--astro-text-sm);
 }
-
-.state {
-  display: grid;
-  justify-items: center;
-  gap: var(--astro-space-2);
-  padding: var(--astro-space-6) var(--astro-space-4);
-  text-align: center;
-  color: var(--text-secondary);
-}
-
-.state__title {
-  margin: 0;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.state__text { margin: 0; }

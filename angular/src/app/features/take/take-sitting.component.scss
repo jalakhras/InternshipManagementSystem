@@ -30,12 +30,26 @@
   background: var(--surface-raised);
 }
 
-// Never squeezed and never wrapped. "Question 3 of 20" is the one thing on this
-// bar that tells a candidate how much is left, and it was being clipped by the
-// edge of the screen.
-.progress {
+// "Question 3 of 20" — the one thing on this bar that tells a candidate how
+// much is left.
+//
+// Named sitting__progress and not progress, which is Bootstrap's progress-bar
+// component. Bootstrap was styling this span as a progress bar: display flex,
+// background #e9ecef, font-size .75rem, and block-size 1rem with overflow
+// hidden. So the candidate's position was a grey pill sixteen pixels tall with
+// the sentence sliced off inside it. Nothing in this file was wrong; the name
+// was, and the collision is silent — a component stylesheet and a vendor one
+// both matching a word as ordinary as "progress".
+//
+// The digits are steadied here rather than by .astro-numeric, which also sets
+// direction: ltr and a monospace family. Both are right for a bare number and
+// wrong for a sentence: on "السؤال ١ من ٣" they lay an Arabic sentence out
+// left-to-right in a font with no Arabic in it.
+.sitting__progress {
   flex: none;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
   color: var(--text-secondary);
   font-size: .9375rem;
 }
@@ -78,7 +92,13 @@
   font-size: .9375rem;
 }
 
+// The paper takes whatever the bar and the actions do not, so the actions sit
+// at the foot of the screen rather than halfway up it. A three-option question
+// otherwise left the Next button floating in the middle of an empty page,
+// which reads as a page that failed to finish loading — not the impression to
+// give somebody who is being timed.
 .paper {
+  flex: 1;
   inline-size: min(48rem, 100%);
   margin-inline: auto;
   padding: var(--astro-space-6) var(--astro-space-5);
