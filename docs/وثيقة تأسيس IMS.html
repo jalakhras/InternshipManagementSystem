@@ -1,0 +1,1479 @@
+<title>وثيقة تأسيس IMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --ground:#F5F6F8;
+  --surface:#FFFFFF;
+  --surface-2:#EDEFF3;
+  --line:#D7DBE2;
+  --line-soft:#E5E8ED;
+  --ink:#151B24;
+  --ink-2:#3F4855;
+  --ink-3:#6B7482;
+  --accent:#0B5D6B;
+  --accent-2:#0E7A8C;
+  --accent-wash:#E4F0F2;
+  --ok:#186B3A;
+  --ok-wash:#E3F1E8;
+  --warn:#8A5A00;
+  --warn-wash:#F7EEDC;
+  --crit:#A32720;
+  --crit-wash:#F8E6E4;
+  --shadow:0 1px 2px rgba(21,27,36,.06),0 8px 24px -12px rgba(21,27,36,.18);
+  --radius:10px;
+  --maxw:74ch;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1219;
+    --surface:#141B24;
+    --surface-2:#1B242F;
+    --line:#2A3542;
+    --line-soft:#212B36;
+    --ink:#E7EBF0;
+    --ink-2:#B2BCC8;
+    --ink-3:#828E9C;
+    --accent:#4FC4D6;
+    --accent-2:#7BD8E6;
+    --accent-wash:#12303618;
+    --ok:#5FCB8A;
+    --ok-wash:#15291d;
+    --warn:#E3B15C;
+    --warn-wash:#2B2416;
+    --crit:#F08379;
+    --crit-wash:#2E1A18;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1219;
+  --surface:#141B24;
+  --surface-2:#1B242F;
+  --line:#2A3542;
+  --line-soft:#212B36;
+  --ink:#E7EBF0;
+  --ink-2:#B2BCC8;
+  --ink-3:#828E9C;
+  --accent:#4FC4D6;
+  --accent-2:#7BD8E6;
+  --accent-wash:#12303618;
+  --ok:#5FCB8A;
+  --ok-wash:#15291d;
+  --warn:#E3B15C;
+  --warn-wash:#2B2416;
+  --crit:#F08379;
+  --crit-wash:#2E1A18;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px -14px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:5.5rem}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"IBM Plex Sans Arabic","Segoe UI",system-ui,sans-serif;
+  font-size:16px;
+  line-height:1.75;
+  -webkit-font-smoothing:antialiased;
+}
+
+.doc{direction:rtl;text-align:right}
+
+/* ---------- shell ---------- */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb, var(--ground) 88%, transparent);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line-soft);
+}
+.topbar-in{
+  max-width:1180px;margin:0 auto;padding:.7rem 1.5rem;
+  display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+}
+.mark{
+  font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.78rem;
+  letter-spacing:.14em;color:var(--accent);
+  border:1px solid var(--accent);border-radius:4px;padding:.12rem .45rem;
+  direction:ltr;
+}
+.topbar h1{
+  font-family:"Readex Pro",sans-serif;font-weight:600;font-size:.98rem;
+  margin:0;letter-spacing:-.01em;
+}
+.topbar .meta{
+  margin-inline-start:auto;font-family:"IBM Plex Mono",monospace;
+  font-size:.72rem;color:var(--ink-3);direction:ltr;
+}
+.progress{height:2px;background:var(--accent);width:0;transition:width .12s linear}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 1.5rem 6rem}
+.layout{display:grid;grid-template-columns:1fr;gap:2rem}
+@media (min-width:1024px){
+  .layout{grid-template-columns:minmax(0,1fr) 15rem;align-items:start;gap:3rem}
+  .toc{position:sticky;top:5rem}
+}
+
+/* ---------- toc ---------- */
+.toc{
+  order:-1;
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:var(--surface);padding:1rem 1.1rem;
+}
+@media (min-width:1024px){.toc{order:0}}
+.toc h2{
+  font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;
+  letter-spacing:.16em;color:var(--ink-3);margin:0 0 .7rem;text-transform:uppercase;
+}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.1rem}
+.toc a{
+  display:flex;gap:.55rem;align-items:baseline;
+  padding:.28rem .4rem;border-radius:5px;
+  color:var(--ink-2);text-decoration:none;font-size:.85rem;line-height:1.4;
+}
+.toc a:hover{background:var(--surface-2);color:var(--ink)}
+.toc a.on{background:var(--accent-wash);color:var(--accent);font-weight:500}
+.toc .n{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-3);min-width:1.1em}
+.toc a.on .n{color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{padding:3.5rem 0 2.5rem;border-bottom:1px solid var(--line-soft);margin-bottom:2.5rem}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.18em;
+  color:var(--accent);text-transform:uppercase;margin:0 0 .9rem;direction:ltr;text-align:right;
+}
+.hero h2{
+  font-family:"Readex Pro",sans-serif;font-weight:600;
+  font-size:clamp(1.9rem,4.4vw,2.9rem);line-height:1.2;letter-spacing:-.02em;
+  margin:0 0 1rem;text-wrap:balance;max-width:20ch;
+}
+.hero p{font-size:1.06rem;color:var(--ink-2);margin:0;max-width:var(--maxw)}
+.hero-facts{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));
+  gap:1px;background:var(--line-soft);border:1px solid var(--line-soft);
+  border-radius:var(--radius);overflow:hidden;margin-top:2.2rem;
+}
+.fact{background:var(--surface);padding:.95rem 1.1rem}
+.fact dt{
+  font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.13em;
+  color:var(--ink-3);text-transform:uppercase;margin:0 0 .3rem;
+}
+.fact dd{margin:0;font-family:"Readex Pro",sans-serif;font-weight:600;font-size:1.02rem;line-height:1.3}
+.fact dd small{display:block;font-family:"IBM Plex Sans Arabic",sans-serif;font-weight:400;font-size:.78rem;color:var(--ink-3);margin-top:.15rem}
+
+/* ---------- sections ---------- */
+section{margin:0 0 4rem;scroll-margin-top:5.5rem}
+.sec-head{display:flex;gap:.8rem;align-items:baseline;margin:0 0 1.4rem;padding-bottom:.7rem;border-bottom:1px solid var(--line)}
+.sec-num{
+  font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:600;
+  color:var(--accent);flex:none;padding-top:.25rem;direction:ltr;
+}
+.sec-head h3{
+  font-family:"Readex Pro",sans-serif;font-weight:600;
+  font-size:clamp(1.25rem,2.6vw,1.6rem);letter-spacing:-.015em;margin:0;text-wrap:balance;
+}
+h4{
+  font-family:"Readex Pro",sans-serif;font-weight:600;font-size:1.05rem;
+  margin:2.2rem 0 .8rem;letter-spacing:-.01em;text-wrap:balance;
+}
+h5{
+  font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ink-3);margin:1.8rem 0 .7rem;
+}
+p{margin:0 0 1rem;max-width:var(--maxw)}
+.lede{font-size:1.02rem;color:var(--ink-2)}
+ul,ol{margin:0 0 1rem;padding-inline-start:1.3rem;max-width:var(--maxw)}
+li{margin-bottom:.4rem}
+li::marker{color:var(--ink-3)}
+strong{font-weight:600}
+code{
+  font-family:"IBM Plex Mono",monospace;font-size:.86em;
+  background:var(--surface-2);padding:.1em .38em;border-radius:4px;
+  direction:ltr;display:inline-block;
+}
+a{color:var(--accent);text-underline-offset:.2em}
+a:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+/* ---------- tables ---------- */
+.tw{overflow-x:auto;margin:0 0 1.4rem;border:1px solid var(--line-soft);border-radius:var(--radius);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:34rem}
+th,td{padding:.62rem .85rem;text-align:right;border-bottom:1px solid var(--line-soft);vertical-align:top}
+thead th{
+  font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);background:var(--surface-2);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.num,th.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;text-align:right}
+.ltr{direction:ltr;text-align:left;font-family:"IBM Plex Mono",monospace;font-size:.82rem}
+
+/* ---------- chips ---------- */
+.chip{
+  display:inline-flex;align-items:center;gap:.3rem;
+  font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;
+  letter-spacing:.06em;padding:.13rem .5rem;border-radius:999px;white-space:nowrap;
+}
+.chip.ok{background:var(--ok-wash);color:var(--ok)}
+.chip.warn{background:var(--warn-wash);color:var(--warn)}
+.chip.crit{background:var(--crit-wash);color:var(--crit)}
+.chip.neutral{background:var(--surface-2);color:var(--ink-3)}
+.chip.acc{background:var(--accent-wash);color:var(--accent)}
+
+/* ---------- cards ---------- */
+.grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));margin-bottom:1.4rem}
+.card{
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:var(--surface);padding:1.1rem 1.2rem;
+}
+.card h5{margin-top:0}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.card .t{font-family:"Readex Pro",sans-serif;font-weight:600;font-size:.98rem;margin:0 0 .4rem;line-height:1.35}
+.card .d{font-size:.87rem;color:var(--ink-2);margin:0}
+
+/* severity rail */
+.rail{border-inline-start:3px solid var(--line);padding-inline-start:1rem;margin:0 0 1.2rem}
+.rail.crit{border-inline-start-color:var(--crit)}
+.rail.warn{border-inline-start-color:var(--warn)}
+.rail.acc{border-inline-start-color:var(--accent)}
+.rail .t{font-family:"Readex Pro",sans-serif;font-weight:600;font-size:.96rem;margin:0 0 .3rem}
+.rail p{margin:0 0 .5rem;font-size:.92rem;color:var(--ink-2)}
+.rail p:last-child{margin-bottom:0}
+
+/* decision block */
+.adr{
+  border:1px solid var(--line-soft);border-radius:var(--radius);background:var(--surface);
+  padding:1.1rem 1.2rem;margin:0 0 1rem;
+}
+.adr-h{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.55rem}
+.adr-id{font-family:"IBM Plex Mono",monospace;font-size:.7rem;font-weight:600;color:var(--accent);direction:ltr}
+.adr-h .t{font-family:"Readex Pro",sans-serif;font-weight:600;font-size:1rem;margin:0}
+.adr dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:.3rem .8rem;font-size:.89rem}
+.adr dt{font-family:"IBM Plex Mono",monospace;font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding-top:.3em}
+.adr dd{margin:0;color:var(--ink-2)}
+
+/* user story */
+.story{
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:var(--surface);padding:1rem 1.15rem;margin-bottom:.85rem;
+}
+.story-h{display:flex;gap:.55rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.5rem}
+.story-id{font-family:"IBM Plex Mono",monospace;font-size:.7rem;font-weight:600;color:var(--accent);direction:ltr}
+.story .as{font-size:.95rem;margin:0 0 .6rem;color:var(--ink)}
+.story .ac{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.28rem}
+.story .ac li{
+  font-size:.85rem;color:var(--ink-2);margin:0;
+  padding-inline-start:1.2rem;position:relative;
+}
+.story .ac li::before{
+  content:"";position:absolute;inset-inline-start:0;top:.62em;
+  width:.42rem;height:.42rem;border:1.5px solid var(--accent);border-radius:2px;
+}
+
+/* diagram */
+figure{margin:0 0 1.6rem}
+.dia{
+  border:1px solid var(--line-soft);border-radius:var(--radius);
+  background:var(--surface);padding:1.2rem .8rem;overflow-x:auto;
+  direction:ltr;
+}
+.dia pre.mermaid{margin:0;background:none;display:flex;justify-content:center;min-width:min-content}
+figcaption{
+  font-size:.83rem;color:var(--ink-3);margin-top:.6rem;
+  padding-inline-start:.2rem;max-width:var(--maxw);
+}
+
+/* phase timeline */
+.phase{
+  display:grid;grid-template-columns:auto 1fr;gap:0 1.1rem;
+  border-inline-start:2px solid var(--line);padding-inline-start:0;margin-inline-start:.6rem;
+}
+.phase-row{display:contents}
+.phase-dot{
+  grid-column:1;width:.62rem;height:.62rem;border-radius:50%;
+  background:var(--accent);margin-inline-start:-.35rem;margin-top:.65rem;flex:none;
+}
+.phase-body{grid-column:2;padding:0 0 1.6rem}
+.phase-body .h{display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;margin-bottom:.35rem}
+.phase-body .t{font-family:"Readex Pro",sans-serif;font-weight:600;font-size:1.02rem;margin:0}
+.phase-body .w{font-family:"IBM Plex Mono",monospace;font-size:.7rem;color:var(--ink-3);direction:ltr}
+.phase-body p{font-size:.9rem;color:var(--ink-2);margin:0 0 .55rem}
+.phase-body ul{font-size:.88rem;margin-bottom:.5rem}
+.gate{
+  font-size:.83rem;color:var(--ink-2);background:var(--surface-2);
+  border-radius:6px;padding:.45rem .7rem;display:inline-block;
+}
+.gate b{color:var(--ink);font-weight:600}
+
+footer{
+  border-top:1px solid var(--line-soft);margin-top:3rem;padding-top:1.5rem;
+  font-size:.83rem;color:var(--ink-3);
+}
+</style>
+
+<div class="doc">
+
+<div class="topbar">
+  <div class="topbar-in">
+    <span class="mark">IMS</span>
+    <h1>وثيقة التأسيس والتنفيذ</h1>
+    <span class="meta" id="meta">v2.1 · 2026-08-29</span>
+  </div>
+  <div class="progress" id="prog"></div>
+</div>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Blueprint · Architecture · Delivery Plan</p>
+    <h2>منصّة تقييم<br>لأي مجال</h2>
+    <p class="lede">وثيقة واحدة تُغني عن المتناثر: ما يفعله النظام، ولمن، وكيف يُبنى، وبأي ترتيب. <strong>النسخة الثانية تُصحّح خطأً جوهرياً في الأولى:</strong> النظام لم يعد أداة توظيف تقني، بل منصّة تقييم تخدم أي مجال — وهذا التوسّع غيّر السكيما والمعمارية لا الوصف وحده.</p>
+
+    <dl class="hero-facts">
+      <div class="fact"><dt>Scope</dt><dd>21<small>حالة استخدام</small></dd></div>
+      <div class="fact"><dt>Backlog</dt><dd>13<small>نوع سؤال مدعوم</small></dd></div>
+      <div class="fact"><dt>Decisions</dt><dd>15<small>قراراً معمارياً ملزِماً</small></dd></div>
+      <div class="fact"><dt>Tests</dt><dd>187<small>اختباراً خضراء</small></dd></div>
+    </dl>
+  </header>
+
+  <div class="layout">
+    <main>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <div class="sec-head"><span class="sec-num">01</span><h3>الرؤية وحالة الأعمال</h3></div>
+
+  <p class="lede">النظام يحلّ مشكلة واحدة محددة: <strong>قياس ما يعرفه شخص ما، بشكل موحّد وقابل للدفاع عنه.</strong> ليس نظام إدارة تعلّم، وليس منصّة كورسات — هذا التمييز يحكم كل قرار في الوثيقة.</p>
+
+  <div class="rail crit">
+    <p class="t">تصحيح جوهري على v1.0</p>
+    <p>قالت النسخة الأولى إن النظام «لتقييم المرشّحين قبل التوظيف أو القبول». هذا كان <strong>أضيق من الحقيقة</strong>، وقد كلّف تصميماً خاطئاً: بنك أسئلة يملكه امتحان واحد، ومستويات غير مرتبطة بمجال. المجال ليس التوظيف — المجال هو <em>التقييم</em>، والجهة تستخدمه حسب ميدانها.</p>
+  </div>
+
+  <h4>الجمهور والقيمة</h4>
+  <div class="grid">
+    <div class="card">
+      <p class="t">شركة توظيف</p>
+      <p class="d">تُنشئ امتحاناً أو أكثر <strong>لكل دور</strong>: مطوّر، مهندس جودة، محاسب. القيمة: توفير وقت المقابلات على من لا يجتاز الحد الأدنى.</p>
+    </div>
+    <div class="card">
+      <p class="t">مركز لغات</p>
+      <p class="d">يُنشئ <strong>نماذج لكل مستوى</strong>: A1 و A2 و B1 للإنجليزية، ومثلها للإسبانية. القيمة: وضع الطالب في الصف الصحيح من أول يوم.</p>
+    </div>
+    <div class="card">
+      <p class="t">أكاديمية تداول</p>
+      <p class="d">تُنشئ امتحانات لمستويات متتابعة: قراءة الشموع، مستويات الدعم، إدارة المخاطر. القيمة: شهادة تعني شيئاً.</p>
+    </div>
+    <div class="card">
+      <p class="t">جهة اعتماد أو جامعة</p>
+      <p class="d">تملك بنك أسئلة هو <strong>ملكيتها الفكرية</strong>. القيمة: منصّة تُنصَّب داخل شبكتها ولا تُشارك بنكها مع أحد.</p>
+    </div>
+  </div>
+
+  <h4>ما يميّز هذا النظام</h4>
+   <p>معظم منصّات الاختبارات تتوقف عند الاختيار من متعدد، والباقي منصّات توظيف تقني. المزايا التالية هي ما يجعل النظام صالحاً <em>لأي ميدان</em>:</p>
+  <ul>
+    <li><strong>ثلاثة عشر نوع سؤال</strong> — نص، اختيار مفرد، متعدد الإجابات، صح/خطأ، مطابقة، ترتيب، رقمي بهامش خطأ، تحديد على صورة، ملء فراغات، كود، رفع ملف، إجابة صوتية، ومقياس تدريجي. إضافة نوع = مصحّح واحد جديد، بلا migration.</li>
+    <li><strong>بنك أسئلة مشترك</strong> — السؤال يملكه <em>مجال ومستوى</em> لا امتحان. ثلاثة نماذج لمستوى A1 هي ثلاثة مخططات فوق بنك واحد، لا ثلاث نسخ تنحرف عن بعضها.</li>
+    <li><strong>مفردات يعيد المستأجر تسميتها</strong> — ما نسمّيه «مرشّحاً» يسمّيه مركز التدريب «طالباً». <code>CategorySet</code> يجعل المنتج يتكلّم لغة الجهة لا العكس.</li>
+    <li><strong>هوية بصرية لكل جهة</strong> — اسمها وشعارها ولونها على صفحة الامتحان والشهادة والدعوة. المرشّح المدعو يُطلب منه الثقة بالجهة التي دعته، لا بنا.</li>
+    <li><strong>تصحيح هجين</strong> — آلي لما يُصحَّح آلياً، وطابور مراجعة بشرية لما لا يُصحَّح، مع دمج النتيجتين في درجة واحدة.</li>
+    <li><strong>مؤقّت مزدوج</strong> — للامتحان كاملاً ولكل سؤال على حدة، والخادم هو المرجع لا المتصفّح.</li>
+    <li><strong>وصول بلا حساب</strong> — المرشّح يدخل برابط موقّع، لا يُنشئ حساباً ولا يتذكّر كلمة سر.</li>
+    <li><strong>وسائط في السؤال والإجابة</strong> — صورة أو صوت أو فيديو في السؤال، وملف مرفوع في الإجابة. الوسيط يُركَّب مع أي نوع: «استماع ثم اختيار» ليس نوعاً ثالث عشر بل صوت فوق سؤال اختيار.</li>
+    <li><strong>قياس نفسي ظاهر</strong> — معامل الصعوبة والتمييز لكل سؤال. معامل تمييز صفر أو أقل يعني أن السؤال يقيس عكس ما يدّعي وينبغي سحبه.</li>
+    <li><strong>ثنائي اللغة بـ RTL كامل</strong> — العربية مواطن من الدرجة الأولى، لا ترجمة لاحقة.</li>
+  </ul>
+
+  <div class="rail acc">
+    <p class="t">قرار نطاق: «خطط التدريب» خارج النطاق</p>
+    <p>وردت في مسودة قديمة داخل <code>docs/use-cases.md</code>، ولا وجود لها في القائمة النهائية المعتمدة ولا في الكود. بناؤها يضيف نموذج بيانات كاملاً ومجموعة شاشات لخدمة هدف مختلف (إدارة التعلّم لا التقييم). <strong>تُحذف من الوثائق ولا تُبنى.</strong></p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <div class="sec-head"><span class="sec-num">02</span><h3>الأدوار والصلاحيات</h3></div>
+
+  <p>أربعة أدوار داخلية ودور خارجي واحد. الصلاحيات تُعرَّف في ABP كـ policies دقيقة، والأدوار مجرد حزم منها.</p>
+
+  <div class="rail acc">
+    <p class="t">الأسئلة صلاحية مستقلة عن الامتحانات</p>
+    <p>فُصلت <code>Assessment.Questions.*</code> عن <code>Assessment.Exams.*</code> بعد اتساع النطاق. المنسّق الذي يجدول امتحاناً ليس بالضرورة من يكتب أسئلته: في مركز لغات يجدول الموظف الإداري ويكتب المدرّس. والأهم أن <strong>قراءة السؤال نفسها محمية</strong> — السؤال يحمل مفتاح إجابته، فحتى العرض يمرّ بـ <code>Questions.View</code>.</p>
+  </div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>الدور</th><th>الامتحانات</th><th>بنك الأسئلة</th><th>المرشّحون والروابط</th><th>المراجعة اليدوية</th><th>النتائج</th><th>الإعدادات والهوية</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Admin</strong></td><td>كامل</td><td>كامل</td><td>كامل</td><td>كامل</td><td>كامل</td><td>كامل</td></tr>
+      <tr><td><strong>HR Manager</strong></td><td>قراءة</td><td>—</td><td>كامل</td><td>—</td><td>كامل</td><td>—</td></tr>
+      <tr><td><strong>Supervisor</strong></td><td>كامل</td><td>كامل</td><td>قراءة</td><td>كامل</td><td>قراءة</td><td>—</td></tr>
+      <tr><td><strong>Reviewer</strong></td><td>—</td><td>—</td><td>—</td><td>كامل</td><td>قراءة</td><td>—</td></tr>
+      <tr><td><strong>Candidate</strong> <span class="chip neutral">بلا حساب</span></td><td>امتحانه فقط أثناء المحاولة</td><td>—</td><td>—</td><td>—</td><td>نتيجته فقط</td><td>—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="rail warn">
+    <p class="t">المرشّح ليس مستخدماً في نظام الهوية</p>
+    <p>هذا قرار جوهري يفصل النظام عن نمط «سجّل ثم امتحن». المرشّح كيان أعمال (<code>Candidate</code>) لا <code>IdentityUser</code>، ويحصل على صلاحية مؤقتة عبر رمز موقّع لا عبر جلسة دخول. يقلّل هذا الاحتكاك على المرشّح ويمنع تراكم حسابات ميتة.</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <div class="sec-head"><span class="sec-num">03</span><h3>حالات الاستخدام</h3></div>
+
+  <p>ستّ عشرة حالة مصنّفة حسب الفاعل. هذه القائمة هي المرجع الوحيد — تُلغي ما في <code>docs/use-cases.md</code> الحالي.</p>
+
+  <h5>Admin — مدير النظام</h5>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">#</th><th>الحالة</th><th>الوصف</th></tr></thead>
+    <tbody>
+      <tr><td class="num">UC-01</td><td>ضبط إعدادات النظام</td><td>تفعيل التسجيل الذاتي، حدود رفع الملفات، سياسة التصحيح الافتراضية.</td></tr>
+      <tr><td class="num">UC-02</td><td>إدارة الأدوار والصلاحيات</td><td>إنشاء المستخدمين وإسناد الأدوار وضبط الوصول لكل وحدة.</td></tr>
+      <tr><td class="num">UC-03</td><td>إدارة التخصصات وقوالب الامتحانات</td><td>تعريف مجالات الخبرة وبناء امتحانات أساس قابلة لإعادة الاستخدام.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h5>HR Manager — مسؤول التوظيف</h5>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">#</th><th>الحالة</th><th>الوصف</th></tr></thead>
+    <tbody>
+      <tr><td class="num">UC-04</td><td>إضافة ملف مرشّح</td><td>تسجيل بيانات المرشّح والوظيفة المتقدَّم لها ومتابعة حالته.</td></tr>
+      <tr><td class="num">UC-05</td><td>إسناد امتحان لمرشّح</td><td>اختيار امتحان وتوليد رابط آمن وإرساله بالبريد.</td></tr>
+      <tr><td class="num">UC-06</td><td>تتبّع المحاولات والدرجات</td><td>متابعة حيّة لعدد المحاولات وحالة كل منها.</td></tr>
+      <tr><td class="num">UC-07</td><td>تحليل لوحات النتائج</td><td>مقارنة أداء المرشّحين على مستوى الامتحان أو الوظيفة.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h5>Supervisor / Reviewer — المشرف والمراجع</h5>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">#</th><th>الحالة</th><th>الوصف</th></tr></thead>
+    <tbody>
+      <tr><td class="num">UC-08</td><td>بناء الأسئلة والامتحانات</td><td>إنشاء امتحان وتعبئته بأسئلة متعددة الأنواع مع وسائط.</td></tr>
+      <tr><td class="num">UC-09</td><td>الدخول لطابور المراجعة اليدوية</td><td>عرض المحاولات المعلّقة وتصحيح الإجابات المفتوحة.</td></tr>
+      <tr><td class="num">UC-10</td><td>إضافة تعليقات وتغذية راجعة</td><td>تبرير الدرجة اليدوية بملاحظة مكتوبة.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h5>Candidate — المرشّح</h5>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">#</th><th>الحالة</th><th>الوصف</th></tr></thead>
+    <tbody>
+      <tr><td class="num">UC-11</td><td>التسجيل الذاتي</td><td>التسجيل عبر نموذج عام إن كان مفعّلاً في الإعدادات.</td></tr>
+      <tr><td class="num">UC-12</td><td>الدخول للامتحان برمز آمن</td><td>فتح الامتحان عبر رابط محدود الصلاحية والمحاولات.</td></tr>
+      <tr><td class="num">UC-13</td><td>أداء الامتحان وتسليمه</td><td>الإجابة ضمن المؤقّت والتسليم يدوياً أو تلقائياً.</td></tr>
+      <tr><td class="num">UC-14</td><td>رفع ملف كإجابة</td><td>إرفاق مستند أو صوت أو فيديو ضمن الإجابة.</td></tr>
+      <tr><td class="num">UC-15</td><td>عرض النتيجة</td><td>الاطلاع على الدرجة والنجاح بعد اكتمال التصحيح.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h5>Developer — المطوّر</h5>
+  <div class="tw">
+  <table>
+    <thead><tr><th class="num">#</th><th>الحالة</th><th>الوصف</th></tr></thead>
+    <tbody>
+      <tr><td class="num">UC-16</td><td>إضافة نوع سؤال جديد</td><td>توسيع النظام بنوع سؤال إضافي دون تعديل منطق التصحيح القائم.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <div class="sec-head"><span class="sec-num">04</span><h3>قصص المستخدم</h3></div>
+
+  <p>أربع وثلاثون قصة في سبع ملاحم، كل واحدة بمعايير قبول قابلة للاختبار. الترقيم يُستخدم في رسائل الـ commit وتذاكر العمل.</p>
+
+  <h4>E1 · إدارة الامتحانات والأسئلة</h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E1-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد إنشاء امتحان بمدة ونسبة نجاح وتخصص، لكي أعيد استخدامه مع عدة مرشّحين.</p>
+    <ul class="ac">
+      <li>المدة بالدقائق مطلوبة وأكبر من صفر.</li>
+      <li>نسبة النجاح مئوية بين 1 و100، افتراضها 60٪.</li>
+      <li>الامتحان يُنشأ في حالة مسودة ولا يمكن إسناده قبل احتوائه سؤالاً واحداً على الأقل.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E1-02</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد إضافة سؤال من أي من الأنواع الستة، لكي أغطي مهارات نظرية وعملية معاً.</p>
+    <ul class="ac">
+      <li>الحقول المطلوبة تتغيّر حسب النوع: الخيارات للاختيار، المخرجات المتوقعة للكود.</li>
+      <li>درجة السؤال عدد عشري أكبر من صفر.</li>
+      <li>مؤقّت السؤال اختياري ولا يتجاوز مدة الامتحان.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E1-03</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد إرفاق صورة أو صوت أو فيديو بالسؤال، لكي أختبر مهارات لا يعبّر عنها النص.</p>
+    <ul class="ac">
+      <li>الصيغ المسموحة والحد الأقصى للحجم مضبوطان في إعدادات النظام.</li>
+      <li>حذف السؤال يحذف ملفه المرتبط.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E1-04</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد جدولة نافذة زمنية للامتحان، لكي لا يُفتح خارج موعده.</p>
+    <ul class="ac">
+      <li>عند التفعيل يصبح تاريخا البداية والنهاية مطلوبين والبداية قبل النهاية.</li>
+      <li>محاولة البدء خارج النافذة تُرفض برسالة تشرح الموعد.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E1-05</span><span class="chip neutral">COULD</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد نسخ امتحان قائم، لكي أبني نسخة معدّلة دون إعادة إدخال الأسئلة.</p>
+    <ul class="ac">
+      <li>النسخة تُنشأ كمسودة باسم مميّز ولا ترث المحاولات ولا الروابط.</li>
+    </ul>
+  </div>
+
+  <h4>E2 · إدارة المرشّحين والروابط</h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E2-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد تسجيل مرشّح ببياناته والوظيفة المتقدَّم لها، لكي أربطه بامتحان.</p>
+    <ul class="ac">
+      <li>البريد مطلوب وبصيغة صحيحة وفريد على مستوى النظام.</li>
+      <li>الحالة الابتدائية «قيد التقييم».</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E2-02</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد توليد رابط امتحان آمن بتاريخ انتهاء وعدد محاولات، لكي أتحكم في نافذة الوصول.</p>
+    <ul class="ac">
+      <li>الرمز عشوائي تشفيرياً بطول 32 بايت على الأقل.</li>
+      <li>تاريخ الانتهاء مستقبلي وعدد المحاولات بين 1 و10.</li>
+      <li>الرابط لا يعمل إلا للمرشّح والامتحان المرتبطين به.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E2-03</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد إرسال الرابط بالبريد تلقائياً، لكي لا أنسخه يدوياً.</p>
+    <ul class="ac">
+      <li>الرسالة ثنائية اللغة وتتضمن اسم الامتحان ومدته وتاريخ انتهاء الرابط.</li>
+      <li>فشل الإرسال يُسجَّل ويُعاد تلقائياً ولا يُفشل عملية إنشاء الرابط.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E2-04</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد إلغاء رابط قبل استخدامه، لكي أتصرّف عند التسريب أو الخطأ.</p>
+    <ul class="ac">
+      <li>الرابط الملغى يعطي رسالة واضحة لا خطأ عاماً.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E2-05</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد إسناد امتحان لمجموعة مرشّحين دفعة واحدة، لكي أتعامل مع دفعات التوظيف.</p>
+    <ul class="ac">
+      <li>كل مرشّح يحصل على رمز مستقل.</li>
+      <li>تقرير يبيّن من أُرسل له ومن فشل.</li>
+    </ul>
+  </div>
+
+  <h4>E3 · أداء الامتحان <span class="chip crit">قلب النظام</span></h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد فتح الامتحان برابط دون إنشاء حساب، لكي أبدأ فوراً.</p>
+    <ul class="ac">
+      <li>الرمز المنتهي أو المستنفد أو الملغى يعطي رسالة تشرح السبب تحديداً.</li>
+      <li>الرمز الصالح يُصدر جلسة قصيرة الأجل تنتهي بانتهاء المحاولة.</li>
+      <li>الجلسة لا تمنح أي وصول خارج امتحان هذه المحاولة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-02</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد رؤية شاشة تمهيدية قبل البدء، لكي أعرف المدة وعدد الأسئلة قبل تشغيل المؤقّت.</p>
+    <ul class="ac">
+      <li>المؤقّت لا يبدأ إلا بضغط «ابدأ».</li>
+      <li>تُعرض المدة وعدد الأسئلة والمحاولات المتبقية.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-03</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد أن تُحفظ كل إجابة فور كتابتها، لكي لا أفقد عملي عند انقطاع الشبكة.</p>
+    <ul class="ac">
+      <li>الحفظ يتم عند الانتقال بين الأسئلة وكل 15 ثانية أثناء الكتابة.</li>
+      <li>مؤشّر مرئي يبيّن آخر حفظ ناجح.</li>
+      <li>إعادة تحميل الصفحة تستأنف من آخر حالة محفوظة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-04</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد رؤية الوقت المتبقي، لكي أوزّع وقتي.</p>
+    <ul class="ac">
+      <li>الوقت المتبقي يُحسب من وقت الخادم لا من ساعة المتصفّح.</li>
+      <li>تنبيه بصري ونصّي عند تبقّي 5 دقائق و1 دقيقة.</li>
+      <li>المؤقّت مُعلَن عبر <code>aria-live="polite"</code> لقارئات الشاشة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-05</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد تسليماً تلقائياً عند انتهاء الوقت، لكي لا أُحرَم من درجة أجبتها.</p>
+    <ul class="ac">
+      <li>المتصفّح يسلّم عند وصول المؤقّت للصفر.</li>
+      <li>عامل خلفي على الخادم يسلّم المحاولات المنتهية زمنياً حتى لو أُغلق المتصفّح.</li>
+      <li>الإجابات المحفوظة قبل الانتهاء تُحتسب كاملة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-06</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد رفع ملف كإجابة، لكي أسلّم عملاً لا يُكتب في مربع نص.</p>
+    <ul class="ac">
+      <li>الصيغة والحجم يُفحصان قبل الرفع وتُعرض رسالة واضحة عند الرفض.</li>
+      <li>شريط تقدّم أثناء الرفع وإمكانية الاستبدال.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-07</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد التنقّل بين الأسئلة ومعرفة ما تبقّى، لكي أراجع قبل التسليم.</p>
+    <ul class="ac">
+      <li>خريطة أسئلة تميّز المُجاب عن غير المُجاب.</li>
+      <li>تأكيد قبل التسليم يذكر عدد الأسئلة غير المُجابة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-08</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد خلط ترتيب الخيارات لكل مرشّح، لكي أقلّل النسخ بين المتقدّمين.</p>
+    <ul class="ac">
+      <li>الخلط ثابت داخل المحاولة الواحدة حتى لا تتبدّل عند إعادة التحميل.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E3-09</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد أن يمنعني النظام من محاولة ثانية متزامنة، لكي لا تتضارب إجاباتي.</p>
+    <ul class="ac">
+      <li>وجود محاولة نشطة يستأنفها بدل إنشاء جديدة.</li>
+      <li>قيد فريد على مستوى قاعدة البيانات يمنع التزامن.</li>
+    </ul>
+  </div>
+
+  <h4>E4 · التصحيح</h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E4-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>النظام</strong>، أريد تصحيح الأسئلة الموضوعية آلياً فور التسليم، لكي تظهر نتيجة أولية دون انتظار.</p>
+    <ul class="ac">
+      <li>الاختيار من متعدد وصح/خطأ: مطابقة غير حسّاسة لحالة الأحرف والمسافات.</li>
+      <li>الكود: مقارنة المخرجات المتوقّعة نصّياً بعد تطبيع نهايات الأسطر.</li>
+      <li>الدرجات عشرية لا صحيحة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E4-02</span><span class="chip crit">MUST · إصلاح ثغرة</span></div>
+    <p class="as">بصفتي <strong>مشرفاً</strong>، أريد أن يعاقب التصحيح على الخيارات الخاطئة في الأسئلة متعددة الإجابات، لكي لا يفلت من يختار كل شيء بالدرجة الكاملة.</p>
+    <ul class="ac">
+      <li>اختيار أي خيار خاطئ واحد يُصفّر درجة السؤال.</li>
+      <li>الاختيار الجزئي الصحيح يأخذ نسبته من الدرجة.</li>
+      <li>السلوك قابل للتبديل على مستوى السؤال عبر <code>AllowPartialCredit</code>.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E4-03</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مراجعاً</strong>، أريد طابوراً بالمحاولات المنتظرة للتصحيح اليدوي، لكي أعرف ما ينتظرني.</p>
+    <ul class="ac">
+      <li>الطابور يُظهر المرشّح والامتحان ووقت التسليم وعدد الأسئلة المعلّقة.</li>
+      <li>فرز حسب الأقدم أولاً افتراضياً.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E4-04</span><span class="chip crit">MUST · إصلاح عطل</span></div>
+    <p class="as">بصفتي <strong>مراجعاً</strong>، أريد أن تُحدَّث النتيجة النهائية فور اعتماد تصحيحي، لكي لا تبقى المحاولة معلّقة للأبد.</p>
+    <ul class="ac">
+      <li>حفظ المراجعة يعيد حساب مجموع المحاولة فوراً.</li>
+      <li>عند مراجعة آخر سؤال معلّق تُرفع علامة الاكتمال وتُزال علامة الانتظار.</li>
+      <li>النجاح يُحتسب بنسبة الدرجة إلى المجموع الكلي مقابل نسبة نجاح الامتحان.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E4-05</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مراجعاً</strong>، أريد كتابة ملاحظة مع الدرجة، لكي يُفهم سبب التقييم لاحقاً.</p>
+    <ul class="ac">
+      <li>الملاحظة تُحفظ مع هوية المراجع ووقت المراجعة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E4-06</span><span class="chip neutral">COULD</span></div>
+    <p class="as">بصفتي <strong>مطوّراً</strong>، أريد إضافة نوع سؤال جديد بتسجيل مصحّح واحد، لكي لا أعدّل منطق التصحيح القائم.</p>
+    <ul class="ac">
+      <li>إضافة النوع لا تتطلّب تعديل أي مصحّح موجود.</li>
+      <li>نوع بلا مصحّح مسجّل يُوجَّه للمراجعة اليدوية تلقائياً.</li>
+    </ul>
+  </div>
+
+  <h4>E5 · النتائج ولوحات المتابعة</h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E5-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد لوحة تُلخّص كل امتحان بعدد المحاولات ونسبة النجاح، لكي أرى الصورة الكبيرة.</p>
+    <ul class="ac">
+      <li>التجميع يتم في قاعدة البيانات لا في الذاكرة.</li>
+      <li>الاستجابة تحت ثانيتين مع 10٬000 محاولة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E5-02</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد ترشيح النتائج حسب الامتحان أو المرشّح أو الحالة، لكي أصل للمعلومة بسرعة.</p>
+    <ul class="ac">
+      <li>ترقيم صفحات من جهة الخادم.</li>
+      <li>الترشيح يبقى محفوظاً عند العودة للصفحة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E5-03</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً</strong>، أريد رؤية نتيجتي بعد اكتمال التصحيح، لكي أعرف موقفي.</p>
+    <ul class="ac">
+      <li>النتيجة لا تُعرض قبل اكتمال المراجعة اليدوية.</li>
+      <li>تُعرض الدرجة والنجاح دون كشف الإجابات الصحيحة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E5-04</span><span class="chip neutral">COULD</span></div>
+    <p class="as">بصفتي <strong>مسؤول توظيف</strong>، أريد تصدير النتائج إلى ملف جدولي، لكي أشاركها خارج النظام.</p>
+    <ul class="ac">
+      <li>التصدير يحترم الترشيح المطبَّق حالياً.</li>
+    </ul>
+  </div>
+
+  <h4>E6 · الإدارة والإعدادات</h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E6-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مديراً</strong>، أريد إدارة المستخدمين وإسناد الأدوار، لكي أتحكم بالوصول.</p>
+    <ul class="ac">
+      <li>تعطيل مستخدم يُنهي جلساته الفعّالة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E6-02</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مديراً</strong>، أريد تفعيل أو تعطيل التسجيل الذاتي، لكي أضبط من يدخل النظام.</p>
+    <ul class="ac">
+      <li>التعطيل يُخفي رابط التسجيل ويرفض الطلب على الخادم أيضاً.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E6-03</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مديراً</strong>، أريد سجل تدقيق للعمليات الحسّاسة، لكي أتتبّع من فعل ماذا.</p>
+    <ul class="ac">
+      <li>يُسجَّل: إنشاء وإلغاء الروابط، تعديل الدرجات، تغيير الصلاحيات.</li>
+    </ul>
+  </div>
+
+  <h4>E7 · التجربة والوصولية</h4>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E7-01</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مستخدماً عربياً</strong>، أريد واجهة عربية بـ RTL كامل، لكي أستخدم النظام بلغتي دون كسر في التخطيط.</p>
+    <ul class="ac">
+      <li>الأيقونات الاتجاهية تنعكس، والجداول والنماذج تنعكس بلا تداخل.</li>
+      <li>تبديل اللغة لا يفقد سياق الصفحة الحالية.</li>
+      <li>الأرقام والتواريخ تُعرض بصيغة اللغة المختارة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E7-02</span><span class="chip acc">MUST</span></div>
+    <p class="as">بصفتي <strong>مستخدماً يعتمد لوحة المفاتيح أو قارئ شاشة</strong>، أريد نظاماً قابلاً للتشغيل بالكامل دون فأرة.</p>
+    <ul class="ac">
+      <li>كل عنصر تفاعلي له حالة تركيز مرئية.</li>
+      <li>تباين النص 4.5:1 في الوضعين الفاتح والداكن.</li>
+      <li>شاشة أداء الامتحان تجتاز تدقيق WCAG 2.2 AA كاملاً.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E7-03</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مرشّحاً على الجوال</strong>، أريد أداء الامتحان من الهاتف بلا معاناة.</p>
+    <ul class="ac">
+      <li>مساحات اللمس 44×44 بكسل على الأقل.</li>
+      <li>لا تمرير أفقي على أي عرض شاشة.</li>
+    </ul>
+  </div>
+
+  <div class="story">
+    <div class="story-h"><span class="story-id">E7-04</span><span class="chip warn">SHOULD</span></div>
+    <p class="as">بصفتي <strong>مستخدماً</strong>، أريد حالات فارغة وتحميل وخطأ واضحة، لكي أفهم ما يحدث.</p>
+    <ul class="ac">
+      <li>كل جدول له حالة فارغة تقترح الخطوة التالية.</li>
+      <li>رسائل الخطأ تشرح السبب والحل لا رمز الخطأ.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <div class="sec-head"><span class="sec-num">05</span><h3>مخططات التسلسل</h3></div>
+
+  <p>أربعة تدفقات تحكم التصميم. المخططات بالإنجليزية لأن أسماء المشاركين هي أسماء مكوّنات فعلية في الكود.</p>
+
+  <figure>
+    <div class="dia">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor HR as HR Manager
+    participant API as ExamLink API
+    participant DB as Database
+    participant Q as Background Queue
+    participant Mail as Email Sender
+    actor C as Candidate
+
+    HR->>API: POST /exam-links {candidateId, examId, expiry, maxAttempts}
+    API->>API: generate 32-byte crypto token
+    API->>DB: persist ExamLink (hashed token)
+    API->>Q: enqueue SendExamLinkEmail
+    API-->>HR: 201 { url, expiresAt }
+    Q->>Mail: render bilingual template
+    Mail->>C: email with secure link
+    Note over Q,Mail: retry with backoff on failure<br/>link creation never blocked
+</pre>
+    </div>
+    <figcaption><strong>تدفق ١ — إسناد امتحان وإرسال الرابط.</strong> الإرسال غير متزامن عمداً: فشل خادم البريد لا يُفشل إنشاء الرابط. الرمز يُخزَّن مُجزّأً لا نصاً صريحاً.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="dia">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor C as Candidate
+    participant UI as Angular App
+    participant Auth as Exam Session Issuer
+    participant API as Attempt API
+    participant DB as Database
+
+    C->>UI: opens /exam/access/{token}
+    UI->>Auth: POST /exam-session {token}
+    Auth->>DB: load link by token hash
+    alt token invalid / expired / exhausted / revoked
+        Auth-->>UI: 403 + specific reason
+        UI-->>C: message explaining exactly why
+    else valid
+        Auth->>Auth: mint short-lived JWT<br/>claims: candidateId, examId, attemptId
+        Auth-->>UI: { examSessionToken, exam preview }
+        UI-->>C: pre-start screen (duration, question count)
+        C->>UI: presses Start
+        UI->>API: POST /attempts (Bearer examSessionToken)
+        API->>DB: check active attempt
+        alt active attempt exists
+            API-->>UI: resume existing attempt
+        else none
+            API->>DB: create attempt, increment link usage
+            API-->>UI: attempt + first question
+        end
+        UI-->>C: timer starts
+    end
+</pre>
+    </div>
+    <figcaption><strong>تدفق ٢ — الدخول بالرمز وبدء المحاولة.</strong> هذا هو التدفق المكسور حالياً في الكود. الحل: رمز الرابط يُبادَل بجلسة امتحان قصيرة الأجل تحمل صلاحيات مقيدة بهذه المحاولة، بدل استدعاء خدمة محمية بصلاحيات إدارية من نقطة مجهولة.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="dia">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    actor C as Candidate
+    participant UI as Angular App
+    participant API as Answer API
+    participant DB as Database
+    participant W as Timeout Worker
+
+    loop every question
+        C->>UI: types / selects answer
+        UI->>API: PUT /attempts/{id}/answers/{qid}
+        API->>DB: upsert answer
+        API-->>UI: { savedAt, serverTimeRemaining }
+        UI-->>C: "saved 12:04:31" indicator
+    end
+
+    alt candidate submits
+        C->>UI: Submit
+        UI->>API: POST /attempts/{id}/submit
+    else timer reaches zero in browser
+        UI->>API: POST /attempts/{id}/submit (auto)
+    else browser closed / offline
+        W->>DB: scan attempts past deadline
+        W->>API: force submit
+    end
+    API->>API: grade (see flow 4)
+    API-->>UI: result or "pending review"
+</pre>
+    </div>
+    <figcaption><strong>تدفق ٣ — الحفظ التدريجي والتسليم.</strong> ثلاثة مسارات للتسليم، أحدها لا يعتمد على المتصفّح إطلاقاً. الوقت المتبقي يعود من الخادم مع كل حفظ، فساعة المتصفّح لا تُصدَّق.</figcaption>
+  </figure>
+
+  <figure>
+    <div class="dia">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant API as Submit Handler
+    participant GR as GraderResolver
+    participant G as IQuestionGrader
+    participant DB as Database
+    actor R as Reviewer
+
+    API->>DB: load answers + questions (single query)
+    loop each answer
+        API->>GR: resolve(question.Type)
+        alt grader registered
+            GR-->>API: grader
+            API->>G: Grade(question, answer)
+            G-->>API: score + isCorrect
+        else no grader
+            GR-->>API: null
+            API->>API: mark NeedsManualReview
+        end
+    end
+    API->>DB: save scores, set IsGraded / NeedsManualReview
+
+    opt manual review pending
+        R->>API: PUT /answers/{id}/review {score, comment}
+        API->>DB: save reviewed answer
+        API->>API: recalculate attempt total
+        alt no pending answers left
+            API->>DB: IsGraded = true, NeedsManualReview = false
+            API->>API: IsPassed = total/max >= exam.PassingPercentage
+        end
+    end
+</pre>
+    </div>
+    <figcaption><strong>تدفق ٤ — التصحيح الآلي واليدوي.</strong> نمط Strategy لكل نوع سؤال: إضافة نوع جديد تعني تسجيل مصحّح واحد. وإعادة الحساب بعد المراجعة اليدوية هي الحلقة المفقودة في الكود الحالي.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <div class="sec-head"><span class="sec-num">06</span><h3>القرارات المعمارية</h3></div>
+
+  <p>خمسة عشر قراراً ملزِماً. التسعة الأولى من v1.0، والستة التالية اتُّخذت أثناء التنفيذ — أربعة منها كشفها اختبار أو تدقيق أمني، لا مراجعة تصميم.</p>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-01</span><p class="t">نموذج واحد للمُقيَّم: <code>Candidate</code></p></div>
+    <dl>
+      <dt>السياق</dt><dd>الكود يحمل مسارين متوازيين كاملين: <code>Trainee / ExamAttempt / ExamAnswer</code> مقابل <code>Candidate / CandidateExamAttempt / CandidateExamAnswer</code>، بخدمتَي تصحيح منفصلتين تفعلان الشيء نفسه.</dd>
+      <dt>القرار</dt><dd>اعتماد <code>Candidate</code> وحذف مسار <code>Trainee</code> بالكامل مع ترحيل بيانات.</dd>
+      <dt>السبب</dt><dd>الازدواجية تضاعف كل إصلاح وكل اختبار، وتضمن انحراف السلوك بين المسارين. المفردة الموحّدة تخدم كل الجماهير الثلاثة.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-02</span><p class="t">جلسة امتحان قصيرة الأجل بدل الوصول المجهول</p></div>
+    <dl>
+      <dt>السياق</dt><dd>نقطة بدء الامتحان معلَّمة <code>AllowAnonymous</code> لكنها تستدعي خدمة محمية بصلاحية إدارية، فترجع 403 دائماً.</dd>
+      <dt>القرار</dt><dd>رمز الرابط يُبادَل مرة واحدة بـ JWT قصير الأجل يحمل <code>candidateId</code> و<code>examId</code> و<code>attemptId</code>، وتُحمى نقاط الامتحان بسياسة تقرأ هذه الـ claims.</dd>
+      <dt>السبب</dt><dd>يفصل هوية المرشّح عن نظام الصلاحيات الإداري، ويجعل كل طلب أثناء الامتحان مقيداً بمحاولة واحدة بعينها.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-03</span><p class="t">التصحيح بنمط Strategy عبر <code>IQuestionGrader</code></p></div>
+    <dl>
+      <dt>السياق</dt><dd>التصحيح الحالي عبارة عن <code>switch</code> ضخم داخل خدمة واحدة، وإضافة نوع تعني تعديله.</dd>
+      <dt>القرار</dt><dd>واجهة <code>IQuestionGrader</code> بتطبيق لكل نوع، تُحلّ عبر حاوية ABP. النوع بلا مصحّح يذهب للمراجعة اليدوية تلقائياً.</dd>
+      <dt>السبب</dt><dd>يحقق UC-16 مباشرة، ويجعل كل نوع قابلاً للاختبار وحدوياً بمعزل عن غيره.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-04</span><p class="t">النجاح بالنسبة المئوية والدرجات عشرية</p></div>
+    <dl>
+      <dt>السياق</dt><dd>الكود يستخدم <code>IsPassed = Score &gt;= 60</code> برقم ثابت، ويقتطع الدرجات إلى <code>int</code> رغم أن درجة السؤال <code>double</code>.</dd>
+      <dt>القرار</dt><dd>إضافة <code>Exam.PassingPercentage</code> و<code>Exam.MaxScore</code> المحسوبة، واعتماد <code>decimal</code> في كل مسار الدرجات.</dd>
+      <dt>السبب</dt><dd>امتحان من 200 درجة لا يمكن أن يكون حدّ نجاحه 60 نقطة. والاقتطاع يفقد الدرجات الجزئية التي بُني النظام لدعمها.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-05</span><p class="t">الخادم مرجع الوقت، والتسليم التلقائي مضمون بعامل خلفي</p></div>
+    <dl>
+      <dt>السياق</dt><dd>لا يوجد تسليم تلقائي إطلاقاً، ولا حماية من تلاعب ساعة المتصفّح.</dd>
+      <dt>القرار</dt><dd>كل استجابة حفظ تُعيد الوقت المتبقي من الخادم. وعامل خلفي في ABP يفحص المحاولات المنتهية زمنياً كل دقيقة ويسلّمها.</dd>
+      <dt>السبب</dt><dd>إغلاق المتصفّح أو انقطاع الشبكة لا يجوز أن يترك محاولة معلّقة للأبد ولا أن يمنح وقتاً إضافياً.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-06</span><p class="t">تخزين الملفات عبر ABP BLOB Storing</p></div>
+    <dl>
+      <dt>السياق</dt><dd>الرفع الحالي يكتب على نظام الملفات مباشرة، ويدمج مُدخل المستخدم <code>folder</code> في المسار دون تنقية، ومسار الجذر معطَّل بقيمة فارغة في الإعدادات.</dd>
+      <dt>القرار</dt><dd>الانتقال إلى <code>Volo.Abp.BlobStoring</code> بموفّر نظام ملفات محلي قابل للتبديل لاحقاً إلى S3 أو Azure دون تغيير كود.</dd>
+      <dt>السبب</dt><dd>يزيل خطر اجتياز المسار، ويوحّد دورة حياة الملف مع الكيان، ويجعل الانتقال للسحابة تغيير إعدادات لا إعادة كتابة.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-07</span><p class="t">واجهة Angular بلا LeptonX — Bootstrap 5 نقي</p></div>
+    <dl>
+      <dt>السياق</dt><dd>قرار سابق موثّق بحرفية «هدفنا الاعتماد على Bootstrap بشكل كامل» مع تصميم لوحة تحكم مرفوع — لكن المستودع ما زال يحمل تبعيات LeptonX وقالبه الافتراضي بلا تعديل.</dd>
+      <dt>القرار</dt><dd>حذف <code>@abp/ng.theme.lepton-x</code> و<code>@volo/ngx-lepton-x.lite</code>، وبناء Layout خاص يعيد ما نفقده: Navbar وSidebar مبني على الصلاحيات ومبدّل لغة وbreadcrumbs.</dd>
+      <dt>السبب</dt><dd>الوضع الحالي — تبعيات قالب لا نستخدمه ونيّة تصميم لم تُنفَّذ — هو أسوأ الاحتمالين. الحسم قبل كتابة أول شاشة أرخص بكثير من بعد عشرين.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-08</span><p class="t">RTL متطلَّب تأسيسي لا لاحق</p></div>
+    <dl>
+      <dt>السياق</dt><dd>لم يرد ذكر RTL في أي وثيقة متطلبات، رغم أن الواجهة عربية وقرار التصميم يتضمّن مبدّل لغة.</dd>
+      <dt>القرار</dt><dd>الخصائص المنطقية في CSS حصراً (<code>margin-inline-start</code> لا <code>margin-left</code>)، و<code>bootstrap.rtl.css</code>، وفحص RTL جزء من تعريف «منجَز» لكل شاشة.</dd>
+      <dt>السبب</dt><dd>تحويل عشرين شاشة إلى RTL بعد بنائها يعني إعادة بنائها. التكلفة عند التأسيس تقارب الصفر.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-09</span><p class="t">البقاء على SQL Server</p></div>
+    <dl>
+      <dt>السياق</dt><dd>توجيه بأن نستخدم الأحدث في كل شيء. البديل المطروح عادة هو PostgreSQL.</dd>
+      <dt>القرار</dt><dd>البقاء على SQL Server مع ترقية EF Core.</dd>
+      <dt>السبب</dt><dd>«الأحدث» تعني أحدث ما يخدم المنتج لا أحدث ما هو متاح. قاعدة البيانات ليست عنق الزجاجة، وتغييرها يعني ترحيل عشرين migration قائمة مقابل صفر مكسب وظيفي. الميزانية الهندسية تُنفَق على الواجهة والمحرّك المكسور.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-10</span><p class="t">حمولة JSON بدل عمود لكل نوع</p></div>
+    <dl>
+      <dt>السياق</dt><dd>النموذج القديم كان عموداً لكل نوع: <code>OptionsJson</code>، <code>CodeExpectedOutput</code>، <code>CodeLanguage</code>… ستة أنواع كلّفت ستة أعمدة، والثلاثة عشر التي يحتاجها التقييم العام كانت ستكلّف أربعين، كلها NULL في معظم الصفوف.</dd>
+      <dt>القرار</dt><dd>عمود <code>Payload</code> واحد بصيغة JSON يحمل كل ما يخصّ النوع، مع <code>QuestionPayloadValidator</code> يفحصه عند الحفظ لا عند التصحيح.</dd>
+      <dt>السبب</dt><dd>نوع جديد = مصحّح جديد وشكل حمولة جديد، بلا migration وبلا مساس بالأنواع القائمة. الفحص عند الحفظ لأن حمولة لا يقرؤها مصحّح تصبح سؤالاً لا يُصحَّح، ويُكتشف ذلك وشخص يجلس للامتحان.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-11</span><p class="t">السؤال لا يملكه امتحان</p></div>
+    <dl>
+      <dt>السياق</dt><dd><code>Question.ExamId</code> كان إلزامياً، فـ«ثلاثة نماذج لمستوى A1» عنى نسخ الأربعين سؤالاً ثلاث مرات.</dd>
+      <dt>القرار</dt><dd><code>ExamId</code> صار اختيارياً. سؤال البنك يملكه <code>CategoryId</code> و<code>LevelId</code>، والمخطط يسحب من امتحانه ومن البنك المتاح لمجاله ومستواه.</dd>
+      <dt>السبب</dt><dd>النسخ تنحرف: مفتاح صُحِّح في نموذج يبقى خاطئاً في الآخرَين، وإحصاءات سؤال جُمعت على نسخة تصف سؤالاً لا يستخدمه أحد. هذا هو نمط <em>item banking</em> المعتمد في تطوير الاختبارات، ومعه قاعدتان: بنك بثلاثة أضعاف طول النموذج على الأقل، وتتبّع تعرّض السؤال عبر النماذج.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-12</span><p class="t">تعدّد المستأجرين مُفعَّل فعلياً</p></div>
+    <dl>
+      <dt>السياق</dt><dd><code>MultiTenancyConsts.IsEnabled</code> كان <code>true</code> بينما <strong>لا كيان واحد</strong> يطبّق <code>IMultiTenant</code>. المستخدمون كانوا مفصولين والبيانات مشتركة.</dd>
+      <dt>القرار</dt><dd>كل كيانات التقييم السبعة عشر تطبّق <code>IMultiTenant</code>، والفلاتر تعمل على مستوى ABP.</dd>
+      <dt>السبب</dt><dd>هذا لم يكن نقصاً بل تسريباً: مركز تدريب كان سيرى بنك أسئلة مركز آخر. لا يوجد إصلاح لاحق أرخص من إصلاحه قبل أول مستأجر ثانٍ.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-13</span><p class="t">مفتاح الإجابة لا يغادر الخادم</p></div>
+    <dl>
+      <dt>السياق</dt><dd><code>QuestionDto</code> كان يشحن <code>CorrectAnswer</code> و<code>CodeExpectedOutput</code> إلى المتصفّح. منع «فحص العنصر» فوق ذلك بلا معنى: الإجابة كانت في الاستجابة أصلاً.</dd>
+      <dt>القرار</dt><dd><code>TakerQuestionProjector</code> هو المسار الوحيد من سؤال إلى الشبكة أثناء الامتحان، ويجرّد كل نوع صراحةً. النوع غير المعروف لا يكشف إلا نص السؤال — يفشل مغلقاً.</dd>
+      <dt>السبب</dt><dd>الأمن بالتصميم لا بالطبقات: نوع سؤال جديد لا يستطيع تسريب مفتاحه بالسهو، لأن الإسقاط يرفض ما لا يعرفه بدل أن يمرّره.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-14</span><p class="t">حذف AutoMapper بالكامل</p></div>
+    <dl>
+      <dt>السياق</dt><dd>ABP 10 أسقط AutoMapper من نواته. إضافته لإصلاح البناء أظهرت ثغرة عالية الخطورة (GHSA-rvv3-g6hj-g44x) ورخصة تجارية.</dd>
+      <dt>القرار</dt><dd>حذفها، وكتابة ثلاث تطبيقات <code>IObjectMapper</code> يدوياً.</dd>
+      <dt>السبب</dt><dd>التحويل بين DTO وكيان ليس مشكلة تستحق تبعية بثغرة ورخصة. الكود اليدوي أطول بأسطر وأوضح في التتبّع، ولا يُفاجئنا بحقل نُقل ضمناً.</dd>
+    </dl>
+  </div>
+
+  <div class="adr">
+    <div class="adr-h"><span class="adr-id">ADR-15</span><p class="t">هوية المستأجر سياق مستقل</p></div>
+    <dl>
+      <dt>السياق</dt><dd>أي جهة تستخدم المنتج تريد اسمها وشعارها. السؤال كان: حقل في الإعدادات، أم كيان، أم محرّر ثيم كامل؟</dd>
+      <dt>القرار</dt><dd>سياق <code>Tenancy</code> مستقل بثلاثة حقول جوهرية: اسم، شعار، لون أساسي واحد يغذّي طبقة الـ tokens التي تشتق منه بقية درجاتها.</dd>
+      <dt>السبب</dt><dd>محرّر ثيم كامل منتج بذاته، وأكثر ما يقدّمه هو وسيلة لجعل لوحة ألوان متاحة غير متاحة. ولون واحد يكفي لأن المرشّح يحتاج أن يتعرّف على الجهة، لا أن يعجب بها. وهو منفصل عن <code>Catalog</code> لأن تغيير الشعار لا شأن له بالجدول الذي يحمل شجرة الكفاءات.</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="s7">
+  <div class="sec-head"><span class="sec-num">07</span><h3>حزمة التقنيات</h3></div>
+
+  <p>الإصدارات أدناه مُتحقَّق منها من السجلات الرسمية بتاريخ هذه الوثيقة، لا من الذاكرة.</p>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>المكوّن</th><th class="num">الحالي</th><th class="num">المستهدف</th><th>الحالة</th></tr></thead>
+    <tbody>
+      <tr><td>.NET</td><td class="num">9.0</td><td class="num">10.0.11 LTS</td><td><span class="chip ok">مُنجَز</span></td></tr>
+      <tr><td>ABP Framework</td><td class="num">9.1</td><td class="num">10.6.0</td><td><span class="chip ok">مُنجَز</span> إصداران رئيسيان</td></tr>
+      <tr><td>Angular</td><td class="num">19.2</td><td class="num">22.1.4</td><td><span class="chip ok">مُنجَز</span> بلا مناطق (zoneless)</td></tr>
+      <tr><td>EF Core</td><td class="num">9.0</td><td class="num">10.0.11</td><td><span class="chip warn">ترقية</span></td></tr>
+      <tr><td>Bootstrap</td><td class="num">—</td><td class="num">5.3.8</td><td><span class="chip ok">مُنجَز</span> بديل LeptonX</td></tr>
+      <tr><td>Node.js</td><td class="num">—</td><td class="num">24.20 LTS</td><td><span class="chip acc">جديد</span></td></tr>
+      <tr><td>Serilog.AspNetCore</td><td class="num">—</td><td class="num">10.0.0</td><td><span class="chip acc">جديد</span> تسجيل مُهيكل</td></tr>
+      <tr><td>MailKit</td><td class="num">—</td><td class="num">4.17.0</td><td><span class="chip acc">جديد</span> بديل NullEmailSender</td></tr>
+      <tr><td>FluentValidation</td><td class="num">—</td><td class="num">12.1.1</td><td><span class="chip acc">جديد</span> تحقق من المدخلات</td></tr>
+      <tr><td>AutoMapper</td><td class="num">—</td><td class="num">—</td><td><span class="chip crit">محذوف</span> ADR-14</td></tr>
+      <tr><td>حزم ABP للواجهة</td><td class="num">—</td><td class="num">ng.core · ng.oauth فقط</td><td><span class="chip warn">مُقلَّص</span> الباقي يثبّت Angular على 20</td></tr>
+      <tr><td>Playwright</td><td class="num">—</td><td class="num">اختبارات الواجهة</td><td><span class="chip ok">مُنجَز</span> 66 اختباراً</td></tr>
+      <tr><td>SQL Server</td><td class="num">—</td><td class="num">بلا تغيير</td><td><span class="chip ok">مستقر</span> ADR-09</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="rail warn">
+    <p class="t">لماذا .NET 10 وليس 11؟</p>
+    <p>‏.NET 11 متاح حالياً كـ <code>preview.7</code> فقط، بدعم preview لا إنتاجي. أما 10.0.11 فهو LTS في الدعم الفعّال. اختيار preview لنظام سيحمل بيانات تقييم حقيقية ليس تحديثاً بل مخاطرة بلا مقابل. <strong>«الأحدث» في الإنتاج تعني أحدث LTS مستقر.</strong></p>
+  </div>
+
+  <h4>خيارات Angular الحديثة المعتمدة</h4>
+  <ul>
+    <li><strong>Standalone components</strong> بلا <code>NgModule</code> — النمط الافتراضي منذ Angular 19.</li>
+    <li><strong>Signals</strong> لإدارة الحالة المحلية، وخصوصاً حالة المؤقّت وحفظ الإجابات.</li>
+    <li><strong>Zoneless change detection</strong> — أداء أفضل على شاشة الامتحان ذات المؤقّت المستمر.</li>
+    <li><strong>صيغة التحكّم الجديدة</strong> <code>@if</code> و<code>@for</code> و<code>@switch</code> بدل <code>*ngIf</code> و<code>*ngFor</code>.</li>
+    <li><strong>‏<code>inject()</code></strong> بدل حقن المُنشئ.</li>
+    <li><strong>Lazy loading</strong> على مستوى المسار لكل وحدة وظيفية.</li>
+  </ul>
+
+  <div class="rail crit">
+    <p class="t">تحذير: الكود المولَّد سابقاً بصيغة قديمة</p>
+    <p>مكوّنات Angular المكتوبة في محادثات التصميم تستخدم <code>*ngIf</code> و<code>*ngFor</code>، وفيها عدم تطابق بين <code>durationInMinutes</code> في النموذج و<code>timeLimitInMinutes</code> في الـ DTO. صالحة كمرجع للبنية، <strong>لا للنسخ المباشر.</strong></p>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="s8">
+  <div class="sec-head"><span class="sec-num">08</span><h3>خطة التنفيذ</h3></div>
+
+  <p>خمس مراحل على عشرة أسابيع. كل مرحلة لها بوابة خروج — لا تبدأ التالية قبل اجتيازها. الترتيب مقصود: المحرّك قبل الواجهة، لأن بناء شاشات فوق منطق مكسور يضاعف العمل.</p>
+
+  <div class="phase">
+
+    <div class="phase-row">
+      <div class="phase-dot"></div>
+      <div class="phase-body">
+        <div class="h"><p class="t">المرحلة 0 — التمهيد والترقية</p><span class="w">الأسبوع 1</span></div>
+        <p>لا ميزات. إزالة العوائق التي تمنع العمل أصلاً.</p>
+        <ul>
+          <li>تثبيت .NET 10 SDK — البناء حالياً يفشل على جهاز التطوير لغياب SDK مناسب.</li>
+          <li>ترقية ABP إلى 10.6 و EF Core إلى 10 و Angular إلى 22.</li>
+          <li>نقل الأسرار من <code>appsettings.json</code> إلى User Secrets وإصلاح <code>UploadRootPath</code> الفارغ.</li>
+          <li>تحديث <code>docs/use-cases.md</code> بالقائمة النهائية وحذف «خطط التدريب».</li>
+          <li>إضافة RTL كمتطلَّب صريح في <code>requirements.md</code>.</li>
+        </ul>
+        <span class="gate"><b>بوابة الخروج:</b> الحل يُبنى ويعمل، والتوثيق يطابق الواقع.</span>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-dot"></div>
+      <div class="phase-body">
+        <div class="h"><p class="t">المرحلة 1 — إصلاح المحرّك</p><span class="w">الأسبوعان 2–3</span></div>
+        <p>الأعطال التي تمنع النظام من أداء وظيفته الأساسية. أعلى أولوية في المشروع كله.</p>
+        <ul>
+          <li>ADR-01: توحيد النموذج وحذف مسار <code>Trainee</code> مع ترحيل البيانات.</li>
+          <li>ADR-02: جلسة الامتحان قصيرة الأجل — إصلاح تدفق المرشّح المكسور.</li>
+          <li>ADR-03: إعادة هيكلة التصحيح إلى <code>IQuestionGrader</code>.</li>
+          <li>E4-02: معاقبة الخيارات الخاطئة — إغلاق ثغرة الدرجة الكاملة.</li>
+          <li>E4-04: إعادة حساب النتيجة بعد المراجعة اليدوية.</li>
+          <li>ADR-04: نسبة النجاح والدرجات العشرية.</li>
+          <li>‏<code>[Authorize]</code> على مستوى الصنف لكل خدمة تطبيق بلا استثناء.</li>
+        </ul>
+        <span class="gate"><b>بوابة الخروج:</b> اختبار تكامل يقطع الرحلة كاملة — رابط ← دخول ← إجابة ← تسليم ← تصحيح آلي ← مراجعة يدوية ← نتيجة نهائية — وينجح.</span>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-dot"></div>
+      <div class="phase-body">
+        <div class="h"><p class="t">المرحلة 2 — إكمال منطق الأعمال</p><span class="w">الأسبوع 4</span></div>
+        <p>ما ينقص لتكون الرحلة صالحة للاستخدام الحقيقي لا للعرض فقط.</p>
+        <ul>
+          <li>ADR-05: التسليم التلقائي بمساريه — المتصفّح والعامل الخلفي.</li>
+          <li>E3-03: الحفظ التدريجي للإجابات.</li>
+          <li>E3-09: منع المحاولات المتزامنة بقيد على قاعدة البيانات.</li>
+          <li>E2-03: إرسال البريد عبر MailKit بقالب ثنائي اللغة.</li>
+          <li>ADR-06: الانتقال إلى BLOB Storing.</li>
+          <li>إصلاحات الجودة: <code>Clock.Now</code> بدل <code>DateTime.Now</code>، معالجة N+1 في التصحيح، تجميع لوحات النتائج على مستوى قاعدة البيانات.</li>
+          <li>تحقق FluentValidation على كل DTO.</li>
+        </ul>
+        <span class="gate"><b>بوابة الخروج:</b> محاولة تُسلَّم تلقائياً بعد إغلاق المتصفّح، والبريد يصل فعلياً.</span>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-dot"></div>
+      <div class="phase-body">
+        <div class="h"><p class="t">المرحلة 3 — الواجهة</p><span class="w">الأسابيع 5–8</span></div>
+        <p>أكبر فجوة في المشروع: الواجهة اليوم قالب فارغ بلا شاشة واحدة.</p>
+
+        <h5>3أ · الأساس — الأسبوع 5</h5>
+        <ul>
+          <li>ADR-07: حذف تبعيات LeptonX.</li>
+          <li>نظام توكنز ثلاثي الطبقات مع دعم RTL والوضع الداكن.</li>
+          <li>Layout: Navbar وSidebar مبني على <code>getGrantedPolicy</code> ومبدّل لغة وbreadcrumbs.</li>
+          <li>توليد الـ proxies من الـ Backend.</li>
+        </ul>
+
+        <h5>3ب · شاشات الإدارة — الأسبوع 6</h5>
+        <ul>
+          <li>الامتحانات: قائمة وتحرير وجدولة.</li>
+          <li>بناء الأسئلة بأنواعها الستة ورفع الوسائط.</li>
+          <li>المرشّحون وتوليد الروابط وإرسالها.</li>
+        </ul>
+
+        <h5>3ج · شاشة أداء الامتحان — الأسبوع 7</h5>
+        <p>الشاشة الأعلى مخاطرة في المشروع: المرشّح يستخدمها مرة واحدة تحت ضغط الوقت، وأي خلل فيها يكلّف مرشّحاً حقيقياً درجته.</p>
+        <ul>
+          <li>شاشة تمهيدية، ثم مؤقّت مزدوج مبني على وقت الخادم.</li>
+          <li>حفظ تدريجي بمؤشّر مرئي، وخريطة أسئلة، ورفع ملفات.</li>
+          <li>وصولية كاملة: <code>aria-live</code> للمؤقّت، تشغيل بلوحة المفاتيح، تباين مطابق.</li>
+        </ul>
+
+        <h5>3د · المراجعة والنتائج — الأسبوع 8</h5>
+        <ul>
+          <li>طابور المراجعة اليدوية وشاشة التصحيح مع التعليقات.</li>
+          <li>لوحات النتائج بالترشيح وترقيم الصفحات.</li>
+          <li>صفحة نتيجة المرشّح.</li>
+        </ul>
+        <span class="gate"><b>بوابة الخروج:</b> كل شاشة تجتاز تدقيق <code>web-design-guidelines</code> وفحص RTL، وشاشة الامتحان تجتاز WCAG 2.2 AA.</span>
+      </div>
+    </div>
+
+    <div class="phase-row">
+      <div class="phase-dot"></div>
+      <div class="phase-body">
+        <div class="h"><p class="t">المرحلة 4 — التصلّب والتسليم</p><span class="w">الأسبوعان 9–10</span></div>
+        <p>المشروع اليوم يحوي خمسة ملفات اختبار كلها عيّنات القالب — أي صفر تغطية فعلية.</p>
+        <ul>
+          <li>اختبارات وحدة لكل مصحّح ولخدمة الروابط ولإعادة حساب النتيجة.</li>
+          <li>اختبارات تكامل للرحلة الكاملة ولمسارات الفشل.</li>
+          <li>اختبارات واجهة عبر Playwright لشاشة الامتحان.</li>
+          <li>Docker Compose وGitHub Actions.</li>
+          <li>مراجعة أمنية: معدّل الطلبات على نقاط الرمز، رؤوس الأمان، تدقيق الصلاحيات.</li>
+        </ul>
+        <span class="gate"><b>بوابة الخروج:</b> تغطية 70٪+ على طبقة التطبيق، والرحلة الكاملة خضراء في CI.</span>
+      </div>
+    </div>
+
+  </div>
+
+  <h4>تسلسل الاعتماديات</h4>
+  <figure>
+    <div class="dia">
+<pre class="mermaid">
+graph LR
+    P0[المرحلة 0<br/>ترقية] --> P1[المرحلة 1<br/>إصلاح المحرك]
+    P1 --> P2[المرحلة 2<br/>منطق الأعمال]
+    P1 --> P3A[3أ · أساس الواجهة]
+    P3A --> P3B[3ب · شاشات الإدارة]
+    P2 --> P3C[3ج · شاشة الامتحان]
+    P3A --> P3C
+    P3B --> P3D[3د · المراجعة والنتائج]
+    P3C --> P3D
+    P3D --> P4[المرحلة 4<br/>التصلب والتسليم]
+    P2 --> P4
+</pre>
+    </div>
+    <figcaption>‏3أ يمكن أن يبدأ بالتوازي مع المرحلة 2 فور اكتمال المرحلة 1 — الواجهة الأساسية لا تعتمد على منطق الأعمال المتبقي. هذا يوفّر أسبوعاً كاملاً إن توفّر شخصان.</figcaption>
+  </figure>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="s9">
+  <div class="sec-head"><span class="sec-num">09</span><h3>المخاطر والمسائل المفتوحة</h3></div>
+
+  <div class="tw">
+  <table>
+    <thead><tr><th>الخطر</th><th>الأثر</th><th>المعالجة</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>ترقية ABP من 9.1 إلى 10.6 تكسر تخصيصات قائمة</td>
+        <td><span class="chip ok">انتهى</span></td>
+        <td>تمّت. كسرت فعلاً: ABP 10 أسقط AutoMapper (ADR-14)، وحزم الواجهة تثبّت Angular على 20 فحُذفت.</td>
+      </tr>
+      <tr>
+        <td>بنك أسئلة صغير يجعل الخلط مسرحية — مرشّحان يجلسان ورقة شبه متطابقة</td>
+        <td><span class="chip warn">متوسط</span></td>
+        <td>تحذير عند النشر إذا كان البنك أقل من ثلاثة أضعاف طول النموذج، وثانٍ عند تعرّض سؤال لعدد كبير.</td>
+      </tr>
+      <tr>
+        <td>ترحيل بيانات <code>Trainee</code> إلى <code>Candidate</code> يفقد سجلات</td>
+        <td><span class="chip crit">مرتفع</span></td>
+        <td>سكربت ترحيل مع نسخة احتياطية وتحقق بالعدّ قبل حذف الجداول القديمة.</td>
+      </tr>
+      <tr>
+        <td>شاشة الامتحان أعقد من تقدير أسبوع واحد</td>
+        <td><span class="chip warn">متوسط</span></td>
+        <td>بناؤها كأول شاشة في المرحلة 3 لا آخرها، لكشف المفاجآت مبكراً.</td>
+      </tr>
+      <tr>
+        <td>تصميم <code>angular-bootstrap_design.zip</code> غير مطابق للاحتياج الفعلي</td>
+        <td><span class="chip warn">متوسط</span></td>
+        <td>مراجعته مقابل شاشات المرحلة 3 قبل بدء 3أ. الملف مرفوع في مساحة العمل ولم يُطبَّق بعد.</td>
+      </tr>
+      <tr>
+        <td>تنفيذ الكود فعلياً بدل مقارنة المخرجات</td>
+        <td><span class="chip neutral">مؤجّل</span></td>
+        <td>قيد صريح في المتطلبات. يحتاج بيئة تنفيذ معزولة — مشروع مستقل خارج هذه الخطة.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4>مسائل حُسمت منذ v1.0</h4>
+  <ul>
+    <li><strong>هوية بصرية:</strong> <span class="chip ok">محسوم</span> بُنيت من الصفر — نظام tokens ثلاثي الطبقات مع وضع داكن. والأهم: الهوية ليست هويتنا بل هوية كل مستأجر، عبر <code>TenantBranding</code> (ADR-15).</li>
+    <li><strong>اللغة الافتراضية:</strong> <span class="chip ok">محسوم</span> العربية افتراضاً، تُغيَّر من الإعدادات. لا تُشتق من المتصفّح: مستخدم عربي على نظام إنجليزي شائع، والاشتقاق يخطئ أكثر مما يصيب.</li>
+    <li><strong>وجهة النشر:</strong> <span class="chip warn">مفتوح</span> ما زال بلا قرار. وقد ازداد وزناً: القابلية للتنصيب داخل شبكة الجهة صارت ميزة تنافسية لا تفصيلاً تشغيلياً — كل المنصّات المنافسة سحابية حصراً.</li>
+  </ul>
+
+  <h4>مسائل جديدة تحتاج قراراً</h4>
+  <ul>
+    <li><strong>أقسام الامتحان:</strong> <span class="chip ok">حُسم ونُفِّذ</span> كيان <code>ExamSection</code> بمؤقّت وحدّ أدنى لكل قسم، وعلَم «يجب اجتيازه» الذي يُرسِب الامتحان كلّه. ومعه القطع المشتركة: نص أو صوت أو فيديو تُبنى عليه عدّة أسئلة. الشاشتان في <code>/exams/:id/structure</code>.</li>
+    <li><strong>حدّ التعرّض:</strong> ٥٠٠ عرض عتبة مؤقتة يجب أن يضبطها المستأجر — امتحان داخلي لعشرين موظفاً غير امتحان عام لآلاف.</li>
+    <li><strong>تنفيذ الكود:</strong> <span class="chip neutral">مؤجّل</span> بلا تغيير. صار أقل إلحاحاً بعد اتساع النطاق: البرمجة عمودٌ واحد من عدّة، لا المنتج.</li>
+  </ul>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="s10">
+  <div class="sec-head"><span class="sec-num">10</span><h3>ما شُحن فعلاً</h3></div>
+
+  <p class="lede">سجل ما دخل المستودع، لا ما خُطِّط له. مُحدَّث بتاريخ <strong>2026-08-29</strong> عند <strong>187 اختباراً أخضر</strong> (10 نطاق · 108 تطبيق · 69 تكامل).</p>
+
+  <div class="rail crit">
+    <p class="t">النمط الذي تكرّر أربع مرات</p>
+    <p>خدمة تطبيق مكتملة <strong>بلا مسار HTTP ولا شاشة</strong> تُقرأ في أي جرد كأنها «منجزة». حدث هذا مع <code>AssignmentAppService</code>، ثم <code>ReviewAppService</code>، ثم بنك الأسئلة المشترك الذي لم تستدعِ قاعدته أي جهة، ثم <code>AssessmentMediaAppService</code> — كل صورة سؤال وكل مقطع استماع كان يعيد 404. الدرس عملي: <em>لا يُعدّ شيء منجزاً قبل أن يصل إليه إنسان من الواجهة.</em> أربعة روابط في القائمة الجانبية كانت تسقط على لوحة المعلومات لغياب المسار.</p>
+  </div>
+
+  <h4>ما صار يعمل</h4>
+  <div class="grid">
+    <div class="card">
+      <p class="t">النموذج المسمّى يصل إلى الورقة</p>
+      <p class="d">لم يكن أي كود يقرأ النموذج عند بدء المحاولة: كل جلوس كان يسحب ورقة عشوائية. الآن <code>Assignment.ExamFormId</code> يختار الورقة و<code>Attempt.ExamFormId</code> يسجّل ما قُدِّم فعلاً — لأن النموذج قد يُؤرشَف بعد أن يجلس له أحد.</p>
+    </div>
+    <div class="card">
+      <p class="t">الكتالوج والبنك المشترك</p>
+      <p class="d">المجالات والمستويات والموضوعات كانت جداول بلا شاشة، فكان <code>CategoryId</code> فارغاً دائماً، وقاعدة السحب تنهار إلى «أسئلة هذا الامتحان وحده». شاشة واحدة ناقصة كانت تُعطّل البنك والمخطّط وتحليل الموضوعات معاً.</p>
+    </div>
+    <div class="card">
+      <p class="t">النتائج</p>
+      <p class="d">صلاحيات <code>Results.*</code> كانت موجودة وخلفها لا شيء. مركز يرسل اختباراً لأربعين طالباً، يُصحَّح آلياً، ثم لا شاشة تعرض درجة واحدة. الآن: كشف كامل، وملخّص للفوج، وتصدير CSV، وتفصيل بالموضوع، وتحليل جودة الأسئلة.</p>
+    </div>
+    <div class="card">
+      <p class="t">البنية: أقسام وقطع</p>
+      <p class="d">القسم بمؤقّته وحدّه الأدنى، والقطعة (نص قراءة أو مقطع صوتي أو فيديو) تُبنى عليها عدّة أسئلة يراها الممتحَن مرة واحدة. هذا ما كان ينقص ليكون امتحان اللغة امتحان لغة.</p>
+    </div>
+    <div class="card">
+      <p class="t">الشُّعَب</p>
+      <p class="d">شعبة تحت مستوى، وكشفها يُحرَّر دفعة واحدة لأن المنسّق يقرأ من سجل لا يتذكّر من تغيّر. المستوى هو ما يجعلها جزءاً من المنهج لا قائمة أسماء.</p>
+    </div>
+    <div class="card">
+      <p class="t">هوية كل جهة</p>
+      <p class="d">اسم الجهة وشعارها في الترويسة — <em>وفي الشاشة التي يفتح عليها الممتحَن رابطه</em>، وهي الأهم: من يفتح رابط اختبار لا تربطه بنا علاقة ولا سبب يجعله يثق باسم لم يسمع به.</p>
+    </div>
+  </div>
+
+  <h4>عيوب كشفتها اختبارات التكامل وحدها</h4>
+  <div class="rail warn">
+    <p class="t">ثلاثة، ولم يكن أي منها ظاهراً في طبقة واحدة</p>
+    <ul>
+      <li><strong>جلسة الامتحان تنكسر بعد البدء.</strong> <code>StartAsync</code> لم يكن يُصدر بطاقة للمحاولة التي أنشأها، فكل نداء بعد البدء يبحث عن محاولة <code>00000000-…</code>. اختبارات المتصفّح تُوقِف الطلبات عند حدود البروتوكول فلم تكن تراه.</li>
+      <li><strong>تسريب مفتاح الإجابة.</strong> مسار النموذج المسمّى كُتب بيده ونسي ترتيب الخيارات، وسؤال المطابقة بلا ترتيب مسجَّل يصل بـ<code>left[i]</code> مقابل <code>right[i]</code> — أي مفتاح الإجابة داخل ما يُسلَّم للممتحَن. الحلّ: إسقاط واحد يمرّ به المساران.</li>
+      <li><strong>اختبار متذبذب.</strong> فحص كان يبحث عن «42» في الحمولة المُسلسَلة كلها، فيفشل كلما احتوى معرّف السؤال العشوائي هذين الرقمين — نحو مرة من كل ثلاث.</li>
+    </ul>
+  </div>
+
+  <h4>ما زال مفتوحاً</h4>
+  <ul>
+    <li><strong>تدوير النماذج (spiralling):</strong> اختيار الورقة يدوي عند الإرسال. التدوير التلقائي بين النماذج المنشورة هو ما يحفظ قابلية المقارنة عبر الدفعات، ولم يُنفَّذ بعد.</li>
+    <li><strong>حدّ التعرّض:</strong> ما زال ثابتاً في الكود ويجب أن يضبطه المستأجر.</li>
+    <li><strong>إدارة المستخدمين:</strong> <code>/users</code> آخر رابط بلا مسار.</li>
+    <li><strong>تنفيذ الكود:</strong> <span class="chip neutral">مؤجّل</span> بلا تغيير.</li>
+  </ul>
+</section>
+
+    </main>
+
+    <nav class="toc" aria-label="فهرس الوثيقة">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#s1"><span class="n">01</span> الرؤية وحالة الأعمال</a></li>
+        <li><a href="#s2"><span class="n">02</span> الأدوار والصلاحيات</a></li>
+        <li><a href="#s3"><span class="n">03</span> حالات الاستخدام</a></li>
+        <li><a href="#s4"><span class="n">04</span> قصص المستخدم</a></li>
+        <li><a href="#s5"><span class="n">05</span> مخططات التسلسل</a></li>
+        <li><a href="#s6"><span class="n">06</span> القرارات المعمارية</a></li>
+        <li><a href="#s7"><span class="n">07</span> حزمة التقنيات</a></li>
+        <li><a href="#s8"><span class="n">08</span> خطة التنفيذ</a></li>
+        <li><a href="#s9"><span class="n">09</span> المخاطر والمسائل</a></li>
+        <li><a href="#s10"><span class="n">10</span> ما شُحن فعلاً</a></li>
+      </ol>
+    </nav>
+  </div>
+
+  <footer>
+    <p>وثيقة تأسيس نظام إدارة التدريب والاختبارات · الإصدار 1.0 · مبنية على قراءة المستودعين <code>InternshipManagementSystem</code> و<code>InternshipManagementSystemUI</code> ومشروع <code>Quizbee</code> المرجعي ومحادثات التصميم السابقة. الإصدارات التقنية متحقَّق منها من السجلات الرسمية.</p>
+  </footer>
+
+</div>
+</div>
+
+<script>
+(function(){
+  var prog=document.getElementById('prog');
+  var secs=[].slice.call(document.querySelectorAll('section[id]'));
+  var links={};
+  [].forEach.call(document.querySelectorAll('.toc a'),function(a){
+    links[a.getAttribute('href').slice(1)]=a;
+  });
+  function onScroll(){
+    var h=document.documentElement;
+    var max=h.scrollHeight-h.clientHeight;
+    prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+    var cur=null;
+    for(var i=0;i<secs.length;i++){
+      if(secs[i].getBoundingClientRect().top<=120) cur=secs[i].id;
+    }
+    for(var k in links) links[k].classList.toggle('on',k===cur);
+  }
+  addEventListener('scroll',onScroll,{passive:true});
+  onScroll();
+})();
+</script>
