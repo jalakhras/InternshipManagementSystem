@@ -23,7 +23,35 @@ public partial class InternshipManagementSystemDbContext :
     IIdentityDbContext,
     ITenantManagementDbContext
 {
-    /* Add DbSet properties for your Aggregate Roots / Entities here. */
+    #region Assessment
+
+    // Declared explicitly rather than relying on the model alone: ABP registers
+    // default repositories from the DbSet properties it finds, so an entity that is
+    // only configured in OnModelCreating gets tables but no IRepository<T> — which
+    // then fails at resolve time, not at build time.
+
+    public DbSet<Assessment.Catalog.CategorySet> CategorySets { get; set; }
+    public DbSet<Assessment.Catalog.Category> Categories { get; set; }
+    public DbSet<Assessment.Catalog.Level> Levels { get; set; }
+    public DbSet<Assessment.Catalog.Topic> Topics { get; set; }
+
+    public DbSet<Assessment.Exams.Exam> Exams { get; set; }
+    public DbSet<Assessment.Exams.QuestionGroup> QuestionGroups { get; set; }
+    public DbSet<Assessment.Exams.Question> Questions { get; set; }
+    public DbSet<Assessment.Exams.ExamBlueprintRule> ExamBlueprintRules { get; set; }
+
+    public DbSet<Assessment.People.Candidate> Candidates { get; set; }
+    public DbSet<Assessment.People.CandidateGroup> CandidateGroups { get; set; }
+    public DbSet<Assessment.People.CandidateGroupMember> CandidateGroupMembers { get; set; }
+
+    public DbSet<Assessment.Delivery.Assignment> Assignments { get; set; }
+    public DbSet<Assessment.Delivery.ExamLink> ExamLinks { get; set; }
+    public DbSet<Assessment.Delivery.Attempt> Attempts { get; set; }
+    public DbSet<Assessment.Delivery.AttemptQuestion> AttemptQuestions { get; set; }
+    public DbSet<Assessment.Delivery.Answer> Answers { get; set; }
+    public DbSet<Assessment.Delivery.IntegritySignal> IntegritySignals { get; set; }
+
+    #endregion Assessment
 
     #region Entities from the modules
 

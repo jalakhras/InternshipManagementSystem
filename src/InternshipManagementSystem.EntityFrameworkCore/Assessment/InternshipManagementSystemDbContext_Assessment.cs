@@ -202,6 +202,15 @@ public partial class InternshipManagementSystemDbContext
             // The timeout worker scans for unsubmitted attempts past their deadline.
             b.HasIndex(x => new { x.IsSubmitted, x.DeadlineAt });
 
+            // At most one attempt in progress per link. The service resumes a running
+            // attempt rather than creating a second, but a double-click or a retried
+            // request can race past that check — two concurrent attempts would split a
+            // taker's answers across papers and lose half their work. Enforced here so
+            // the database refuses it regardless of what any caller does.
+            b.HasIndex(x => x.ExamLinkId)
+                .IsUnique()
+                .HasFilter("[IsSubmitted] = 0 AND [ExamLinkId] IS NOT NULL");
+
             // The manual-review queue reads exactly this predicate.
             b.HasIndex(x => new { x.TenantId, x.NeedsManualReview, x.IsSubmitted });
 
