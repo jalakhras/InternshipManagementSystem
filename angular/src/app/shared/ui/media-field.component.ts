@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { MediaService } from '../../core/media.service';
 import { RestService } from '@abp/ng.core';
 import { TranslateService } from '../../core/translate.service';
 
@@ -137,6 +138,8 @@ export class MediaFieldComponent {
 
   readonly t = inject(TranslateService).t;
 
+  private readonly media = inject(MediaService);
+
   readonly blobName = input<string | undefined>();
   readonly mediaType = input<string | undefined>();
 
@@ -159,8 +162,16 @@ export class MediaFieldComponent {
     return this.mediaType() === 'video';
   }
 
-  url(): string {
-    return `/api/assessment/media/${this.blobName()}`;
+  /**
+   * The preview, fetched with the signed-in caller's token.
+   *
+   * Not a plain path: the API is a different origin from the application, and a
+   * browser will not attach an Authorization header to an `<img src>` however
+   * much the page would like it to. Both of those made every preview in the
+   * product a broken image.
+   */
+  url(): string | null {
+    return this.media.objectUrl(this.blobName())();
   }
 
   accept(): string {

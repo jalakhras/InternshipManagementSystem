@@ -1,0 +1,42 @@
+<astro-page-header
+  [title]="t('::Nav:Assignments')"
+  [description]="t('::Assignment:Picker:Lede')" />
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <!-- Nothing published is the ordinary state of a new account, and it has a
+       next step rather than an apology. -->
+  <div class="state">
+    <i class="bi bi-send" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::Assignment:Picker:NonePublished') }}</p>
+    <p class="state__text">{{ t('::Assignment:Picker:NonePublishedNote') }}</p>
+    <a class="btn btn-primary" routerLink="/exams">{{ t('::Nav:Exams') }}</a>
+  </div>
+} @else {
+  <ul class="exams">
+    @for (exam of items(); track exam.id) {
+      <li>
+        <a class="exam" [routerLink]="['/assignments', exam.id]">
+          <span class="exam__title">{{ exam.title }}</span>
+          <span class="exam__meta">
+            {{ t('::Form:Questions', exam.questionCount.toString()) }}
+            ·
+            {{ t('::Section:Minutes', exam.timeLimitInMinutes.toString()) }}
+          </span>
+          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+        </a>
+      </li>
+    }
+  </ul>
+}

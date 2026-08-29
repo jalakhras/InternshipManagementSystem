@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, Signal, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -6,13 +6,14 @@ import {
   AuthService,
   ConfigStateService,
   LanguageInfo,
-  PermissionService,
   SessionStateService,
 } from '@abp/ng.core';
 import { DirectionService, ThemePreference } from '../core/direction.service';
 import { TranslateService } from '../core/translate.service';
+import { permissionSignal } from '../core/permission.signal';
 import { NAVIGATION, NavItem, NavSection } from '../core/navigation';
 import { SettingsService } from '../core/api/settings.service';
+import { MediaService } from '../core/media.service';
 
 /**
  * The application shell: top bar, sidebar, content region.
@@ -32,11 +33,11 @@ import { SettingsService } from '../core/api/settings.service';
   styleUrl: './shell.component.scss',
 })
 export class ShellComponent {
-  private readonly permission = inject(PermissionService);
   private readonly session = inject(SessionStateService);
   private readonly config = inject(ConfigStateService);
   private readonly auth = inject(AuthService);
   private readonly settings = inject(SettingsService);
+  private readonly media = inject(MediaService);
 
   readonly dir = inject(DirectionService);
 
@@ -63,11 +64,7 @@ export class ShellComponent {
   );
 
   /** Their mark, when they have uploaded one. The drawn astrolabe stands in until then. */
-  readonly logoUrl = computed(() => {
-    const blob = this.settings.current()?.logoBlobName;
-
-    return blob ? `/api/assessment/media/${blob}` : null;
-  });
+  readonly logoUrl = computed(() => this.media.objectUrl(this.settings.current()?.logoBlobName)());
 
   readonly userMenuOpen = signal(false);
 
@@ -92,6 +89,24 @@ export class ShellComponent {
   );
 
   readonly currentLanguage = computed(() => this.dir.language());
+
+  /**
+   * Every policy the sidebar asks about, each as a signal.
+   *
+   * Built once here rather than looked up per render. The lookup itself is what
+   * had to change: `computed()` over `getGrantedPolicy()` has no dependencies —
+   * that call is a plain method and NAVIGATION is a constant — so in a zoneless
+   * application it evaluated during construction and never again. A user whose
+   * configuration had not landed yet saw a sidebar with nothing but Dashboard
+   * in it, permanently, until they reloaded.
+   */
+  private readonly granted = new Map<string, Signal<boolean>>(
+    NAVIGATION
+      .flatMap(section => section.items)
+      .map(item => item.permission)
+      .filter((policy): policy is string => !!policy)
+      .map(policy => [policy, permissionSignal(policy)] as const),
+  );
 
   /**
    * Sections with nothing the viewer may open are dropped entirely, rather than
@@ -136,7 +151,13 @@ export class ShellComponent {
   }
 
   private isVisible(item: NavItem): boolean {
-    return !item.permission || this.permission.getGrantedPolicy(item.permission);
+    if (!item.permission) {
+      return true;
+    }
+
+    // Reading the signal is what ties `sections` to the configuration, so the
+    // menu fills in the moment the answer arrives.
+    return this.granted.get(item.permission)?.() ?? false;
   }
 }
 

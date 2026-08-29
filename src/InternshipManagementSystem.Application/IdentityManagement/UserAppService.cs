@@ -112,6 +112,19 @@ namespace InternshipManagementSystem.IdentityManagement
         /// role with the held ones ticked, and what is ticked when they press save
         /// is what they mean.
         /// </para>
+        /// <para>
+        /// Guarded separately from editing. <c>Users.ManageRoles</c> existed,
+        /// appeared in the permission tree and was enforced nowhere — so anybody
+        /// who could correct a colleague's phone number could also tick Admin on
+        /// their own record. Deciding what an account may do is a different act
+        /// from maintaining its details, which is what the two permissions have
+        /// always claimed.
+        /// </para>
+        /// <para>
+        /// Checked only when the list actually differs. Saving a profile without
+        /// touching the roles must not require a permission the person does not
+        /// need, or the two permissions collapse back into one.
+        /// </para>
         /// </summary>
         private async Task SetRolesAsync(IdentityUser user, List<string> roles)
         {
@@ -121,6 +134,12 @@ namespace InternshipManagementSystem.IdentityManagement
                 .ToList();
 
             var held = await _userManager.GetRolesAsync(user);
+
+            if (!wanted.OrderBy(r => r).SequenceEqual(held.OrderBy(r => r)))
+            {
+                await AuthorizationService.CheckAsync(
+                    InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles);
+            }
 
             foreach (var role in held.Where(r => !wanted.Contains(r)))
             {

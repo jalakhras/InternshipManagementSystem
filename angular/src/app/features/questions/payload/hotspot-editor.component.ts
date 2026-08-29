@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
 import { TranslateService } from '../../../core/translate.service';
 import { MediaFieldComponent } from '../../../shared/ui/media-field.component';
+import { MediaService } from '../../../core/media.service';
 import { HotspotPayload, HotspotRegion, newId, readPayload, writePayload } from './payload.models';
 
 /**
@@ -150,6 +151,8 @@ import { HotspotPayload, HotspotRegion, newId, readPayload, writePayload } from 
   `,
 })
 export class HotspotEditorComponent {
+  private readonly media = inject(MediaService);
+
   readonly t = inject(TranslateService).t;
 
   readonly payload = input<string>('');
@@ -184,8 +187,14 @@ export class HotspotEditorComponent {
     });
   }
 
-  imageUrl(): string {
-    return `/api/assessment/media/${this.imageBlobName()}`;
+  /**
+   * The picture, fetched with the author's token.
+   *
+   * Null until it arrives. The template already guards on a blob name, and an
+   * empty src would draw a broken-image icon over the region editor.
+   */
+  imageUrl(): string | null {
+    return this.media.objectUrl(this.imageBlobName())();
   }
 
   setImage(media: { blobName?: string }): void {

@@ -93,9 +93,14 @@
 
       @if (userMenuOpen()) {
         <div class="user__menu" role="menu">
-          <a class="user__item" routerLink="/account/profile" role="menuitem" (click)="toggleUserMenu()">
-            <i class="bi bi-person" aria-hidden="true"></i>
-            {{ t('::MyProfile') }}
+          <!-- Removed rather than left pointing at nothing. ABP's account module
+               is deliberately not registered, so /account/profile fell through to
+               the dashboard: the menu offered a profile page that did not exist.
+               A missing item is honest; a dead one teaches people the product is
+               unreliable. -->
+          <a class="user__item" routerLink="/settings" role="menuitem" (click)="toggleUserMenu()">
+            <i class="bi bi-sliders" aria-hidden="true"></i>
+            {{ t('::Nav:Settings') }}
           </a>
           <button type="button" class="user__item" role="menuitem" (click)="logout()">
             <i class="bi bi-box-arrow-right astro-flip" aria-hidden="true"></i>

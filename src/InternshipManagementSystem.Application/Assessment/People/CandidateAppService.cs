@@ -19,7 +19,18 @@ namespace InternshipManagementSystem.Assessment.People;
 /// <summary>
 /// The people who sit exams, and the cohorts they belong to.
 /// </summary>
-[Authorize(InternshipManagementSystemPermissions.Candidates.Default)]
+/// <remarks>
+/// Signed in at class level, and each method states its own permission.
+/// <para>
+/// It used to demand <c>Candidates</c> here as well. ASP.NET combines a class
+/// and a method attribute with AND, not override — so a coordinator whose role
+/// was "manage the classes, do not touch the candidate records" passed the route
+/// guard, watched the screen mount, and had every request refused. The class
+/// attribute is what keeps this off the anonymous surface; the method attributes
+/// are what decide who may do what.
+/// </para>
+/// </remarks>
+[Authorize]
 public class CandidateAppService : ApplicationService, ICandidateAppService
 {
     private readonly IRepository<Candidate, Guid> _candidates;

@@ -52,11 +52,11 @@
 
           @if (stimulus.mediaUrl) {
             @if (stimulus.mediaType === 'audio') {
-              <audio class="stimulus__player" [src]="stimulus.mediaUrl" controls></audio>
+              <audio class="stimulus__player" [src]="src(stimulus.mediaUrl)" controls></audio>
             } @else if (stimulus.mediaType === 'video') {
-              <video class="stimulus__player" [src]="stimulus.mediaUrl" controls></video>
+              <video class="stimulus__player" [src]="src(stimulus.mediaUrl)" controls></video>
             } @else {
-              <img class="stimulus__image" [src]="stimulus.mediaUrl" [alt]="t('::Take:Stimulus')" />
+              <img class="stimulus__image" [src]="src(stimulus.mediaUrl)" [alt]="t('::Take:Stimulus')" />
             }
           }
 
@@ -71,11 +71,11 @@
 
         @if (q.mediaUrl) {
           @if (q.mediaType === 'audio') {
-            <audio class="question__media" [src]="q.mediaUrl" controls></audio>
+            <audio class="question__media" [src]="src(q.mediaUrl)" controls></audio>
           } @else if (q.mediaType === 'video') {
-            <video class="question__media" [src]="q.mediaUrl" controls></video>
+            <video class="question__media" [src]="src(q.mediaUrl)" controls></video>
           } @else {
-            <img class="question__media" [src]="q.mediaUrl" [alt]="t('::Take:QuestionImage')" />
+            <img class="question__media" [src]="src(q.mediaUrl)" [alt]="t('::Take:QuestionImage')" />
           }
         }
 

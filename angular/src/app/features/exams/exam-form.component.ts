@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { PermissionService } from '@abp/ng.core';
 
 import { CatalogService } from '../../core/api/catalog.service';
 import { CategoryDto, LevelDto } from '../../core/api/catalog.models';
@@ -14,6 +13,7 @@ import {
   PublishCheckDto,
 } from '../../core/api/assessment.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
+import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusChipComponent } from '../../shared/ui/status-chip.component';
@@ -37,7 +37,6 @@ export class ExamFormComponent {
   private readonly exams = inject(ExamService);
   private readonly catalog = inject(CatalogService);
   private readonly router = inject(Router);
-  private readonly permission = inject(PermissionService);
 
   readonly t = inject(TranslateService).t;
 
@@ -92,8 +91,12 @@ export class ExamFormComponent {
   });
 
   readonly isNew = computed(() => !this.id());
-  readonly canEdit = this.permission.getGrantedPolicy(P.Exams.Edit);
-  readonly canPublish = this.permission.getGrantedPolicy(P.Exams.Publish);
+  // Signals, not one-shot booleans. Read in a field initialiser the answer is
+  // whatever the configuration happened to hold during construction, and a
+  // component built before it lands captures false and keeps it — an author with
+  // every permission looking at a form with no Save button.
+  readonly canEdit = permissionSignal(P.Exams.Edit);
+  readonly canPublish = permissionSignal(P.Exams.Publish);
 
   readonly isPublished = computed(() => this.exam()?.status === ExamStatus.Published);
 

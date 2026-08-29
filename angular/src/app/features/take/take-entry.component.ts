@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 
+import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { ExamPreview } from './take.models';
@@ -31,6 +32,18 @@ export class TakeEntryComponent {
   private readonly router = inject(Router);
 
   readonly t = inject(TranslateService).t;
+
+
+  /** The organisation's mark, at the API's origin rather than this app's. */
+
+  src(url: string | null | undefined): string | null {
+
+    return this.media.absolute(url);
+
+  }
+
+
+  private readonly media = inject(MediaService);
 
   readonly token = input.required<string>();
 

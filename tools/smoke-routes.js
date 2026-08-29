@@ -86,6 +86,13 @@ const ROUTES = [
   // activates — the failure this replaced was a 500 from a BLOB provider that
   // was never configured, which no amount of uploading would have fixed.
   ['GET', '/api/assessment/media/nobody/none.png', s => s === 404],
+
+  // Gone on purpose. Two legacy settings services wrote the same values as
+  // /api/assessment/settings and one of them had no [Authorize] at all, so
+  // anybody could rename the organisation without signing in. If either route
+  // answers again, a duplicate has come back.
+  ['GET', '/api/app/system-general-settings', s => s === 404],
+  ['GET', '/api/app/self-registration-setting', s => s === 404],
 ];
 
 (async () => {

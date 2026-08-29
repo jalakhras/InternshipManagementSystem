@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { RestService } from '@abp/ng.core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
 
 import { PagedResult } from './assessment.models';
 import {
@@ -22,8 +25,12 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ResultService {
   private readonly rest = inject(RestService);
+  private readonly http = inject(HttpClient);
 
   private readonly base = '/api/assessment/results';
+
+  /** The API's origin. RestService knows it; a raw HttpClient call does not. */
+  private readonly api = environment.apis.default.url.replace(/\/+$/, '');
 
   getList(input: ResultListRequest): Observable<PagedResult<ResultRow>> {
     return this.rest.request<void, PagedResult<ResultRow>>({
@@ -55,8 +62,15 @@ export class ResultService {
     });
   }
 
-  /** The same filters as the list, as a URL the browser can download directly. */
-  exportUrl(input: ResultListRequest): string {
+  /**
+   * The same rows as the list, as a file.
+   *
+   * Fetched rather than linked. A plain `<a href>` to this path resolved against
+   * the application instead of the API — different origins — and carried no
+   * token even when it did not, so the primary button on the results screen
+   * navigated the coordinator to the dashboard and lost their filters.
+   */
+  exportCsv(input: ResultListRequest): Observable<Blob> {
     const query = new URLSearchParams();
 
     for (const [key, value] of Object.entries(this.params(input))) {
@@ -65,7 +79,9 @@ export class ResultService {
       }
     }
 
-    return `${this.base}/export?${query.toString()}`;
+    return this.http.get(`${this.api}${this.base}/export?${query.toString()}`, {
+      responseType: 'blob',
+    });
   }
 
   private params(input: ResultListRequest): Record<string, unknown> {

@@ -1,5 +1,7 @@
 using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Identity;
+using Volo.Abp.SettingManagement;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Authorization.Permissions;
@@ -22,6 +24,7 @@ namespace InternshipManagementSystem
         private readonly IGuidGenerator _guidGenerator;
         private readonly IPermissionManager _permissionManager;
         private readonly IPermissionDefinitionManager _permissionDefinitions;
+        private readonly ISettingManager _settings;
 
         public InternshipManagementSystemDataSeedContributor(
             IdentityUserManager userManager,
@@ -31,8 +34,8 @@ namespace InternshipManagementSystem
             IUnitOfWorkManager unitOfWorkManager,
             IGuidGenerator guidGenerator,
             PermissionManager permissionManager,
-            IPermissionDefinitionManager permissionDefinitions)
-
+            IPermissionDefinitionManager permissionDefinitions,
+            ISettingManager settings)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -42,7 +45,7 @@ namespace InternshipManagementSystem
             _guidGenerator = guidGenerator;
             _permissionManager = permissionManager;
             _permissionDefinitions = permissionDefinitions;
-
+            _settings = settings;
         }
 
         public async Task SeedAsync(DataSeedContext context)
@@ -114,6 +117,15 @@ namespace InternshipManagementSystem
         /// own modules, and granting them from here would silently override a
         /// deliberate revocation.
         /// </para>
+        /// <para>
+        /// Each permission is granted <i>once</i>, and the names already offered
+        /// are remembered. Re-granting on every start looked idempotent and was
+        /// not: an administrator who deliberately took Results.Export away from
+        /// the admin role would find it back after the next deployment, with
+        /// nothing to explain why. ABP's store cannot tell "revoked" from "never
+        /// granted" — both are simply the absence of a row — so the record has to
+        /// be kept here.
+        /// </para>
         /// </summary>
         private async Task GrantAdminPanelAccessToAdminRoleAsync()
         {
@@ -127,15 +139,32 @@ namespace InternshipManagementSystem
 
             var ours = groups
                 .Where(group => group.Name == InternshipManagementSystemPermissions.GroupName)
-                .SelectMany(group => group.GetPermissionsWithChildren());
+                .SelectMany(group => group.GetPermissionsWithChildren())
+                .Select(permission => permission.Name)
+                .ToList();
 
-            foreach (var permission in ours)
+            var alreadyOffered = (await _settings.GetOrNullGlobalAsync(Settings.InternshipManagementSystemSettings.SeededPermissions) ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToHashSet();
+
+            var newlyDefined = ours.Where(name => !alreadyOffered.Contains(name)).ToList();
+
+            foreach (var name in newlyDefined)
             {
-                // Idempotent: seeding runs on every startup, and re-granting a
-                // permission the role already holds is a no-op.
-                await _permissionManager.SetForRoleAsync(adminRole.Name, permission.Name, true);
+                await _permissionManager.SetForRoleAsync(adminRole.Name, name, true);
+            }
+
+            if (newlyDefined.Count > 0)
+            {
+                // Written after granting, so a failure half way means the rest are
+                // offered again on the next run rather than lost.
+                await _settings.SetGlobalAsync(
+                    Settings.InternshipManagementSystemSettings.SeededPermissions,
+                    string.Join(',', alreadyOffered.Concat(newlyDefined).Distinct().OrderBy(n => n)));
             }
         }
+
+
 
     }
 }

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
 import { ReviewService, ReviewAnswer, IntegrityReport } from '../../core/api/review.service';
+import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
@@ -38,6 +39,31 @@ export class ReviewAttemptComponent {
   private readonly review = inject(ReviewService);
 
   readonly t = inject(TranslateService).t;
+
+
+  /**
+
+   * An uploaded answer, fetched with the marker's token.
+
+   *
+
+   * The server sends a path relative to the API, and a plain link from this
+
+   * application would resolve against the wrong origin and carry no token.
+
+   */
+
+  fileUrl(url: string | null | undefined): string | null {
+
+    const blob = url?.split('/api/assessment/media/')[1];
+
+
+    return blob ? this.media.objectUrl(blob)() : null;
+
+  }
+
+
+  private readonly media = inject(MediaService);
 
   readonly attemptId = input.required<string>();
 

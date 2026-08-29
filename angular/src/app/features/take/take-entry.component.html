@@ -29,7 +29,7 @@
         @if (exam.organizationLogoUrl || exam.organizationName) {
           <div class="org">
             @if (exam.organizationLogoUrl; as logo) {
-              <img class="org__logo" [src]="logo" alt="" />
+              <img class="org__logo" [src]="src(logo)" alt="" />
             }
             @if (exam.organizationName; as name) {
               <span class="org__name">{{ name }}</span>

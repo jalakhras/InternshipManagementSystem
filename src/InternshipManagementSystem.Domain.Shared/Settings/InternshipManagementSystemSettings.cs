@@ -11,6 +11,21 @@ public static class InternshipManagementSystemSettings
 {
     private const string Prefix = "Assessment";
 
+    // ---- Bookkeeping ----
+
+    /// <summary>
+    /// Which permissions the seeder has already offered the admin role.
+    /// <para>
+    /// Not a setting anyone changes and not shown anywhere: a marker, so that
+    /// granting is a one-time act per permission. Re-granting on every start
+    /// looked idempotent and was not — an administrator who deliberately took a
+    /// permission away from the admin role would find it back after the next
+    /// deployment, with nothing to explain why. ABP's store cannot tell "revoked"
+    /// from "never granted", so the record has to live here.
+    /// </para>
+    /// </summary>
+    public const string SeededPermissions = Prefix + ".Internal.SeededPermissions";
+
     // ---- Presentation ----
 
     /// <summary>

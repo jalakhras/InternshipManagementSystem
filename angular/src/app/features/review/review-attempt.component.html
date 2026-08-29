@@ -60,7 +60,7 @@
         @if (answer.response) {
           <pre class="answer__text">{{ answer.response }}</pre>
         } @else if (answer.answerFileUrl) {
-          <a class="answer__file" [href]="answer.answerFileUrl" target="_blank" rel="noopener">
+          <a class="answer__file" [href]="fileUrl(answer.answerFileUrl)" target="_blank" rel="noopener">
             <i class="bi bi-paperclip" aria-hidden="true"></i>
             {{ answer.answerFileName || t('::Review:AttachedFile') }}
           </a>

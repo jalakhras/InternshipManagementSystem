@@ -502,6 +502,9 @@ public class ResultAppService : ApplicationService, IResultAppService
             return [];
         }
 
+        var showIntegrity = await AuthorizationService.IsGrantedAsync(
+            InternshipManagementSystemPermissions.Review.ViewIntegritySignals);
+
         var candidateIds = attempts.Select(a => a.CandidateId).Distinct().ToList();
         var examIds = attempts.Select(a => a.ExamId).Distinct().ToList();
         var formIds = attempts.Where(a => a.ExamFormId != null)
@@ -549,7 +552,12 @@ public class ResultAppService : ApplicationService, IResultAppService
                 ScorePercentage = attempt.ScorePercentage,
                 IsPassed = attempt.IsPassed,
                 EndReason = attempt.EndReason.ToString(),
-                IntegrityFlagCount = attempt.IntegrityFlagCount,
+
+                // Withheld from anyone without the permission that guards them
+                // elsewhere. A count of "this candidate pasted four times" is an
+                // accusation, and it was leaking through the roster and the CSV
+                // to everyone who could read a score.
+                IntegrityFlagCount = showIntegrity ? attempt.IntegrityFlagCount : 0,
                 DurationInMinutes = Math.Max(0, (int)(ended - attempt.StartedAt).TotalMinutes),
             };
         }).ToList();

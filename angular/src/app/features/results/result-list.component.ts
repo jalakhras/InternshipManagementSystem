@@ -70,7 +70,35 @@ export class ResultListComponent {
   );
   readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
 
-  readonly exportUrl = computed(() => this.results.exportUrl(this.request()));
+  readonly exporting = signal(false);
+
+  /**
+   * Saves the filtered rows as a file.
+   *
+   * The blob is handed to a link this code creates and clicks, because that is
+   * the only way to name a downloaded file from a fetched response.
+   */
+  exportCsv(): void {
+    this.exporting.set(true);
+
+    this.results.exportCsv(this.request()).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = `results-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+
+        URL.revokeObjectURL(url);
+        this.exporting.set(false);
+      },
+      error: err => {
+        this.error.set(this.reason(err));
+        this.exporting.set(false);
+      },
+    });
+  }
 
   constructor() {
     // The two pickers. Neither is worth failing the screen over: results still

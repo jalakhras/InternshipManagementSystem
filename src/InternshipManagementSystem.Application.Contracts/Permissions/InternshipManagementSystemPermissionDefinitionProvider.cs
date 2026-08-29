@@ -52,13 +52,29 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         review.AddChild(InternshipManagementSystemPermissions.Review.ViewIntegritySignals, L("Permission:ViewIntegritySignals"));
 
         var results = group.AddPermission(InternshipManagementSystemPermissions.Results.Default, L("Permission:Results"));
-        results.AddChild(InternshipManagementSystemPermissions.Results.View, L("Permission:View"));
-        results.AddChild(InternshipManagementSystemPermissions.Results.Export, L("Permission:Export"));
-        results.AddChild(InternshipManagementSystemPermissions.Results.ViewItemAnalysis, L("Permission:ViewItemAnalysis"));
+
+        // Export and item analysis nest under View for the same reason the
+        // catalogue's Manage does: the service demands View at class level and the
+        // finer permission at method level, and the two combine with AND. Beside
+        // each other they would describe roles that cannot work.
+        var resultsView = results.AddChild(
+            InternshipManagementSystemPermissions.Results.View, L("Permission:View"));
+
+        resultsView.AddChild(InternshipManagementSystemPermissions.Results.Export, L("Permission:Export"));
+        resultsView.AddChild(
+            InternshipManagementSystemPermissions.Results.ViewItemAnalysis, L("Permission:ViewItemAnalysis"));
 
         var catalog = group.AddPermission(InternshipManagementSystemPermissions.Catalog.Default, L("Permission:Catalog"));
-        catalog.AddChild(InternshipManagementSystemPermissions.Catalog.View, L("Permission:View"));
-        catalog.AddChild(InternshipManagementSystemPermissions.Catalog.Manage, L("Permission:Manage"));
+
+        // Manage sits under View rather than beside it, because the service
+        // requires both: ASP.NET combines the class and method attributes with
+        // AND. Nested, ABP's permission screen grants the parent along with the
+        // child, so "let this person maintain the catalogue" cannot be expressed
+        // as a role that then fails on every request.
+        var catalogView = catalog.AddChild(
+            InternshipManagementSystemPermissions.Catalog.View, L("Permission:View"));
+
+        catalogView.AddChild(InternshipManagementSystemPermissions.Catalog.Manage, L("Permission:Manage"));
 
         var identity = group.AddPermission(
             InternshipManagementSystemPermissions.IdentityManagement.Default, L("Permission:Users"));

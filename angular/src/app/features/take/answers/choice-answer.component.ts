@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { MediaService } from '../../../core/media.service';
 import { TranslateService } from '../../../core/translate.service';
 import { TakerQuestion } from '../take.models';
 
@@ -36,7 +37,7 @@ import { TakerQuestion } from '../take.models';
 
           <span class="choice__body">
             @if (option.mediaUrl) {
-              <img class="choice__image" [src]="option.mediaUrl" [alt]="option.text" />
+              <img class="choice__image" [src]="src(option.mediaUrl)" [alt]="option.text" />
             }
             <span class="choice__text">{{ option.text }}</span>
           </span>
@@ -121,6 +122,13 @@ import { TakerQuestion } from '../take.models';
 })
 export class ChoiceAnswerComponent {
   readonly t = inject(TranslateService).t;
+
+  /** The API's origin in front of a grant the paper already carries. */
+  src(url: string | null | undefined): string | null {
+    return this.media.absolute(url);
+  }
+
+  private readonly media = inject(MediaService);
 
   readonly question = input.required<TakerQuestion>();
   readonly response = input<string | undefined>();

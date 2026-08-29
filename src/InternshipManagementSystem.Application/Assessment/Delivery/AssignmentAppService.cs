@@ -103,6 +103,16 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
             }
         }
 
+        // Sending is its own permission and always was; nothing enforced it, so
+        // anybody who could create a sitting could also mail forty people. The
+        // distinction matters to an organisation that lets coordinators prepare
+        // exams and reserves the sending to one person.
+        if (input.SendEmail)
+        {
+            await AuthorizationService.CheckAsync(
+                InternshipManagementSystemPermissions.Assignments.SendEmail);
+        }
+
         var recipients = await ResolveRecipientsAsync(input);
 
         if (recipients.Count == 0)

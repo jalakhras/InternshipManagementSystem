@@ -9,13 +9,13 @@
       </a>
     }
     @if (canExport()) {
-      <!-- A plain link, not a fetch. The browser already knows how to save a
-           file; routing the bytes through the app so it can rebuild one is work
-           for nobody's benefit. -->
-      <a class="btn btn-primary" [href]="exportUrl()">
+      <!-- Fetched and saved, not linked. The API is a different origin and the
+           request needs the caller's token, so a plain link navigated away and
+           lost the filters the coordinator had just set. -->
+      <button type="button" class="btn btn-primary" [disabled]="exporting()" (click)="exportCsv()">
         <i class="bi bi-download" aria-hidden="true"></i>
         {{ t('::Results:Export') }}
-      </a>
+      </button>
     }
   </div>
 </astro-page-header>

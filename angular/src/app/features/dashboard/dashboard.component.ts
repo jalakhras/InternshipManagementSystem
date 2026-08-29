@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, Signal, inject } from '@angular/core';
+import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
-import { PermissionService } from '@abp/ng.core';
 import { RouterLink } from '@angular/router';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 
@@ -86,7 +86,6 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
   `,
 })
 export class DashboardComponent {
-  private readonly permission = inject(PermissionService);
 
   readonly t = inject(TranslateService).t;
 
@@ -125,7 +124,26 @@ export class DashboardComponent {
     },
   ];
 
+  /**
+   * One signal per policy these cards ask about.
+   *
+   * Built here, in the field initialiser, because `permissionSignal` injects and
+   * injection is only legal during construction. Created lazily inside `can()`
+   * it threw the first time a template called it — which is the failure mode the
+   * signals were introduced to remove.
+   */
+  private readonly granted = new Map<string, Signal<boolean>>(
+    this.steps.map(step => [step.permission, permissionSignal(step.permission)] as const),
+  );
+
+  /**
+   * Whether the viewer holds a policy, as an answer that updates when it does.
+   *
+   * Read through a signal so a card appears when the configuration arrives,
+   * rather than staying hidden from somebody who can use it. Read once at
+   * construction it was `false` for everyone whose configuration had not landed.
+   */
   can(policy: string): boolean {
-    return this.permission.getGrantedPolicy(policy);
+    return this.granted.get(policy)?.() ?? false;
   }
 }

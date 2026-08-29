@@ -13,6 +13,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { AttemptState, TakerQuestion } from './take.models';
@@ -54,7 +55,21 @@ export class TakeSittingComponent {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
 
+  private readonly media = inject(MediaService);
+
   readonly t = inject(TranslateService).t;
+
+  /**
+   * A media URL from the server, made absolute.
+   *
+   * The paper arrives with the grant already in the address — a candidate has no
+   * account and nothing in this page could attach a header to an `<audio src>`
+   * anyway — so all it needs is the API's origin in front of it. Without that it
+   * resolves against the application and the clip never plays.
+   */
+  src(url: string | null | undefined): string | null {
+    return this.media.absolute(url);
+  }
 
   readonly token = input.required<string>();
 

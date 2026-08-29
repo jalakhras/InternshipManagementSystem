@@ -11,7 +11,7 @@
 
     <a class="btn btn-outline-secondary" routerLink="/exams">{{ t('::Cancel') }}</a>
 
-    @if (canEdit) {
+    @if (canEdit()) {
       <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
         {{ saving() ? t('::Saving') : t('::Save') }}
       </button>
@@ -19,7 +19,7 @@
 
     <!-- Publishing is a separate permission from editing, because moving a draft
          to something a real person sits is a different act from changing a title. -->
-    @if (canPublish && !isNew() && !isPublished()) {
+    @if (canPublish() && !isNew() && !isPublished()) {
       <button type="button" class="btn btn-success" (click)="openPublishPanel()">
         <i class="bi bi-broadcast" aria-hidden="true"></i>
         {{ t('::Exam:Publish') }}
