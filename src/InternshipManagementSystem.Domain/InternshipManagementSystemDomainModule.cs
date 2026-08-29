@@ -5,7 +5,10 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
+using Volo.Abp.BlobStoring;
+using Volo.Abp.BlobStoring.FileSystem;
 using Volo.Abp.Emailing;
+using Volo.Abp.MailKit;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
@@ -31,7 +34,10 @@ namespace InternshipManagementSystem;
     typeof(AbpPermissionManagementDomainIdentityModule),
     typeof(AbpSettingManagementDomainModule),
     typeof(AbpTenantManagementDomainModule),
-    typeof(AbpEmailingModule)
+    typeof(AbpEmailingModule),
+    typeof(AbpMailKitModule),
+    typeof(AbpBlobStoringModule),
+    typeof(AbpBlobStoringFileSystemModule)
 )]
 public class InternshipManagementSystemDomainModule : AbpModule
 {

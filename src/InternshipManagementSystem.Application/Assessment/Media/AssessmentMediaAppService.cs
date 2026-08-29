@@ -1,0 +1,117 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using InternshipManagementSystem.Assessment.Media.Dtos;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Volo.Abp;
+using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
+using Volo.Abp.BlobStoring;
+
+namespace InternshipManagementSystem.Assessment.Media;
+
+/// <summary>
+/// Stores question media and uploaded answers.
+/// <para>
+/// Replaces the old FileUploadAppService, which had three problems: it joined a
+/// caller-supplied folder name into a filesystem path without sanitising it, so
+/// <c>../../</c> escaped the upload directory; it read its root from a config key set
+/// to an empty string, which the <c>??</c> fallback did not catch, so files landed in
+/// the process working directory; and it tied the product to local disk.
+/// </para>
+/// <para>
+/// Here the container is a constant, the blob name is generated from a GUID, and the
+/// caller's filename is kept only as a label. There is no path the caller can steer.
+/// </para>
+/// </summary>
+public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaAppService
+{
+    /// <summary>
+    /// Extensions we are willing to hold. An allowlist, because a denylist is a
+    /// guess about every format that might ever be dangerous.
+    /// </summary>
+    private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Images: question stimuli, charts, diagrams
+        ".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg",
+        // Audio: listening comprehension, spoken answers
+        ".mp3", ".wav", ".m4a", ".ogg", ".webm",
+        // Video
+        ".mp4", ".mov",
+        // Documents: uploaded answers
+        ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".txt", ".csv", ".zip"
+    };
+
+    private const long MaxFileSizeBytes = 25 * 1024 * 1024;
+
+    private readonly IBlobContainer<AssessmentBlobContainer> _blobs;
+    private readonly ILogger<AssessmentMediaAppService> _logger;
+
+    public AssessmentMediaAppService(
+        IBlobContainer<AssessmentBlobContainer> blobs,
+        ILogger<AssessmentMediaAppService> logger)
+    {
+        _blobs = blobs;
+        _logger = logger;
+    }
+
+    public async Task<MediaUploadResultDto> UploadAsync(IFormFile file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.FileEmpty);
+        }
+
+        if (file.Length > MaxFileSizeBytes)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.FileTooLarge)
+                .WithData("MaxMegabytes", MaxFileSizeBytes / (1024 * 1024));
+        }
+
+        var extension = Path.GetExtension(file.FileName);
+
+        if (string.IsNullOrEmpty(extension) || !AllowedExtensions.Contains(extension))
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.FileTypeNotAllowed)
+                .WithData("Extension", extension ?? string.Empty);
+        }
+
+        // The name is generated, and the tenant prefix keeps one tenant's blobs from
+        // colliding with another's. Nothing here derives from caller input.
+        var blobName = $"{CurrentTenant.Id?.ToString("N") ?? "host"}/{GuidGenerator.Create():N}{extension.ToLowerInvariant()}";
+
+        await using var stream = file.OpenReadStream();
+        await _blobs.SaveAsync(blobName, stream);
+
+        _logger.LogInformation("Stored blob {BlobName} ({Bytes} bytes).", blobName, file.Length);
+
+        return new MediaUploadResultDto
+        {
+            BlobName = blobName,
+            // Kept for display only. It is never used to build a path.
+            OriginalFileName = Path.GetFileName(file.FileName),
+            SizeInBytes = file.Length,
+            Url = $"/api/assessment/media/{blobName}"
+        };
+    }
+
+    public async Task<Stream?> GetAsync(string blobName)
+    {
+        // Rejects any traversal attempt on the read side too, since blob names travel
+        // through URLs and a stored name is not automatically a trusted one.
+        if (blobName.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(blobName))
+        {
+            throw new AbpAuthorizationException("Invalid blob name.");
+        }
+
+        return await _blobs.GetOrNullAsync(blobName);
+    }
+
+    public async Task DeleteAsync(string blobName)
+    {
+        await _blobs.DeleteAsync(blobName);
+    }
+}

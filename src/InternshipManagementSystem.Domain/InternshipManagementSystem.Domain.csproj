@@ -14,6 +14,9 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Emailing" />
+    <PackageReference Include="Volo.Abp.MailKit" />
+    <PackageReference Include="Volo.Abp.BlobStoring" />
+    <PackageReference Include="Volo.Abp.BlobStoring.FileSystem" />
     <PackageReference Include="Volo.Abp.Identity.Domain" />
     <PackageReference Include="Volo.Abp.PermissionManagement.Domain.Identity" />
     <PackageReference Include="Volo.Abp.BackgroundJobs.Domain" />
