@@ -96,6 +96,29 @@ test.describe('Assignments', () => {
     await expect(page.getByRole('row', { name: /Killed/ }).locator('.state-chip')).toHaveText('Revoked');
   });
 
+  test('the deadline can be extended without reissuing first', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubAssignments(page, [link({ candidateName: 'Missed Friday' })]);
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+
+    // Guards a nesting mistake rather than a missing feature: the extend dialog
+    // was once written inside the "new link" panel's own @if, so it rendered
+    // only after a link had just been reissued — which is the one moment nobody
+    // needs it. The whole feature was unreachable and everything still compiled,
+    // because a template that never runs is a template that never complains.
+    await page.getByRole('button', { name: /Extend the deadline/ }).click();
+
+    const dialog = page.getByRole('dialog');
+
+    await expect(dialog).toBeVisible();
+
+    // Scoped to the dialog: the name is in the table behind it too, and an
+    // unscoped match would pass with no dialog on screen at all.
+    await expect(dialog.getByText('Missed Friday')).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Extend' })).toBeVisible();
+  });
+
   test('a revoked link stays revoked whatever else is true of it', async ({ page }) => {
     await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
     await stubAssignments(page, [
