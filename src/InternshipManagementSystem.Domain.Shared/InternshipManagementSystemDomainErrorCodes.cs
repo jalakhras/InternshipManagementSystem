@@ -9,6 +9,12 @@ public static class InternshipManagementSystemDomainErrorCodes
     // ---- Exam authoring ----
     public const string ExamHasNoQuestions = "IMS:Exam:NoQuestions";
     public const string ExamFormLargerThanBank = "IMS:Exam:FormLargerThanBank";
+
+    /// <summary>
+    /// A question was submitted with neither an owning exam nor a domain to file it
+    /// under, which would leave it invisible to both.
+    /// </summary>
+    public const string QuestionBelongsNowhere = "IMS:Question:BelongsNowhere";
     public const string ExamNotPublished = "IMS:Exam:NotPublished";
     public const string ExamOutsideSchedule = "IMS:Exam:OutsideSchedule";
     public const string ExamBlueprintUnsatisfiable = "IMS:Exam:BlueprintUnsatisfiable";

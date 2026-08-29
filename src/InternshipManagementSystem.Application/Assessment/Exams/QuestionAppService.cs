@@ -27,6 +27,7 @@ namespace InternshipManagementSystem.Assessment.Exams;
 public class QuestionAppService : ApplicationService, IQuestionAppService
 {
     private readonly IRepository<Question, Guid> _questions;
+    private readonly IRepository<Exam, Guid> _exams;
     private readonly IRepository<QuestionGroup, Guid> _groups;
     private readonly IRepository<Topic, Guid> _topics;
     private readonly QuestionPayloadValidator _validator;
@@ -34,12 +35,14 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
     public QuestionAppService(
         IRepository<Question, Guid> questions,
+        IRepository<Exam, Guid> exams,
         IRepository<QuestionGroup, Guid> groups,
         IRepository<Topic, Guid> topics,
         QuestionPayloadValidator validator,
         IGraderResolver graders)
     {
         _questions = questions;
+        _exams = exams;
         _groups = groups;
         _topics = topics;
         _validator = validator;
@@ -56,7 +59,34 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
         if (input.ExamId is { } examId)
         {
-            query = query.Where(q => q.ExamId == examId);
+            // Everything this exam can draw: its own questions, plus the bank
+            // questions its domain and level make available. Listing only the
+            // owned ones would tell an author their bank is empty when it is not.
+            var exam = await _exams.GetAsync(examId);
+
+            query = query.Where(q =>
+                q.ExamId == examId ||
+                (q.ExamId == null &&
+                 q.CategoryId != null &&
+                 q.CategoryId == exam.CategoryId &&
+                 (q.LevelId == null || q.LevelId == exam.LevelId)));
+        }
+
+        if (input.BankOnly == true)
+        {
+            query = query.Where(q => q.ExamId == null);
+        }
+
+        if (input.CategoryId is { } categoryId)
+        {
+            query = query.Where(q => q.CategoryId == categoryId);
+        }
+
+        if (input.LevelId is { } levelId)
+        {
+            // A question with no level suits every level in its domain, so it belongs
+            // in this result too.
+            query = query.Where(q => q.LevelId == levelId || q.LevelId == null);
         }
 
         if (input.TopicId is { } topicId)
@@ -112,6 +142,13 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         if (blockers.Count > 0)
         {
             throw new BusinessException(blockers[0]);
+        }
+
+        if (input.ExamId is null && input.CategoryId is null)
+        {
+            // Otherwise the question is owned by nothing: no exam can draw it and no
+            // bank listing shows it, so it is written and then invisible.
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.QuestionBelongsNowhere);
         }
 
         var question = new Question(GuidGenerator.Create(), CurrentTenant.Id, input.ExamId, input.Type, input.Text);
@@ -263,6 +300,8 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
     private static void Apply(Question question, CreateUpdateQuestionDto input)
     {
+        question.CategoryId = input.CategoryId;
+        question.LevelId = input.LevelId;
         question.QuestionGroupId = input.QuestionGroupId;
         question.Payload = input.Payload;
         question.TopicId = input.TopicId;
@@ -280,6 +319,8 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
     {
         Id = q.Id,
         ExamId = q.ExamId,
+        CategoryId = q.CategoryId,
+        LevelId = q.LevelId,
         QuestionGroupId = q.QuestionGroupId,
         Text = q.Text,
         Type = q.Type,
@@ -295,6 +336,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         DisplayOrder = q.DisplayOrder,
         IsActive = q.IsActive,
         TimesAnswered = q.TimesAnswered,
+        TimesServed = q.TimesServed,
         DifficultyIndex = q.DifficultyIndex,
         DiscriminationIndex = q.DiscriminationIndex,
         CreationTime = q.CreationTime,

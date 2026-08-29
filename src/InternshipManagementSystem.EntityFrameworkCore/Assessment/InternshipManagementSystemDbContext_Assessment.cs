@@ -2,6 +2,7 @@ using InternshipManagementSystem.Assessment.Catalog;
 using InternshipManagementSystem.Assessment.Delivery;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.People;
+using InternshipManagementSystem.Assessment.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -52,6 +53,7 @@ public partial class InternshipManagementSystemDbContext
             b.Property(x => x.Name).IsRequired().HasMaxLength(128);
             b.Property(x => x.Code).IsRequired().HasMaxLength(64);
             b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
+            b.HasIndex(x => new { x.TenantId, x.CategoryId });
         });
 
         builder.Entity<Topic>(b =>
@@ -62,6 +64,7 @@ public partial class InternshipManagementSystemDbContext
             b.Property(x => x.Code).IsRequired().HasMaxLength(64);
             b.HasIndex(x => new { x.TenantId, x.Code }).IsUnique();
             b.HasIndex(x => x.ParentId);
+            b.HasIndex(x => new { x.TenantId, x.CategoryId });
         });
 
         // ---------- Exams and their question bank ----------
@@ -115,6 +118,12 @@ public partial class InternshipManagementSystemDbContext
             b.HasIndex(x => x.QuestionGroupId);
             // The blueprint draws by topic and difficulty, so it indexes on both.
             b.HasIndex(x => new { x.ExamId, x.TopicId, x.Difficulty });
+
+            // Bank questions have no ExamId, so the index above never serves them.
+            // Drawing a form for a level is the hottest read in authoring and it
+            // filters on exactly this shape.
+            b.HasIndex(x => new { x.TenantId, x.CategoryId, x.LevelId, x.TopicId, x.Difficulty })
+                .HasFilter("[ExamId] IS NULL");
         });
 
         builder.Entity<ExamBlueprintRule>(b =>
@@ -123,6 +132,25 @@ public partial class InternshipManagementSystemDbContext
             b.ConfigureByConvention();
             b.Property(x => x.QuestionType).HasMaxLength(64);
             b.HasIndex(x => x.ExamId);
+        });
+
+        builder.Entity<TenantBranding>(b =>
+        {
+            b.ToTable(prefix + "TenantBranding", schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.DisplayName).IsRequired().HasMaxLength(128);
+            b.Property(x => x.DisplayNameAlternate).HasMaxLength(128);
+            b.Property(x => x.LogoBlobName).HasMaxLength(256);
+            b.Property(x => x.IconBlobName).HasMaxLength(256);
+
+            // #rrggbb and nothing else. See TenantBranding.IsUsableColor.
+            b.Property(x => x.PrimaryColor).HasMaxLength(7);
+            b.Property(x => x.CertificateFooter).HasMaxLength(512);
+            b.Property(x => x.SupportEmail).HasMaxLength(256);
+
+            // One identity per tenant. Without this a second row is silently created
+            // and which of the two the shell reads becomes a matter of ordering.
+            b.HasIndex(x => x.TenantId).IsUnique();
         });
 
         // ---------- People and cohorts ----------

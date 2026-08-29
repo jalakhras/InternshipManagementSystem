@@ -236,10 +236,34 @@ public class ExamAppService : ApplicationService, IExamAppService
             result.Warnings.Add("IMS:Exam:EveryoneGetsTheSameForm");
         }
 
+        // A bank only slightly larger than the form draws nearly the same paper every
+        // time, so the shuffling is theatre: two candidates overlap on almost every
+        // question. Test-development practice puts the floor at roughly three times
+        // the form length before rotation is worth anything.
+        if (result.FormLength > 0 && bank.Count > 0 && bank.Count < result.FormLength * 3)
+        {
+            result.Warnings.Add("IMS:Exam:BankTooSmallToRotate");
+        }
+
+        // An item that has been in front of enough candidates has usually been
+        // shared, and from then on it measures who has seen it rather than who
+        // knows the answer.
+        if (bank.Any(q => q.TimesServed >= OverExposedAfterServings))
+        {
+            result.Warnings.Add("IMS:Exam:BankHasOverExposedItems");
+        }
+
         result.CanPublish = result.Blockers.Count == 0;
 
         return result;
     }
+
+    /// <summary>
+    /// Servings after which an item is treated as over-exposed. A round number
+    /// standing in for a judgement that really depends on how public the audience
+    /// is; a tenant will eventually want to set it themselves.
+    /// </summary>
+    private const int OverExposedAfterServings = 500;
 
     [Authorize(InternshipManagementSystemPermissions.Exams.Publish)]
     public async Task<ExamDto> PublishAsync(Guid id)

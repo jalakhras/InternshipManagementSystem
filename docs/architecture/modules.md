@@ -25,7 +25,7 @@ it now would be paying up front for an option that may never be exercised.
 
 ---
 
-## The six contexts
+## The seven contexts
 
 | Context | Owns | Depends on |
 |---|---|---|
@@ -35,10 +35,19 @@ it now would be paying up front for an option that may never be exercised.
 | **Delivery** | Assignments, links, attempts, answers, integrity signals | Authoring, People |
 | **Grading** | Graders per question type, scoring, manual review | Delivery, Authoring |
 | **Analytics** | Results, topic breakdown, item analysis | Delivery, Authoring |
+| **Tenancy** | How a tenant appears to its own people: name, logo, brand colour | — |
 
 Dependencies point one way only. Catalog knows nothing about exams; Authoring
 knows nothing about attempts. A cycle here would mean two contexts are really one
 and should be merged rather than wired together.
+
+Tenancy depends on nothing for the same reason Catalog does: it is read by the
+shell, the exam page, the certificate and the invitation email, and if it knew
+about any of them the arrow would run backwards. It is separate from Catalog
+rather than folded into it because the two answer different questions — Catalog
+is the vocabulary a tenant assesses with, Tenancy is the face it shows while
+doing so, and a tenant changing its logo has no business touching the table that
+holds its competency tree.
 
 ### Why these lines and not others
 

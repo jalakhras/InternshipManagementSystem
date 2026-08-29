@@ -46,6 +46,11 @@ public class ModuleBoundaryTests
 
         // Grading reads the question to score the answer.
         ["Grading"] = ["Delivery", "Exams", "Catalog"],
+
+        // How a tenant appears to its own people. Depends on nothing: branding is
+        // read by the shell, the exam page and the certificate, and if it knew
+        // about any of them the dependency would run backwards.
+        ["Tenancy"] = [],
     };
 
     private static Assembly DomainAssembly => typeof(Exam).Assembly;

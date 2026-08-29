@@ -17,6 +17,9 @@ public class Topic : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
 
+    /// <summary>The domain this competency belongs to. Scoped for the same reason as a level.</summary>
+    public Guid? CategoryId { get; set; }
+
     public string Name { get; set; } = default!;
 
     /// <summary>Stable machine key, unique per tenant.</summary>

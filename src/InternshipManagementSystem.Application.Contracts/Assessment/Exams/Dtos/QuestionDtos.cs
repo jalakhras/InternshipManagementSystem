@@ -18,7 +18,14 @@ namespace InternshipManagementSystem.Assessment.Exams.Dtos;
 /// </summary>
 public class QuestionDto : AuditedEntityDto<Guid>
 {
-    public Guid ExamId { get; set; }
+    /// <summary>Null when the question lives in the shared bank rather than one exam.</summary>
+    public Guid? ExamId { get; set; }
+
+    /// <summary>The domain that owns a bank question.</summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>The level or role a bank question is written for. Null suits every level.</summary>
+    public Guid? LevelId { get; set; }
     public Guid? QuestionGroupId { get; set; }
 
     public string Text { get; set; } = default!;
@@ -46,6 +53,9 @@ public class QuestionDto : AuditedEntityDto<Guid>
 
     public int TimesAnswered { get; set; }
 
+    /// <summary>How many forms have carried this question. High counts mean it has circulated.</summary>
+    public int TimesServed { get; set; }
+
     /// <summary>
     /// Share who answered correctly. Near 1 means the question separates nobody;
     /// near 0 usually means the question or its key is wrong.
@@ -61,8 +71,13 @@ public class QuestionDto : AuditedEntityDto<Guid>
 
 public class CreateUpdateQuestionDto
 {
+    /// <summary>The domain to file this question under when it is written into the bank.</summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>The level a bank question targets. Leave null for one that suits any level.</summary>
+    public Guid? LevelId { get; set; }
     [Required]
-    public Guid ExamId { get; set; }
+    public Guid? ExamId { get; set; }
 
     public Guid? QuestionGroupId { get; set; }
 
@@ -110,6 +125,12 @@ public class CreateUpdateQuestionDto
 public class QuestionListRequestDto : PagedAndSortedResultRequestDto
 {
     public Guid? ExamId { get; set; }
+    public Guid? CategoryId { get; set; }
+    public Guid? LevelId { get; set; }
+
+    /// <summary>Restrict to questions in the shared bank, i.e. owned by no exam.</summary>
+    public bool? BankOnly { get; set; }
+
     public Guid? TopicId { get; set; }
     public string? Type { get; set; }
     public QuestionDifficulty? Difficulty { get; set; }

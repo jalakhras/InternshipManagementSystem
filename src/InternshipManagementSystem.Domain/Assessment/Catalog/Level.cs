@@ -14,6 +14,16 @@ public class Level : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
 
+    /// <summary>
+    /// The domain this level belongs to, or null for one that spans all of them.
+    /// <para>
+    /// Without this, a tenant that assesses both software roles and English levels
+    /// sees "QA Engineer" offered under "English Language". The two lists are not
+    /// one list: a level only means something inside a domain.
+    /// </para>
+    /// </summary>
+    public Guid? CategoryId { get; set; }
+
     public string Name { get; set; } = default!;
 
     /// <summary>Stable machine key, unique per tenant.</summary>

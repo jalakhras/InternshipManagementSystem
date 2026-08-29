@@ -19,7 +19,31 @@ public class Question : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
 
-    public Guid ExamId { get; set; }
+    /// <summary>
+    /// The exam that owns this question, or null when it lives in the shared bank.
+    /// <para>
+    /// A question written straight into one exam keeps an ExamId, which is the
+    /// simple case and how most authoring starts. A bank question has none: it is
+    /// owned by a <see cref="CategoryId"/> and <see cref="LevelId"/> instead, and
+    /// every form for that level draws from it.
+    /// </para>
+    /// <para>
+    /// This is what makes "three forms for A1" cost three blueprints rather than
+    /// three copies of the same forty questions. Copies drift: a key corrected in
+    /// one form stays wrong in the other two, and item statistics gathered against
+    /// a copy describe a question nobody else is using.
+    /// </para>
+    /// </summary>
+    public Guid? ExamId { get; set; }
+
+    /// <summary>The domain this question belongs to when it lives in the shared bank.</summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>
+    /// The level or role this question is written for. Null means it suits any level
+    /// within its domain, which is common for questions measuring a foundation skill.
+    /// </summary>
+    public Guid? LevelId { get; set; }
 
     /// <summary>Set when this question belongs to a shared stimulus. See <see cref="QuestionGroup"/>.</summary>
     public Guid? QuestionGroupId { get; set; }
@@ -77,6 +101,14 @@ public class Question : AuditedAggregateRoot<Guid>, IMultiTenant
     public int TimesAnswered { get; set; }
 
     /// <summary>
+    /// How many forms this question has been served on. Distinct from
+    /// <see cref="TimesAnswered"/>: exposure is how many candidates have seen it,
+    /// which is what erodes a question's value once it circulates. A bank shared by
+    /// many forms needs this to retire over-used items before they stop measuring.
+    /// </summary>
+    public int TimesServed { get; set; }
+
+    /// <summary>
     /// Share of takers who got it right. Near 1 means the question separates nobody;
     /// near 0 usually means the question or its key is wrong.
     /// </summary>
@@ -90,11 +122,50 @@ public class Question : AuditedAggregateRoot<Guid>, IMultiTenant
 
     protected Question() { }
 
-    public Question(Guid id, Guid? tenantId, Guid examId, string type, string text) : base(id)
+    public Question(Guid id, Guid? tenantId, Guid? examId, string type, string text) : base(id)
     {
         TenantId = tenantId;
         ExamId = examId;
         Type = type;
         Text = text;
+    }
+
+    /// <summary>
+    /// A question written into the shared bank rather than into one exam.
+    /// </summary>
+    public static Question InBank(Guid id, Guid? tenantId, Guid categoryId, Guid? levelId, string type, string text)
+    {
+        return new Question(id, tenantId, examId: null, type, text)
+        {
+            CategoryId = categoryId,
+            LevelId = levelId,
+        };
+    }
+
+    /// <summary>
+    /// Whether this question is available to an exam in the given domain and level.
+    /// <para>
+    /// A bank question with no level suits every level in its domain; one with a
+    /// level is offered only to exams at that level.
+    /// </para>
+    /// </summary>
+    public bool IsDrawableBy(Guid examId, Guid? examCategoryId, Guid? examLevelId)
+    {
+        if (!IsActive)
+        {
+            return false;
+        }
+
+        if (ExamId == examId)
+        {
+            return true;
+        }
+
+        if (ExamId is not null || CategoryId is null || CategoryId != examCategoryId)
+        {
+            return false;
+        }
+
+        return LevelId is null || LevelId == examLevelId;
     }
 }
