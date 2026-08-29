@@ -70,6 +70,12 @@
 
 .negative { color: var(--astro-fail-600); }
 
+// Not a finding, and it must not read as one.
+.unknown {
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .state {
   display: grid;
   justify-items: center;

@@ -115,8 +115,16 @@ export interface ItemAnalysisRow {
   /** Proportion who got it right. Runs backwards from "difficulty": 0.95 is easy. */
   facility: number;
 
-  /** Top quarter minus bottom quarter. Negative nearly always means a wrong key. */
-  discrimination: number;
+  /**
+   * Top quarter minus bottom quarter. Negative nearly always means a wrong key.
+   *
+   * Null when it cannot be measured — one of the groups never answered this
+   * question, which happens as a matter of course when a cohort is split across
+   * named papers, or the totals sat too close together for the split to mean
+   * anything. Shown as unknown rather than as zero: reporting zero told authors
+   * that correctly keyed questions were mis-keyed.
+   */
+  discrimination: number | null;
 
   /** A localisation key, set when the numbers say something worth acting on. */
   flagKey?: string | null;

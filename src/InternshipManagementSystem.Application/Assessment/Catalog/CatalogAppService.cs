@@ -32,6 +32,8 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
     private readonly IRepository<CategorySet, Guid> _vocabulary;
     private readonly IRepository<Exam, Guid> _exams;
     private readonly IRepository<Question, Guid> _questions;
+    private readonly IRepository<ExamBlueprintRule, Guid> _blueprintRules;
+    private readonly IRepository<ExamSection, Guid> _sections;
 
     public CatalogAppService(
         IRepository<Category, Guid> categories,
@@ -39,7 +41,9 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
         IRepository<Topic, Guid> topics,
         IRepository<CategorySet, Guid> vocabulary,
         IRepository<Exam, Guid> exams,
-        IRepository<Question, Guid> questions)
+        IRepository<Question, Guid> questions,
+        IRepository<ExamBlueprintRule, Guid> blueprintRules,
+        IRepository<ExamSection, Guid> sections)
     {
         _categories = categories;
         _levels = levels;
@@ -47,6 +51,8 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
         _vocabulary = vocabulary;
         _exams = exams;
         _questions = questions;
+        _blueprintRules = blueprintRules;
+        _sections = sections;
     }
 
     // ------------------------------------------------------------- categories
@@ -179,9 +185,22 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
         }
 
         // The levels and topics under it go with it. They describe this domain and
-        // mean nothing without it.
+        // mean nothing without it — but each carries its own guard, and cascading
+        // past those was how a question filed at a level under one domain, while
+        // itself filed under another, ended up pointing at a row that no longer
+        // exists.
         var levels = await (await _levels.GetQueryableAsync()).Where(l => l.CategoryId == id).ToListAsync();
         var topics = await (await _topics.GetQueryableAsync()).Where(t => t.CategoryId == id).ToListAsync();
+
+        foreach (var level in levels)
+        {
+            await EnsureLevelIsUnusedAsync(level.Id);
+        }
+
+        foreach (var topic in topics)
+        {
+            await EnsureTopicIsUnusedAsync(topic.Id);
+        }
 
         await _levels.DeleteManyAsync(levels, autoSave: true);
         await _topics.DeleteManyAsync(topics, autoSave: true);
@@ -227,13 +246,18 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
     [Authorize(InternshipManagementSystemPermissions.Catalog.Manage)]
     public async Task DeleteLevelAsync(Guid id)
     {
+        await EnsureLevelIsUnusedAsync(id);
+
+        await _levels.DeleteAsync(id, autoSave: true);
+    }
+
+    private async Task EnsureLevelIsUnusedAsync(Guid id)
+    {
         if (await (await _exams.GetQueryableAsync()).AnyAsync(e => e.LevelId == id)
             || await (await _questions.GetQueryableAsync()).AnyAsync(q => q.LevelId == id))
         {
             throw new BusinessException(InternshipManagementSystemDomainErrorCodes.CatalogLevelInUse);
         }
-
-        await _levels.DeleteAsync(id, autoSave: true);
     }
 
     // ----------------------------------------------------------------- topics
@@ -284,10 +308,7 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
     [Authorize(InternshipManagementSystemPermissions.Catalog.Manage)]
     public async Task DeleteTopicAsync(Guid id)
     {
-        if (await (await _questions.GetQueryableAsync()).AnyAsync(q => q.TopicId == id))
-        {
-            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.CatalogTopicInUse);
-        }
+        await EnsureTopicIsUnusedAsync(id);
 
         // Children are promoted rather than deleted. Removing "grammar" should not
         // take "past perfect" with it — the questions filed under the child are
@@ -302,6 +323,31 @@ public class CatalogAppService : ApplicationService, ICatalogAppService
 
         await _topics.UpdateManyAsync(children, autoSave: true);
         await _topics.DeleteAsync(id, autoSave: true);
+    }
+
+    /// <summary>
+    /// Refuses a topic something still points at.
+    /// <para>
+    /// Questions are the obvious case. Blueprint rules are the one that hurts:
+    /// nothing enforces a foreign key here, and a rule naming a deleted topic
+    /// matches no questions and contributes none — so every drawn paper for that
+    /// exam is short by that rule's count, silently, for as long as nobody
+    /// notices. That is the failure the blueprint screen exists to make visible,
+    /// arriving by a route the screen cannot show.
+    /// </para>
+    /// </summary>
+    private async Task EnsureTopicIsUnusedAsync(Guid id)
+    {
+        if (await (await _questions.GetQueryableAsync()).AnyAsync(q => q.TopicId == id))
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.CatalogTopicInUse);
+        }
+
+        if (await (await _blueprintRules.GetQueryableAsync()).AnyAsync(r => r.TopicId == id)
+            || await (await _sections.GetQueryableAsync()).AnyAsync(s => s.TopicId == id))
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.CatalogTopicInBlueprint);
+        }
     }
 
     // ------------------------------------------------------------- vocabulary

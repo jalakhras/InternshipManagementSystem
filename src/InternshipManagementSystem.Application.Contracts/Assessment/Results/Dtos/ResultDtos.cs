@@ -193,8 +193,15 @@ public class ItemAnalysisRowDto
     /// the better candidates got it wrong more often, which nearly always means a
     /// wrong answer key.
     /// </para>
+    /// <para>
+    /// Null when it cannot be measured: when one of the two groups never answered
+    /// this question — which happens as a matter of course when a cohort is split
+    /// across named papers — or when the cohort's totals sit too close together
+    /// for the split to mean anything. Reporting zero in those cases told authors
+    /// that correctly keyed questions were mis-keyed.
+    /// </para>
     /// </summary>
-    public decimal Discrimination { get; set; }
+    public decimal? Discrimination { get; set; }
 
     /// <summary>Set when the numbers say something worth acting on.</summary>
     public string? FlagKey { get; set; }

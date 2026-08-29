@@ -64,8 +64,12 @@
             <td class="muted">{{ row.topicName || '—' }}</td>
             <td class="numeric">{{ row.timesAnswered }}</td>
             <td class="numeric">{{ percent(row.facility) }}</td>
-            <td class="numeric" [class.negative]="row.discrimination < 0">
-              {{ percent(row.discrimination) }}
+            <td class="numeric" [class.negative]="(row.discrimination ?? 0) < 0">
+              @if (row.discrimination === null) {
+                <span class="unknown">{{ t('::Results:ItemAnalysis:NotMeasurable') }}</span>
+              } @else {
+                {{ percent(row.discrimination) }}
+              }
             </td>
           </tr>
         }

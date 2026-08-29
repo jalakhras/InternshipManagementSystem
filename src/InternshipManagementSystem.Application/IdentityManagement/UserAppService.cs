@@ -5,10 +5,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Volo.Abp.Identity;
+// Both namespaces define these names. Volo's are the entities this service
+// stores; ASP.NET's namespace is here only for the IdentityResult extension that
+// turns a discarded failure into an exception.
+using IdentityUser = Volo.Abp.Identity.IdentityUser;
+using IdentityRole = Volo.Abp.Identity.IdentityRole;
 
 namespace InternshipManagementSystem.IdentityManagement
 {
@@ -57,7 +65,9 @@ namespace InternshipManagementSystem.IdentityManagement
             user.Name = input.FullName;
             user.Surname = string.Empty;
 
-            await _userManager.CreateAsync(user, input.Password);
+            // Same reason: a rejected password produced no error at all, and the
+            // caller was handed a user they could not sign in as.
+            (await _userManager.CreateAsync(user, input.Password)).CheckErrors();
 
             if (!string.IsNullOrWhiteSpace(input.PhoneNumber))
             {
@@ -141,14 +151,19 @@ namespace InternshipManagementSystem.IdentityManagement
                     InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles);
             }
 
+            // CheckErrors, because a discarded IdentityResult means the caller is
+            // told the save worked when the role was refused — a role that no
+            // longer exists, or one the store would not write. Silence there is
+            // worse than an error: the screen would show the truth on its next
+            // load and nobody would know why it disagreed with what they did.
             foreach (var role in held.Where(r => !wanted.Contains(r)))
             {
-                await _userManager.RemoveFromRoleAsync(user, role);
+                (await _userManager.RemoveFromRoleAsync(user, role)).CheckErrors();
             }
 
             foreach (var role in wanted.Where(r => !held.Contains(r)))
             {
-                await _userManager.AddToRoleAsync(user, role);
+                (await _userManager.AddToRoleAsync(user, role)).CheckErrors();
             }
         }
 
@@ -170,23 +185,35 @@ namespace InternshipManagementSystem.IdentityManagement
         [Authorize(InternshipManagementSystemPermissions.IdentityManagement.Users.View)]
         public override async Task<PagedResultDto<UserDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
-            var query = await _userRepository.GetQueryableAsync();
+            // WithDetails, so each user arrives carrying its role links. Asking the
+            // user manager per row cost one round trip per account on every load.
+            var query = (await _userRepository.WithDetailsAsync()).OrderBy(u => u.UserName);
 
-            query = query.OrderBy(u => u.UserName); // ترتيب بالاسم
+            var totalCount = await query.CountAsync();
 
-            var totalCount = query.Count();
-
-            var users = query
+            var users = await query
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount)
-                .ToList();
+                .ToListAsync();
 
-            var rows = new List<UserDto>();
+            // The links carry role ids; the screen shows names. One query for the
+            // handful of roles an organisation has, rather than one per user.
+            var roleNames = (await _roleRepository.GetListAsync())
+                .ToDictionary(role => role.Id, role => role.Name);
 
-            foreach (var user in users)
+            var rows = users.Select(user =>
             {
-                rows.Add(await ToDtoAsync(user));
-            }
+                var dto = ObjectMapper.Map<IdentityUser, UserDto>(user);
+
+                dto.Roles = user.Roles
+                    .Select(link => roleNames.GetValueOrDefault(link.RoleId))
+                    .Where(name => name is not null)
+                    .Select(name => name!)
+                    .OrderBy(name => name)
+                    .ToList();
+
+                return dto;
+            }).ToList();
 
             return new PagedResultDto<UserDto>(totalCount, rows);
         }

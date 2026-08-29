@@ -275,12 +275,24 @@ public class ResultAppService : ApplicationService, IResultAppService
 
         // The top and bottom quarter by total score. Discrimination is the
         // difference between how those two groups did on this one question: if the
-        // strongest quarter does worse than the weakest, the key is wrong.
-        var ranked = attemptIds.OrderByDescending(a => a.ScorePercentage).Select(a => a.Id).ToList();
+        // strongest quarter does worse than the weakest, the key is usually wrong.
+        var ranked = attemptIds.OrderByDescending(a => a.ScorePercentage).ToList();
         var groupSize = Math.Max(1, ranked.Count / 4);
 
-        var top = ranked.Take(groupSize).ToHashSet();
-        var bottom = ranked.TakeLast(groupSize).ToHashSet();
+        var top = ranked.Take(groupSize).Select(a => a.Id).ToHashSet();
+        var bottom = ranked.TakeLast(groupSize).Select(a => a.Id).ToHashSet();
+
+        // Whether the two groups are actually different. With a cohort clustered
+        // on one total the split is decided by whatever order the database
+        // returned, and the resulting number is an artifact of row order rather
+        // than a property of the question. Below a real gap, discrimination is
+        // reported as unknown instead of as a finding.
+        var spread = ranked.Count > 1
+            ? ranked.Take(groupSize).Average(a => a.ScorePercentage)
+              - ranked.TakeLast(groupSize).Average(a => a.ScorePercentage)
+            : 0m;
+
+        var groupsAreComparable = spread >= 5m;
 
         var questionIds = maxByQuestion.Keys.ToList();
 
@@ -310,15 +322,33 @@ public class ResultAppService : ApplicationService, IResultAppService
 
             // Proportion of the marks available, rather than right-or-wrong, so
             // partially credited types are not counted as failures.
-            decimal Share(IEnumerable<decimal> awarded) =>
-                awarded.Any() ? awarded.Average() / max : 0m;
+            decimal? Share(IEnumerable<decimal> awarded)
+            {
+                var values = awarded.ToList();
 
-            var facility = Share(forThis.Select(a => a.AwardedScore!.Value));
+                // Null, not zero. A group that never answered this question has
+                // told us nothing, and scoring that as "everybody got it wrong" is
+                // what produced the worst false report this screen could make.
+                return values.Count == 0 ? null : values.Average() / max;
+            }
+
+            var facility = Share(forThis.Select(a => a.AwardedScore!.Value)) ?? 0m;
 
             var topShare = Share(forThis.Where(a => top.Contains(a.AttemptId)).Select(a => a.AwardedScore!.Value));
             var bottomShare = Share(forThis.Where(a => bottom.Contains(a.AttemptId)).Select(a => a.AwardedScore!.Value));
 
-            var discrimination = topShare - bottomShare;
+            // Only when both groups actually answered it, and only when the two
+            // groups differ enough to be two groups.
+            //
+            // Papers differ within one exam: named forms are assigned per class, so
+            // the top quarter can be entirely people who sat Form A. Every Form B
+            // question then had no top-quarter answers at all, scored zero, and was
+            // reported as "the strongest candidates got this wrong" — a whole form
+            // of correctly keyed questions flagged as mis-keyed, sorted to the top
+            // of the list.
+            decimal? discrimination = groupsAreComparable && topShare is { } t && bottomShare is { } b
+                ? t - b
+                : null;
 
             rows.Add(new ItemAnalysisRowDto
             {
@@ -328,14 +358,19 @@ public class ResultAppService : ApplicationService, IResultAppService
                 TopicName = question.TopicId is { } topicId ? topicNames.GetValueOrDefault(topicId) : null,
                 TimesAnswered = forThis.Count,
                 Facility = Math.Round(facility, 2),
-                Discrimination = Math.Round(discrimination, 2),
+                Discrimination = discrimination is { } d ? Math.Round(d, 2) : null,
                 FlagKey = Flag(forThis.Count, facility, discrimination),
             });
         }
 
         // Worst first: the point of the screen is the questions to fix, and putting
-        // them at the bottom of an alphabetical list is how they stay unfixed.
-        return rows.OrderBy(r => r.Discrimination).ToList();
+        // them at the bottom of an alphabetical list is how they stay unfixed. A
+        // question whose discrimination could not be measured sorts after the ones
+        // that could, because "unknown" is not a finding.
+        return rows
+            .OrderBy(r => r.Discrimination.HasValue ? 0 : 1)
+            .ThenBy(r => r.Discrimination)
+            .ToList();
     }
 
     // ------------------------------------------------------------------ helpers
@@ -347,20 +382,16 @@ public class ResultAppService : ApplicationService, IResultAppService
     /// people have answered teaches an author to ignore the flags.
     /// </para>
     /// </summary>
-    private static string? Flag(int answered, decimal facility, decimal discrimination)
+    private static string? Flag(int answered, decimal facility, decimal? discrimination)
     {
         if (answered < 20)
         {
             return null;
         }
 
-        // The strongest candidates got it wrong more often than the weakest. Nearly
-        // always a wrong key, and worth saying before anything else.
-        if (discrimination < 0m)
-        {
-            return "IMS:ItemAnalysis:NegativeDiscrimination";
-        }
-
+        // Facility first, because it is measured on everybody who answered and
+        // needs no comparison between groups. The two facility flags are true
+        // whatever the cohort looked like.
         if (facility >= 0.95m)
         {
             return "IMS:ItemAnalysis:TooEasy";
@@ -371,7 +402,21 @@ public class ResultAppService : ApplicationService, IResultAppService
             return "IMS:ItemAnalysis:TooHard";
         }
 
-        if (discrimination < 0.1m)
+        if (discrimination is not { } value)
+        {
+            // Not measurable here: either group answered none of this question, or
+            // the cohort's totals were too close together for the split to mean
+            // anything. Saying nothing is right — a flag nobody can trust teaches
+            // an author to ignore all of them.
+            return null;
+        }
+
+        if (value < 0m)
+        {
+            return "IMS:ItemAnalysis:NegativeDiscrimination";
+        }
+
+        if (value < 0.1m)
         {
             return "IMS:ItemAnalysis:WeakDiscrimination";
         }
@@ -486,13 +531,36 @@ public class ResultAppService : ApplicationService, IResultAppService
             return 0;
         }
 
-        var links = await _links.GetQueryableAsync();
+        var links = (await _links.GetQueryableAsync())
+            .Where(l => l.ExamId == examId && !l.IsRevoked);
+
+        // Narrowed by the same filters as everything else on the card. It used to
+        // count every un-started link in the exam regardless, so a coordinator
+        // looking at one class read "12 sat, 40 never started" — two numbers from
+        // one card describing two different populations.
+        if (input.CandidateGroupId is { } groupId)
+        {
+            var memberIds = (await _members.GetQueryableAsync())
+                .Where(m => m.CandidateGroupId == groupId)
+                .Select(m => m.CandidateId);
+
+            links = links.Where(l => memberIds.Contains(l.CandidateId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var term = input.Filter.Trim();
+
+            var candidateIds = (await _candidates.GetQueryableAsync())
+                .Where(c => c.FullName.Contains(term) || c.Email.Contains(term))
+                .Select(c => c.Id);
+
+            links = links.Where(l => candidateIds.Contains(l.CandidateId));
+        }
+
         var attempts = await _attempts.GetQueryableAsync();
 
-        return await links
-            .Where(l => l.ExamId == examId && !l.IsRevoked)
-            .Where(l => !attempts.Any(a => a.ExamLinkId == l.Id))
-            .CountAsync();
+        return await links.Where(l => !attempts.Any(a => a.ExamLinkId == l.Id)).CountAsync();
     }
 
     private async Task<List<ResultRowDto>> ToRowsAsync(List<Attempt> attempts)
@@ -573,11 +641,22 @@ public class ResultAppService : ApplicationService, IResultAppService
     /// </summary>
     private static string Escape(string value)
     {
-        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r'))
+        // A cell beginning =, +, - or @ is evaluated by Excel and by Sheets. A
+        // candidate registering as =HYPERLINK("http://x","click") gets that run on
+        // the coordinator's machine when they open the export — and the stated
+        // purpose of this file is that somebody opens it in a spreadsheet.
+        //
+        // A leading apostrophe is the conventional defusing: the text is shown and
+        // nothing is evaluated.
+        var safe = value.Length > 0 && "=+-@".Contains(value[0])
+            ? "'" + value
+            : value;
+
+        if (!safe.Contains(',') && !safe.Contains('"') && !safe.Contains('\n') && !safe.Contains('\r'))
         {
-            return value;
+            return safe;
         }
 
-        return '"' + value.Replace("\"", "\"\"") + '"';
+        return '"' + safe.Replace("\"", "\"\"") + '"';
     }
 }

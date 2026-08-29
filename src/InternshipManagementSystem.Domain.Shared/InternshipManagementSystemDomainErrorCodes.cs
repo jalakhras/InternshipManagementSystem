@@ -96,6 +96,12 @@ public static class InternshipManagementSystemDomainErrorCodes
     /// </summary>
     public const string AttemptGradedCannotDelete = "IMS:Attempt:GradedCannotDelete";
 
+    /// <summary>
+    /// A published form whose questions have all been deactivated or refiled. A
+    /// candidate reaching an empty paper is worse than being told to come back.
+    /// </summary>
+    public const string ExamFormNoLongerUsable = "IMS:ExamForm:NoLongerUsable";
+
     // ---- Catalog ----
     public const string CatalogCodeAlreadyExists = "IMS:Catalog:CodeAlreadyExists";
 
@@ -110,6 +116,13 @@ public static class InternshipManagementSystemDomainErrorCodes
 
     /// <summary>Questions filed under a topic are still about something.</summary>
     public const string CatalogTopicInUse = "IMS:Catalog:TopicInUse";
+
+    /// <summary>
+    /// A blueprint rule or an exam section still names this topic. Nothing
+    /// enforces a foreign key, and a rule pointing at a deleted topic draws
+    /// nothing — so every paper it shapes comes out short, silently.
+    /// </summary>
+    public const string CatalogTopicInBlueprint = "IMS:Catalog:TopicInBlueprint";
 
     /// <summary>A topic that is its own ancestor makes a result breakdown loop.</summary>
     public const string CatalogTopicCycle = "IMS:Catalog:TopicCycle";

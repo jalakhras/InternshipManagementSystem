@@ -10,6 +10,7 @@ using InternshipManagementSystem.Settings;
 using InternshipManagementSystem.Assessment.People;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
@@ -784,6 +785,30 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             .ToListAsync();
 
         var known = bank.ToDictionary(q => q.Id);
+
+        // A named form exists to make two scores comparable, and a paper that has
+        // silently lost a question is not comparable with the one everybody else
+        // sat. The builder never fails — it contributes what it can — so a form
+        // whose questions were deactivated after publication produced a shorter
+        // paper marked out of a different total, with no signal to anyone.
+        //
+        // A missing question or two is recoverable and visible in the marks; an
+        // empty paper is not, and a candidate must never reach one.
+        var missing = slots.Count(slot => !known.ContainsKey(slot.QuestionId));
+
+        if (missing > 0)
+        {
+            Logger.LogWarning(
+                "Form {FormId} is serving {Served} of {Total} questions: {Missing} are no longer "
+                + "drawable by exam {ExamId}. Scores from this sitting are not comparable with "
+                + "earlier ones.",
+                examFormId, slots.Count - missing, slots.Count, missing, exam.Id);
+        }
+
+        if (missing == slots.Count && slots.Count > 0)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamFormNoLongerUsable);
+        }
 
         // Through the same projector the drawn path uses, which is the point: the
         // option order lives there. Written out by hand this method once omitted it,
