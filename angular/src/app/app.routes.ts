@@ -39,6 +39,13 @@ export const APP_ROUTES: Routes = [
         loadChildren: () => import('./features/exams/exam.routes').then(m => m.EXAM_ROUTES),
       },
       {
+        path: 'questions',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Questions.View' },
+        loadChildren: () =>
+          import('./features/questions/question.routes').then(m => m.QUESTION_ROUTES),
+      },
+      {
         path: 'candidates',
         canActivate: [permissionGuard],
         data: { requiredPolicy: 'Assessment.Candidates.View' },
@@ -51,6 +58,12 @@ export const APP_ROUTES: Routes = [
         data: { requiredPolicy: 'Assessment.Assignments.View' },
         loadChildren: () =>
           import('./features/assignments/assignment.routes').then(m => m.ASSIGNMENT_ROUTES),
+      },
+      {
+        path: 'catalog',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Catalog.View' },
+        loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES),
       },
       {
         path: 'review',

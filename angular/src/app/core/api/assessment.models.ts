@@ -159,7 +159,13 @@ export interface BlueprintRuleDto {
 
 export interface QuestionDto {
   id: string;
-  examId: string;
+
+  /** Absent for a bank question, which belongs to a domain rather than to a paper. */
+  examId?: string | null;
+
+  categoryId?: string | null;
+  levelId?: string | null;
+
   questionGroupId?: string;
 
   text: string;
@@ -193,7 +199,21 @@ export interface QuestionDto {
 }
 
 export interface CreateUpdateQuestionDto {
-  examId: string;
+  /**
+   * The exam that owns this question, or absent for a bank question.
+   *
+   * Absent is the interesting case and the one that was unreachable: a bank
+   * question belongs to a domain and a level rather than to one paper, and every
+   * exam at that level can draw it.
+   */
+  examId?: string | null;
+
+  /** Required when there is no exam: it is what makes the question findable. */
+  categoryId?: string | null;
+
+  /** Optional even in the bank — a question with no level suits every level in its domain. */
+  levelId?: string | null;
+
   questionGroupId?: string;
   text: string;
   type: string;
@@ -211,6 +231,12 @@ export interface CreateUpdateQuestionDto {
 
 export interface QuestionListRequest extends PagedRequest {
   examId?: string;
+
+  /** Only questions owned by no exam. What the bank screen asks for. */
+  bankOnly?: boolean;
+
+  categoryId?: string;
+  levelId?: string;
   topicId?: string;
   type?: string;
   difficulty?: QuestionDifficulty;

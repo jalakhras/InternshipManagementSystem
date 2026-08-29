@@ -1,0 +1,450 @@
+<astro-page-header
+  [title]="t('::Nav:Catalog')"
+  [description]="t('::Catalog:Lede')">
+  <div slot="actions" class="head-actions">
+    @if (canManage()) {
+      <button type="button" class="btn btn-outline-secondary" (click)="openVocabulary()">
+        <i class="bi bi-translate" aria-hidden="true"></i>
+        {{ t('::Catalog:Vocabulary') }}
+      </button>
+      <button type="button" class="btn btn-primary" (click)="newCategory()">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        {{ t('::Catalog:NewCategory') }}
+      </button>
+    }
+  </div>
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else {
+  <div class="panes">
+    <!-- The domains. Deliberately the narrower pane: an organisation has a handful
+         of these and dozens of levels and topics underneath them. -->
+    <section class="pane pane--list" [attr.aria-label]="t('::Catalog:Categories')">
+      <div class="pane__head">
+        <h2 class="pane__title">{{ t('::Catalog:Categories') }}</h2>
+        <label class="inactive-toggle">
+          <input
+            type="checkbox"
+            [checked]="includeInactive()"
+            (change)="toggleInactive()" />
+          {{ t('::Catalog:ShowInactive') }}
+        </label>
+      </div>
+
+      @if (isEmpty()) {
+        <div class="state">
+          <i class="bi bi-tags" aria-hidden="true"></i>
+          <p class="state__title">{{ t('::Catalog:NoneYet') }}</p>
+          <p class="state__text">{{ t('::Catalog:NoneYetNote') }}</p>
+          @if (canManage()) {
+            <button type="button" class="btn btn-primary" (click)="newCategory()">
+              {{ t('::Catalog:NewCategory') }}
+            </button>
+          }
+        </div>
+      }
+
+      <ul class="category-list">
+        @for (category of categories(); track category.id) {
+          <li>
+            <button
+              type="button"
+              class="category"
+              [class.category--selected]="category.id === selectedId()"
+              [class.category--inactive]="!category.isActive"
+              [attr.aria-current]="category.id === selectedId() ? 'true' : null"
+              (click)="select(category.id)">
+              <span class="category__name">{{ category.name }}</span>
+              <span class="category__meta">
+                {{ counts(category) }}
+              </span>
+            </button>
+          </li>
+        }
+      </ul>
+
+      @if (categoryDraft().open) {
+        <form class="draft" (ngSubmit)="saveCategory()">
+          <h3 class="draft__title">
+            {{ categoryDraft().id ? t('::Catalog:EditCategory') : t('::Catalog:NewCategory') }}
+          </h3>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Name') }}</span>
+            <input
+              class="form-control"
+              required
+              [ngModel]="categoryDraft().name"
+              name="categoryName"
+              (ngModelChange)="categoryDraft.set({ ...categoryDraft(), name: $event })" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Code') }}</span>
+            <input
+              class="form-control"
+              name="categoryCode"
+              [placeholder]="suggest(categoryDraft().name)"
+              [ngModel]="categoryDraft().code"
+              (ngModelChange)="categoryDraft.set({ ...categoryDraft(), code: $event })" />
+            <span class="field__hint">{{ t('::Catalog:CodeHint') }}</span>
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Description') }}</span>
+            <textarea
+              class="form-control"
+              rows="2"
+              name="categoryDescription"
+              [ngModel]="categoryDraft().description"
+              (ngModelChange)="categoryDraft.set({ ...categoryDraft(), description: $event })"></textarea>
+          </label>
+
+          <label class="check">
+            <input
+              type="checkbox"
+              name="categoryActive"
+              [ngModel]="categoryDraft().isActive"
+              (ngModelChange)="categoryDraft.set({ ...categoryDraft(), isActive: $event })" />
+            {{ t('::Catalog:Active') }}
+          </label>
+
+          <div class="draft__actions">
+            <button type="submit" class="btn btn-primary" [disabled]="saving()">
+              {{ t('::Save') }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="cancelCategory()">
+              {{ t('::Cancel') }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+
+    <!-- The selected domain: its ladder and its topics, together, because setting
+         up English means thinking about A1 through C2 in one sitting. -->
+    <section class="pane pane--detail">
+      @if (selected(); as category) {
+        <div class="pane__head">
+          <div>
+            <h2 class="pane__title">{{ category.name }}</h2>
+            <p class="pane__meta">
+              {{ counts(category) }}
+              @if (!category.isActive) {
+                <span class="badge badge--muted">{{ t('::Catalog:Inactive') }}</span>
+              }
+            </p>
+          </div>
+
+          @if (canManage()) {
+            <div class="pane__actions">
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="editCategory(category)">
+                {{ t('::Edit') }}
+              </button>
+              <button
+                type="button"
+                class="btn btn-outline-danger btn-sm"
+                (click)="askDelete('category', category.id, category.name)">
+                {{ t('::Delete') }}
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Levels -->
+        <div class="group">
+          <div class="group__head">
+            <h3 class="group__title">{{ t('::Catalog:Levels') }}</h3>
+            @if (canManage()) {
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="newLevel()">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                {{ t('::Catalog:AddLevel') }}
+              </button>
+            }
+          </div>
+
+          @if (category.levels.length === 0) {
+            <p class="group__empty">{{ t('::Catalog:NoLevels') }}</p>
+          }
+
+          <ul class="rows">
+            @for (level of category.levels; track level.id) {
+              <li class="row" [class.row--inactive]="!level.isActive">
+                <span class="row__order">{{ level.displayOrder }}</span>
+                <span class="row__name">{{ level.name }}</span>
+                <code class="row__code">{{ level.code }}</code>
+                @if (!level.categoryId) {
+                  <span class="badge badge--muted">{{ t('::Catalog:Everywhere') }}</span>
+                }
+                @if (canManage()) {
+                  <span class="row__actions">
+                    <button type="button" class="link" (click)="editLevel(level)">{{ t('::Edit') }}</button>
+                    <button
+                      type="button"
+                      class="link link--danger"
+                      (click)="askDelete('level', level.id, level.name)">
+                      {{ t('::Delete') }}
+                    </button>
+                  </span>
+                }
+              </li>
+            }
+          </ul>
+
+          @if (levelDraft().open) {
+            <form class="draft draft--inline" (ngSubmit)="saveLevel()">
+              <label class="field field--grow">
+                <span class="field__label">{{ t('::Catalog:Name') }}</span>
+                <input
+                  class="form-control"
+                  required
+                  name="levelName"
+                  [ngModel]="levelDraft().name"
+                  (ngModelChange)="levelDraft.set({ ...levelDraft(), name: $event })" />
+              </label>
+
+              <label class="field">
+                <span class="field__label">{{ t('::Catalog:Code') }}</span>
+                <input
+                  class="form-control"
+                  name="levelCode"
+                  [placeholder]="suggest(levelDraft().name)"
+                  [ngModel]="levelDraft().code"
+                  (ngModelChange)="levelDraft.set({ ...levelDraft(), code: $event })" />
+              </label>
+
+              <label class="field field--narrow">
+                <span class="field__label">{{ t('::Catalog:Order') }}</span>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="levelOrder"
+                  [ngModel]="levelDraft().displayOrder"
+                  (ngModelChange)="levelDraft.set({ ...levelDraft(), displayOrder: +$event })" />
+              </label>
+
+              <label class="check">
+                <input
+                  type="checkbox"
+                  name="levelEverywhere"
+                  [ngModel]="levelDraft().appliesEverywhere"
+                  (ngModelChange)="levelDraft.set({ ...levelDraft(), appliesEverywhere: $event })" />
+                {{ t('::Catalog:AppliesEverywhere') }}
+              </label>
+
+              <div class="draft__actions">
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">
+                  {{ t('::Save') }}
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelLevel()">
+                  {{ t('::Cancel') }}
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+
+        <!-- Topics -->
+        <div class="group">
+          <div class="group__head">
+            <h3 class="group__title">{{ t('::Catalog:Topics') }}</h3>
+            @if (canManage()) {
+              <button type="button" class="btn btn-outline-secondary btn-sm" (click)="newTopic()">
+                <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                {{ t('::Catalog:AddTopic') }}
+              </button>
+            }
+          </div>
+
+          <p class="group__note">{{ t('::Catalog:TopicsNote') }}</p>
+
+          @if (topicRows().length === 0) {
+            <p class="group__empty">{{ t('::Catalog:NoTopics') }}</p>
+          }
+
+          <ul class="rows">
+            @for (row of topicRows(); track row.topic.id) {
+              <li
+                class="row"
+                [class.row--inactive]="!row.topic.isActive"
+                [style.padding-inline-start.rem]="row.depth * 1.25">
+                <span class="row__name">{{ row.topic.name }}</span>
+                <code class="row__code">{{ row.topic.code }}</code>
+                @if (canManage()) {
+                  <span class="row__actions">
+                    <button type="button" class="link" (click)="newTopic(row.topic.id)">
+                      {{ t('::Catalog:AddChild') }}
+                    </button>
+                    <button type="button" class="link" (click)="editTopic(row.topic)">{{ t('::Edit') }}</button>
+                    <button
+                      type="button"
+                      class="link link--danger"
+                      (click)="askDelete('topic', row.topic.id, row.topic.name)">
+                      {{ t('::Delete') }}
+                    </button>
+                  </span>
+                }
+              </li>
+            }
+          </ul>
+
+          @if (topicDraft().open) {
+            <form class="draft draft--inline" (ngSubmit)="saveTopic()">
+              <label class="field field--grow">
+                <span class="field__label">{{ t('::Catalog:Name') }}</span>
+                <input
+                  class="form-control"
+                  required
+                  name="topicName"
+                  [ngModel]="topicDraft().name"
+                  (ngModelChange)="topicDraft.set({ ...topicDraft(), name: $event })" />
+              </label>
+
+              <label class="field">
+                <span class="field__label">{{ t('::Catalog:Code') }}</span>
+                <input
+                  class="form-control"
+                  name="topicCode"
+                  [placeholder]="suggest(topicDraft().name)"
+                  [ngModel]="topicDraft().code"
+                  (ngModelChange)="topicDraft.set({ ...topicDraft(), code: $event })" />
+              </label>
+
+              <label class="field">
+                <span class="field__label">{{ t('::Catalog:ParentTopic') }}</span>
+                <select
+                  class="form-select"
+                  name="topicParent"
+                  [ngModel]="topicDraft().parentId ?? ''"
+                  (ngModelChange)="topicDraft.set({ ...topicDraft(), parentId: $event || null })">
+                  <option value="">{{ t('::Catalog:NoParent') }}</option>
+                  @for (option of parentOptions(); track option.id) {
+                    <option [value]="option.id">{{ option.name }}</option>
+                  }
+                </select>
+              </label>
+
+              <div class="draft__actions">
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="saving()">
+                  {{ t('::Save') }}
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="cancelTopic()">
+                  {{ t('::Cancel') }}
+                </button>
+              </div>
+            </form>
+          }
+        </div>
+      } @else {
+        <div class="state">
+          <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+          <p class="state__text">{{ t('::Catalog:PickOne') }}</p>
+        </div>
+      }
+    </section>
+  </div>
+}
+
+@if (pendingDelete(); as pending) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::ConfirmDelete')">
+    <div class="dialog">
+      <h2 class="dialog__title">{{ t('::ConfirmDelete') }}</h2>
+      <p class="dialog__body">{{ t('::Catalog:DeleteWarning', pending.name) }}</p>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="confirmDelete()">
+          {{ t('::Delete') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelDelete()">
+          {{ t('::Cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (vocabularyOpen()) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Catalog:Vocabulary')">
+    <div class="dialog dialog--wide">
+      <h2 class="dialog__title">{{ t('::Catalog:Vocabulary') }}</h2>
+      <p class="dialog__body">{{ t('::Catalog:VocabularyNote') }}</p>
+
+      @if (vocabulary(); as words) {
+        <form class="words" (ngSubmit)="saveVocabulary()">
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Word:CategorySingular') }}</span>
+            <input class="form-control" name="singular"
+              [ngModel]="words.singularName"
+              (ngModelChange)="setWord('singularName', $event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Word:CategoryPlural') }}</span>
+            <input class="form-control" name="plural"
+              [ngModel]="words.pluralName"
+              (ngModelChange)="setWord('pluralName', $event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Word:SubjectSingular') }}</span>
+            <input class="form-control" name="subjectSingular"
+              [ngModel]="words.subjectSingularName"
+              (ngModelChange)="setWord('subjectSingularName', $event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Word:SubjectPlural') }}</span>
+            <input class="form-control" name="subjectPlural"
+              [ngModel]="words.subjectPluralName"
+              (ngModelChange)="setWord('subjectPluralName', $event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Word:GroupSingular') }}</span>
+            <input class="form-control" name="groupSingular"
+              [ngModel]="words.groupSingularName"
+              (ngModelChange)="setWord('groupSingularName', $event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Catalog:Word:GroupPlural') }}</span>
+            <input class="form-control" name="groupPlural"
+              [ngModel]="words.groupPluralName"
+              (ngModelChange)="setWord('groupPluralName', $event)" />
+          </label>
+
+          <div class="dialog__actions">
+            <button type="submit" class="btn btn-primary" [disabled]="vocabularySaving()">
+              {{ t('::Save') }}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" (click)="closeVocabulary()">
+              {{ t('::Close') }}
+            </button>
+            @if (vocabularySaved()) {
+              <span class="saved" role="status">{{ t('::Saved') }}</span>
+            }
+          </div>
+        </form>
+      } @else {
+        <div class="state" role="status">
+          <span class="spinner" aria-hidden="true"></span>
+        </div>
+      }
+    </div>
+  </div>
+}

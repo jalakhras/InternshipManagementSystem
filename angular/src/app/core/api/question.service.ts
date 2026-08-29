@@ -28,6 +28,9 @@ export class QuestionService {
       url: this.base,
       params: {
         examId: input.examId,
+        bankOnly: input.bankOnly,
+        categoryId: input.categoryId,
+        levelId: input.levelId,
         topicId: input.topicId,
         type: input.type,
         difficulty: input.difficulty,

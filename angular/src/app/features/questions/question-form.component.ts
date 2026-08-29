@@ -13,6 +13,8 @@ import { FormsModule } from '@angular/forms';
 import { RichTextComponent } from '../../shared/ui/rich-text.component';
 import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 
+import { CatalogService } from '../../core/api/catalog.service';
+import { CategoryDto } from '../../core/api/catalog.models';
 import { QuestionService } from '../../core/api/question.service';
 import {
   CreateUpdateQuestionDto,
@@ -43,10 +45,18 @@ import { PAYLOAD_EDITORS } from './payload/payload-editor';
 })
 export class QuestionFormComponent {
   private readonly questions = inject(QuestionService);
+  private readonly catalog = inject(CatalogService);
 
   readonly t = inject(TranslateService).t;
 
-  readonly examId = input.required<string>();
+  /**
+   * The exam this question is being written into, or absent in the bank.
+   *
+   * In the bank the question is filed under a domain and a level instead, and
+   * every exam at that level can draw it. That path had no screen, so the only
+   * questions this product could produce were ones tied to a single paper.
+   */
+  readonly examId = input<string>();
   readonly questionId = input<string>();
 
   /** The question already fetched, so the form is not reloaded over the author's edits. */
@@ -70,8 +80,31 @@ export class QuestionFormComponent {
   /** Type is chosen first: it decides the shape of everything below it. */
   readonly showTypePicker = signal(true);
 
+  /** Domains, with their levels and topics, for the filing section. */
+  readonly categories = signal<CategoryDto[]>([]);
+
+  /**
+   * Levels under the chosen domain. A level belongs to one ladder, so offering
+   * every organisation's at once is how a beginners' safety item ends up at B2.
+   */
+  readonly levels = computed(() =>
+    this.categories().find(c => c.id === this.form().categoryId)?.levels ?? [],
+  );
+
+  readonly topics = computed(() =>
+    this.categories().find(c => c.id === this.form().categoryId)?.topics ?? [],
+  );
+
+  /**
+   * A bank question has to say which domain it belongs to.
+   *
+   * Not a nicety: the drawing rule is domain plus level, so a bank question with
+   * no domain can never be drawn by anything. It would save successfully and be
+   * invisible forever, which is the worst kind of accepted input.
+   */
+  readonly needsCategory = computed(() => !this.examId() && !this.form().categoryId);
+
   readonly form = signal<CreateUpdateQuestionDto>({
-    examId: '',
     text: '',
     type: '',
     payload: '{}',
@@ -103,7 +136,15 @@ export class QuestionFormComponent {
     });
 
     effect(() => {
-      this.patch('examId', this.examId());
+      // Undefined rather than an empty string. The server reads "no exam" as
+      // "bank question", and an empty string is a malformed id.
+      this.patch('examId', this.examId() ?? undefined);
+    });
+
+    // The catalogue, for the filing pickers. A failure here costs the pickers and
+    // nothing else — somebody fixing a typo in a prompt should not be stopped.
+    this.catalog.getCategories().subscribe({
+      next: categories => this.categories.set(categories),
     });
 
     // Mounts the editor for the chosen type.
@@ -173,6 +214,8 @@ export class QuestionFormComponent {
       next: question => {
         this.form.set({
           examId: question.examId,
+          categoryId: question.categoryId,
+          levelId: question.levelId,
           questionGroupId: question.questionGroupId,
           text: question.text,
           type: question.type,
@@ -210,7 +253,26 @@ export class QuestionFormComponent {
     this.patch('mediaType', media.mediaType);
   }
 
+  /**
+   * Changing the domain clears the level and the topic.
+   *
+   * Both belong to the domain that was just replaced. Leaving them would file the
+   * question under a level from another ladder, which reads fine on the screen.
+   */
+  setCategory(categoryId: string): void {
+    this.form.update(f => ({
+      ...f,
+      categoryId: categoryId || undefined,
+      levelId: undefined,
+      topicId: undefined,
+    }));
+  }
+
   save(): void {
+    if (this.needsCategory()) {
+      return;
+    }
+
     this.saving.set(true);
     this.error.set(null);
 

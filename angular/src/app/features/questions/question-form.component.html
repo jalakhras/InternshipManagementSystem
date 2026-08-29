@@ -98,6 +98,66 @@
     <section class="group">
       <h2 class="group__title">{{ t('::Question:Group:Marking') }}</h2>
 
+      <!-- ── Filing ──────────────────────────────────────────────────────
+           Where this question lives. Inside an exam it is optional and mostly
+           useful for the topic breakdown on a result; in the bank the domain is
+           what makes the question drawable at all, so it is required. -->
+      <div class="row-3">
+        <div class="field">
+          <label class="form-label" for="questionCategory">{{ t('::Exam:Category') }}</label>
+          <select
+            id="questionCategory"
+            class="form-select"
+            name="questionCategory"
+            [ngModel]="form().categoryId ?? ''"
+            (ngModelChange)="setCategory($event)">
+            <option value="">{{ t('::Exam:Category:None') }}</option>
+            @for (category of categories(); track category.id) {
+              <option [value]="category.id">{{ category.name }}</option>
+            }
+          </select>
+          @if (needsCategory()) {
+            <p class="hint hint--warn">{{ t('::Question:Category:Required') }}</p>
+          } @else {
+            <p class="hint">{{ t('::Question:Category:Hint') }}</p>
+          }
+        </div>
+
+        <div class="field">
+          <label class="form-label" for="questionLevel">{{ t('::Exam:Level') }}</label>
+          <select
+            id="questionLevel"
+            class="form-select"
+            name="questionLevel"
+            [disabled]="!form().categoryId"
+            [ngModel]="form().levelId ?? ''"
+            (ngModelChange)="patch('levelId', $event || undefined)">
+            <option value="">{{ t('::Question:Level:Any') }}</option>
+            @for (level of levels(); track level.id) {
+              <option [value]="level.id">{{ level.name }}</option>
+            }
+          </select>
+          <p class="hint">{{ t('::Question:Level:Hint') }}</p>
+        </div>
+
+        <div class="field">
+          <label class="form-label" for="questionTopic">{{ t('::Question:Topic') }}</label>
+          <select
+            id="questionTopic"
+            class="form-select"
+            name="questionTopic"
+            [disabled]="!form().categoryId"
+            [ngModel]="form().topicId ?? ''"
+            (ngModelChange)="patch('topicId', $event || undefined)">
+            <option value="">{{ t('::Question:Topic:None') }}</option>
+            @for (topic of topics(); track topic.id) {
+              <option [value]="topic.id">{{ topic.name }}</option>
+            }
+          </select>
+          <p class="hint">{{ t('::Question:Topic:Hint') }}</p>
+        </div>
+      </div>
+
       <div class="row-3">
         <div class="field">
           <label class="form-label" for="score">{{ t('::Question:Score') }}</label>

@@ -50,6 +50,41 @@
         name="title" />
     </div>
 
+    <div class="row-2">
+      <div class="field">
+        <label class="form-label" for="categoryId">{{ t('::Exam:Category') }}</label>
+        <select
+          id="categoryId"
+          class="form-select"
+          name="categoryId"
+          [ngModel]="form().categoryId ?? ''"
+          (ngModelChange)="setCategory($event)">
+          <option value="">{{ t('::Exam:Category:None') }}</option>
+          @for (category of categories(); track category.id) {
+            <option [value]="category.id">{{ category.name }}</option>
+          }
+        </select>
+        <p class="hint">{{ t('::Exam:Category:Hint') }}</p>
+      </div>
+
+      <div class="field">
+        <label class="form-label" for="levelId">{{ t('::Exam:Level') }}</label>
+        <select
+          id="levelId"
+          class="form-select"
+          name="levelId"
+          [disabled]="!form().categoryId"
+          [ngModel]="form().levelId ?? ''"
+          (ngModelChange)="patch('levelId', $event || undefined)">
+          <option value="">{{ t('::Exam:Level:None') }}</option>
+          @for (level of levels(); track level.id) {
+            <option [value]="level.id">{{ level.name }}</option>
+          }
+        </select>
+        <p class="hint">{{ t('::Exam:Level:Hint') }}</p>
+      </div>
+    </div>
+
     <div class="field">
       <label class="form-label" for="description">{{ t('::Exam:Description') }}</label>
       <textarea

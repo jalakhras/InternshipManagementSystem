@@ -93,6 +93,21 @@ public static class InternshipManagementSystemDomainErrorCodes
     // ---- Catalog ----
     public const string CatalogCodeAlreadyExists = "IMS:Catalog:CodeAlreadyExists";
 
+    /// <summary>
+    /// Deleting a domain that exams are filed under would unfile them, and an
+    /// unfiled exam draws from an empty bank — a paper that silently gets shorter.
+    /// </summary>
+    public const string CatalogCategoryInUse = "IMS:Catalog:CategoryInUse";
+
+    /// <summary>The same, one rung down.</summary>
+    public const string CatalogLevelInUse = "IMS:Catalog:LevelInUse";
+
+    /// <summary>Questions filed under a topic are still about something.</summary>
+    public const string CatalogTopicInUse = "IMS:Catalog:TopicInUse";
+
+    /// <summary>A topic that is its own ancestor makes a result breakdown loop.</summary>
+    public const string CatalogTopicCycle = "IMS:Catalog:TopicCycle";
+
     // ---- Candidates ----
     public const string CandidateEmailAlreadyExists = "IMS:Candidate:EmailAlreadyExists";
 

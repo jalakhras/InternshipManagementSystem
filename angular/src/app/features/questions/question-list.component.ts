@@ -5,6 +5,8 @@ import { Observable } from 'rxjs';
 
 import { QuestionService } from '../../core/api/question.service';
 import { ExamService } from '../../core/api/exam.service';
+import { CatalogService } from '../../core/api/catalog.service';
+import { CategoryDto } from '../../core/api/catalog.models';
 import {
   QuestionDifficulty,
   QuestionDto,
@@ -36,13 +38,24 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
   templateUrl: './question-list.component.html',
   styleUrl: './question-list.component.scss',
 })
+/** Stands in for "the bank" in the loaded-once check, which is otherwise keyed by exam id. */
+const BANK = '__bank__';
+
 export class QuestionListComponent {
   private readonly questions = inject(QuestionService);
   private readonly exams = inject(ExamService);
+  private readonly catalog = inject(CatalogService);
 
   readonly t = inject(TranslateService).t;
 
-  readonly examId = input.required<string>();
+  /**
+   * The exam whose questions these are, or absent on the bank screen.
+   *
+   * Absent is not a degraded case. A bank question belongs to a domain and a
+   * level rather than to a paper, and until this screen existed there was no way
+   * to see one — so the bank was written, tested, and invisible.
+   */
+  readonly examId = input<string>();
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -54,6 +67,17 @@ export class QuestionListComponent {
 
   readonly filter = signal('');
   readonly type = signal<string>('');
+  readonly categoryId = signal<string>('');
+  readonly levelId = signal<string>('');
+
+  /** The catalogue, for the bank screen's two filters. */
+  readonly categories = signal<CategoryDto[]>([]);
+
+  readonly levels = computed(() => {
+    const chosen = this.categories().find(c => c.id === this.categoryId());
+
+    return chosen?.levels ?? [];
+  });
   readonly difficulty = signal<QuestionDifficulty | null>(null);
   readonly page = signal(0);
 
@@ -67,8 +91,26 @@ export class QuestionListComponent {
   readonly busyId = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
 
+  /** True on the bank screen: no owning exam, so the filters change and so does the heading. */
+  readonly isBank = computed(() => !this.examId());
+
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.items().length === 0);
-  readonly isFiltered = computed(() => !!this.filter() || !!this.type() || this.difficulty() !== null);
+  readonly isFiltered = computed(() =>
+    !!this.filter() || !!this.type() || this.difficulty() !== null || !!this.categoryId(),
+  );
+
+  /** Where the new-question and edit links go, which differs between the two screens. */
+  readonly newLink = computed(() => {
+    const exam = this.examId();
+
+    return exam ? ['/exams', exam, 'questions', 'new'] : ['/questions', 'new'];
+  });
+
+  editLink(questionId: string): unknown[] {
+    const exam = this.examId();
+
+    return exam ? ['/exams', exam, 'questions', questionId] : ['/questions', questionId];
+  }
   readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
 
   readonly difficulties = [
@@ -93,7 +135,23 @@ export class QuestionListComponent {
     effect(() => {
       const id = this.examId();
 
-      if (!id || id === this.loadedId) {
+      // The bank screen has no exam to wait for, so it loads once and stops. The
+      // guard below would otherwise leave it permanently empty.
+      if (!id) {
+        if (this.loadedId !== BANK) {
+          this.loadedId = BANK;
+
+          this.catalog.getCategories().subscribe({
+            next: categories => this.categories.set(categories),
+          });
+
+          this.load();
+        }
+
+        return;
+      }
+
+      if (id === this.loadedId) {
         return;
       }
 
@@ -115,6 +173,9 @@ export class QuestionListComponent {
     this.questions
       .getList({
         examId: this.examId(),
+        bankOnly: this.isBank() ? true : undefined,
+        categoryId: this.categoryId() || undefined,
+        levelId: this.levelId() || undefined,
         filter: this.filter() || undefined,
         type: this.type() || undefined,
         difficulty: this.difficulty() ?? undefined,
@@ -137,6 +198,19 @@ export class QuestionListComponent {
   applyFilter(): void {
     this.page.set(0);
     this.load();
+  }
+
+  setCategory(value: string): void {
+    this.categoryId.set(value);
+
+    // A level belongs to one ladder, so it cannot survive the domain changing.
+    this.levelId.set('');
+    this.applyFilter();
+  }
+
+  setLevel(value: string): void {
+    this.levelId.set(value);
+    this.applyFilter();
   }
 
   setType(value: string): void {

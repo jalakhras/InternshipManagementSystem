@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
 
+import { CatalogService } from '../../core/api/catalog.service';
+import { CategoryDto, LevelDto } from '../../core/api/catalog.models';
 import { ExamService } from '../../core/api/exam.service';
 import {
   CreateUpdateExamDto,
@@ -33,6 +35,7 @@ import { StatusChipComponent } from '../../shared/ui/status-chip.component';
 })
 export class ExamFormComponent {
   private readonly exams = inject(ExamService);
+  private readonly catalog = inject(CatalogService);
   private readonly router = inject(Router);
   private readonly permission = inject(PermissionService);
 
@@ -46,8 +49,33 @@ export class ExamFormComponent {
   readonly error = signal<string | null>(null);
 
   readonly exam = signal<ExamDto | null>(null);
+
+  /**
+   * The catalogue, for the two pickers below.
+   *
+   * These fields existed on the DTO from the start and had nowhere to be set, so
+   * every exam in the product was filed under no domain and no level. That is not
+   * cosmetic: the rule behind the shared item bank is "same domain, same level",
+   * and with both null it collapses to "this exam's own questions" — so an exam
+   * that should have drawn from a bank of four hundred drew from its own dozen,
+   * silently and with no error anywhere.
+   */
+  readonly categories = signal<CategoryDto[]>([]);
   readonly publishCheck = signal<PublishCheckDto | null>(null);
   readonly showPublishPanel = signal(false);
+
+  /**
+   * Levels offered for the chosen domain.
+   *
+   * Empty until a domain is chosen, because a level belongs to a ladder and
+   * offering every organisation's levels at once is how somebody files a
+   * beginners' safety test under B2.
+   */
+  readonly levels = computed<LevelDto[]>(() => {
+    const chosen = this.categories().find(c => c.id === this.form().categoryId);
+
+    return chosen?.levels ?? [];
+  });
 
   readonly form = signal<CreateUpdateExamDto>({
     title: '',
@@ -79,6 +107,13 @@ export class ExamFormComponent {
     // component's inputs after it is constructed, so `id` was always undefined
     // here: the exam was never fetched and the form opened as a new one, which
     // is why pressing Edit never entered edit mode.
+    // Loaded once for the pickers. Failing to load them must not stop somebody
+    // editing an exam's title, so there is no error branch: the pickers stay
+    // empty and everything else on the form still works.
+    this.catalog.getCategories().subscribe({
+      next: categories => this.categories.set(categories),
+    });
+
     effect(() => {
       const id = this.id();
 
@@ -126,6 +161,21 @@ export class ExamFormComponent {
 
   patch<K extends keyof CreateUpdateExamDto>(key: K, value: CreateUpdateExamDto[K]): void {
     this.form.update(f => ({ ...f, [key]: value }));
+  }
+
+  /**
+   * Changing the domain clears the level.
+   *
+   * A level belongs to one ladder. Keeping the old selection would leave an
+   * English A1 exam filed under safety, which reads fine on the screen and puts
+   * the paper in the wrong bank.
+   */
+  setCategory(categoryId: string): void {
+    this.form.update(f => ({
+      ...f,
+      categoryId: categoryId || undefined,
+      levelId: undefined,
+    }));
   }
 
   save(): void {

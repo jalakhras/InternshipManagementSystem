@@ -1,0 +1,318 @@
+/*
+ * Two panes side by side on a desk, stacked on a phone. Logical properties
+ * throughout, so the list sits on the reading-start edge in both directions
+ * without a second stylesheet.
+ */
+.head-actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) 1fr;
+  gap: var(--astro-space-4);
+  align-items: start;
+}
+
+@media (max-width: 60rem) {
+  .panes { grid-template-columns: 1fr; }
+}
+
+.pane {
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  padding: var(--astro-space-4);
+}
+
+.pane__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  margin-block-end: var(--astro-space-3);
+}
+
+.pane__title {
+  margin: 0;
+  font-size: var(--astro-text-lg);
+}
+
+.pane__meta {
+  margin: var(--astro-space-1) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+}
+
+.pane__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+}
+
+.inactive-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+/* --- the domain list --- */
+
+.category-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-1);
+}
+
+.category {
+  inline-size: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+  padding: var(--astro-space-2) var(--astro-space-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--astro-radius-md);
+  text-align: start;
+  cursor: pointer;
+  color: inherit;
+}
+
+.category:hover { background: var(--surface-sunken); }
+
+.category--selected {
+  background: var(--surface-sunken);
+  border-color: var(--astro-brand-700);
+}
+
+/* Dimmed rather than hidden: an inactive domain is still there, and the author
+   is looking at this list precisely to find it. */
+.category--inactive .category__name { opacity: 0.6; }
+
+.category__name { font-weight: 600; }
+
+.category__meta {
+  font-size: var(--astro-text-sm);
+  color: var(--text-muted);
+}
+
+/* --- levels and topics --- */
+
+.group + .group {
+  margin-block-start: var(--astro-space-5);
+  padding-block-start: var(--astro-space-4);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+.group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  margin-block-end: var(--astro-space-2);
+}
+
+.group__title {
+  margin: 0;
+  font-size: var(--astro-text-base);
+}
+
+.group__note,
+.group__empty {
+  margin: 0 0 var(--astro-space-2);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-2);
+  border-radius: var(--astro-radius-md);
+  flex-wrap: wrap;
+}
+
+.row:hover { background: var(--surface-sunken); }
+
+.row--inactive { opacity: 0.6; }
+
+.row__order {
+  min-inline-size: 1.5rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--astro-text-sm);
+}
+
+.row__name { font-weight: 500; }
+
+.row__code {
+  color: var(--text-muted);
+  font-size: var(--astro-text-sm);
+}
+
+/* Pushed to the far end of the reading direction, wherever that is. */
+.row__actions {
+  margin-inline-start: auto;
+  display: flex;
+  gap: var(--astro-space-3);
+}
+
+.link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--astro-brand-700);
+  cursor: pointer;
+  font-size: var(--astro-text-sm);
+}
+
+.link--danger { color: var(--astro-fail-600); }
+
+.badge {
+  font-size: var(--astro-text-xs);
+  padding: 0.125rem var(--astro-space-2);
+  border-radius: var(--astro-radius-sm);
+}
+
+.badge--muted {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+/* --- the inline editors --- */
+
+.draft {
+  margin-block-start: var(--astro-space-3);
+  padding: var(--astro-space-3);
+  background: var(--surface-sunken);
+  border-radius: var(--astro-radius-md);
+  display: grid;
+  gap: var(--astro-space-3);
+}
+
+.draft--inline {
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  align-items: end;
+}
+
+.draft__title {
+  margin: 0;
+  font-size: var(--astro-text-base);
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field--grow { grid-column: span 2; }
+.field--narrow { max-inline-size: 7rem; }
+
+.field__label {
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+.field__hint {
+  font-size: var(--astro-text-xs);
+  color: var(--text-muted);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+}
+
+.draft__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  align-items: center;
+}
+
+/* --- dialogs --- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 0.4);
+  display: grid;
+  place-items: center;
+  padding: var(--astro-space-4);
+  z-index: 40;
+}
+
+.dialog {
+  background: var(--surface-overlay);
+  border-radius: var(--astro-radius-lg);
+  padding: var(--astro-space-5);
+  max-inline-size: 28rem;
+  inline-size: 100%;
+}
+
+.dialog--wide { max-inline-size: 40rem; }
+
+.dialog__title {
+  margin: 0 0 var(--astro-space-2);
+  font-size: var(--astro-text-lg);
+}
+
+.dialog__body {
+  margin: 0 0 var(--astro-space-4);
+  color: var(--text-secondary);
+}
+
+.dialog__actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  align-items: center;
+  grid-column: 1 / -1;
+}
+
+.words {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--astro-space-3);
+}
+
+.saved {
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-6) var(--astro-space-4);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.state__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.state__text { margin: 0; }
