@@ -78,6 +78,13 @@ export const APP_ROUTES: Routes = [
         loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES),
       },
       {
+        // No permission guard: everybody signed in may read the settings, and the
+        // screen is read-only without ManageSettings. Knowing the rules the exams
+        // run under is not a privilege.
+        path: 'settings',
+        loadChildren: () => import('./features/settings/settings.routes').then(m => m.SETTINGS_ROUTES),
+      },
+      {
         path: 'review',
         canActivate: [permissionGuard],
         data: { requiredPolicy: 'Assessment.Review.ViewQueue' },

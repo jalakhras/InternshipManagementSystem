@@ -6,6 +6,7 @@ using InternshipManagementSystem.Assessment.Catalog;
 using InternshipManagementSystem.Assessment.Delivery.Dtos;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.Grading;
+using InternshipManagementSystem.Settings;
 using InternshipManagementSystem.Assessment.People;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -163,6 +164,21 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             : _sessions.Issue(
                 Guid.Empty, link.CandidateId, link.ExamId, link.TenantId,
                 now.AddMinutes(exam.TimeLimitInMinutes + 30).ToUniversalTime(), link.Id);
+
+        // Whose exam this is. Read after the link resolves, so it is the owning
+        // tenant's branding rather than whoever happens to be signed in.
+        preview.OrganizationName = await SettingProvider.GetOrNullAsync(
+            InternshipManagementSystemSettings.OrganizationName);
+
+        var logo = await SettingProvider.GetOrNullAsync(
+            InternshipManagementSystemSettings.LogoBlobName);
+
+        if (!string.IsNullOrWhiteSpace(logo))
+        {
+            // Signed like any other media a candidate is shown: they have no
+            // account, so the address is the whole credential.
+            preview.OrganizationLogoUrl = BuildMediaUrl(logo, link.ExpiresAt);
+        }
 
         // The plain token is needed once more, to bind the pending start to this link.
         preview.BlockReason = null;

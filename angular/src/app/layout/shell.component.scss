@@ -92,6 +92,15 @@
   // instrument would be a different instrument.
 }
 
+// An uploaded mark, sized like the drawn one so the header does not jump
+// between an organisation that has uploaded one and an organisation that has not.
+.brand__logo {
+  block-size: 28px;
+  inline-size: auto;
+  max-inline-size: 8rem;
+  object-fit: contain;
+}
+
 .brand__name {
   font-weight: var(--astro-weight-semibold);
   font-size: var(--astro-text-lg);

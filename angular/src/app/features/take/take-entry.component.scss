@@ -95,3 +95,27 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 2s; }
 }
+
+// ── Whose exam this is ───────────────────────────────────────────────────────
+// Above the greeting, quiet rather than loud: it is reassurance, not a headline.
+// The candidate is checking they are in the right place, not reading an advert.
+.org {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  margin-block-end: var(--astro-space-4);
+  padding-block-end: var(--astro-space-3);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.org__logo {
+  block-size: 2rem;
+  inline-size: auto;
+  max-inline-size: 10rem;
+  object-fit: contain;
+}
+
+.org__name {
+  color: var(--text-secondary);
+  font-weight: var(--astro-weight-medium);
+}

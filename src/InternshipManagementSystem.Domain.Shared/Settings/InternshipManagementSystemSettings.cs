@@ -22,6 +22,17 @@ public static class InternshipManagementSystemSettings
     /// <summary>Tenant timezone. The exam timer and every scheduled window depend on it.</summary>
     public const string TimeZone = Prefix + ".TimeZone";
 
+    /// <summary>
+    /// What this organisation calls itself.
+    /// <para>
+    /// Shown in the shell, on the screen a candidate opens their link on, and in
+    /// the invitation email. A candidate sitting an English placement test for a
+    /// language centre should see that centre's name, not ours: they have no
+    /// relationship with us and no reason to trust a name they have never heard.
+    /// </para>
+    /// </summary>
+    public const string OrganizationName = Prefix + ".OrganizationName";
+
     /// <summary>Tenant logo, as a blob name. Shown in the shell and on emailed invitations.</summary>
     public const string LogoBlobName = Prefix + ".LogoBlobName";
 

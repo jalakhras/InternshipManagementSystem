@@ -12,6 +12,7 @@ import {
 import { DirectionService, ThemePreference } from '../core/direction.service';
 import { TranslateService } from '../core/translate.service';
 import { NAVIGATION, NavItem, NavSection } from '../core/navigation';
+import { SettingsService } from '../core/api/settings.service';
 
 /**
  * The application shell: top bar, sidebar, content region.
@@ -35,14 +36,38 @@ export class ShellComponent {
   private readonly session = inject(SessionStateService);
   private readonly config = inject(ConfigStateService);
   private readonly auth = inject(AuthService);
+  private readonly settings = inject(SettingsService);
 
   readonly dir = inject(DirectionService);
 
   /** Bound so templates can call it directly; see TranslateService for why. */
   readonly t = inject(TranslateService).t;
 
+  constructor() {
+    // Once, here, because every screen inside the shell renders under this name.
+    // A failure costs the branding and nothing else: the product name stands in.
+    this.settings.load().subscribe({ error: () => undefined });
+  }
+
   /** Collapsed on small screens by default; the content matters more than the menu. */
   readonly sidebarOpen = signal(false);
+
+  /**
+   * The organisation's own name, falling back to the product's.
+   *
+   * A language centre's staff should see their centre's name here. They did not
+   * choose this platform by name and have no particular attachment to ours.
+   */
+  readonly organizationName = computed(
+    () => this.settings.current()?.organizationName?.trim() || this.t('::AppName'),
+  );
+
+  /** Their mark, when they have uploaded one. The drawn astrolabe stands in until then. */
+  readonly logoUrl = computed(() => {
+    const blob = this.settings.current()?.logoBlobName;
+
+    return blob ? `/api/assessment/media/${blob}` : null;
+  });
 
   readonly userMenuOpen = signal(false);
 

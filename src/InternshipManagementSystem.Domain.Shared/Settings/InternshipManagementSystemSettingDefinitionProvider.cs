@@ -14,6 +14,7 @@ public class InternshipManagementSystemSettingDefinitionProvider : SettingDefini
             // English-speaking tenant changes its own without affecting anyone else.
             Tenant(InternshipManagementSystemSettings.DefaultLanguage, "ar"),
             Tenant(InternshipManagementSystemSettings.TimeZone, "Asia/Riyadh"),
+            Tenant(InternshipManagementSystemSettings.OrganizationName, null),
             Tenant(InternshipManagementSystemSettings.LogoBlobName, null),
             Tenant(InternshipManagementSystemSettings.BrandColor, null),
             Tenant(InternshipManagementSystemSettings.DefaultPassingPercentage, "60"),

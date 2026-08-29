@@ -36,6 +36,16 @@ export interface ExamPreview {
   /** Set when an attempt is already running, so the screen offers to resume rather than to start. */
   resumableAttemptId?: string;
 
+  /**
+   * The organisation running this exam, and its mark.
+   *
+   * A candidate has no relationship with this platform and no reason to trust a
+   * name they have never heard of. What they recognise is the centre that told
+   * them to expect the email.
+   */
+  organizationName?: string;
+  organizationLogoUrl?: string;
+
   /** Minted on opening the link. Worth one attempt, and only in memory. */
   sessionToken?: string;
 }

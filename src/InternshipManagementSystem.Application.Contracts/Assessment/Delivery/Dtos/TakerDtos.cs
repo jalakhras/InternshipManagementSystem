@@ -25,6 +25,19 @@ public class ExamPreviewDto
     /// <summary>Why not, when it is not. Specific: expired, revoked, attempts used up.</summary>
     public string? BlockReason { get; set; }
 
+    /// <summary>
+    /// The organisation running this exam, and its mark.
+    /// <para>
+    /// A candidate opening a placement-test link has no relationship with this
+    /// platform and no reason to trust a name they have never heard of. What they
+    /// recognise is the centre that told them to expect the email.
+    /// </para>
+    /// </summary>
+    public string? OrganizationName { get; set; }
+
+    /// <summary>Signed, because the person about to see it has no account.</summary>
+    public string? OrganizationLogoUrl { get; set; }
+
     public string ExamTitle { get; set; } = default!;
     public string? Description { get; set; }
     public string CandidateName { get; set; } = default!;

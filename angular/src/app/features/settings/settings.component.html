@@ -1,0 +1,164 @@
+<astro-page-header
+  [title]="t('::Nav:Settings')"
+  [description]="t('::Settings:Lede')" />
+
+@if (error(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else {
+  <form class="form" (ngSubmit)="save()">
+    <!-- ── The organisation ────────────────────────────────────────────────
+         First because these are the ones a candidate sees. Somebody opening a
+         placement-test link has no relationship with us and no reason to trust
+         a name they have never heard. -->
+    <section class="group">
+      <h2 class="group__title">{{ t('::Settings:Brand') }}</h2>
+      <p class="group__lede">{{ t('::Settings:Brand:Lede') }}</p>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Settings:OrganizationName') }}</span>
+        <input
+          class="form-control"
+          maxlength="128"
+          name="organizationName"
+          [disabled]="readOnly()"
+          [placeholder]="t('::Settings:OrganizationName:Placeholder')"
+          [ngModel]="form().organizationName ?? ''"
+          (ngModelChange)="patch('organizationName', $event)" />
+        <span class="field__hint">{{ t('::Settings:OrganizationName:Hint') }}</span>
+      </label>
+
+      <div class="field">
+        <span class="field__label">{{ t('::Settings:Logo') }}</span>
+        <astro-media-field
+          [blobName]="form().logoBlobName ?? undefined"
+          mediaType="image"
+          (changed)="setLogo($event)" />
+        <span class="field__hint">{{ t('::Settings:Logo:Hint') }}</span>
+      </div>
+
+      <label class="field field--narrow">
+        <span class="field__label">{{ t('::Settings:BrandColor') }}</span>
+        <input
+          type="color"
+          class="form-control form-control-color"
+          name="brandColor"
+          [disabled]="readOnly()"
+          [ngModel]="form().brandColor ?? '#1f6feb'"
+          (ngModelChange)="patch('brandColor', $event)" />
+        <span class="field__hint">{{ t('::Settings:BrandColor:Hint') }}</span>
+      </label>
+    </section>
+
+    <!-- ── Language and time ───────────────────────────────────────────── -->
+    <section class="group">
+      <h2 class="group__title">{{ t('::Settings:Regional') }}</h2>
+
+      <div class="row-2">
+        <label class="field">
+          <span class="field__label">{{ t('::Settings:DefaultLanguage') }}</span>
+          <select
+            class="form-select"
+            name="defaultLanguage"
+            [disabled]="readOnly()"
+            [ngModel]="form().defaultLanguage ?? 'ar'"
+            (ngModelChange)="patch('defaultLanguage', $event)">
+            @for (language of languages; track language.culture) {
+              <option [value]="language.culture">{{ t(language.labelKey) }}</option>
+            }
+          </select>
+          <span class="field__hint">{{ t('::Settings:DefaultLanguage:Hint') }}</span>
+        </label>
+
+        <label class="field">
+          <span class="field__label">{{ t('::Settings:TimeZone') }}</span>
+          <input
+            class="form-control"
+            maxlength="64"
+            name="timeZone"
+            [disabled]="readOnly()"
+            [ngModel]="form().timeZone ?? ''"
+            (ngModelChange)="patch('timeZone', $event)" />
+          <!-- Not decoration: every exam clock and scheduled window is read in it. -->
+          <span class="field__hint">{{ t('::Settings:TimeZone:Hint') }}</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- ── Assessment defaults ─────────────────────────────────────────── -->
+    <section class="group">
+      <h2 class="group__title">{{ t('::Settings:Assessment') }}</h2>
+
+      <label class="field field--narrow">
+        <span class="field__label">{{ t('::Settings:PassMark') }}</span>
+        <input
+          type="number"
+          min="1"
+          max="100"
+          class="form-control astro-numeric"
+          name="passMark"
+          [disabled]="readOnly()"
+          [ngModel]="form().defaultPassingPercentage"
+          (ngModelChange)="patch('defaultPassingPercentage', +$event)" />
+        <span class="field__hint">{{ t('::Settings:PassMark:Hint') }}</span>
+      </label>
+
+      <label class="toggle">
+        <input
+          type="checkbox"
+          name="showResult"
+          [disabled]="readOnly()"
+          [checked]="form().showResultToCandidate"
+          (change)="patch('showResultToCandidate', !form().showResultToCandidate)" />
+        <span>
+          <strong>{{ t('::Settings:ShowResult') }}</strong>
+          <small>{{ t('::Settings:ShowResult:Hint') }}</small>
+        </span>
+      </label>
+
+      <label class="toggle">
+        <input
+          type="checkbox"
+          name="integrity"
+          [disabled]="readOnly()"
+          [checked]="form().collectIntegritySignals"
+          (change)="patch('collectIntegritySignals', !form().collectIntegritySignals)" />
+        <span>
+          <strong>{{ t('::Settings:Integrity') }}</strong>
+          <small>{{ t('::Settings:Integrity:Hint') }}</small>
+        </span>
+      </label>
+
+      <label class="toggle">
+        <input
+          type="checkbox"
+          name="selfRegistration"
+          [disabled]="readOnly()"
+          [checked]="form().enableSelfRegistration"
+          (change)="patch('enableSelfRegistration', !form().enableSelfRegistration)" />
+        <span>
+          <strong>{{ t('::Settings:SelfRegistration') }}</strong>
+          <small>{{ t('::Settings:SelfRegistration:Hint') }}</small>
+        </span>
+      </label>
+    </section>
+
+    @if (canManage()) {
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ t('::Save') }}</button>
+        @if (saved()) {
+          <span class="saved" role="status">{{ t('::Saved') }}</span>
+        }
+      </div>
+    } @else {
+      <!-- Read-only rather than hidden: knowing the rules is not a privilege. -->
+      <p class="readonly">{{ t('::Settings:ReadOnly') }}</p>
+    }
+  </form>
+}

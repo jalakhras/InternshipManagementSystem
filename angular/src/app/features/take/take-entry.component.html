@@ -23,6 +23,20 @@
       </div>
     } @else {
       <div class="card">
+        <!-- Whose exam this is, before anything else. The candidate recognises the
+             centre that told them to expect the email; they have never heard of
+             us and have no reason to trust a name they have not. -->
+        @if (exam.organizationLogoUrl || exam.organizationName) {
+          <div class="org">
+            @if (exam.organizationLogoUrl; as logo) {
+              <img class="org__logo" [src]="logo" alt="" />
+            }
+            @if (exam.organizationName; as name) {
+              <span class="org__name">{{ name }}</span>
+            }
+          </div>
+        }
+
         <p class="greeting">{{ t('::Take:Greeting', exam.candidateName) }}</p>
         <h1 class="title">{{ exam.examTitle }}</h1>
 

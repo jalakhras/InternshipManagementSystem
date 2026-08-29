@@ -1,0 +1,116 @@
+// Tenant settings. Logical properties throughout — this mirrors in Arabic.
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.form {
+  display: grid;
+  gap: var(--astro-space-5);
+  max-inline-size: 52rem;
+}
+
+.group {
+  padding: var(--astro-space-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  display: grid;
+  gap: var(--astro-space-3);
+}
+
+.group__title {
+  margin: 0;
+  font-size: var(--astro-text-lg);
+}
+
+.group__lede {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  max-inline-size: 70ch;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--astro-space-3);
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.field--narrow { max-inline-size: 12rem; }
+
+.field__label {
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+.field__hint {
+  font-size: var(--astro-text-xs);
+  color: var(--text-muted);
+  max-inline-size: 60ch;
+}
+
+.toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-2) 0;
+
+  strong {
+    display: block;
+    font-weight: var(--astro-weight-medium);
+    font-size: var(--astro-text-sm);
+  }
+
+  small {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    max-inline-size: 60ch;
+  }
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+}
+
+.saved,
+.readonly {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  &__text { margin: 0; }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
