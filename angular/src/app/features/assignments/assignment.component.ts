@@ -17,6 +17,7 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * Stands for "whichever paper comes next" in the picker.
@@ -48,7 +49,7 @@ const ROTATE = '__rotate__';
 @Component({
   selector: 'astro-assignment',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent],
+  imports: [FormsModule, DatePipe, PageHeaderComponent, ModalDirective],
   templateUrl: './assignment.component.html',
   styleUrl: './assignment.component.scss',
 })
@@ -270,6 +271,66 @@ export class AssignmentComponent {
 
   closeReissued(): void {
     this.reissued.set(null);
+  }
+
+  // --- extending a deadline ---
+
+  /**
+   * The link whose deadline is being moved, and the date being proposed.
+   *
+   * Reissuing deliberately leaves the deadline alone — a lost address and a
+   * missed deadline are different problems. Which meant that until this existed,
+   * a coordinator helping somebody who missed Friday had only the reissue
+   * button: they pressed it, read out a fresh address, and it was expired before
+   * the candidate typed it.
+   */
+  readonly extending = signal<ExamLinkDto | null>(null);
+  readonly extendTo = signal('');
+
+  askExtend(link: ExamLinkDto): void {
+    this.actionError.set(null);
+    this.extending.set(link);
+
+    // Prefilled a week out from today rather than from the old deadline, which
+    // may be months gone. A week is the answer often enough to be worth typing
+    // over rather than typing from scratch.
+    const week = new Date();
+    week.setDate(week.getDate() + 7);
+
+    this.extendTo.set(week.toISOString().slice(0, 16));
+  }
+
+  cancelExtend(): void {
+    this.extending.set(null);
+    this.extendTo.set('');
+  }
+
+  confirmExtend(): void {
+    const link = this.extending();
+    const when = this.extendTo();
+
+    if (!link || !when) {
+      return;
+    }
+
+    this.busyId.set(link.id);
+    this.actionError.set(null);
+
+    this.assignments.extend(link.id, new Date(when).toISOString()).subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.cancelExtend();
+        this.load();
+      },
+      error: err => {
+        // The server refuses a date in the past and a date earlier than the one
+        // already set, and says which. Shown as it comes rather than replaced
+        // with a general failure: "you cannot move a deadline backwards" is
+        // something a coordinator can act on.
+        this.actionError.set(this.reason(err));
+        this.busyId.set(null);
+      },
+    });
   }
 
   copyReissued(): void {

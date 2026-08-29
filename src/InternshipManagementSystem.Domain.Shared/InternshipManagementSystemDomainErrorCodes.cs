@@ -130,6 +130,14 @@ public static class InternshipManagementSystemDomainErrorCodes
     // ---- Candidates ----
     public const string CandidateEmailAlreadyExists = "IMS:Candidate:EmailAlreadyExists";
 
+    /// <summary>A deadline in the past is not an extension; it is a revocation
+    /// that does not say so to the person holding the link.</summary>
+    public const string ExamLinkExpiryInPast = "IMS:ExamLink:ExpiryInPast";
+
+    /// <summary>Pulling a deadline back ends a sitting under somebody part way
+    /// through it. Closing an exam early is what revoking is for.</summary>
+    public const string ExamLinkExpiryMovedBack = "IMS:ExamLink:ExpiryMovedBack";
+
     // ---- Staff accounts ----
 
     /// <summary>

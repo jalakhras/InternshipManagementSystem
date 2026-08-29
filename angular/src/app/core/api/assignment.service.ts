@@ -115,6 +115,22 @@ export class AssignmentService {
     });
   }
 
+  /**
+   * Moves a link's deadline forward, for somebody who missed it.
+   *
+   * Separate from reissuing on purpose. Reissuing deliberately leaves the
+   * deadline alone, so it was the only tool a coordinator had for a candidate
+   * who missed Friday — and it handed them a fresh address that was already
+   * expired.
+   */
+  extend(linkId: string, expiresAt: string): Observable<ExamLinkDto> {
+    return this.rest.request<{ expiresAt: string }, ExamLinkDto>({
+      method: 'POST',
+      url: `${this.base}/links/${linkId}/extend`,
+      body: { expiresAt },
+    });
+  }
+
   revoke(linkId: string): Observable<void> {
     return this.rest.request<void, void>({
       method: 'POST',

@@ -20,6 +20,16 @@ public interface IAssignmentAppService : IApplicationService
     Task<PagedResultDto<ExamLinkDto>> GetLinksAsync(Guid examId, PagedAndSortedResultRequestDto input);
 
     /// <summary>Stops a link working, for a leak or a mistaken send.</summary>
+    /// <summary>
+    /// Moves a link's deadline forward, for somebody who missed it.
+    /// <para>
+    /// Separate from reissuing: a lost address and a missed deadline are
+    /// different problems, and reissuing an expired link produced a new token
+    /// that was expired the moment it was handed over.
+    /// </para>
+    /// </summary>
+    Task<ExamLinkDto> ExtendLinkAsync(Guid linkId, DateTime expiresAt);
+
     Task RevokeLinkAsync(Guid linkId);
 
     /// <summary>

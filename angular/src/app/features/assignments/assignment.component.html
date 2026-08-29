@@ -90,6 +90,19 @@
                     </button>
                   }
 
+                  <!-- Reissuing leaves the deadline where it was, so somebody
+                       who simply ran out of time needs this and not that. -->
+                  @if (canCreate()) {
+                    <button
+                      type="button"
+                      class="row-action"
+                      [attr.title]="t('::Link:Extend')"
+                      [attr.aria-label]="t('::Link:Extend') + ': ' + link.candidateName"
+                      (click)="askExtend(link)">
+                      <i class="bi bi-calendar-plus" aria-hidden="true"></i>
+                    </button>
+                  }
+
                   @if (canRevoke() && !link.isRevoked) {
                     <button
                       type="button"
@@ -300,7 +313,49 @@
 
 @if (reissued(); as recipient) {
   <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Link:Reissue')">
-    <div class="reissued">
+    @if (extending(); as link) {
+  <div class="scrim" (click)="cancelExtend()"></div>
+
+  <div
+    class="confirm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="extendTitle"
+    astroModal
+    (dismiss)="cancelExtend()">
+    <h2 id="extendTitle" class="confirm__title">{{ t('::Link:Extend') }}</h2>
+
+    <p class="confirm__body">{{ t('::Link:Extend:Body', link.candidateName) }}</p>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Assignment:Expires') }}</span>
+      <input
+        type="datetime-local"
+        class="form-control"
+        [ngModel]="extendTo()"
+        (ngModelChange)="extendTo.set($event)"
+        name="extendTo" />
+      <!-- Forward only, and said before they type rather than after the server
+           refuses. Closing an exam early is what revoking is for. -->
+      <span class="field__hint">{{ t('::Link:Extend:ForwardOnly') }}</span>
+    </label>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelExtend()">
+        {{ t('::Cancel') }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!extendTo() || busyId() === link.id"
+        (click)="confirmExtend()">
+        {{ t('::Link:Extend:Confirm') }}
+      </button>
+    </div>
+  </div>
+}
+
+<div class="reissued">
       <h2 class="reissued__title">{{ t('::Link:Reissued:Title') }}</h2>
       <p class="reissued__body">{{ t('::Link:Reissued:Body', recipient.candidateName) }}</p>
 

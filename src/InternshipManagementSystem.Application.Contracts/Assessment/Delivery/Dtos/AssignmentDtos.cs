@@ -112,3 +112,15 @@ public class ExamLinkDto
     public DateTime? FirstOpenedAt { get; set; }
     public DateTime? EmailSentAt { get; set; }
 }
+
+/// <summary>
+/// The new deadline for a link whose old one has passed.
+/// <para>
+/// A body rather than a query parameter, so a date carrying a time zone
+/// survives the trip intact.
+/// </para>
+/// </summary>
+public class ExtendLinkDto
+{
+    public DateTime ExpiresAt { get; set; }
+}

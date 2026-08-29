@@ -271,6 +271,69 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
         };
     }
 
+    /// <summary>
+    /// Moves a link's deadline, so somebody who missed it can still sit.
+    /// <para>
+    /// Reissuing does not do this and should not: a new address for a lost link
+    /// and a new deadline for a missed one are different decisions, and one of
+    /// them is the coordinator's to make deliberately. But without this, they
+    /// could only make the first — so a coordinator helping somebody who missed
+    /// Friday reissued the link, handed over a fresh address, and it was already
+    /// expired. The token was new and the deadline was not.
+    /// </para>
+    /// <para>
+    /// Forward only. Pulling a deadline back onto a sitting somebody is part way
+    /// through ends it under them with no warning; closing an exam early is what
+    /// revoking is for, and it says so to the person holding the link.
+    /// </para>
+    /// </summary>
+    [Authorize(InternshipManagementSystemPermissions.Assignments.Create)]
+    public async Task<ExamLinkDto> ExtendLinkAsync(Guid linkId, DateTime expiresAt)
+    {
+        var link = await _links.GetAsync(linkId);
+
+        if (expiresAt <= Clock.Now)
+        {
+            throw new BusinessException(
+                InternshipManagementSystemDomainErrorCodes.ExamLinkExpiryInPast);
+        }
+
+        if (expiresAt < link.ExpiresAt)
+        {
+            throw new BusinessException(
+                InternshipManagementSystemDomainErrorCodes.ExamLinkExpiryMovedBack);
+        }
+
+        link.ExpiresAt = expiresAt;
+
+        // An extended link is one somebody is meant to use, so a revocation would
+        // contradict the act. Left alone deliberately all the same: revoking is
+        // how a leaked link is killed, and quietly undoing that because a date
+        // moved would hand the exam back to whoever it leaked to.
+        await _links.UpdateAsync(link, autoSave: true);
+
+        _logger.LogInformation(
+            "Extended the link for candidate {CandidateId} on exam {ExamId} to {ExpiresAt}.",
+            link.CandidateId, link.ExamId, expiresAt);
+
+        var candidate = await _candidates.GetAsync(link.CandidateId);
+
+        return new ExamLinkDto
+        {
+            Id = link.Id,
+            ExamId = link.ExamId,
+            CandidateId = link.CandidateId,
+            CandidateName = candidate.FullName,
+            TokenPrefix = link.TokenPrefix,
+            ExpiresAt = link.ExpiresAt,
+            MaxAttempts = link.MaxAttempts,
+            AttemptsUsed = link.AttemptsUsed,
+            IsRevoked = link.IsRevoked,
+            FirstOpenedAt = link.FirstOpenedAt,
+            EmailSentAt = link.EmailSentAt,
+        };
+    }
+
     [Authorize(InternshipManagementSystemPermissions.Assignments.Revoke)]
     public async Task RevokeLinkAsync(Guid linkId)
     {
