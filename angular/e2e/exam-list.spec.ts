@@ -16,8 +16,11 @@ test.describe('Exam list', () => {
     await stubExams(page);
     await gotoApp(page, '/exams');
 
-    await expect(page.getByRole('link', { name: 'Spanish B1 Placement' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Technical Analysis — Level 2' })).toBeVisible();
+    // exact, because each row also carries an "Edit: <title>" action whose
+    // accessible name names the exam — which is the point of it, for anyone
+    // hearing the row rather than seeing it.
+    await expect(page.getByRole('link', { name: 'Spanish B1 Placement', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Technical Analysis — Level 2', exact: true })).toBeVisible();
 
     // 25 drawn from a bank of 120: the two numbers together are the anti-leak
     // mechanism, so both belong in the cell.

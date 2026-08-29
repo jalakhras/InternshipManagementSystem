@@ -18,6 +18,7 @@
     "Dashboard:Step:Exam": "أنشئ اختباراً",
     "Dashboard:Step:ExamNote": "حدّد المدة ونسبة النجاح، ثم ابنِ الأسئلة.",
     "Dashboard:Title": "أهلاً بك",
+    "Delete": "حذف",
     "Description:Assessment.BrandColor": "قيمة لونية سداسية تُطبَّق فوق ألوان النظام.",
     "Description:Assessment.CollectIntegritySignals": "تسجيل اللصق وفقدان التركيز والتوقيت لعرضها على المصحّح. لا يحكم النظام تلقائياً بناءً عليها.",
     "Description:Assessment.DefaultLanguage": "اللغة التي يراها المستخدمون قبل أن يختاروا لغتهم.",
@@ -34,10 +35,15 @@
     "DisplayName:Assessment.LogoBlobName": "الشعار",
     "DisplayName:Assessment.ShowResultToCandidate": "إظهار النتيجة للمتقدّم",
     "DisplayName:Assessment.TimeZone": "المنطقة الزمنية",
+    "Edit": "تعديل",
+    "Exam:Archive": "أرشفة",
     "Exam:Category": "التصنيف",
     "Exam:Create": "اختبار جديد",
     "Exam:Create:Lede": "أنشئ الاختبار أولاً، ثم أضف أسئلته. يبقى مسودّة حتى تنشره.",
     "Exam:Created": "أُنشئ",
+    "Exam:Delete:Body": "«{0}» لن يظهر في القائمة ولن يمكن إسناده.",
+    "Exam:Delete:Note": "المحاولات التي أُدّيت تحتفظ بنتائجها — الاختبار يُخفى ولا يُمحى.",
+    "Exam:Delete:Title": "حذف هذا الاختبار؟",
     "Exam:Description": "الوصف",
     "Exam:Description:Hint": "لمن يُعدّ الاختبارات، لا للمتقدّم. لا يظهر في شاشة الامتحان.",
     "Exam:DrawsFromPool": "كل متقدّم يحصل على نموذج مختلف مسحوب من البنك",
@@ -256,6 +262,7 @@
     "Theme:system": "يتبع النظام",
     "ToggleNavigation": "إظهار القائمة أو إخفاؤها",
     "ToggleTheme": "تبديل المظهر",
-    "UnknownError": "خطأ غير معروف"
+    "UnknownError": "خطأ غير معروف",
+    "Working": "جارٍ التنفيذ…"
   }
 }

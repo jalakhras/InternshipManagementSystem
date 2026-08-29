@@ -18,6 +18,7 @@
     "Dashboard:Step:Exam": "Create an exam",
     "Dashboard:Step:ExamNote": "Set the duration and pass mark, then write the questions.",
     "Dashboard:Title": "Welcome",
+    "Delete": "Delete",
     "Description:Assessment.BrandColor": "A hex value applied over the platform palette.",
     "Description:Assessment.CollectIntegritySignals": "Record pasting, focus loss and timing for the reviewer to weigh. The system never judges on them by itself.",
     "Description:Assessment.DefaultLanguage": "What people see before they choose a language of their own.",
@@ -34,10 +35,15 @@
     "DisplayName:Assessment.LogoBlobName": "Logo",
     "DisplayName:Assessment.ShowResultToCandidate": "Show the result to the candidate",
     "DisplayName:Assessment.TimeZone": "Time zone",
+    "Edit": "Edit",
+    "Exam:Archive": "Archive",
     "Exam:Category": "Category",
     "Exam:Create": "New exam",
     "Exam:Create:Lede": "Create the exam first, then add its questions. It stays a draft until you publish.",
     "Exam:Created": "Created",
+    "Exam:Delete:Body": "“{0}” will no longer appear in the list or be assignable.",
+    "Exam:Delete:Note": "Attempts already sat keep their results — the exam is hidden, not erased.",
+    "Exam:Delete:Title": "Delete this exam?",
     "Exam:Description": "Description",
     "Exam:Description:Hint": "For whoever writes the exams, not for the candidate. It never appears during the exam.",
     "Exam:DrawsFromPool": "Each candidate gets a different form drawn from the bank",
@@ -256,6 +262,7 @@
     "Theme:system": "Match system",
     "ToggleNavigation": "Show or hide the menu",
     "ToggleTheme": "Switch appearance",
-    "UnknownError": "Unknown error"
+    "UnknownError": "Unknown error",
+    "Working": "Working…"
   }
 }

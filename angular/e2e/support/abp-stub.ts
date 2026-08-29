@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test';
+import { InternshipManagementSystemPermissions } from '../../src/app/core/permissions';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -54,25 +55,28 @@ const AR_TEXTS = loadTexts('ar');
 const EN_TEXTS = loadTexts('en');
 
 /** Everything a signed-in administrator would hold. */
-export const ALL_POLICIES = [
-  'Assessment.Exams.View',
-  'Assessment.Exams.Create',
-  'Assessment.Exams.Edit',
-  'Assessment.Exams.Publish',
-  'Assessment.Questions.View',
-  'Assessment.Questions.Create',
-  'Assessment.Candidates.View',
-  'Assessment.Candidates.Create',
-  'Assessment.Groups.View',
-  'Assessment.Assignments.View',
-  'Assessment.Assignments.Create',
-  'Assessment.Review.ViewQueue',
-  'Assessment.Results.View',
-  'Assessment.Catalog.View',
-  'Assessment.Catalog.Manage',
-  'Assessment.IdentityManagement.Users.View',
-  'Assessment.Administration.ManageSettings',
-];
+/**
+ * Every policy this application defines, derived from the same constants the
+ * components read.
+ *
+ * It was a hand-written list, and it drifted the moment a permission was added:
+ * a Delete button that never rendered in a test looked like a broken button
+ * rather than a stale fixture. The server's seeder had the identical defect at
+ * the identical time, granting the admin one permission out of fifty-one.
+ */
+export const ALL_POLICIES = collectPolicies(InternshipManagementSystemPermissions);
+
+function collectPolicies(node: unknown, found: string[] = []): string[] {
+  if (typeof node === 'string') {
+    found.push(node);
+  } else if (node && typeof node === 'object') {
+    for (const value of Object.values(node)) {
+      collectPolicies(value, found);
+    }
+  }
+
+  return found;
+}
 
 export async function stubAbp(page: Page, options: StubOptions = {}): Promise<void> {
   const culture = options.culture ?? 'ar';

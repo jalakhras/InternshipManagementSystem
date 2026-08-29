@@ -2,12 +2,13 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { PermissionService } from '@abp/ng.core';
+import { Observable } from 'rxjs';
 
 import { ExamService } from '../../core/api/exam.service';
 import { ExamDto, ExamStatus } from '../../core/api/assessment.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 import { TranslateService } from '../../core/translate.service';
+import { permissionSignal } from '../../core/permission.signal';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.component';
@@ -28,7 +29,6 @@ import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.com
 })
 export class ExamListComponent {
   private readonly exams = inject(ExamService);
-  private readonly permission = inject(PermissionService);
 
   readonly t = inject(TranslateService).t;
 
@@ -43,11 +43,26 @@ export class ExamListComponent {
 
   readonly pageSize = 20;
 
-  readonly canCreate = this.permission.getGrantedPolicy(P.Exams.Create);
+  readonly canCreate = permissionSignal(P.Exams.Create);
 
   // Writing questions is its own permission: a coordinator who may create an
   // exam is not necessarily the person who writes its questions.
-  readonly canAddQuestions = this.permission.getGrantedPolicy(P.Questions.Create);
+  readonly canAddQuestions = permissionSignal(P.Questions.Create);
+  readonly canEdit = permissionSignal(P.Exams.Edit);
+  readonly canDelete = permissionSignal(P.Exams.Delete);
+  readonly canPublish = permissionSignal(P.Exams.Publish);
+
+  /**
+   * The exam awaiting confirmation, or null. Holding the row rather than its id
+   * lets the prompt name what is about to be deleted — "delete this?" with no
+   * subject is how the wrong thing gets deleted.
+   */
+  readonly pendingDelete = signal<ExamDto | null>(null);
+
+  /** The row being published, archived or deleted, so it can say so and refuse a second click. */
+  readonly busyId = signal<string | null>(null);
+
+  readonly actionError = signal<string | null>(null);
 
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.items().length === 0);
 
@@ -55,6 +70,62 @@ export class ExamListComponent {
   readonly isFiltered = computed(() => !!this.filter() || this.status() !== null);
 
   readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
+
+  /**
+   * Publishing is refused on a draft that would not survive it, so the action is
+   * offered only where it can succeed. The server checks again regardless: this
+   * is courtesy, not enforcement.
+   */
+  canPublishRow(exam: ExamDto): boolean {
+    return this.canPublish() && exam.status === ExamStatus.Draft;
+  }
+
+  canArchiveRow(exam: ExamDto): boolean {
+    return this.canPublish() && exam.status === ExamStatus.Published;
+  }
+
+  publish(exam: ExamDto): void {
+    this.run(exam.id, this.exams.publish(exam.id));
+  }
+
+  archive(exam: ExamDto): void {
+    this.run(exam.id, this.exams.archive(exam.id));
+  }
+
+  confirmDelete(): void {
+    const exam = this.pendingDelete();
+
+    if (!exam) {
+      return;
+    }
+
+    this.pendingDelete.set(null);
+    this.run(exam.id, this.exams.delete(exam.id));
+  }
+
+  /**
+   * Runs a row action, then reloads rather than patching the row in place.
+   * <p>
+   * Publishing can fail on the server for a reason this screen cannot know — an
+   * unsatisfiable blueprint, a bank that shrank — and a row updated optimistically
+   * would show a state the database does not have.
+   * </p>
+   */
+  private run(id: string, action: Observable<unknown>): void {
+    this.busyId.set(id);
+    this.actionError.set(null);
+
+    action.subscribe({
+      next: () => {
+        this.busyId.set(null);
+        this.load();
+      },
+      error: err => {
+        this.busyId.set(null);
+        this.actionError.set(err?.error?.error?.message ?? err?.message ?? this.t('::UnknownError'));
+      },
+    });
+  }
 
   readonly statusOptions = [
     { value: null, labelKey: '::Exam:Status:All' },

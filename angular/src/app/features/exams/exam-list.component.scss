@@ -186,3 +186,51 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 2s; }
 }
+
+// Row actions wrap on a phone rather than forcing the table wider.
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--astro-space-1);
+  justify-content: flex-end;
+}
+
+// --- Delete confirmation ----------------------------------------------------
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  z-index: 40;
+}
+
+.confirm {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Logical properties do not cover translate, so the sign is written out. In
+  // Arabic the inline axis runs the other way and a shared value parks the
+  // dialog off screen — the mistake that put a drawer 216px into a 412px phone.
+  transform: translate(-50%, -50%);
+  inline-size: min(30rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  background: var(--astro-surface-1);
+  border: 1px solid var(--astro-line);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
+
+  &__title { margin: 0 0 var(--astro-space-2); font-size: 1.125rem; }
+  &__body  { margin: 0 0 var(--astro-space-2); color: var(--astro-ink-2); }
+  &__note  { margin: 0; font-size: .875rem; color: var(--astro-ink-3); }
+
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
+}
+
+:host-context([dir='rtl']) .confirm {
+  transform: translate(50%, -50%);
+}

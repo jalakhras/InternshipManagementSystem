@@ -8,6 +8,9 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { provideAbpCore, withOptions } from '@abp/ng.core';
 import { provideAbpOAuth } from '@abp/ng.oauth';
 
+import localeAr from '@angular/common/locales/ar';
+import { registerLocaleData } from '@angular/common';
+
 import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
 
@@ -58,9 +61,12 @@ export const appConfig: ApplicationConfig = {
  * which reads as a bug long before anyone traces it to a missing locale.
  */
 function registerLocale() {
-  return async (locale: string) => {
-    if (locale.split('-')[0] === 'ar') {
-      await import('@angular/common/locales/ar');
-    }
-  };
+  // Registered eagerly rather than imported on demand. The dynamic import was a
+  // reasonable saving — a few kilobytes for anyone using English — but it put an
+  // extra await between bootstrap and the remote configuration, and that was
+  // enough to let a list response arrive before the permission state did. Rows
+  // then rendered with every action hidden, in Arabic only.
+  registerLocaleData(localeAr);
+
+  return async (_locale: string) => {};
 }
