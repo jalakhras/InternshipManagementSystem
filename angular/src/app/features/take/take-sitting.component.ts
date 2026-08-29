@@ -17,7 +17,7 @@ import { Observable, shareReplay } from 'rxjs';
 import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
-import { AttemptState, SaveAnswerResult, TakerQuestion } from './take.models';
+import { AttemptState, IntegritySignalType, SaveAnswerResult, TakerQuestion } from './take.models';
 import { ANSWER_INPUTS, AnswerInput, FALLBACK_ANSWER_INPUT } from './answers/answer-input';
 
 /**
@@ -440,13 +440,18 @@ export class TakeSittingComponent {
   private watchIntegrity(): void {
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
-        this.take.reportSignal('window-blur');
+        this.take.reportSignal(IntegritySignalType.WindowBlur, this.question()?.id);
       }
     };
 
+    // Noted, not reported. The paste travels with the next save, where the
+    // server records it only if the pasted text was long enough to be an
+    // imported answer — a deliberate threshold. Reporting every paste from here
+    // as well filed a second, unconditional observation for somebody pasting a
+    // single word, which is exactly the noise that threshold exists to keep out
+    // of a marker's report.
     const onPaste = () => {
       this.wasPasted = true;
-      this.take.reportSignal('paste');
     };
 
     const onKey = (event: KeyboardEvent) => {

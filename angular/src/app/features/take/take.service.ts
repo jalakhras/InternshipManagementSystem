@@ -7,6 +7,7 @@ import {
   AttemptResult,
   AttemptState,
   ExamPreview,
+  IntegritySignalType,
   SaveAnswer,
   SaveAnswerResult,
   TakerQuestion,
@@ -99,9 +100,13 @@ export class TakeService {
    * candidate's time is theirs.
    * </p>
    */
-  reportSignal(kind: string, detail?: string): void {
+  /**
+   * Records something the browser noticed. Never blocks, never retries: an
+   * observation that fails to arrive is a gap in a report, not a lost answer.
+   */
+  reportSignal(type: IntegritySignalType, questionId?: string, magnitude?: number): void {
     this.http
-      .post(`${this.base}/signal`, { kind, detail }, { headers: this.headers() })
+      .post(`${this.base}/signal`, { type, questionId, magnitude }, { headers: this.headers() })
       .subscribe({ error: () => undefined });
   }
 

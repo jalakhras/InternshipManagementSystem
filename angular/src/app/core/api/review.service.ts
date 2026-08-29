@@ -57,6 +57,16 @@ export interface ReviewAnswer {
   backspaceCount: number;
 }
 
+/** Mirrors the server's IntegritySignalType. */
+export enum IntegritySignalType {
+  Paste = 0,
+  WindowBlur = 1,
+  ImplausibleSpeed = 2,
+  NoCorrections = 3,
+  DevToolsOpened = 4,
+  PageReloaded = 5,
+}
+
 export interface GradeAnswerDto {
   answerId: string;
   awardedScore: number;
@@ -64,10 +74,22 @@ export interface GradeAnswerDto {
   comment?: string;
 }
 
+/**
+ * One thing the browser noticed, as the server actually sends it.
+ *
+ * This declared `kind: string` and `detail`, and the server has always sent
+ * `type` and `magnitude` — so every field of it was wrong. Nothing rendered it,
+ * which is the only reason it went unnoticed: the marker's screen shows the
+ * server's own written observations rather than the raw list. A model that
+ * describes a payload nobody reads is a trap for whoever reads it next.
+ */
 export interface IntegritySignal {
-  kind: string;
-  detail?: string;
+  type: IntegritySignalType;
+  questionId?: string;
   occurredAt: string;
+
+  /** Characters pasted, seconds away from the window, and so on. */
+  magnitude?: number;
 }
 
 export interface IntegrityReport {

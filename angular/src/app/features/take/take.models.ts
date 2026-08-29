@@ -174,3 +174,23 @@ export interface AttemptResult {
   /** Practice mode only, and only after submitting. */
   review: PracticeReviewItem[];
 }
+
+/**
+ * What the browser can observe, mirrored from the server's own enum.
+ *
+ * The numbers matter: this crosses the wire as a number and the server binds it
+ * to `IntegritySignalType`. The client used to post `{ kind: 'window-blur' }` to
+ * a server reading `Type`, so nothing bound and every observation was stored as
+ * the default — Paste. A marker weighing whether an answer was somebody's own
+ * work was told they pasted it when they had alt-tabbed. Observations are
+ * supposed to inform a person's judgement; a wrong one misinforms it, about a
+ * named candidate, in the record.
+ */
+export enum IntegritySignalType {
+  Paste = 0,
+  WindowBlur = 1,
+  ImplausibleSpeed = 2,
+  NoCorrections = 3,
+  DevToolsOpened = 4,
+  PageReloaded = 5,
+}
