@@ -1,5 +1,6 @@
 import {
   Component,
+  ComponentRef,
   ViewContainerRef,
   computed,
   effect,
@@ -47,6 +48,18 @@ export class QuestionFormComponent {
   readonly examId = input.required<string>();
   readonly questionId = input<string>();
 
+  /** The question already fetched, so the form is not reloaded over the author's edits. */
+  private loadedId?: string;
+
+  /** Only the chosen type, so the mounting effect ignores every other form change. */
+  private readonly selectedTypeId = computed(() => this.form().type);
+
+  /** The question's marks, watched separately so the rubric can follow them. */
+  private readonly questionScore = computed(() => this.form().score);
+
+  /** The mounted editor, kept so its inputs can be updated without rebuilding it. */
+  private editorRef?: ComponentRef<{ payloadChange: { subscribe(fn: (value: string) => void): unknown } }>;
+
   private readonly editorHost = viewChild('editorHost', { read: ViewContainerRef });
 
   readonly types = signal<QuestionTypeDescriptor[]>([]);
@@ -92,10 +105,14 @@ export class QuestionFormComponent {
       this.patch('examId', this.examId());
     });
 
-    // Mounts the editor for the chosen type. Runs on type change rather than on
-    // every keystroke, so typing inside an editor does not tear it down.
+    // Mounts the editor for the chosen type.
+    //
+    // The type is read through a computed, not off the form. Reading form().type
+    // directly tracks the whole form object, and every patch replaces it — so a
+    // single keystroke tore the editor down and built a new one, losing focus and
+    // flashing the panel. A computed emits only when the type itself changes.
     effect(() => {
-      const type = this.form().type;
+      const type = this.selectedTypeId();
       const host = this.editorHost();
 
       if (!host) {
@@ -118,16 +135,36 @@ export class QuestionFormComponent {
         // type to know how many answers may be correct, and the rubric editor
         // needs the question's marks to flag a rubric that does not add up.
         ref.setInput('type', type);
-        ref.setInput('questionScore', this.form().score);
+        ref.setInput('questionScore', this.questionScore());
 
         ref.instance.payloadChange.subscribe((payload: string) => this.patch('payload', payload));
+
+        this.editorRef = ref as typeof this.editorRef;
       });
     });
 
-    const id = this.questionId();
-    if (id) {
+    // Marks reach the mounted editor without rebuilding it. They used to arrive
+    // by rebuilding — which is why changing them worked and typing anything else
+    // destroyed the editor mid-edit.
+    effect(() => {
+      const score = this.questionScore();
+
+      this.editorRef?.setInput('questionScore', score);
+    });
+
+    // Not read directly in the constructor: withComponentInputBinding() sets a
+    // routed component's inputs after construction, so this was always undefined
+    // and an existing question opened as a blank new one.
+    effect(() => {
+      const id = this.questionId();
+
+      if (!id || id === this.loadedId) {
+        return;
+      }
+
+      this.loadedId = id;
       this.load(id);
-    }
+    });
   }
 
   private load(id: string): void {

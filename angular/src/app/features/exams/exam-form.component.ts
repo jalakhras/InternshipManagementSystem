@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { PermissionService } from '@abp/ng.core';
@@ -71,12 +71,24 @@ export class ExamFormComponent {
 
   readonly ExamMode = ExamMode;
 
-  constructor() {
-    const id = this.id();
+  /** The id already loaded, so navigating between two exams reloads but typing does not. */
+  private loadedId?: string;
 
-    if (id) {
+  constructor() {
+    // Not read in the constructor. withComponentInputBinding() sets a routed
+    // component's inputs after it is constructed, so `id` was always undefined
+    // here: the exam was never fetched and the form opened as a new one, which
+    // is why pressing Edit never entered edit mode.
+    effect(() => {
+      const id = this.id();
+
+      if (!id || id === this.loadedId) {
+        return;
+      }
+
+      this.loadedId = id;
       this.loadExam(id);
-    }
+    });
   }
 
   private loadExam(id: string): void {
