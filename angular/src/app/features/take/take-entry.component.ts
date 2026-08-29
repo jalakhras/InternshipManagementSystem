@@ -1,0 +1,103 @@
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { DatePipe } from '@angular/common';
+
+import { TranslateService } from '../../core/translate.service';
+import { TakeService } from './take.service';
+import { ExamPreview } from './take.models';
+
+/**
+ * What a candidate sees when they follow their link.
+ *
+ * Opening a link must not cost an attempt. Somebody who clicks a message on a
+ * bus to see how long the exam is has not started it, and a product that treats
+ * that click as a start has taken something from them they cannot get back.
+ * Nothing here consumes anything; the button does.
+ *
+ * The other job of this screen is to say plainly why a link does not work.
+ * "Invalid link" leaves a candidate with nowhere to go — expired, already used
+ * and not yet open are three different problems with three different answers.
+ */
+@Component({
+  selector: 'astro-take-entry',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe],
+  templateUrl: './take-entry.component.html',
+  styleUrl: './take-entry.component.scss',
+})
+export class TakeEntryComponent {
+  private readonly take = inject(TakeService);
+  private readonly router = inject(Router);
+
+  readonly t = inject(TranslateService).t;
+
+  readonly token = input.required<string>();
+
+  readonly loading = signal(true);
+  readonly starting = signal(false);
+  readonly error = signal<string | null>(null);
+  readonly preview = signal<ExamPreview | null>(null);
+
+  readonly attemptsLeft = computed(() => {
+    const preview = this.preview();
+
+    return preview ? Math.max(preview.attemptsAllowed - preview.attemptsUsed, 0) : 0;
+  });
+
+  /** An attempt already running. Resuming continues the same clock rather than restarting it. */
+  readonly canResume = computed(() => !!this.preview()?.resumableAttemptId);
+
+  private opened?: string;
+
+  constructor() {
+    // Read through an effect: withComponentInputBinding() sets a routed
+    // component's inputs after construction.
+    effect(() => {
+      const token = this.token();
+
+      if (!token || token === this.opened) {
+        return;
+      }
+
+      this.opened = token;
+      this.open(token);
+    });
+  }
+
+  open(token: string): void {
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.take.open(token).subscribe({
+      next: preview => {
+        this.preview.set(preview);
+        this.take.setSession(preview.sessionToken ?? null);
+        this.loading.set(false);
+      },
+      error: err => {
+        this.error.set(this.reason(err));
+        this.loading.set(false);
+      },
+    });
+  }
+
+  start(): void {
+    this.starting.set(true);
+    this.error.set(null);
+
+    this.take.start().subscribe({
+      next: () => this.router.navigate(['/exam', this.token(), 'sitting']),
+      error: err => {
+        this.starting.set(false);
+        this.error.set(this.reason(err));
+      },
+    });
+  }
+
+  private reason(err: unknown): string {
+    const problem = err as { error?: { error?: { message?: string } }; message?: string };
+
+    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+  }
+}

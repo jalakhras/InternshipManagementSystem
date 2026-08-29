@@ -1,0 +1,138 @@
+<div class="sitting">
+  <!-- The clock is the only permanently visible thing besides the question, and
+       it counts what the server says is left rather than what this browser thinks. -->
+  <header class="bar">
+    <span class="progress astro-numeric">
+      {{ t('::Take:Progress', position().toString(), (state()?.totalQuestions ?? 0).toString()) }}
+    </span>
+
+    <span
+      class="clock clock--{{ clockTone() }}"
+      role="timer"
+      aria-live="polite"
+      [attr.aria-label]="t('::Take:TimeLeft')">
+      <i class="bi bi-clock" aria-hidden="true"></i>
+      <span class="astro-numeric">{{ clock() }}</span>
+    </span>
+
+    <span class="saved" role="status">
+      @if (saving()) {
+        {{ t('::Take:Saving') }}
+      } @else if (savedAt(); as at) {
+        <i class="bi bi-check2" aria-hidden="true"></i>
+        {{ t('::Take:Saved') }}
+      }
+    </span>
+  </header>
+
+  @if (error(); as message) {
+    <!-- Never blocking. A failed save is retried on the next one, and a candidate
+         told to stop is a candidate who loses time they had earned. -->
+    <div class="notice" role="alert">
+      <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+      {{ message }}
+    </div>
+  }
+
+  <main class="paper">
+    @if (loading()) {
+      <div class="state" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>{{ t('::Loading') }}</p>
+      </div>
+    } @else if (question(); as q) {
+      @if (q.stimulus; as stimulus) {
+        <!-- A passage or a recording several questions share. Kept above the
+             prompt and repeated on each of them, because scrolling back to find
+             the passage is time taken from answering. -->
+        <section class="stimulus">
+          @if (stimulus.instructions) {
+            <p class="stimulus__instructions">{{ stimulus.instructions }}</p>
+          }
+
+          @if (stimulus.mediaUrl) {
+            @if (stimulus.mediaType === 'audio') {
+              <audio class="stimulus__player" [src]="stimulus.mediaUrl" controls></audio>
+            } @else if (stimulus.mediaType === 'video') {
+              <video class="stimulus__player" [src]="stimulus.mediaUrl" controls></video>
+            } @else {
+              <img class="stimulus__image" [src]="stimulus.mediaUrl" [alt]="t('::Take:Stimulus')" />
+            }
+          }
+
+          @if (stimulus.text) {
+            <div class="stimulus__text" [innerHTML]="stimulus.text"></div>
+          }
+        </section>
+      }
+
+      <article class="question">
+        <div class="question__prompt" [innerHTML]="q.text"></div>
+
+        @if (q.mediaUrl) {
+          @if (q.mediaType === 'audio') {
+            <audio class="question__media" [src]="q.mediaUrl" controls></audio>
+          } @else if (q.mediaType === 'video') {
+            <video class="question__media" [src]="q.mediaUrl" controls></video>
+          } @else {
+            <img class="question__media" [src]="q.mediaUrl" [alt]="t('::Take:QuestionImage')" />
+          }
+        }
+
+        <!-- One slot, thirteen possible occupants. Everything around it stays
+             identical, so the paper does not feel like thirteen screens. -->
+        <ng-container #answerHost />
+      </article>
+    }
+  </main>
+
+  <footer class="actions">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      [disabled]="!canGoBack()"
+      (click)="previous()">
+      <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+      {{ t('::Take:Previous') }}
+    </button>
+
+    @if (isLast()) {
+      <button type="button" class="btn btn-primary" (click)="askToSubmit()">
+        {{ t('::Take:Finish') }}
+      </button>
+    } @else {
+      <button type="button" class="btn btn-primary" (click)="next()">
+        {{ t('::Take:Next') }}
+        <i class="bi bi-chevron-left astro-flip" aria-hidden="true"></i>
+      </button>
+    }
+  </footer>
+</div>
+
+@if (confirmingSubmit()) {
+  <div class="scrim" (click)="confirmingSubmit.set(false)"></div>
+
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="submitTitle">
+    <h2 class="confirm__title" id="submitTitle">{{ t('::Take:Submit:Title') }}</h2>
+
+    @if (unanswered() > 0) {
+      <!-- The count, not a vague warning. Somebody who left three blank on
+           purpose should not be talked out of finishing. -->
+      <p class="confirm__warning">
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        {{ t('::Take:Submit:Unanswered', unanswered().toString()) }}
+      </p>
+    }
+
+    <p class="confirm__body">{{ t('::Take:Submit:Body') }}</p>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="confirmingSubmit.set(false)">
+        {{ t('::Take:Submit:KeepGoing') }}
+      </button>
+      <button type="button" class="btn btn-primary" [disabled]="submitting()" (click)="submit()">
+        {{ submitting() ? t('::Take:Submitting') : t('::Take:Submit:Confirm') }}
+      </button>
+    </div>
+  </div>
+}

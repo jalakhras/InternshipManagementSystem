@@ -1,0 +1,196 @@
+// A full-height column: a fixed bar, the paper scrolling between, and the
+// actions always reachable. Nothing about it moves as the answer grows, because
+// a button that shifts under a thumb costs a click somebody is timed on.
+.sitting {
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  min-block-size: 100dvh;
+  background: var(--surface-page);
+}
+
+.bar {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-3) var(--astro-space-5);
+  border-block-end: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+}
+
+.progress { color: var(--text-secondary); font-size: .9375rem; }
+
+.clock {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-1) var(--astro-space-3);
+  border-radius: var(--astro-radius-full);
+  font-size: 1.125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+
+  &--calm   { background: var(--surface-sunken);      color: var(--text-primary); }
+  &--warn   { background: var(--astro-pending-50);    color: var(--astro-pending-700); }
+  &--urgent { background: var(--astro-fail-50);       color: var(--astro-fail-700); }
+}
+
+.saved {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  min-inline-size: 6rem;
+  color: var(--text-muted);
+  font-size: .875rem;
+
+  // The reassurance a candidate looks for when their connection wobbles. It
+  // must not move the clock when it appears and disappears.
+  justify-content: flex-end;
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-2) var(--astro-space-5);
+  background: var(--astro-pending-50);
+  color: var(--astro-pending-700);
+  font-size: .9375rem;
+}
+
+.paper {
+  inline-size: min(48rem, 100%);
+  margin-inline: auto;
+  padding: var(--astro-space-6) var(--astro-space-5);
+}
+
+.stimulus {
+  margin-block-end: var(--astro-space-5);
+  padding: var(--astro-space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-raised);
+}
+
+.stimulus__instructions {
+  margin: 0 0 var(--astro-space-3);
+  color: var(--text-secondary);
+  font-size: .9375rem;
+}
+
+.stimulus__player { inline-size: 100%; }
+.stimulus__image { max-inline-size: 100%; block-size: auto; border-radius: var(--astro-radius-sm); }
+
+.stimulus__text {
+  line-height: var(--astro-leading-body);
+
+  // A passage is read, not skimmed. Wider than the prompt would be, and with
+  // room between the lines.
+  :where(p) { margin-block: 0 var(--astro-space-3); }
+  :where(p:last-child) { margin-block-end: 0; }
+}
+
+.question__prompt {
+  margin-block-end: var(--astro-space-5);
+  font-size: 1.125rem;
+  line-height: var(--astro-leading-body);
+
+  :where(p) { margin-block: 0 var(--astro-space-3); }
+  :where(pre) { direction: ltr; text-align: start; overflow-x: auto; }
+}
+
+.question__media {
+  display: block;
+  inline-size: 100%;
+  max-block-size: 24rem;
+  object-fit: contain;
+  margin-block-end: var(--astro-space-5);
+  border-radius: var(--astro-radius-md);
+}
+
+.actions {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  inline-size: min(48rem, 100%);
+  margin-inline: auto;
+  padding: var(--astro-space-4) var(--astro-space-5);
+  border-block-start: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+
+  .btn { min-block-size: 2.75rem; min-inline-size: 7rem; }
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-3);
+  padding-block: var(--astro-space-8);
+  color: var(--text-muted);
+}
+
+.spinner {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: sitting-spin .7s linear infinite;
+}
+
+@keyframes sitting-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgb(0 0 0 / 45%);
+}
+
+.confirm {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Translate has no logical form, so the sign is written out for each
+  // direction rather than shared.
+  transform: translate(-50%, -50%);
+  inline-size: min(30rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
+
+  &__title { margin: 0 0 var(--astro-space-3); font-size: 1.125rem; }
+  &__body { margin: 0; color: var(--text-secondary); }
+
+  &__warning {
+    display: flex;
+    align-items: center;
+    gap: var(--astro-space-2);
+    margin: 0 0 var(--astro-space-3);
+    padding: var(--astro-space-3);
+    border-radius: var(--astro-radius-md);
+    background: var(--astro-pending-50);
+    color: var(--astro-pending-700);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
+}
+
+:host-context([dir='rtl']) .confirm { transform: translate(50%, -50%); }

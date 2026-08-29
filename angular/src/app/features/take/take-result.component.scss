@@ -1,0 +1,127 @@
+.result {
+  display: grid;
+  place-items: start center;
+  min-block-size: 100dvh;
+  padding: var(--astro-space-5);
+  background: var(--surface-page);
+}
+
+.card {
+  inline-size: min(42rem, 100%);
+  margin-block-start: var(--astro-space-6);
+  padding: var(--astro-space-7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--astro-shadow-md);
+}
+
+.submitted { margin: 0 0 var(--astro-space-1); color: var(--text-muted); font-size: .875rem; }
+.title { margin: 0 0 var(--astro-space-5); font-size: var(--astro-text-2xl); }
+.muted { color: var(--text-secondary); }
+
+.pending {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding: var(--astro-space-6);
+  border-radius: var(--astro-radius-md);
+  background: var(--astro-pending-50);
+  text-align: center;
+
+  i { font-size: 1.75rem; color: var(--astro-pending-600); }
+  &__title { margin: 0; font-weight: 600; color: var(--astro-pending-700); }
+  &__body { margin: 0; color: var(--text-secondary); }
+}
+
+.score {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-1);
+  padding: var(--astro-space-6);
+  border-radius: var(--astro-radius-md);
+  background: var(--astro-fail-50);
+
+  &--passed { background: var(--astro-pass-50); }
+
+  &__value { font-size: 3rem; font-weight: 700; line-height: 1; color: var(--astro-fail-700); }
+  &--passed &__value { color: var(--astro-pass-700); }
+
+  &__marks { color: var(--text-secondary); }
+  &__verdict { margin-block-start: var(--astro-space-2); font-weight: 600; }
+}
+
+.breakdown {
+  margin-block-start: var(--astro-space-6);
+
+  &__title { margin: 0 0 var(--astro-space-3); font-size: 1rem; }
+}
+
+.topic {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) 2fr auto;
+  align-items: center;
+  gap: var(--astro-space-3);
+  margin-block-end: var(--astro-space-2);
+
+  &__name { font-size: .9375rem; }
+
+  &__bar {
+    block-size: .5rem;
+    border-radius: var(--astro-radius-full);
+    background: var(--surface-sunken);
+    overflow: hidden;
+  }
+
+  &__fill {
+    display: block;
+    block-size: 100%;
+    background: var(--astro-brand-600);
+  }
+
+  &__value { font-size: .875rem; color: var(--text-secondary); }
+}
+
+.review {
+  margin-block-start: var(--astro-space-6);
+
+  &__title { margin: 0 0 var(--astro-space-3); font-size: 1rem; }
+
+  &__item {
+    padding: var(--astro-space-4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--astro-radius-md);
+
+    // The border carries the outcome so nothing needs a red tick beside it: a
+    // learner reading their own mistakes does not need them decorated.
+    &--wrong { border-inline-start: 3px solid var(--astro-fail-600); }
+    & + & { margin-block-start: var(--astro-space-3); }
+  }
+
+  &__prompt { margin-block-end: var(--astro-space-2); line-height: var(--astro-leading-body); }
+  &__answer { margin: 0 0 var(--astro-space-2); }
+  &__explanation { margin: 0; color: var(--text-secondary); line-height: var(--astro-leading-body); }
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-3);
+  margin-block-start: var(--astro-space-8);
+  color: var(--text-muted);
+}
+
+.spinner {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: result-spin .7s linear infinite;
+}
+
+@keyframes result-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}

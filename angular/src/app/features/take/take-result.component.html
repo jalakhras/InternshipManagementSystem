@@ -1,0 +1,81 @@
+<div class="result">
+  @if (loading()) {
+    <div class="state" role="status" aria-live="polite">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>{{ t('::Loading') }}</p>
+    </div>
+  } @else if (error(); as message) {
+    <div class="card" role="alert">
+      <h1>{{ t('::CouldNotLoad') }}</h1>
+      <p class="muted">{{ message }}</p>
+    </div>
+  } @else if (result(); as outcome) {
+    <div class="card">
+      <p class="submitted">{{ t('::Take:SubmittedAt') }} {{ outcome.submittedAt | date: 'y/MM/dd HH:mm' }}</p>
+      <h1 class="title">{{ outcome.examTitle }}</h1>
+
+      @if (!outcome.isFinal) {
+        <!-- No number at all while a person still has answers to mark. A
+             provisional score that later changes is worse than waiting. -->
+        <div class="pending">
+          <i class="bi bi-hourglass-split" aria-hidden="true"></i>
+          <p class="pending__title">{{ t('::Take:Result:Pending') }}</p>
+          <p class="pending__body">{{ t('::Take:Result:Pending:Body') }}</p>
+        </div>
+      } @else {
+        <div class="score" [class.score--passed]="outcome.isPassed">
+          <span class="score__value astro-numeric">{{ outcome.scorePercentage }}%</span>
+          <span class="score__marks astro-numeric">
+            {{ t('::Take:Result:Marks', outcome.score.toString(), outcome.maxScore.toString()) }}
+          </span>
+          <span class="score__verdict">
+            {{ outcome.isPassed ? t('::Take:Result:Passed') : t('::Take:Result:NotPassed') }}
+          </span>
+        </div>
+
+        @if (outcome.topicBreakdown.length > 0) {
+          <!-- One percentage tells nobody what to do next. This is the part a
+               student and a coordinator actually act on. -->
+          <section class="breakdown">
+            <h2 class="breakdown__title">{{ t('::Take:Result:Breakdown') }}</h2>
+
+            @for (topic of outcome.topicBreakdown; track topic.topicId) {
+              <div class="topic">
+                <span class="topic__name">{{ topic.topicName }}</span>
+                <span class="topic__bar" aria-hidden="true">
+                  <span class="topic__fill" [style.inline-size.%]="topic.percentage"></span>
+                </span>
+                <span class="topic__value astro-numeric">{{ topic.percentage }}%</span>
+              </div>
+            }
+          </section>
+        }
+      }
+
+      @if (outcome.review.length > 0) {
+        <!-- Practice mode only. A learner who sees only a score has not learned
+             anything, so this is where the explanation earns its place. -->
+        <section class="review">
+          <h2 class="review__title">{{ t('::Take:Result:Review') }}</h2>
+
+          @for (item of outcome.review; track item.questionId) {
+            <article class="review__item" [class.review__item--wrong]="item.wasCorrect === false">
+              <div class="review__prompt" [innerHTML]="item.text"></div>
+
+              @if (item.correctAnswer) {
+                <p class="review__answer">
+                  <strong>{{ t('::Take:Result:CorrectAnswer') }}</strong>
+                  {{ item.correctAnswer }}
+                </p>
+              }
+
+              @if (item.explanation) {
+                <p class="review__explanation">{{ item.explanation }}</p>
+              }
+            </article>
+          }
+        </section>
+      }
+    </div>
+  }
+</div>
