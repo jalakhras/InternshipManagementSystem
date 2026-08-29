@@ -182,12 +182,23 @@ public class ExamSessionTokenService : ISingletonDependency
     /// and expires with the sitting rather than opening the container.
     /// </para>
     /// </summary>
-    public string IssueMediaGrant(string blobName, DateTime expiresUtc)
+    public string IssueMediaGrant(string blobName, DateTime expiresUtc, Guid? tenantId)
     {
+        var claims = new List<Claim> { new(ClaimBlobName, blobName) };
+
+        if (tenantId.HasValue)
+        {
+            // Whose file this is. A candidate arrives with no tenant context at
+            // all — a link is their entire credential and it carries no host
+            // name — so without this the read looked in the host's container and
+            // missed every image on a tenant's paper.
+            claims.Add(new Claim(ClaimTenantId, tenantId.Value.ToString()));
+        }
+
         var token = new JwtSecurityToken(
             issuer: "ims-exam-media",
             audience: "ims-exam-media",
-            claims: [new Claim(ClaimBlobName, blobName)],
+            claims: claims,
 
             // No not-before. A grant is minted as the question is served and used
             // in the same breath, so it buys nothing — and with one, minting a
@@ -207,11 +218,11 @@ public class ExamSessionTokenService : ISingletonDependency
     /// the listening clip cannot be replayed against the answer somebody uploaded.
     /// </para>
     /// </summary>
-    public bool GrantsMedia(string? token, string blobName)
+    public MediaGrant? ReadMediaGrant(string? token, string blobName)
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            return false;
+            return null;
         }
 
         try
@@ -228,14 +239,23 @@ public class ExamSessionTokenService : ISingletonDependency
                 ClockSkew = TimeSpan.FromSeconds(30)
             }, out _);
 
-            return string.Equals(
+            var granted = string.Equals(
                 principal.FindFirst(ClaimBlobName)?.Value,
                 blobName,
                 StringComparison.Ordinal);
+
+            if (!granted)
+            {
+                return null;
+            }
+
+            var tenantId = principal.FindFirst(ClaimTenantId)?.Value;
+
+            return new MediaGrant(tenantId is null ? null : Guid.Parse(tenantId));
         }
         catch (Exception)
         {
-            return false;
+            return null;
         }
     }
 
@@ -254,6 +274,16 @@ public class ExamSessionTokenService : ISingletonDependency
 }
 
 /// <summary>What an exam-session credential asserts.</summary>
+/// <summary>
+/// Permission to read one stored file, and whose file it is.
+/// <para>
+/// The tenant matters because the caller has none: a candidate is not a user of
+/// this system and their link says nothing about which organisation set the
+/// exam. Read without it, every blob in every tenant but the host was a 404.
+/// </para>
+/// </summary>
+public sealed record MediaGrant(Guid? TenantId);
+
 public sealed record ExamSessionClaims(
     Guid AttemptId,
     Guid CandidateId,

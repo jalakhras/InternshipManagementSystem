@@ -25,33 +25,35 @@ public class MediaGrantTests
 
     private const string Clip = "tenant/8a1f0b3c4d5e6f708192a3b4c5d6e7f8.mp3";
 
+    private static readonly Guid Tenant = Guid.Parse("dddddddd-0000-0000-0000-000000000001");
+
     [Fact]
     public void A_grant_opens_the_blob_it_names()
     {
-        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30));
+        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30), Tenant);
 
-        _tokens.GrantsMedia(grant, Clip).ShouldBeTrue();
+        _tokens.ReadMediaGrant(grant, Clip).ShouldNotBeNull();
     }
 
     [Fact]
     public void A_grant_does_not_open_a_different_blob()
     {
-        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30));
+        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30), Tenant);
 
         // The listening clip and somebody's uploaded answer sit in one container,
         // and both are reached by name. A grant that opened the container rather
         // than the file would hand every candidate everyone else's work.
-        _tokens.GrantsMedia(grant, "tenant/ffffffffffffffffffffffffffffffff.pdf").ShouldBeFalse();
+        _tokens.ReadMediaGrant(grant, "tenant/ffffffffffffffffffffffffffffffff.pdf").ShouldBeNull();
     }
 
     [Fact]
     public void An_expired_grant_opens_nothing()
     {
-        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddHours(-2));
+        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddHours(-2), Tenant);
 
         // A URL copied out of the page during the exam has to stop working once the
         // exam is over, or the paper leaks by the ordinary act of sharing a link.
-        _tokens.GrantsMedia(grant, Clip).ShouldBeFalse();
+        _tokens.ReadMediaGrant(grant, Clip).ShouldBeNull();
     }
 
     [Fact]
@@ -59,8 +61,28 @@ public class MediaGrantTests
     {
         var elsewhere = Service("a-completely-different-signing-key-value");
 
-        _tokens.GrantsMedia(elsewhere.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30)), Clip)
-            .ShouldBeFalse();
+        _tokens.ReadMediaGrant(elsewhere.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30), Tenant), Clip)
+            .ShouldBeNull();
+    }
+
+    [Fact]
+    public void A_grant_says_whose_file_it_opens()
+    {
+        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30), Tenant);
+
+        // A candidate has no tenant context of their own — their link is their
+        // whole credential and says nothing about which organisation set the
+        // exam. Without this the read looked in the host's container and every
+        // image on a tenant's paper was a 404 with a valid grant in hand.
+        _tokens.ReadMediaGrant(grant, Clip)!.TenantId.ShouldBe(Tenant);
+    }
+
+    [Fact]
+    public void A_grant_for_the_host_names_no_tenant()
+    {
+        var grant = _tokens.IssueMediaGrant(Clip, DateTime.UtcNow.AddMinutes(30), tenantId: null);
+
+        _tokens.ReadMediaGrant(grant, Clip)!.TenantId.ShouldBeNull();
     }
 
     [Fact]
@@ -72,7 +94,7 @@ public class MediaGrantTests
         var session = _tokens.Issue(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null, DateTime.UtcNow.AddHours(1));
 
-        _tokens.GrantsMedia(session, Clip).ShouldBeFalse();
+        _tokens.ReadMediaGrant(session, Clip).ShouldBeNull();
     }
 
     [Theory]
@@ -82,7 +104,7 @@ public class MediaGrantTests
     [InlineData("not-a-token")]
     public void Nonsense_opens_nothing(string? grant)
     {
-        _tokens.GrantsMedia(grant, Clip).ShouldBeFalse();
+        _tokens.ReadMediaGrant(grant, Clip).ShouldBeNull();
     }
 
     private static ExamSessionTokenService Service(

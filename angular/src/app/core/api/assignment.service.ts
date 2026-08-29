@@ -20,6 +20,14 @@ export interface CreateAssignmentDto {
    */
   examFormId?: string;
 
+  /**
+   * Move to the next published paper on each retake, rather than naming one.
+   *
+   * What makes a second sitting a genuinely different paper without anybody
+   * having to remember which one this candidate already had.
+   */
+  rotateForms?: boolean;
+
   examId: string;
   candidateId?: string;
   candidateGroupId?: string;

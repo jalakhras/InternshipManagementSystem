@@ -33,6 +33,15 @@ public class CreateAssignmentDto
     /// </summary>
     public Guid? ExamFormId { get; set; }
 
+    /// <summary>
+    /// Move to the next published paper on each retake, rather than naming one.
+    /// <para>
+    /// What makes a second sitting a genuinely different paper without anybody
+    /// having to remember which one the candidate already had.
+    /// </para>
+    /// </summary>
+    public bool RotateForms { get; set; }
+
     /// <summary>Set this or <see cref="CandidateGroupId"/>, not both.</summary>
     public Guid? CandidateId { get; set; }
 

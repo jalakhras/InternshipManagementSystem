@@ -14,6 +14,15 @@ import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 /**
+ * Stands for "whichever paper comes next" in the picker.
+ *
+ * A sentinel rather than a second control, because naming a paper and rotating
+ * through them are one decision — which paper does this sitting use — and two
+ * controls would let somebody set both.
+ */
+const ROTATE = '__rotate__';
+
+/**
  * Sending an exam out, and watching what happened to the links.
  *
  * The last stretch between a roll of people and somebody sitting an exam. The
@@ -61,6 +70,8 @@ export class AssignmentComponent {
    */
   readonly forms = signal<ExamFormDto[]>([]);
   readonly formId = signal('');
+
+  readonly ROTATE = ROTATE;
 
   readonly links = signal<ExamLinkDto[]>([]);
   readonly totalCount = signal(0);
@@ -208,7 +219,8 @@ export class AssignmentComponent {
     this.assignments
       .create({
         examId: this.examId(),
-        examFormId: this.formId() || undefined,
+        examFormId: this.formId() === ROTATE ? undefined : this.formId() || undefined,
+        rotateForms: this.formId() === ROTATE,
         candidateGroupId: this.groupId() || undefined,
         expiresAt: new Date(this.expiresAt()).toISOString(),
         maxAttempts: this.maxAttempts(),

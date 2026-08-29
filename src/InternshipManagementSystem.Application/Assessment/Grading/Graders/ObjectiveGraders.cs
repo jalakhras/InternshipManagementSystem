@@ -186,8 +186,24 @@ public class FillInTheBlankGrader : IQuestionGrader
             return GradeResult.Manual("Question payload could not be read.");
         }
 
+        if (string.IsNullOrWhiteSpace(response))
+        {
+            return GradeResult.Wrong();
+        }
+
         var given = PayloadJson.Read<Dictionary<string, string>>(response);
-        if (given is null || given.Count == 0)
+
+        if (given is null)
+        {
+            // Something was written and this grader cannot read it. That is not a
+            // wrong answer, and calling it one costs a real person real marks —
+            // which is exactly what happened: the candidate's screen sent a bare
+            // string for a while, this parse failed, and every correct answer
+            // scored zero without ever asking anybody to look.
+            return GradeResult.Manual("The answer could not be read in the expected shape.");
+        }
+
+        if (given.Count == 0)
         {
             return GradeResult.Wrong();
         }

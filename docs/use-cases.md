@@ -16,6 +16,11 @@ Each case carries one status, claimed against the code rather than against inten
 Verified by opening the files: the Angular component, its route, the service
 method, the controller route attribute, and the application service behind it.
 
+**Pinned to `0842cc9`.** Four commits landed while this was being written and
+closed three of the breaks it had recorded — the media, the results export and the
+last dead navigation links. Where that happened it is said, because *how* those
+defects survived is more useful than the fact that they are gone.
+
 | Status | Means | بالعربية |
 |---|---|---|
 | **BUILT** | A person completes this today, end to end, from the browser | مكتملة |
@@ -102,7 +107,7 @@ draft/approved/retired lifecycle — only an on/off flag (`BNK-11`).
 ---
 
 ## 🎯 Use Case 3: Attach a chart, a recording or a clip | إرفاق صورة أو تسجيل بالسؤال
-**Status: PARTIAL — the file uploads and nothing can display it** · `BNK-04`, `PLT-09`
+**Status: BUILT — and it was broken until `3923129`, which is the interesting part** · `BNK-04`, `PLT-09`
 
 **Actors:** Teacher, Candidate
 **Preconditions:** A question exists.
@@ -113,32 +118,33 @@ listening question should play the clip.
 1. Teacher drags a file onto the media field, or clicks to pick one. No URL is
    typed.
 2. The file uploads. Oversized files and disallowed types are refused by name and
-   limit. **✅ This works.**
-3. The preview should render in place. **❌ It does not.**
-4. The candidate sitting the exam should see the image or hear the clip. **❌ They
-   do not.**
+   limit.
+3. The preview renders in place.
+4. The candidate sitting the exam sees the image or hears the clip — fetched with a
+   signed grant that names one blob and expires with their attempt, so somebody
+   with no account gets exactly their own paper's media and nothing else.
 
-**Where it breaks, exactly.** Every URL the product hands the browser to fetch for
-itself — an `img`, an `audio`, a `video`, a download link — is built
-origin-relative, as `/api/assessment/media/…`. The app runs on one origin and the
-API on another, in both the development and the "production" environment files,
-with no proxy configured, so the browser asks the wrong server. And even
-same-origin it would fail for staff, because a browser's media request carries no
-authorisation header, so an author's preview is an anonymous request against a
-permission check and comes back 404.
+**Recorded because of how it broke, not because it is broken.** Until last week
+every URL the product handed the browser to fetch for *itself* — an `img`, an
+`audio`, a `video`, a download link — was built origin-relative. The app runs on
+one origin and the API on another in both environment files, with no proxy, so the
+browser asked the wrong server. Staff had a second, independent failure: a browser
+will not attach a bearer token to an `img src` however much the page would like it
+to, so an author's preview was an anonymous request against a permission check and
+came back 404.
 
-The candidate's path was designed correctly and is defeated by the same problem:
-their media URL carries a signed grant naming one blob and expiring with the
-attempt, which is exactly right for somebody with no account.
+**Seven symptoms, one cause:** the author's preview, the candidate's question media
+and passage, the exam entry page's logo, the staff shell's logo, the hotspot
+editor's image, the reviewer's link to an uploaded answer, and the results export.
 
-**Six symptoms, one cause:** the author's preview, the candidate's question media,
-the exam entry page's logo, the staff shell's logo, the hotspot editor's image, and
-the reviewer's link to an uploaded answer.
-
-**Why it survived.** The browser test stubs this exact URL, so it asserts our own
-mock is reachable; the live backend test fetches the blob with an API client
-carrying a token, which no `<img>` tag can do. Both sides pass and neither crosses
-the seam.
+**Why it survived two reviews and 187 passing tests.** The browser test stubbed
+this exact URL, so it asserted our own mock was reachable; the live backend test
+fetched the blob with an API client carrying a token, which no `<img>` tag can do.
+Both sides passed and neither crossed the seam. The fix serves the two callers
+differently — the candidate's paper already carries its grant and needed only the
+right origin; staff files are fetched with the token and handed to the page as
+object URLs — and the live suite now covers the round trip, including that an
+anonymous stranger holding a blob name gets 404 rather than the file.
 
 ---
 
@@ -217,15 +223,23 @@ should be sold as the profile until sections land.
 a fixed list of questions, a human reads it, and that is the paper the class sits.
 
 **Flow:**
-1. Coordinator opens **Exam → Papers** and creates a form with a name and a code.
-2. Either hand-picks questions from the exam's drawable bank and orders them, or
-   generates one from the blueprint — and the form records which it was.
-3. A reviewer reads it and publishes it. The maximum score freezes; the question
+1. Coordinator opens **Exam → Blueprint** and writes the recipe — "six grammar,
+   four listening, two of them hard" — with each rule showing how many bank
+   questions actually match it, and a rule the bank cannot fill marked on its row.
+   That matters on screen rather than later: the builder contributes what it can
+   and never fails, so an unfillable blueprint produces a short paper silently and
+   nobody finds out until a candidate has sat it.
+2. Opens **Exam → Papers** and creates a form with a name and a code.
+3. Either hand-picks questions from the exam's drawable bank and orders them, or
+   generates one from the blueprint — and the form records which it was. *(Until
+   `0842cc9` the papers screen offered "fill from the blueprint" as the recommended
+   route, there was nothing to fill from, and no way to say so.)*
+4. A reviewer reads it and publishes it. The maximum score freezes; the question
    list becomes immutable; an empty or duplicated form is refused.
-4. When sending the exam, the coordinator picks that published form.
-5. Every candidate on that assignment sits exactly it, in its order, with its
+5. When sending the exam, the coordinator picks that published form.
+6. Every candidate on that assignment sits exactly it, in its order, with its
    frozen marks.
-6. Later, the form shows how many times it has been sat, and can be retired without
+7. Later, the form shows how many times it has been sat, and can be retired without
    breaking the results already sat on it.
 
 **This is the product's best single answer to a sceptical coordinator**, and it was
@@ -303,12 +317,18 @@ individually revocable — and nobody needs an account.
 6. A link sent to the wrong person is revoked and reports itself as revoked rather
    than as invalid.
 
+7. While the exam is running, the coordinator watches it: **Results → In progress**
+   lists the sittings under way, and one that is stuck or was started in error can
+   be ended — recording who ended it and why, and grading it — or discarded
+   outright behind a second confirmation. Each of the three actions carries its own
+   permission. *(This landed in the working tree while this document was being
+   written; it is not in `0842cc9`.)*
+
 **Known gaps, and each one is a place a pilot stops.** There is no resend: the
 plaintext token is returned once at creation and only its hash is kept, so a
 student who deletes the email needs a new link, not the same one (`ASG-06`). There
-is no way to extend an expiry for someone who was ill (`ASG-07`). There is no way
-to end an attempt that is stuck (`ASG-08`). Sending to one person means creating a
-class of one (`ASG-01`).
+is no way to extend an expiry for someone who was ill (`ASG-07`). Sending to one
+person means creating a class of one (`ASG-01`).
 
 **The invitation is not the centre's.** It is a hardcoded bilingual message
 carrying the candidate's name, the exam title, the duration, the expiry and a long
@@ -415,7 +435,7 @@ Case 9: they are all recorded as pastes.
 ---
 
 ## 🎯 Use Case 11: Read the results and get them out | قراءة النتائج وتصديرها
-**Status: PARTIAL — every screen works; the export does not download** · `RES-01`, `RES-02`, `RES-03`, `RES-05`, `RES-12`
+**Status: BUILT — the export was fixed in `3923129`** · `RES-01`, `RES-02`, `RES-03`, `RES-05`, `RES-12`
 
 **Actors:** Training coordinator
 **Preconditions:** Attempts have been sat.
@@ -432,8 +452,7 @@ Case 9: they are all recorded as pastes.
    order it was served, their answer, the mark, the reviewer's comment — reflecting
    the paper as served even if the bank has been edited since. **✅**
 5. Reads the competency breakdown: listening 40%, reading 85%, rather than 62%.
-   **✅**
-6. Presses **Export**. **❌ Nothing arrives.**
+6. Presses **Export** and gets a CSV.
 
 **This closes the sharpest break in the product.** Until this month, a fully
 automatic exam was graded, stored, and visible to nobody but the candidate — no
@@ -441,13 +460,15 @@ roster, no attempt list, no export anywhere, and three declared permissions with
 code behind them. Forty students sat the exam and the coordinator who paid for it
 asked them what it said.
 
-**Where the export breaks, exactly.** The file itself is right: a UTF-8 byte-order
-mark so Arabic opens correctly in a spreadsheet without a manual encoding step,
-proper escaping, returned as a download rather than a JSON string. The button is
-right and is hidden without the export permission. The **link** is a plain anchor
-pointing at an origin-relative path, so the browser asks the app's own origin
-instead of the API — and even same-origin it would carry no credential against a
-permission-checked endpoint. Same cause as Use Case 3 (`PLT-09`).
+**The export is worth a note.** The file was always right — a UTF-8 byte-order mark
+so Arabic opens correctly in a spreadsheet without a manual encoding step, proper
+escaping, returned as a download rather than a JSON string for the front end to
+reassemble. The **button** was a plain anchor pointing at an origin-relative path,
+so the primary action on this screen took the coordinator to the dashboard and lost
+their filters. Same cause as Use Case 3; it now fetches with the token and saves.
+Fixed in the same pass: the integrity flag count — "this candidate pasted four
+times", which is an accusation — was reaching anybody who could read a score,
+through both this roster and the CSV.
 
 **Known gaps:** No score per section, because sections never reach delivery
 (`RES-04`). No per-competency columns in the export. No certificate, which is the
@@ -505,20 +526,27 @@ platform they have never heard of.
    assessment defaults. Everything saves. **✅**
 3. The organisation's name replaces the product's in the staff shell and on the
    exam entry page a candidate sees. **✅**
-4. The logo appears. **❌ A broken-image icon appears.**
+4. The logo appears, in the shell and on the exam page. **✅ since `3923129`.**
 5. The brand colour changes how the product looks. **❌ Nothing changes.**
 6. The invitation email carries the centre's identity. **❌ It carries none.**
 7. The centre's own vocabulary — "Students" instead of "Candidates" — appears
    across the screens. **❌ It is saved and read by no screen.**
 
-**Where it breaks, exactly.** The logo URL is origin-relative and unauthenticated,
-like every other file the browser fetches for itself (`PLT-09`). The brand colour
-appears in the Angular source only inside the settings feature — no CSS custom
-property is ever set from it. Seven of the nine saved settings are read by nothing
-outside the settings screen, including the switch that is supposed to turn
-integrity observation off, which is a consent problem rather than a configuration
-one. And the vocabulary editor writes a record that only the catalogue screen reads
-back.
+**Where it breaks, exactly.** The brand colour appears in the Angular source only
+inside the settings feature — no CSS custom property is ever set from it, so an
+administrator picks a colour, saves it, sees "saved", and nothing anywhere changes.
+Seven of the nine saved settings are read by nothing outside the settings screen,
+including the switch that is supposed to turn integrity observation off, which is a
+consent problem rather than a configuration one. And the vocabulary editor writes a
+record that only the catalogue screen reads back.
+
+**One thing this screen fixed that is worth recording.** Two rival settings
+services existed alongside it, and ABP generates a conventional controller for
+every application service — so `PUT /api/app/system-general-settings`, which
+carried no authorisation attribute at all, was an anonymous write that let anybody
+rename the organisation without signing in. Both were deleted rather than guarded,
+because a duplicate source of truth is how one of them ends up forgotten, and the
+route smoke test now fails if either comes back.
 
 **The read-only case is unreachable.** The settings route is deliberately left
 ungated so that anyone signed in can read the rules their exams run under; the
@@ -539,7 +567,10 @@ needs, and a marker is not given the answer keys to the whole bank.
 1. Administrator opens **Users**.
 2. Creates an account, ticking the roles on the same form — an account is never
    briefly role-less. **✅**
-3. Changes somebody's roles later, as a whole list rather than a diff. **✅**
+3. Changes somebody's roles later, as a whole list rather than a diff — and that
+   now requires its own permission, checked only when the list actually changes.
+   **✅ since `3923129`; until then anyone who could edit a colleague's phone
+   number could make themselves an administrator.**
 4. Removes somebody who has left. **⚠ Only by hard delete; there is no
    deactivation.**
 5. Resets a locked-out colleague's password. **❌ The request succeeds and the
@@ -558,11 +589,20 @@ That decision was made after a service authorised against a policy name nobody h
 defined, which ASP.NET answers with a 500, so a permission mistake presented as a
 broken screen.
 
-**Six declared permissions enforce nothing** anywhere in the product. **Two
-navigation links still go nowhere** — the user menu's profile link, and the
-sidebar's Assignments entry, whose route requires an exam id and has no index page
-— and both silently deposit the user on the dashboard, which is exactly the
-behaviour the navigation is supposed to prevent (`ADM-02`).
+**Every navigation link now resolves.** Seven went nowhere a month ago; the last
+two — the user menu's profile link, pointing at a module deliberately not
+registered, and the sidebar's Assignments entry, whose route required an exam id
+and had no index page — were fixed while this document was being written. Two
+subtler navigation defects went with them: in a zoneless application the sidebar
+read permissions once at construction, so a user whose configuration had not landed
+yet saw nothing but Dashboard permanently; and class and method authorisation
+attributes combine with AND rather than override, so a "manage the classes" role
+passed the route guard, watched the screen mount, and had every request refused
+(`ADM-02`).
+
+**One declared permission still enforces nothing**, `Administration.Access`, and
+should be removed. Five others were closed rather than deleted, which was the
+better answer.
 
 ---
 
@@ -635,25 +675,41 @@ Walked end to end, in order, as a demonstration:
 |---|---|---|
 | 1 | Set up a catalogue | ✅ |
 | 2 | Write questions the centre owns | ✅ |
-| 3 | Attach a chart or a recording | ❌ nothing displays |
+| 3 | Attach a chart or a recording | ✅ |
 | 4 | Build an exam, be stopped from publishing a broken one | ✅ |
-| 5 | Divide it into sections | ⚠ saves, does nothing |
-| 6 | Build and approve a named paper | ✅ |
-| 7 | Import a class roll | ✅ |
-| 8 | Put the class at a level | ✅ |
-| 9 | Send the exam, choosing the approved paper | ✅ unbranded email |
-| 10 | Sit it — clock, autosave, resume, submit | ✅ |
-| 11 | Mark the written answers | ✅ without the model answer |
-| 12 | Read the roster, the profile and the answer sheet | ✅ |
-| 13 | Export the results | ❌ nothing downloads |
-| 14 | See which questions stopped measuring | ✅ |
-| 15 | Put the centre's name and logo on it | ⚠ name yes, logo no |
+| 5 | Write the blueprint the paper is drawn to | ✅ |
+| 6 | Divide it into sections | ⚠ saves, does nothing |
+| 7 | Build and approve a named paper | ✅ |
+| 8 | Import a class roll | ✅ |
+| 9 | Put the class at a level | ✅ |
+| 10 | Send the exam, choosing the approved paper | ✅ unbranded email |
+| 11 | Sit it — clock, autosave, resume, submit | ✅ |
+| 12 | Watch the sittings in progress, end a stuck one | ✅ uncommitted |
+| 13 | Mark the written answers | ✅ without the model answer |
+| 14 | Read the roster, the profile and the answer sheet | ✅ |
+| 15 | Export the results | ✅ |
+| 16 | See which questions stopped measuring | ✅ no link to the question |
+| 17 | Put the centre's name and logo on it | ✅ colour does nothing |
 
-**Eleven of fifteen steps work end to end.** A month ago the same walk had two.
+**Fifteen of seventeen steps work end to end.** A month ago the same walk had two,
+and at the start of this document it had eleven of fifteen — three of the breaks it
+recorded were fixed while it was being written.
 
-**The honest sentence for a meeting:** *we can show a centre building its own exam
-from its own questions, approving the exact paper, sending it to a class, watching
-somebody sit it, marking it and reading the results — and we cannot yet show a
-question with a picture in it, or hand them the spreadsheet at the end.*
+**The honest sentence for a meeting:**
 
-Both of those are the same defect, and it is small.
+> A centre can build an exam from questions it owns, filed under its own domains
+> and competencies; approve the exact paper before it goes out; send it to a class
+> at a level; watch somebody sit it on a phone in Arabic with a clock it cannot
+> cheat; mark what needs a person; read the roster, the answer sheet and the
+> competency profile; export it; and be told which of its questions have stopped
+> measuring.
+
+Every clause of that is demonstrable today. **What still cannot be said** is
+anything about a section-by-section result, an exam imported rather than typed, or
+an installation on the customer's own hardware — and the invitation their students
+receive still comes from nobody.
+
+**And one defect this walk does not show, because a demonstration would not:** a
+fill-in-the-blank answer is scored zero however right it is (Use Case 9). That is
+the one item on this page that would end a pilot with a complaint rather than a
+shrug.

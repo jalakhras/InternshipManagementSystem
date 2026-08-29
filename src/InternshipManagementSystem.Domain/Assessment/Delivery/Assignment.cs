@@ -31,6 +31,22 @@ public class Assignment : AuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public Guid? ExamFormId { get; set; }
 
+    /// <summary>
+    /// Move to the next published paper on each retake.
+    /// <para>
+    /// The reason named forms exist at all, made automatic. Without it a
+    /// coordinator has to remember, at the moment they send a resit, that this
+    /// person already sat Form 1 — and if they forget, the retake measures what
+    /// the candidate remembers of the first go rather than what they know.
+    /// </para>
+    /// <para>
+    /// Ignored when <see cref="ExamFormId"/> names a paper: an explicit choice is
+    /// an explicit choice, and silently overriding it would be worse than not
+    /// offering the option.
+    /// </para>
+    /// </summary>
+    public bool RotateForms { get; set; }
+
     /// <summary>Set for a single-person assignment.</summary>
     public Guid? CandidateId { get; set; }
 

@@ -195,6 +195,9 @@
           <label class="form-label" for="sendForm">{{ t('::Assignment:Form') }}</label>
           <select id="sendForm" class="form-select" [ngModel]="formId()" (ngModelChange)="formId.set($event)">
             <option value="">{{ t('::Assignment:Form:Draw') }}</option>
+            <!-- Above the named papers, because it is the answer for a resit and a
+                 resit is when somebody comes to this screen a second time. -->
+            <option [value]="ROTATE">{{ t('::Assignment:Form:Rotate') }}</option>
             @for (form of forms(); track form.id) {
               <option [value]="form.id">{{ form.name }} ({{ form.questionCount }})</option>
             }

@@ -123,6 +123,7 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
         var assignment = new Assignment(GuidGenerator.Create(), CurrentTenant.Id, exam.Id, input.ExpiresAt)
         {
             ExamFormId = input.ExamFormId,
+            RotateForms = input.RotateForms,
             CandidateId = input.CandidateId,
             CandidateGroupId = input.CandidateGroupId,
             MaxAttempts = input.MaxAttempts,

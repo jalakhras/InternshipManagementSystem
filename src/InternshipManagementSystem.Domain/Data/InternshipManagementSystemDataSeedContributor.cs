@@ -143,7 +143,14 @@ namespace InternshipManagementSystem
                 .Select(permission => permission.Name)
                 .ToList();
 
-            var alreadyOffered = (await _settings.GetOrNullGlobalAsync(Settings.InternshipManagementSystemSettings.SeededPermissions) ?? string.Empty)
+            // Per tenant, because seeding runs per tenant and the grants it writes
+            // are tenant-scoped. Held globally this marker was filled by the host's
+            // pass and then read as "already done" by every tenant after it — so
+            // the second organisation on a deployment got an Admin role with no
+            // permission at all, and every screen returned 403. That is the exact
+            // failure this method was written to fix, reintroduced one level down.
+            var alreadyOffered = (await _settings.GetOrNullForCurrentTenantAsync(
+                    Settings.InternshipManagementSystemSettings.SeededPermissions) ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet();
 
@@ -158,7 +165,7 @@ namespace InternshipManagementSystem
             {
                 // Written after granting, so a failure half way means the rest are
                 // offered again on the next run rather than lost.
-                await _settings.SetGlobalAsync(
+                await _settings.SetForCurrentTenantAsync(
                     Settings.InternshipManagementSystemSettings.SeededPermissions,
                     string.Join(',', alreadyOffered.Concat(newlyDefined).Distinct().OrderBy(n => n)));
             }

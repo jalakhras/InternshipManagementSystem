@@ -3057,26 +3057,37 @@ document's plan is real.
    this document is unverified, and six declared permissions turn out to enforce
    nothing — which is exactly what an unexercised authorisation layer looks like
    from the inside.)*
-4. At least one spec per epic runs against a real backend. *(Partly built —
-   `angular/e2e/live/journey.spec.ts` is opt-in, runs against a real host and
-   database, and is a genuine improvement. It drives the **API** rather than the
-   screens, which is why it can prove a blob round-trips and still miss that no
-   `img` in the product can fetch one. The `desktop` and `mobile` projects stub
-   every request.)*
-5. There are no Angular unit tests. *(Zero `.spec.ts` files under `angular/src`.
+4. At least one spec per epic runs against a real backend. *(Substantially built,
+   and it earned its keep immediately. `angular/e2e/live/journey.spec.ts` is an
+   opt-in Playwright project — `--project=live` — because it needs the host up and
+   it writes rows. It is deliberately one long journey rather than several small
+   ones: catalogue, exam, questions, publish, named paper, candidate, link, **sit it
+   in the browser**, submit, then read the roster, the topic breakdown and the CSV.
+   The value is in the joins, because that is where this project's defects have
+   been — and on its first run it found that every candidate was being served the
+   second question first (TAK-04).)*
+5. **A stub must be able to fail.** *(Learned and applied. The stubbed suite could
+   not see the off-by-one because the stub echoed back whatever position it was
+   asked for, so it agreed with any client. A stub that answers anything proves
+   nothing; it now refuses an out-of-range position the way the service does, and
+   numbers its questions the way the server numbers them.)*
+6. There are no Angular unit tests. *(Zero `.spec.ts` files under `angular/src`.
    Given the component logic now carrying real decisions — item health chips,
    derived link states, the answer input registry — this is a growing gap.)*
-6. Something runs the tests. *(Not built. No CI configuration, no Dockerfile, no
+7. Something runs the tests. *(Not built. No CI configuration, no Dockerfile, no
    compose file, no deployment manifest and no installer exist anywhere in the
    repository, though the Playwright config already branches on a `CI` environment
-   variable that nothing sets.)*
+   variable that nothing sets. The route smoke tool (PLT-10) has the same
+   problem.)*
 
 **Tests** — this story is the test plan; its acceptance is measured by the coverage
 of the others.
 
-*Roughly 154 test attributes across 22 files, and they are good tests. The problem
-has never been their quality; it is that they all sit on one side of the seams
-where this product keeps failing.*
+*Roughly 154 test attributes across 22 .NET files, twelve browser spec files and
+one live journey, and they are good tests. The problem has never been their
+quality; it is that until the live suite landed they all sat on one side of the
+seams where this product keeps failing. That is now half-fixed, and the half that
+remains is authorisation.*
 
 #### PLT-08 · Be honest about what a score means
 **SHOULD · PARTIAL** — *the numbers shipped; the caveats did not*
@@ -3109,39 +3120,42 @@ is not a set of broken-image icons.
 
 **Acceptance**
 1. Every URL the product builds for the browser to fetch **directly** — in an
-   `img`, `audio`, `video` or `a[href]` — is absolute against the API base, the
-   same way `RestService` prefixes every XHR. *(Not built. Six places build
-   origin-relative `/api/...` URLs: the media field's preview, the taker's
-   question media, the taker entry page's tenant logo, the shell's tenant logo, the
-   hotspot editor's image and the reviewer's uploaded-answer link — plus the
-   results export's `a[href]`. Both `environment.ts` and `environment.prod.ts` put
-   the app on `http://localhost:4200` and the API on `https://localhost:44373`, and
-   no proxy is configured, so all seven resolve against the app's own origin.)*
-2. Every such URL carries its own credential, because a browser-initiated media or
-   download request carries no `Authorization` header whatever the interceptor
-   does. *(Half built, and the half that exists is the clever one: the candidate's
-   media URL carries a signed grant naming one blob and expiring with the attempt,
-   which is exactly right for someone with no account. The **staff** paths carry
-   nothing, so an author's preview, the shell logo and the reviewer's attachment
-   are anonymous requests against a permission check and return 404. The results
-   export is anonymous against `[Authorize]` and returns 401.)*
+   `img`, `audio`, `video` or a download — resolves against the API rather than
+   against the application, the same way `RestService` prefixes every XHR. *(Built.
+   Seven places built origin-relative `/api/...` URLs: the media field's preview,
+   the taker's question media and stimulus, the taker entry page's tenant logo, the
+   shell's tenant logo, the hotspot editor's image, the reviewer's uploaded-answer
+   link and the results export. Both `environment.ts` and `environment.prod.ts` put
+   the app and the API on different origins with no proxy, so all seven asked the
+   wrong server.)*
+2. Every such fetch carries its own credential, because a browser-initiated media
+   or download request carries no `Authorization` header whatever the interceptor
+   does. *(Built, and the two callers correctly get different answers: a
+   candidate's paper already carries a signed grant naming one blob and expiring
+   with the attempt, so it needed only the right origin; staff are signed in, so
+   `core/media.service.ts` fetches their files with the token and hands the page an
+   object URL. The export does the same and saves.)*
 3. A file the caller is not entitled to returns 404 rather than 403, because
    whether a blob exists is itself worth not saying. *(Built.)*
 4. Content type is decided from the stored extension, never echoed from the
    uploader, and `.svg` is served as an octet-stream rather than as an image a
    browser will run script from. *(Built, and well reasoned.)*
 
-**Tests** — *e2e*: a browser test that renders a question with an image and asserts
-the image request returned 200; the same for the shell logo, the taker's audio and
-the export download. **This is the missing layer and it is the point of the
-story.** Every existing test proves one side: the component tests stub the URL, and
-the live suite fetches the blob with an API client carrying a token, which no
-`img` tag can do.
+**Tests** — *e2e*: `live/journey.spec.ts` covers the media round trip and asserts
+that an anonymous stranger holding a blob name gets 404 rather than the file.
+**Still worth adding, because it is the assertion whose absence caused this:** a
+browser test that renders a question with an image and asserts the image request
+returned 200, and one that clicks Export and asserts a file arrives. Every test
+that existed proved one side — the component tests stubbed the URL, and the live
+suite fetched the blob with an API client carrying a token, which no `img` tag can
+do.
 
-*Cheap to fix and the highest ratio of embarrassment to effort in the product: it
-breaks the opening sales argument (their Google Form lost the chart, and we keep
-it), the listening exam a language centre would buy, the tenant's logo, and the
-results file the coordinator paid for.*
+*Kept as a story rather than deleted, because the defect class is the point. One
+mistake produced seven symptoms across four features, it survived two reviews and
+187 passing tests, and it was found by a person reading a URL string. It broke the
+opening sales argument (their Google Form lost the chart, and we keep it), the
+listening exam a language centre would buy, the tenant's logo, and the results file
+the coordinator paid for.*
 
 #### PLT-10 · Prove every route the client calls answers
 **SHOULD · PARTIAL** — *new; the tool exists and nothing runs it*
@@ -3185,10 +3199,15 @@ by anything.*
 
 | Status | Stories |
 |---|---|
-| **BUILT** | 55 |
-| **PARTIAL** | 39 |
-| **NOT BUILT** | 31 |
+| **BUILT** | 62 |
+| **PARTIAL** | 33 |
+| **NOT BUILT** | 30 |
 | **Total** | **125** |
+
+*Seven of those BUILT statuses were PARTIAL or NOT BUILT when this revision was
+drafted and changed before it was published: `BNK-04`, `BPR-01`, `RES-05`,
+`BRD-01`, `ADM-02` and `PLT-09` were fixed in `08f0eb6`, `3923129` and `0842cc9`,
+and `ASG-08` is complete in the working tree. The audit is pinned to `0842cc9`.*
 
 *Five stories are new in this revision, for work that shipped and was never
 written down or that this pass uncovered: `PPL-07` (a class at a level, in a
@@ -3200,9 +3219,9 @@ actually sent), `PLT-09` (serve a stored file to the browser that renders it) an
 
 | | MUST | SHOULD | COULD | Total |
 |---|---|---|---|---|
-| **BUILT** | 44 | 10 | 1 | **55** |
-| **PARTIAL** | 21 | 16 | 2 | **39** |
-| **NOT BUILT** | 10 | 11 | 10 | **31** |
+| **BUILT** | 50 | 11 | 1 | **62** |
+| **PARTIAL** | 15 | 16 | 2 | **33** |
+| **NOT BUILT** | 10 | 10 | 10 | **30** |
 | **Total** | **75** | **37** | **13** | **125** |
 
 ## By epic
@@ -3210,57 +3229,70 @@ actually sent), `PLT-09` (serve a stored file to the browser that renders it) an
 | Epic | Stories | BUILT | PARTIAL | NOT BUILT |
 |---|---|---|---|---|
 | 1 · The catalogue and the tenant's vocabulary | 6 | 2 | 3 | 1 |
-| 2 · The question bank | 12 | 7 | 2 | 3 |
+| 2 · The question bank | 12 | 8 | 1 | 3 |
 | 3 · Getting existing exams in | 5 | 1 | 0 | 4 |
 | 4 · Exams, sections and publishing | 12 | 6 | 5 | 1 |
-| 5 · Blueprints and per-candidate assembly | 7 | 2 | 2 | 3 |
+| 5 · Blueprints and per-candidate assembly | 7 | 3 | 1 | 3 |
 | 6 · Named forms | 8 | 5 | 0 | 3 |
 | 7 · People and cohorts | 7 | 4 | 3 | 0 |
-| 8 · Assignment and links | 9 | 4 | 2 | 3 |
+| 8 · Assignment and links | 9 | 5 | 2 | 2 |
 | 9 · Sitting the exam | 16 | 9 | 3 | 4 |
 | 10 · Grading and the reviewer's queue | 10 | 4 | 2 | 4 |
-| 11 · Results, item health and export | 12 | 4 | 4 | 4 |
-| 12 · The tenant's own face | 5 | 0 | 4 | 1 |
-| 13 · Access and administration | 6 | 3 | 3 | 0 |
-| 14 · How the product behaves everywhere | 10 | 4 | 6 | 0 |
+| 11 · Results, item health and export | 12 | 5 | 3 | 4 |
+| 12 · The tenant's own face | 5 | 1 | 3 | 1 |
+| 13 · Access and administration | 6 | 4 | 2 | 0 |
+| 14 · How the product behaves everywhere | 10 | 5 | 5 | 0 |
 
 ## What the shape of those tables says
 
-**Forty-four of the seventy-five MUST stories are now BUILT, against seventeen at
-the last revision.** The month closed the catalogue, the shared bank's route in,
-named forms end to end, people and classes, the review queue, the results roster,
-the item analysis, staff accounts and tenant settings. That is not a marginal
-change; it is most of a product.
+**Fifty of the seventy-five MUST stories are now BUILT, against seventeen at the
+last revision.** The month closed the catalogue, the shared bank's route in, named
+forms end to end, people and classes, the review queue, the results roster, item
+analysis, the blueprint editor, staff accounts, tenant settings, the media path and
+the export. That is not a marginal change; it is most of a product.
 
 **PARTIAL has changed character, and this is the finding that matters.** Last time
 it meant "the service is finished and there is no screen", and the missing layer
-was Angular. That shape is nearly gone. What it means now is **a screen that is
-finished and a mechanism that is not** — a section's clock nothing reads, a
-qualifying flag nothing consults, a brand colour applied to nothing, seven tenant
-settings nobody consumes, a password field that reports success and changes
-nothing, an integrity payload that binds to no field, a model answer the server
-sends and the marking screen never renders, and an export button whose link cannot
-succeed. **Eleven of the thirty-nine PARTIAL stories are a control the user can
-operate that does nothing at all.** That is worse than an absent feature: an
-absent feature disappoints, and a dead control lies.
+was always Angular. That shape is now gone — the last two instances, the blueprint
+editor and the results export, closed while this was being written. What PARTIAL
+means today is the opposite: **a screen that is finished and a mechanism that is
+not.** A section's clock nothing reads, a qualifying flag nothing consults, a brand
+colour applied to nothing, seven tenant settings nobody consumes, a password field
+that reports success and changes nothing, an integrity payload that binds to no
+field, and a model answer the server sends that the marking screen never renders.
+**Ten of the thirty-three PARTIAL stories are a control the user can operate that
+does nothing at all.** That is worse than an absent feature: an absent feature
+disappoints, and a dead control lies.
 
-**The three defects that cost somebody something are all seam defects, and they
-are the same defect.** `GRD-10` (the answer shape the grader cannot read),
-`PLT-09` (the URLs the browser fetches for itself) and `TAK-13` (the integrity
-payload that binds to nothing) are each a case where both sides are written,
-tested and correct, and no test crosses between them. The missing media controller
-and the undefined permission policy were the same shape and were found the same
-way — by a person reading code, or by the one tool that speaks to a running
-server. This is now a pattern with five instances and it should be treated as a
-class of defect rather than five bugs.
+**The defects that cost somebody something are all seam defects, and they are one
+defect wearing different clothes.** Six instances now, in this codebase:
 
-**Epic 12 has no BUILT stories at all**, which is startling for an epic that
-shipped a whole screen this month. Everything the settings screen writes is real;
-almost nothing reads it.
+| Instance | Both sides correct | Nothing crossed |
+|---|---|---|
+| The media route that no controller declared | service, five callers | no route test |
+| The BLOB container with no provider | container, writer | nothing activated it |
+| An `[Authorize]` naming an undefined policy | service, permission tree | nothing ran the policy |
+| Origin-relative media and export URLs (`PLT-09`) | grant minting, controller | stub answered our own URL |
+| Question positions off by one (`TAK-04`) | screen counts from 1, server from 0 | stub echoed any position |
+| The blank-filling answer shape (`GRD-10`) | answer control, grader | no test pairs the two |
+
+Five of the six were found by a person reading code or by the one tool that speaks
+to a running server; the sixth — the off-by-one — was found by the live suite on
+its first run, which is the correct answer to this whole class and the reason that
+suite is the most valuable thing shipped this month. **`GRD-10` and `TAK-13` are
+the two instances still open**, and the fix for each is a test that pairs the two
+sides rather than testing either.
+
+**Epic 12 has one BUILT story out of five**, which is startling for an epic that
+shipped a whole settings screen. Everything it writes is real; almost nothing reads
+it.
 
 **Five application services still have no tests** — `ReviewAppService`,
 `AttemptGradingService`, `AssessmentMediaAppService`, `TenantSettingsAppService`,
-`UserAppService` — and no `[Authorize]` attribute anywhere is exercised by any
-test, because the test base allows everything. Every permission claim in this
-document is therefore an assertion about code that has been read rather than run,
-and six permissions turn out to gate nothing.
+`UserAppService` — and **no `[Authorize]` attribute anywhere is exercised by any
+test**, because the test base allows everything. That is the one place the seam
+lesson has not yet been applied, and it is not theoretical: this month a settings
+service with no `[Authorize]` at all exposed an anonymous write that let anybody
+rename the organisation, and a permission that was defined and never checked let
+anybody who could edit a colleague's phone number make themselves an
+administrator. Both were found by reading, not by running.

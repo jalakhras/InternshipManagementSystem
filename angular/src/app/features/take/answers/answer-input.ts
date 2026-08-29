@@ -45,7 +45,7 @@ export const ANSWER_INPUTS: Record<string, AnswerInputLoader> = {
   matching: () => import('./matching-answer.component').then(m => m.MatchingAnswerComponent),
   text: () => import('./text-answer.component').then(m => m.TextAnswerComponent),
   code: () => import('./text-answer.component').then(m => m.TextAnswerComponent),
-  'fill-in-the-blank': () => import('./text-answer.component').then(m => m.TextAnswerComponent),
+  'fill-in-the-blank': () => import('./blanks-answer.component').then(m => m.BlanksAnswerComponent),
 };
 
 /** What a type with no input of its own falls back to. */

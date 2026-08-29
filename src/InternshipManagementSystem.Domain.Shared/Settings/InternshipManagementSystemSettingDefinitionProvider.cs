@@ -14,10 +14,14 @@ public class InternshipManagementSystemSettingDefinitionProvider : SettingDefini
             // English-speaking tenant changes its own without affecting anyone else.
             Tenant(InternshipManagementSystemSettings.DefaultLanguage, "ar"),
             Tenant(InternshipManagementSystemSettings.TimeZone, "Asia/Riyadh"),
-            // Bookkeeping, never shown: not client-visible and not per-tenant,
-            // because it records what this deployment's seeder has done.
+            // Bookkeeping, never shown. Per tenant, not global: the grants it
+            // records are tenant-scoped, and one value for the whole deployment
+            // meant the host's pass marked the work done for every tenant that
+            // followed.
             new SettingDefinition(InternshipManagementSystemSettings.SeededPermissions)
-                .WithProviders(GlobalSettingValueProvider.ProviderName),
+                .WithProviders(
+                    TenantSettingValueProvider.ProviderName,
+                    GlobalSettingValueProvider.ProviderName),
 
             Tenant(InternshipManagementSystemSettings.OrganizationName, null),
             Tenant(InternshipManagementSystemSettings.LogoBlobName, null),

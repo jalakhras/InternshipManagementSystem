@@ -139,11 +139,28 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
             throw new AbpAuthorizationException("Invalid blob name.");
         }
 
-        var entitled = _sessions.GrantsMedia(grant, blobName)
-                       || await AuthorizationService.IsGrantedAsync(
-                           InternshipManagementSystemPermissions.Questions.Default);
+        var granted = _sessions.ReadMediaGrant(grant, blobName);
 
-        if (!entitled)
+        if (granted is not null)
+        {
+            // Read as the tenant the grant names. A candidate has no tenant
+            // context of their own — the link is their whole credential — so
+            // without this the container looked under the host and every image on
+            // a tenant's paper was a 404 with a perfectly valid grant.
+            //
+            // Safe because the grant is signed and names this exact blob: it can
+            // only exist because the server put that file on somebody's paper.
+            using (CurrentTenant.Change(granted.TenantId))
+            {
+                return await _blobs.GetOrNullAsync(blobName);
+            }
+        }
+
+        // Staff, in their own tenant and nobody else's. Deliberately not the
+        // tenant encoded in the name: an administrator who knew another
+        // organisation's blob name could otherwise read it.
+        if (!await AuthorizationService.IsGrantedAsync(
+                InternshipManagementSystemPermissions.Questions.Default))
         {
             return null;
         }

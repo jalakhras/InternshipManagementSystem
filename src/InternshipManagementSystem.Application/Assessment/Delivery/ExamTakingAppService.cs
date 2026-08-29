@@ -167,17 +167,26 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         // Whose exam this is. Read after the link resolves, so it is the owning
         // tenant's branding rather than whoever happens to be signed in.
-        preview.OrganizationName = await SettingProvider.GetOrNullAsync(
-            InternshipManagementSystemSettings.OrganizationName);
-
-        var logo = await SettingProvider.GetOrNullAsync(
-            InternshipManagementSystemSettings.LogoBlobName);
-
-        if (!string.IsNullOrWhiteSpace(logo))
+        //
+        // Read inside the link's own tenant. Disabling the data filter lets this
+        // request see the row; it does not make the request *be* that tenant, and
+        // settings are resolved per tenant — so without the change here a language
+        // centre's candidates were shown the platform's name and mark instead of
+        // the centre's, which is the opposite of the point.
+        using (CurrentTenant.Change(link.TenantId))
         {
-            // Signed like any other media a candidate is shown: they have no
-            // account, so the address is the whole credential.
-            preview.OrganizationLogoUrl = BuildMediaUrl(logo, link.ExpiresAt);
+            preview.OrganizationName = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.OrganizationName);
+
+            var logo = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.LogoBlobName);
+
+            if (!string.IsNullOrWhiteSpace(logo))
+            {
+                // Signed like any other media a candidate is shown: they have no
+                // account, so the address is the whole credential.
+                preview.OrganizationLogoUrl = BuildMediaUrl(logo, link.ExpiresAt, link.TenantId);
+            }
         }
 
         // The plain token is needed once more, to bind the pending start to this link.
@@ -251,7 +260,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         // one for this candidate, which is what every exam did before named forms
         // existed and still the right answer for practice.
         var assignment = await _assignments.FindAsync(link.AssignmentId);
-        var formId = assignment?.ExamFormId;
+
+        var formId = assignment?.ExamFormId
+                     ?? await RotatedFormIdAsync(assignment, exam.Id, link.CandidateId);
 
         var seed = ExamSessionTokenService.NewShuffleSeed();
         var attempt = new Attempt(
@@ -345,7 +356,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         var dto = _projector.Project(
             question, slot, group, form.Count,
-            blob => BuildMediaUrl(blob, attempt.DeadlineAt));
+            blob => BuildMediaUrl(blob, attempt.DeadlineAt, attempt.TenantId));
 
         var saved = await (await _answers.GetQueryableAsync())
             .FirstOrDefaultAsync(a => a.AttemptId == attempt.Id && a.QuestionId == question.Id);
@@ -672,9 +683,10 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     /// with this attempt.
     /// </para>
     /// </summary>
-    private string BuildMediaUrl(string blobName, DateTime deadline) =>
+    private string BuildMediaUrl(string blobName, DateTime deadline, Guid? tenantId) =>
         $"/api/assessment/media/{blobName}?grant=" +
-        Uri.EscapeDataString(_sessions.IssueMediaGrant(blobName, deadline.ToUniversalTime().AddMinutes(5)));
+        Uri.EscapeDataString(
+            _sessions.IssueMediaGrant(blobName, deadline.ToUniversalTime().AddMinutes(5), tenantId));
 
     /// <summary>
     /// Loads the attempt a session names, and refuses one that is not the
@@ -699,6 +711,48 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         }
 
         return attempt;
+    }
+
+    /// <summary>
+    /// The next paper in the rotation, or null when this sitting does not rotate.
+    /// <para>
+    /// Chosen by how many times this candidate has already sat this exam, so the
+    /// first sitting gets the first paper and a retake gets the next one. It
+    /// wraps: with two papers and three attempts the third is the first paper
+    /// again, which is honest — the alternative is refusing to let somebody sit
+    /// an exam because the bank ran out of forms.
+    /// </para>
+    /// <para>
+    /// Ordered by code rather than by creation, because the code is what a
+    /// coordinator names when they talk about a paper, and creation order changes
+    /// when somebody deletes a draft.
+    /// </para>
+    /// </summary>
+    private async Task<Guid?> RotatedFormIdAsync(Assignment? assignment, Guid examId, Guid candidateId)
+    {
+        if (assignment?.RotateForms != true)
+        {
+            return null;
+        }
+
+        var published = await (await _forms.GetQueryableAsync())
+            .Where(f => f.ExamId == examId && f.Status == ExamFormStatus.Published)
+            .OrderBy(f => f.Code)
+            .Select(f => f.Id)
+            .ToListAsync();
+
+        if (published.Count == 0)
+        {
+            // Nothing to rotate through. Drawing a paper is the older behaviour
+            // and a working one; refusing to start would punish the candidate for
+            // an authoring decision they know nothing about.
+            return null;
+        }
+
+        var alreadySat = await (await _attempts.GetQueryableAsync())
+            .CountAsync(a => a.ExamId == examId && a.CandidateId == candidateId);
+
+        return published[alreadySat % published.Count];
     }
 
     /// <summary>

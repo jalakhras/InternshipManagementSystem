@@ -194,6 +194,72 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
     }
 
     [Fact]
+    public async Task A_rotating_sitting_gives_a_retake_a_different_paper()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await ExamWithBankAsync("delivery-rotate", 6);
+
+            var first = await PublishedFormAsync(
+                exam.Id, "Form 1", "R-F1", exam.Bank.Take(3).Select(q => q.Id).ToList());
+
+            var second = await PublishedFormAsync(
+                exam.Id, "Form 2", "R-F2", exam.Bank.Skip(3).Take(3).Select(q => q.Id).ToList());
+
+            var candidate = await _candidates.CreateAsync(new CreateUpdateCandidateDto
+            {
+                FullName = "Twice",
+                Email = "twice@example.test",
+            });
+
+            // Two sittings for one person, both set to rotate rather than naming a
+            // paper. This is what a resit looks like.
+            var firstPaper = await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+            var secondPaper = await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+
+            var firstIds = firstPaper.Select(q => q.Id).ToList();
+            var secondIds = secondPaper.Select(q => q.Id).ToList();
+
+            // The whole reason named forms exist, made automatic. A retake on the
+            // same paper measures what somebody remembers of the first attempt, and
+            // a coordinator should not have to hold that in their head at the
+            // moment they press send.
+            firstIds.ShouldNotBe(secondIds);
+            firstIds.Intersect(secondIds).ShouldBeEmpty();
+
+            var forms = new[] { first.Id, second.Id };
+            forms.ShouldContain(f => f == first.Id);
+        });
+    }
+
+    [Fact]
+    public async Task Rotation_wraps_rather_than_refusing_a_third_sitting()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await ExamWithBankAsync("delivery-wrap", 4);
+
+            await PublishedFormAsync(exam.Id, "Form 1", "W-F1", exam.Bank.Take(2).Select(q => q.Id).ToList());
+            await PublishedFormAsync(exam.Id, "Form 2", "W-F2", exam.Bank.Skip(2).Take(2).Select(q => q.Id).ToList());
+
+            var candidate = await _candidates.CreateAsync(new CreateUpdateCandidateDto
+            {
+                FullName = "Thrice",
+                Email = "thrice@example.test",
+            });
+
+            var first = await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+            await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+            var third = await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+
+            // Two papers and three sittings. Wrapping is honest; the alternative is
+            // refusing to let somebody sit an exam because the authoring ran out of
+            // forms, which is not their problem.
+            third.Select(q => q.Id).ShouldBe(first.Select(q => q.Id).ToList());
+        });
+    }
+
+    [Fact]
     public async Task A_draft_form_cannot_be_sent()
     {
         await AsTenantAsync(async () =>
@@ -329,6 +395,22 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
 
             // No mail server in a test host, and the link comes back in the result
             // either way.
+            SendEmail = false,
+        });
+
+        return result.Recipients.Single().Url.Split('/').Last();
+    }
+
+    /// <summary>Sends a sitting set to rotate, and returns the link token.</summary>
+    private async Task<string> SendRotatingAsync(Guid examId, Guid candidateId)
+    {
+        var result = await _assignments.CreateAsync(new CreateAssignmentDto
+        {
+            ExamId = examId,
+            RotateForms = true,
+            CandidateId = candidateId,
+            ExpiresAt = DateTime.Now.AddDays(7),
+            MaxAttempts = 1,
             SendEmail = false,
         });
 

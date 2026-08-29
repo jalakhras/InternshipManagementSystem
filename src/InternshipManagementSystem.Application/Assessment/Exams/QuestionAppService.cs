@@ -270,7 +270,6 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         }).ToList();
     }
 
-    [Authorize(InternshipManagementSystemPermissions.Questions.Create)]
     [Authorize(InternshipManagementSystemPermissions.Questions.Edit)]
     public async Task<QuestionGroupDto> UpdateGroupAsync(Guid id, CreateUpdateQuestionGroupDto input)
     {
@@ -307,6 +306,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         await _groups.DeleteAsync(id, autoSave: true);
     }
 
+    [Authorize(InternshipManagementSystemPermissions.Questions.Create)]
     public async Task<QuestionGroupDto> CreateGroupAsync(CreateUpdateQuestionGroupDto input)
     {
         var group = new QuestionGroup(GuidGenerator.Create(), CurrentTenant.Id, input.ExamId)
