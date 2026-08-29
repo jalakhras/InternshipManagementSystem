@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace InternshipManagementSystem.IdentityManagement.DTOs
 {
@@ -23,5 +24,15 @@ namespace InternshipManagementSystem.IdentityManagement.DTOs
         [MaxLength(10)] // PhoneNumber غالباً 16
         [Phone]
         public string PhoneNumber { get; set; } // رقم الهاتف
+
+        /// <summary>
+        /// The roles to give this account.
+        /// <para>
+        /// Set at creation rather than afterwards. An account created with none
+        /// can sign in and see an empty application, and the person who created it
+        /// has already moved on to telling them their password.
+        /// </para>
+        /// </summary>
+        public List<string> Roles { get; set; } = new();
     }
 }

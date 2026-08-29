@@ -78,6 +78,12 @@ export const APP_ROUTES: Routes = [
         loadChildren: () => import('./features/catalog/catalog.routes').then(m => m.CATALOG_ROUTES),
       },
       {
+        path: 'users',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.IdentityManagement.Users.View' },
+        loadChildren: () => import('./features/users/user.routes').then(m => m.USER_ROUTES),
+      },
+      {
         // No permission guard: everybody signed in may read the settings, and the
         // screen is read-only without ManageSettings. Knowing the rules the exams
         // run under is not a privilege.

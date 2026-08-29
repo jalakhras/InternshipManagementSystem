@@ -1,10 +1,11 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using InternshipManagementSystem.IdentityManagement;
 using InternshipManagementSystem.IdentityManagement.DTOs;
 using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -53,6 +54,10 @@ namespace InternshipManagementSystem.Controllers.IdentityManagement
         {
             return _userAppService.UpdateAsync(id, input);
         }
+
+        /// <summary>Declared before {id} so "roles" is not read as an identifier.</summary>
+        [HttpGet("roles")]
+        public Task<List<string>> GetRolesAsync() => _userAppService.GetRolesAsync();
 
         [HttpDelete("{id}")]
         [Authorize(InternshipManagementSystemPermissions.IdentityManagement.Users.Delete)]

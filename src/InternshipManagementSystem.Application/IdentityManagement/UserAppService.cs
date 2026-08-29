@@ -24,14 +24,24 @@ namespace InternshipManagementSystem.IdentityManagement
     {
         private readonly IdentityUserManager _userManager;
         private readonly IRepository<IdentityUser, Guid> _userRepository;
+        private readonly IRepository<IdentityRole, Guid> _roleRepository;
 
         public UserAppService(
             IRepository<IdentityUser, Guid> userRepository,
+            IRepository<IdentityRole, Guid> roleRepository,
             IdentityUserManager userManager)
             : base(userRepository)
         {
             _userManager = userManager;
             _userRepository = userRepository;
+            _roleRepository = roleRepository;
+        }
+
+        public async Task<List<string>> GetRolesAsync()
+        {
+            var roles = await _roleRepository.GetListAsync();
+
+            return roles.Select(r => r.Name).OrderBy(name => name).ToList();
         }
 
         [Authorize(InternshipManagementSystemPermissions.IdentityManagement.Users.Create)]
@@ -54,9 +64,14 @@ namespace InternshipManagementSystem.IdentityManagement
                 await _userManager.SetPhoneNumberAsync(user, input.PhoneNumber);
             }
 
+            // Before saving, because an account created with no role can sign in
+            // and see an empty application — and by then whoever created it has
+            // moved on to telling them their password.
+            await SetRolesAsync(user, input.Roles);
+
             await CurrentUnitOfWork.SaveChangesAsync();
 
-            return ObjectMapper.Map<IdentityUser, UserDto>(user);
+            return await ToDtoAsync(user);
         }
 
         [Authorize(InternshipManagementSystemPermissions.IdentityManagement.Users.Edit)]
@@ -82,10 +97,49 @@ namespace InternshipManagementSystem.IdentityManagement
                 await _userManager.SetPhoneNumberAsync(user, input.PhoneNumber);
             }
 
+            await SetRolesAsync(user, input.Roles);
+
             await _userRepository.UpdateAsync(user);
             await CurrentUnitOfWork.SaveChangesAsync();
 
-            return ObjectMapper.Map<IdentityUser, UserDto>(user);
+            return await ToDtoAsync(user);
+        }
+
+        /// <summary>
+        /// Makes the account's roles match the list exactly.
+        /// <para>
+        /// Whole-list rather than add-and-remove, because the screen shows every
+        /// role with the held ones ticked, and what is ticked when they press save
+        /// is what they mean.
+        /// </para>
+        /// </summary>
+        private async Task SetRolesAsync(IdentityUser user, List<string> roles)
+        {
+            var wanted = (roles ?? new List<string>())
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct()
+                .ToList();
+
+            var held = await _userManager.GetRolesAsync(user);
+
+            foreach (var role in held.Where(r => !wanted.Contains(r)))
+            {
+                await _userManager.RemoveFromRoleAsync(user, role);
+            }
+
+            foreach (var role in wanted.Where(r => !held.Contains(r)))
+            {
+                await _userManager.AddToRoleAsync(user, role);
+            }
+        }
+
+        /// <summary>The row a screen renders, with the roles it holds.</summary>
+        private async Task<UserDto> ToDtoAsync(IdentityUser user)
+        {
+            var dto = ObjectMapper.Map<IdentityUser, UserDto>(user);
+            dto.Roles = (await _userManager.GetRolesAsync(user)).ToList();
+
+            return dto;
         }
 
         [Authorize(InternshipManagementSystemPermissions.IdentityManagement.Users.Delete)]
@@ -108,10 +162,14 @@ namespace InternshipManagementSystem.IdentityManagement
                 .Take(input.MaxResultCount)
                 .ToList();
 
-            return new PagedResultDto<UserDto>(
-                totalCount,
-                ObjectMapper.Map<List<IdentityUser>, List<UserDto>>(users)
-            );
+            var rows = new List<UserDto>();
+
+            foreach (var user in users)
+            {
+                rows.Add(await ToDtoAsync(user));
+            }
+
+            return new PagedResultDto<UserDto>(totalCount, rows);
         }
     }
 }

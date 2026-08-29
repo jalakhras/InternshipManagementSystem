@@ -1,0 +1,186 @@
+<astro-page-header
+  [title]="t('::Nav:Users')"
+  [description]="t('::User:Lede')">
+  @if (canCreate()) {
+    <button slot="actions" type="button" class="btn btn-primary" (click)="newUser()">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      {{ t('::User:New') }}
+    </button>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (draft().open) {
+  <form class="draft" (ngSubmit)="save()">
+    <h2 class="draft__title">{{ draft().id ? t('::User:Edit') : t('::User:New') }}</h2>
+
+    <div class="draft__grid">
+      <label class="field">
+        <span class="field__label">{{ t('::User:FullName') }}</span>
+        <input
+          class="form-control"
+          name="fullName"
+          [ngModel]="draft().fullName"
+          (ngModelChange)="patch('fullName', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::User:UserName') }}</span>
+        <input
+          class="form-control"
+          required
+          name="userName"
+          [ngModel]="draft().userName"
+          (ngModelChange)="patch('userName', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::User:Email') }}</span>
+        <input
+          type="email"
+          class="form-control"
+          required
+          name="email"
+          [ngModel]="draft().email"
+          (ngModelChange)="patch('email', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::User:Phone') }}</span>
+        <input
+          class="form-control"
+          name="phoneNumber"
+          [ngModel]="draft().phoneNumber"
+          (ngModelChange)="patch('phoneNumber', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::User:Password') }}</span>
+        <input
+          type="password"
+          class="form-control"
+          autocomplete="new-password"
+          name="password"
+          [ngModel]="draft().password"
+          (ngModelChange)="patch('password', $event)" />
+        <!-- Blank on edit keeps the existing one. Said out loud, because a blank
+             password field is otherwise read as "it will be cleared". -->
+        <span class="field__hint">
+          {{ draft().id ? t('::User:Password:Keep') : t('::User:Password:Required') }}
+        </span>
+      </label>
+    </div>
+
+    <!-- On the form, not behind a second screen. An account with no role can sign
+         in and see an empty application, and by then whoever created it has moved
+         on to telling them the password. -->
+    <fieldset class="roles">
+      <legend class="field__label">{{ t('::User:Roles') }}</legend>
+
+      @if (roles().length === 0) {
+        <p class="field__hint">{{ t('::User:Roles:None') }}</p>
+      }
+
+      <div class="roles__list">
+        @for (role of roles(); track role) {
+          <label class="role">
+            <input type="checkbox" [checked]="hasRole(role)" (change)="toggleRole(role)" />
+            <span>{{ role }}</span>
+          </label>
+        }
+      </div>
+
+      @if (draft().roles.length === 0) {
+        <p class="field__warn">{{ t('::User:Roles:Empty') }}</p>
+      }
+    </fieldset>
+
+    <div class="draft__actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">{{ t('::Save') }}</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">{{ t('::Cancel') }}</button>
+    </div>
+  </form>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi bi-person-badge" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::User:NoneYet') }}</p>
+  </div>
+} @else {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::User:FullName') }}</th>
+          <th scope="col">{{ t('::User:UserName') }}</th>
+          <th scope="col">{{ t('::User:Email') }}</th>
+          <th scope="col">{{ t('::User:Roles') }}</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of items(); track user.id) {
+          <tr>
+            <td>{{ user.fullName || '—' }}</td>
+            <td>{{ user.userName }}</td>
+            <td class="muted">{{ user.email }}</td>
+            <td>
+              @if (user.roles.length === 0) {
+                <!-- Worth showing rather than leaving blank: this account can sign
+                     in and do nothing, which reads to its owner as a broken login. -->
+                <span class="norole">{{ t('::User:Roles:Empty:Short') }}</span>
+              } @else {
+                @for (role of user.roles; track role) {
+                  <span class="chip">{{ role }}</span>
+                }
+              }
+            </td>
+            <td class="actions">
+              @if (canEdit()) {
+                <button type="button" class="link" (click)="edit(user)">{{ t('::Edit') }}</button>
+              }
+              @if (canDelete()) {
+                <button type="button" class="link link--danger" (click)="askDelete(user)">
+                  {{ t('::Delete') }}
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (pendingDelete(); as user) {
+  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::ConfirmDelete')">
+    <div class="dialog">
+      <h2 class="dialog__title">{{ t('::ConfirmDelete') }}</h2>
+      <p class="dialog__body">{{ t('::User:DeleteWarning', user.userName) }}</p>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="confirmDelete()">
+          {{ t('::Delete') }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelDelete()">
+          {{ t('::Cancel') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

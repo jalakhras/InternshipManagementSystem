@@ -734,6 +734,22 @@
     "ToggleNavigation": "Show or hide the menu",
     "ToggleTheme": "Switch appearance",
     "UnknownError": "Unknown error",
+    "User:DeleteWarning": "\"{0}\" will be removed and will no longer be able to sign in. Anything they authored stays where it is.",
+    "User:Edit": "Edit account",
+    "User:Email": "Email",
+    "User:FullName": "Full name",
+    "User:Lede": "Staff accounts. Candidates never appear here — their link is their whole credential, and asking somebody sitting one exam to manage a password would be work for nothing.",
+    "User:New": "New account",
+    "User:NoneYet": "No accounts yet",
+    "User:Password": "Password",
+    "User:Password:Keep": "Leave blank to keep the current one.",
+    "User:Password:Required": "Required for a new account.",
+    "User:Phone": "Phone",
+    "User:Roles": "Roles",
+    "User:Roles:Empty": "This account has no role, so it will sign in and see an empty application. Its owner will read that as a broken login.",
+    "User:Roles:Empty:Short": "No role",
+    "User:Roles:None": "No roles are defined yet.",
+    "User:UserName": "Username",
     "Working": "Working…"
   }
 }
