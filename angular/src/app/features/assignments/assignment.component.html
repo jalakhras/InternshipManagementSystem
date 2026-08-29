@@ -1,0 +1,239 @@
+<astro-page-header
+  [title]="examTitle() || t('::Nav:Assignments')"
+  [description]="t('::Assignment:Lede')">
+  @if (canSend()) {
+    <button slot="actions" type="button" class="btn btn-primary" (click)="openSend()">
+      <i class="bi bi-send" aria-hidden="true"></i>
+      {{ t('::Assignment:Send') }}
+    </button>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi bi-send" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::Assignment:NoneYet') }}</p>
+    <p class="state__text">{{ t('::Assignment:NoneYetNote') }}</p>
+    @if (canSend()) {
+      <button type="button" class="btn btn-primary" (click)="openSend()">
+        {{ t('::Assignment:Send') }}
+      </button>
+    }
+  </div>
+}
+
+@if (!loading() && !error() && links().length > 0) {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Link:Candidate') }}</th>
+          <th scope="col">{{ t('::Link:State') }}</th>
+          <th scope="col" class="num">{{ t('::Link:Attempts') }}</th>
+          <th scope="col">{{ t('::Link:Expires') }}</th>
+          <th scope="col">{{ t('::Link:Token') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (link of links(); track link.id) {
+          <tr>
+            <td>{{ link.candidateName }}</td>
+
+            <td>
+              <span class="state-chip state-chip--{{ linkState(link) }}">
+                {{ t(stateKey(link)) }}
+              </span>
+            </td>
+
+            <td class="num astro-numeric">{{ link.attemptsUsed }} / {{ link.maxAttempts }}</td>
+            <td class="muted">{{ link.expiresAt | date: 'y/MM/dd HH:mm' }}</td>
+
+            <td class="muted astro-ltr">
+              <!-- The prefix only. The link is stored hashed and cannot be
+                   recovered — enough here to tell two apart, not enough to use. -->
+              {{ link.tokenPrefix }}…
+            </td>
+
+            <td class="row-actions">
+              @if (busyId() === link.id) {
+                <span class="muted">{{ t('::Working') }}</span>
+              } @else if (canRevoke() && !link.isRevoked) {
+                <div class="row-actions__set">
+                  <button
+                    type="button"
+                    class="row-action row-action--danger"
+                    [attr.title]="t('::Link:Revoke')"
+                    [attr.aria-label]="t('::Link:Revoke') + ': ' + link.candidateName"
+                    (click)="revoke(link)">
+                    <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                  </button>
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" [attr.aria-label]="t('::Pagination')">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)">
+        <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+        {{ t('::Previous') }}
+      </button>
+
+      <span class="pager__count astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)">
+        {{ t('::Next') }}
+        <i class="bi bi-chevron-left astro-flip" aria-hidden="true"></i>
+      </button>
+    </nav>
+  }
+}
+
+<!-- ── Send ───────────────────────────────────────────────────────────── -->
+@if (sending()) {
+  <div class="scrim" (click)="closeSend()"></div>
+
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="sendTitle">
+    @if (result(); as sent) {
+      <h2 class="panel__title" id="sendTitle">{{ t('::Assignment:Sent:Title') }}</h2>
+
+      <p class="panel__lede">
+        {{ t('::Assignment:Sent:Summary', sent.linksCreated.toString(), sent.emailsSent.toString()) }}
+      </p>
+
+      @if (sent.emailsFailed > 0) {
+        <!-- An email that failed is not a link that failed. The link exists and is
+             on the row below, so it can be passed on another way. -->
+        <p class="notice notice--warn">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          {{ t('::Assignment:Sent:EmailsFailed', sent.emailsFailed.toString()) }}
+        </p>
+      }
+
+      <p class="notice notice--once">
+        <i class="bi bi-key" aria-hidden="true"></i>
+        {{ t('::Assignment:Sent:OnceOnly') }}
+      </p>
+
+      <div class="recipients">
+        @for (recipient of sent.recipients; track recipient.candidateId) {
+          <div class="recipient" [class.recipient--failed]="!recipient.emailSent">
+            <div class="recipient__who">
+              <span class="recipient__name">{{ recipient.candidateName }}</span>
+              <span class="recipient__email astro-ltr">{{ recipient.email }}</span>
+              @if (recipient.emailError) {
+                <span class="recipient__error">{{ recipient.emailError }}</span>
+              }
+            </div>
+
+            <code class="recipient__url astro-ltr">{{ recipient.url }}</code>
+
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary"
+              (click)="copy(recipient)">
+              {{ copied() === recipient.candidateId ? t('::Copied') : t('::Copy') }}
+            </button>
+          </div>
+        }
+      </div>
+
+      <div class="panel__actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="copyAll()">
+          {{ copied() === 'all' ? t('::Copied') : t('::Assignment:CopyAll') }}
+        </button>
+        <button type="button" class="btn btn-primary" (click)="closeSend()">{{ t('::Close') }}</button>
+      </div>
+    } @else {
+      <h2 class="panel__title" id="sendTitle">{{ t('::Assignment:Send:Title') }}</h2>
+      <p class="panel__lede">{{ t('::Assignment:Send:Lede') }}</p>
+
+      <div class="field">
+        <label class="form-label" for="sendGroup">{{ t('::Assignment:Group') }}</label>
+        <select id="sendGroup" class="form-select" [ngModel]="groupId()" (ngModelChange)="groupId.set($event)">
+          <option value="">{{ t('::Assignment:ChooseGroup') }}</option>
+          @for (group of groups(); track group.id) {
+            <option [value]="group.id">{{ group.name }} ({{ group.memberCount }})</option>
+          }
+        </select>
+        <p class="hint">{{ t('::Assignment:Group:Hint') }}</p>
+      </div>
+
+      <div class="row-2">
+        <div class="field">
+          <label class="form-label" for="expiresAt">{{ t('::Assignment:Expires') }}</label>
+          <input
+            id="expiresAt"
+            type="datetime-local"
+            class="form-control"
+            [ngModel]="expiresAt()"
+            (ngModelChange)="expiresAt.set($event)" />
+          <p class="hint">{{ t('::Assignment:Expires:Hint') }}</p>
+        </div>
+
+        <div class="field">
+          <label class="form-label" for="maxAttempts">{{ t('::Assignment:Attempts') }}</label>
+          <input
+            id="maxAttempts"
+            type="number"
+            min="1"
+            max="10"
+            class="form-control astro-numeric"
+            [ngModel]="maxAttempts()"
+            (ngModelChange)="maxAttempts.set(+$event)" />
+          <p class="hint">{{ t('::Assignment:Attempts:Hint') }}</p>
+        </div>
+      </div>
+
+      <label class="toggle">
+        <input type="checkbox" [checked]="sendEmail()" (change)="sendEmail.set(!sendEmail())" />
+        <span>
+          <strong>{{ t('::Assignment:Email') }}</strong>
+          <small>{{ t('::Assignment:Email:Hint') }}</small>
+        </span>
+      </label>
+
+      <div class="panel__actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeSend()">
+          {{ t('::Cancel') }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="working() || !groupId()"
+          (click)="send()">
+          {{ working() ? t('::Working') : t('::Assignment:Send:Confirm') }}
+        </button>
+      </div>
+    }
+  </div>
+}

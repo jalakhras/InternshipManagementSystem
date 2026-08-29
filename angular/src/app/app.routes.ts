@@ -46,6 +46,13 @@ export const APP_ROUTES: Routes = [
           import('./features/candidates/candidate.routes').then(m => m.CANDIDATE_ROUTES),
       },
       {
+        path: 'assignments',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'Assessment.Assignments.View' },
+        loadChildren: () =>
+          import('./features/assignments/assignment.routes').then(m => m.ASSIGNMENT_ROUTES),
+      },
+      {
         path: 'review',
         canActivate: [permissionGuard],
         data: { requiredPolicy: 'Assessment.Review.ViewQueue' },

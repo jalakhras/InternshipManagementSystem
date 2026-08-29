@@ -160,6 +160,17 @@
                     </a>
                   }
 
+                  <!-- Sending is where an exam stops being a draft and reaches
+                       somebody, so it belongs on the row rather than two screens
+                       away. -->
+                  <a
+                    class="row-action"
+                    [routerLink]="['/assignments', exam.id]"
+                    [attr.title]="t('::Nav:Assignments')"
+                    [attr.aria-label]="t('::Nav:Assignments') + ': ' + exam.title">
+                    <i class="bi bi-people" aria-hidden="true"></i>
+                  </a>
+
                   <!-- Publishing is its own permission, not part of editing: deciding
                        an exam is ready to send is a different act from writing it. -->
                   @if (canPublishRow(exam)) {

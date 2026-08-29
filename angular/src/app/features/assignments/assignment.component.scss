@@ -1,0 +1,497 @@
+// Exam list. Logical properties throughout — this table mirrors in Arabic.
+
+// Angular component hosts are inline by default, which leaves them outside normal
+// block sizing and lets content escape the column.
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.filters {
+  display: flex;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  align-items: center;
+  margin-block-end: var(--astro-space-4);
+}
+
+.search {
+  position: relative;
+  flex: 1;
+  min-inline-size: 14rem;
+  max-inline-size: 24rem;
+
+  > i {
+    position: absolute;
+    // Sits at the reading-start edge in both directions.
+    inset-inline-start: var(--astro-space-3);
+    inset-block-start: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  input {
+    padding-inline-start: var(--astro-space-6);
+    background: var(--surface-raised);
+    border-color: var(--border-subtle);
+    color: var(--text-primary);
+    min-block-size: var(--astro-touch-min);
+
+    &::placeholder { color: var(--text-muted); }
+  }
+}
+
+// ── Segmented control ────────────────────────────────────────────────────────
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+}
+
+.segmented__option {
+  min-block-size: 2.25rem;
+  min-inline-size: auto;
+  padding-inline: var(--astro-space-3);
+  border: 0;
+  border-radius: calc(var(--astro-radius-md) - 2px);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  white-space: nowrap;
+  transition: background var(--astro-duration-fast) var(--astro-ease),
+              color var(--astro-duration-fast) var(--astro-ease);
+
+  &--active {
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-weight: var(--astro-weight-medium);
+    box-shadow: var(--astro-shadow-sm);
+  }
+}
+
+// ── Table ────────────────────────────────────────────────────────────────────
+.table {
+  --bs-table-bg: var(--surface-raised);
+  --bs-table-color: var(--text-primary);
+  --bs-table-border-color: var(--border-subtle);
+
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  overflow: hidden;
+  font-size: var(--astro-text-sm);
+
+  th, td {
+    padding: var(--astro-space-3);
+    // Start edge, so the table reverses with the page.
+    text-align: start;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    font-weight: var(--astro-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  tbody tr:hover { background: var(--surface-sunken); }
+}
+
+// Numeric columns align at their end edge so digits stack.
+.num { text-align: end !important; white-space: nowrap; }
+.muted { color: var(--text-secondary); }
+
+.title {
+  color: var(--text-primary);
+  font-weight: var(--astro-weight-medium);
+  text-decoration: none;
+
+  &:hover { color: var(--accent); text-decoration: underline; }
+}
+
+.mode,
+.level {
+  display: inline-block;
+  margin-inline-start: var(--astro-space-2);
+  padding-inline: var(--astro-space-2);
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--astro-text-2xs);
+}
+
+.draws {
+  margin-inline-start: var(--astro-space-2);
+  color: var(--accent);
+  font-size: 0.85em;
+}
+
+// ── Pager ────────────────────────────────────────────────────────────────────
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--astro-space-3);
+  margin-block-start: var(--astro-space-4);
+}
+
+.pager__count {
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+
+// The loading, error and empty states, moved here from astro-data-state so that
+// one view decides which of them shows. See the note in the template.
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+  &__text  { margin: 0; max-inline-size: 44ch; }
+  &--error i { color: var(--astro-fail-600); }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
+
+
+// --- Delete confirmation ----------------------------------------------------
+.scrim {
+  position: fixed;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  z-index: 40;
+}
+
+.confirm {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Logical properties do not cover translate, so the sign is written out. In
+  // Arabic the inline axis runs the other way and a shared value parks the
+  // dialog off screen — the mistake that put a drawer 216px into a 412px phone.
+  transform: translate(-50%, -50%);
+  inline-size: min(30rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  box-shadow: var(--astro-shadow-lg);
+
+  &__title { margin: 0 0 var(--astro-space-2); font-size: 1.125rem; }
+  &__body  { margin: 0 0 var(--astro-space-2); color: var(--text-secondary); }
+  &__note  { margin: 0; font-size: .875rem; color: var(--text-muted); }
+
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
+}
+
+:host-context([dir='rtl']) .confirm {
+  transform: translate(50%, -50%);
+}
+
+// --- Row actions ------------------------------------------------------------
+// A td stays a td: turning it into a flex container takes it out of the table's
+// column sizing, which is what stacked four buttons on top of each row.
+.row-actions {
+  inline-size: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.row-actions__set {
+  display: inline-flex;
+  gap: var(--astro-space-1);
+}
+
+// Icon-only, because eight columns and four labelled buttons is a table nobody
+// can read. The label is still there for anyone hearing the row rather than
+// seeing it, and as a tooltip for anyone unsure of an icon.
+.row-action {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--astro-brand-600);
+    color: var(--astro-brand-700);
+  }
+
+  &--danger:hover {
+    border-color: var(--astro-fail-600);
+    color: var(--astro-fail-600);
+  }
+}
+
+// --- Question list ----------------------------------------------------------
+.type-filter { inline-size: auto; min-inline-size: 12rem; }
+
+.prompt {
+  display: inline;
+
+  // Author formatting renders, but a prompt in a table row is a label rather
+  // than a document: block elements would break the row's rhythm.
+  :where(p, div, ul, ol, pre) { display: inline; margin: 0; }
+  :where(br) { display: none; }
+}
+
+.badge-bank {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  margin-inline-start: var(--astro-space-2);
+  padding: .0625rem .375rem;
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: .75rem;
+  white-space: nowrap;
+}
+
+.health {
+  font-size: .8125rem;
+  white-space: nowrap;
+
+  &--quiet { color: var(--text-muted); }
+  &--good  { color: var(--astro-pass-600); }
+  &--warn  { color: var(--astro-pending-600); }
+
+  // A question almost nobody gets right is usually a question whose key is
+  // wrong, so it is the one that earns the alarming colour.
+  &--bad {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    color: var(--astro-fail-600);
+    font-weight: 600;
+  }
+}
+
+// --- Candidates -------------------------------------------------------------
+.group-filter { inline-size: auto; min-inline-size: 12rem; }
+
+.name { font-weight: 500; }
+
+.reference {
+  margin-inline-start: var(--astro-space-2);
+  padding: .0625rem .375rem;
+  border-radius: var(--astro-radius-full);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: .75rem;
+}
+
+// --- The import panel -------------------------------------------------------
+// Wider than the confirmation dialogs: somebody is reading a pasted roll and a
+// list of line numbers in it, and squeezing that into a prompt-sized box makes
+// the problems harder to find than they need to be.
+.panel {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: min(42rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 4rem);
+  overflow-y: auto;
+  padding: var(--astro-space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--astro-shadow-lg);
+
+  &__title { margin: 0 0 var(--astro-space-2); font-size: 1.125rem; }
+  &__lede { margin: 0 0 var(--astro-space-4); color: var(--text-secondary); }
+
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
+}
+
+:host-context([dir='rtl']) .panel { transform: translate(50%, -50%); }
+
+.paste {
+  // A pasted roll is a table of names and addresses. Monospace keeps the columns
+  // lined up so somebody can see at a glance which row is short.
+  font-family: var(--astro-font-mono);
+  font-size: .875rem;
+  direction: ltr;
+  text-align: start;
+}
+
+.summary {
+  margin-block-start: var(--astro-space-4);
+  padding: var(--astro-space-4);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+
+  &--done { background: var(--astro-pass-50); }
+
+  &__line {
+    margin: 0 0 var(--astro-space-1);
+
+    &--quiet { color: var(--text-secondary); }
+  }
+}
+
+.problems {
+  margin: var(--astro-space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.problem {
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-1);
+  border-block-start: 1px solid var(--border-subtle);
+  font-size: .875rem;
+
+  &__line {
+    grid-row: span 2;
+    color: var(--astro-fail-600);
+    font-weight: 600;
+  }
+
+  &__reason { color: var(--text-primary); }
+
+  &__content {
+    grid-column: 2;
+    color: var(--text-muted);
+    font-family: var(--astro-font-mono);
+    font-size: .8125rem;
+    direction: ltr;
+    text-align: start;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+// --- Link state -------------------------------------------------------------
+// Six states, and only two of them are alarming. A chip that shouts at every row
+// stops meaning anything, so ready and sent are quiet and revoked is not.
+.state-chip {
+  display: inline-block;
+  padding: .125rem .5rem;
+  border-radius: var(--astro-radius-full);
+  font-size: .8125rem;
+  white-space: nowrap;
+
+  &--ready   { background: var(--surface-sunken);   color: var(--text-secondary); }
+  &--sent    { background: var(--astro-brand-50);   color: var(--astro-brand-700); }
+  &--started { background: var(--astro-pending-50); color: var(--astro-pending-700); }
+  &--spent   { background: var(--astro-pass-50);    color: var(--astro-pass-700); }
+  &--expired { background: var(--surface-sunken);   color: var(--text-muted); }
+  &--revoked { background: var(--astro-fail-50);    color: var(--astro-fail-700); }
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--astro-space-3);
+}
+
+.toggle {
+  display: flex;
+  gap: var(--astro-space-2);
+  margin-block-start: var(--astro-space-3);
+  cursor: pointer;
+
+  span { display: grid; }
+  small { color: var(--text-muted); }
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  margin: 0 0 var(--astro-space-3);
+  padding: var(--astro-space-3);
+  border-radius: var(--astro-radius-md);
+  font-size: .9375rem;
+
+  &--warn { background: var(--astro-pending-50); color: var(--astro-pending-700); }
+
+  // The links cannot be recovered, so this is the one chance to take them. Said
+  // before somebody closes the panel rather than after.
+  &--once { background: var(--astro-brand-50); color: var(--astro-brand-800); }
+}
+
+.recipients {
+  display: grid;
+  gap: var(--astro-space-2);
+  max-block-size: 20rem;
+  overflow-y: auto;
+}
+
+.recipient {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1fr) 2fr auto;
+  align-items: center;
+  gap: var(--astro-space-3);
+  padding: var(--astro-space-2) var(--astro-space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+
+  &--failed { border-inline-start: 3px solid var(--astro-pending-600); }
+
+  &__who { display: grid; }
+  &__name { font-weight: 500; }
+  &__email { color: var(--text-muted); font-size: .8125rem; }
+  &__error { color: var(--astro-pending-700); font-size: .8125rem; }
+
+  &__url {
+    font-size: .75rem;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 40rem) {
+  .recipient { grid-template-columns: 1fr; }
+}
