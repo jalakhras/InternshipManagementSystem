@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Volo.Abp.BackgroundWorkers;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Threading;
 using Volo.Abp.Timing;
@@ -41,6 +42,9 @@ public class AttemptTimeoutWorker : AsyncPeriodicBackgroundWorkerBase
         Timer.Period = 60 * 1000;
     }
 
+    /// <summary>Shared across instances, so only one of them sweeps at a time.</summary>
+    private const string DistributedLockName = "IMS_AttemptTimeoutSweep";
+
     [UnitOfWork]
     protected override async Task DoWorkAsync(PeriodicBackgroundWorkerContext workerContext)
     {
@@ -48,6 +52,19 @@ public class AttemptTimeoutWorker : AsyncPeriodicBackgroundWorkerBase
         var grading = workerContext.ServiceProvider.GetRequiredService<AttemptGradingService>();
         var clock = workerContext.ServiceProvider.GetRequiredService<IClock>();
         var dataFilter = workerContext.ServiceProvider.GetRequiredService<IDataFilter>();
+        var distributedLock = workerContext.ServiceProvider.GetRequiredService<IAbpDistributedLock>();
+
+        // Behind a load balancer this worker runs on every instance, and two of them
+        // reaching the same expired attempt would grade it twice. Taking the lock
+        // keeps the deployment shape a free choice: one box or ten, same behaviour.
+        // A handle of null means another instance already holds it, which is not an
+        // error — the work is being done.
+        await using var handle = await distributedLock.TryAcquireAsync(DistributedLockName);
+
+        if (handle is null)
+        {
+            return;
+        }
 
         var now = clock.Now;
 

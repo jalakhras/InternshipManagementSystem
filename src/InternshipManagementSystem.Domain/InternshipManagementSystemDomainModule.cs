@@ -45,24 +45,16 @@ public class InternshipManagementSystemDomainModule : AbpModule
     {
         Configure<AbpLocalizationOptions>(options =>
         {
+            // Arabic first, and first deliberately: ABP falls back to the head of
+            // this list when a request expresses no preference, so the ordering here
+            // is what makes Arabic the default rather than a special case elsewhere.
+            // A tenant or a user can switch to English from settings at any time.
             options.Languages.Add(new LanguageInfo("ar", "ar", "العربية"));
-            options.Languages.Add(new LanguageInfo("cs", "cs", "Čeština"));
             options.Languages.Add(new LanguageInfo("en", "en", "English"));
-            options.Languages.Add(new LanguageInfo("en-GB", "en-GB", "English (UK)"));
-            options.Languages.Add(new LanguageInfo("hu", "hu", "Magyar"));
-            options.Languages.Add(new LanguageInfo("hr", "hr", "Croatian"));
-            options.Languages.Add(new LanguageInfo("fi", "fi", "Finnish"));
-            options.Languages.Add(new LanguageInfo("fr", "fr", "Français"));
-            options.Languages.Add(new LanguageInfo("hi", "hi", "Hindi"));
-            options.Languages.Add(new LanguageInfo("it", "it", "Italiano"));
-            options.Languages.Add(new LanguageInfo("pt-BR", "pt-BR", "Português"));
-            options.Languages.Add(new LanguageInfo("ru", "ru", "Русский"));
-            options.Languages.Add(new LanguageInfo("sk", "sk", "Slovak"));
-            options.Languages.Add(new LanguageInfo("tr", "tr", "Türkçe"));
-            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文"));
-            options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "繁體中文"));
-            options.Languages.Add(new LanguageInfo("de-DE", "de-DE", "Deutsch"));
-            options.Languages.Add(new LanguageInfo("es", "es", "Español"));
+
+            // The template offered eighteen languages we do not translate or test.
+            // A half-translated screen reads as broken, and RTL correctness has to be
+            // verified per language rather than assumed.
         });
 
         Configure<AbpMultiTenancyOptions>(options =>
