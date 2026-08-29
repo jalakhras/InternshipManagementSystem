@@ -38,26 +38,36 @@
   </div>
 </div>
 
-<astro-data-state
-  [loading]="loading()"
-  [error]="error()"
-  [empty]="isEmpty()"
-  [emptyTitle]="isFiltered() ? t('::Exam:NoMatches') : t('::Exam:NoneYet')"
-  [emptyDescription]="isFiltered() ? t('::Exam:NoMatchesNote') : t('::Exam:NoneYetNote')"
-  [emptyIcon]="isFiltered() ? 'bi-search' : 'bi-file-earmark-plus'">
-
-  <button slot="retry" type="button" class="btn btn-outline-secondary" (click)="load()">
-    {{ t('::Retry') }}
-  </button>
-
-  <!-- The empty state carries the action that fills it. Someone looking at an
-       empty list wants to know what to do next, not to be told there is nothing. -->
-  @if (canCreate && !isFiltered()) {
-    <a slot="empty-action" class="btn btn-primary" routerLink="/exams/new">
-      {{ t('::Exam:Create') }}
-    </a>
-  }
-</astro-data-state>
+<!-- The three states live in this component's own view rather than behind
+     astro-data-state's inputs. A child component's view is not being scheduled
+     for refresh when its inputs change in this build: the child held
+     loading=false while its DOM still showed the spinner, over a table this
+     view had already filled. Owning the branch here keeps one view deciding. -->
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">
+      {{ t('::Retry') }}
+    </button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi {{ isFiltered() ? 'bi-search' : 'bi-file-earmark-plus' }}" aria-hidden="true"></i>
+    <p class="state__title">{{ isFiltered() ? t('::Exam:NoMatches') : t('::Exam:NoneYet') }}</p>
+    <p class="state__text">{{ isFiltered() ? t('::Exam:NoMatchesNote') : t('::Exam:NoneYetNote') }}</p>
+    <!-- The empty state carries the action that fills it. -->
+    @if (canCreate && !isFiltered()) {
+      <a class="btn btn-primary" routerLink="/exams/new">{{ t('::Exam:Create') }}</a>
+    }
+  </div>
+}
 
 @if (!loading() && !error() && items().length > 0) {
   <div class="astro-scroll-x">

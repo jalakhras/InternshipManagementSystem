@@ -9,7 +9,7 @@ import { ExamDto, ExamStatus } from '../../core/api/assessment.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
-import { DataStateComponent } from '../../shared/ui/data-state.component';
+
 import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.component';
 
 /**
@@ -22,7 +22,7 @@ import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.com
 @Component({
   selector: 'astro-exam-list',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, PageHeaderComponent, DataStateComponent, StatusChipComponent],
+  imports: [FormsModule, RouterLink, DatePipe, PageHeaderComponent, StatusChipComponent],
   templateUrl: './exam-list.component.html',
   styleUrl: './exam-list.component.scss',
 })

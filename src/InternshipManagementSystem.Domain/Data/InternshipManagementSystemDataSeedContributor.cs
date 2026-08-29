@@ -1,6 +1,8 @@
-﻿using InternshipManagementSystem.Permissions;
+using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Identity;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Guids;
@@ -19,6 +21,7 @@ namespace InternshipManagementSystem
         private readonly IUnitOfWorkManager _unitOfWorkManager;
         private readonly IGuidGenerator _guidGenerator;
         private readonly IPermissionManager _permissionManager;
+        private readonly IPermissionDefinitionManager _permissionDefinitions;
 
         public InternshipManagementSystemDataSeedContributor(
             IdentityUserManager userManager,
@@ -26,7 +29,9 @@ namespace InternshipManagementSystem
             IIdentityUserRepository userRepository,
             IIdentityRoleRepository roleRepository,
             IUnitOfWorkManager unitOfWorkManager,
-            IGuidGenerator guidGenerator, PermissionManager permissionManager)
+            IGuidGenerator guidGenerator,
+            PermissionManager permissionManager,
+            IPermissionDefinitionManager permissionDefinitions)
 
         {
             _userManager = userManager;
@@ -92,16 +97,42 @@ namespace InternshipManagementSystem
             }
         }
 
+        /// <summary>
+        /// Grants the admin role everything this application defines.
+        /// <para>
+        /// Read from the definition manager rather than listed here. A hardcoded
+        /// list drifts the moment a permission is added, and the failure is
+        /// invisible in tests: the admin simply gets a 403 on a screen that was
+        /// working yesterday. That is exactly what happened — the seeder granted
+        /// only Administration.Access, so every assessment screen returned 403
+        /// and its loader never resolved.
+        /// </para>
+        /// <para>
+        /// Scoped to this application's own group. ABP's own permissions
+        /// (identity, tenant management, feature management) are seeded by their
+        /// own modules, and granting them from here would silently override a
+        /// deliberate revocation.
+        /// </para>
+        /// </summary>
         private async Task GrantAdminPanelAccessToAdminRoleAsync()
         {
             var adminRole = await _roleRepository.FindByNormalizedNameAsync("ADMIN");
-            if (adminRole != null)
+            if (adminRole == null)
             {
-                await _permissionManager.SetForRoleAsync(
-                    adminRole.Name,
-                    Permissions.InternshipManagementSystemPermissions.Administration.Access,
-                    true
-                );
+                return;
+            }
+
+            var groups = await _permissionDefinitions.GetGroupsAsync();
+
+            var ours = groups
+                .Where(group => group.Name == InternshipManagementSystemPermissions.GroupName)
+                .SelectMany(group => group.GetPermissionsWithChildren());
+
+            foreach (var permission in ours)
+            {
+                // Idempotent: seeding runs on every startup, and re-granting a
+                // permission the role already holds is a no-op.
+                await _permissionManager.SetForRoleAsync(adminRole.Name, permission.Name, true);
             }
         }
 

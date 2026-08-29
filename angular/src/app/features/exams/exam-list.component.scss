@@ -154,3 +154,35 @@
   white-space: nowrap;
   text-align: end;
 }
+
+// The loading, error and empty states, moved here from astro-data-state so that
+// one view decides which of them shows. See the note in the template.
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--astro-ink-3);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--astro-ink-1); }
+  &__text  { margin: 0; max-inline-size: 44ch; }
+  &--error i { color: var(--astro-fail-fg); }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--astro-line);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}
