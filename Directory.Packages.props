@@ -123,6 +123,12 @@
 
   <ItemGroup Label="Microsoft">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
+    <!-- Pinned explicitly: transitive pinning leaves these behind the direct
+         reference, which fails at runtime with an assembly-version mismatch. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(EfCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EfCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(EfCoreVersion)" />
     <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="$(MsExtVersion)" />
