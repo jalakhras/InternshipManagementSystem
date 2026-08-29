@@ -304,3 +304,191 @@
     font-weight: 600;
   }
 }
+
+// --- The import panel -------------------------------------------------------
+// Every class here is prefixed. `.panel`, `.card`, `.badge`, `.alert`, `.row`
+// and `.progress` all exist in Bootstrap, which is loaded globally — a bare one
+// picks up its rules and the element silently restyles itself weeks later, when
+// nobody is looking at this file.
+//
+// Wider than the confirmation dialogs: somebody is reading a preview of eighty
+// questions and a list of row numbers, and squeezing that into a prompt-sized
+// box makes the problems harder to find than they need to be.
+.qimport {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Logical properties do not cover translate, so the sign is written out. In
+  // Arabic the inline axis runs the other way and a shared value parks the
+  // dialog off screen.
+  transform: translate(-50%, -50%);
+  inline-size: min(46rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 4rem);
+  overflow-y: auto;
+  padding: var(--astro-space-5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--astro-shadow-lg);
+
+  &__title { margin: 0 0 var(--astro-space-2); font-size: 1.125rem; }
+  &__lede { margin: 0 0 var(--astro-space-4); color: var(--text-secondary); }
+
+  &__field { margin-block-end: var(--astro-space-4); }
+
+  &__hint {
+    margin: var(--astro-space-1) 0 0;
+    color: var(--text-muted);
+    font-size: var(--astro-text-sm);
+  }
+
+  // What the columns are, said once and in front of the file picker rather than
+  // in a help page nobody opens.
+  &__rules {
+    margin: 0 0 var(--astro-space-4);
+    padding-inline-start: var(--astro-space-4);
+    color: var(--text-secondary);
+    font-size: var(--astro-text-sm);
+
+    li + li { margin-block-start: var(--astro-space-1); }
+  }
+
+  &__error {
+    margin: 0 0 var(--astro-space-3);
+    color: var(--astro-fail-600);
+    font-size: var(--astro-text-sm);
+  }
+
+  &__summary {
+    margin-block-start: var(--astro-space-4);
+    padding: var(--astro-space-4);
+    border-radius: var(--astro-radius-md);
+    background: var(--surface-sunken);
+
+    &--done { background: var(--astro-pass-50); }
+  }
+
+  &__line {
+    margin: 0 0 var(--astro-space-1);
+
+    &--quiet { color: var(--text-secondary); }
+  }
+
+  &__heading {
+    margin: var(--astro-space-4) 0 var(--astro-space-2);
+    font-size: var(--astro-text-sm);
+    font-weight: var(--astro-weight-semibold);
+    color: var(--text-secondary);
+  }
+
+  &__problems,
+  &__preview {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__problem {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    gap: var(--astro-space-1) var(--astro-space-2);
+    padding-block: var(--astro-space-2);
+    border-block-start: 1px solid var(--border-subtle);
+    font-size: var(--astro-text-sm);
+  }
+
+  // The row number leads, because it is what somebody carries back to their
+  // spreadsheet.
+  &__row {
+    color: var(--astro-fail-600);
+    font-weight: var(--astro-weight-semibold);
+    white-space: nowrap;
+  }
+
+  // Which cell, so the fix is one cell rather than nine.
+  &__column {
+    padding-inline: var(--astro-space-2);
+    border-radius: var(--astro-radius-full);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    font-size: var(--astro-text-xs);
+    white-space: nowrap;
+  }
+
+  &__reason { color: var(--text-primary); }
+
+  &__content {
+    grid-column: 1 / -1;
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    // A grid item's automatic minimum is its content, so an unwrappable row of
+    // cells would widen the track and take the page sideways with it — on a
+    // phone, which is where nobody would be looking for it.
+    min-inline-size: 0;
+  }
+
+  &__row-preview {
+    padding-block: var(--astro-space-2);
+    border-block-start: 1px solid var(--border-subtle);
+    font-size: var(--astro-text-sm);
+  }
+
+  &__prompt {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--astro-space-2);
+    color: var(--text-primary);
+  }
+
+  // The preview's row numbers are not problems, so they do not borrow the
+  // alarming colour.
+  &__row-preview &__row { color: var(--text-muted); }
+
+  &__type {
+    padding-inline: var(--astro-space-2);
+    border-radius: var(--astro-radius-full);
+    background: var(--surface-raised);
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    white-space: nowrap;
+  }
+
+  &__options {
+    margin: var(--astro-space-1) 0 0;
+    color: var(--text-secondary);
+  }
+
+  // What will be marked right, in words. The mistake worth catching is a key one
+  // row off, and it is only visible if the answer reads as an answer.
+  &__answer {
+    margin: var(--astro-space-1) 0 0;
+    color: var(--astro-pass-600);
+    font-weight: var(--astro-weight-medium);
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--astro-space-2);
+    justify-content: flex-end;
+    margin-block-start: var(--astro-space-5);
+  }
+}
+
+:host-context([dir='rtl']) .qimport { transform: translate(50%, -50%); }
+
+// The empty state offers two ways forward rather than one, so they need a row of
+// their own.
+.state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--astro-space-2);
+  margin-block-start: var(--astro-space-2);
+}

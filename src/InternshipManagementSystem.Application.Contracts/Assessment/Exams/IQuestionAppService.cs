@@ -40,6 +40,32 @@ public interface IQuestionAppService : IApplicationService
     /// </summary>
     Task<List<QuestionTypeDescriptorDto>> GetTypesAsync();
 
+    /// <summary>
+    /// Reads a spreadsheet of questions and writes whichever rows are usable.
+    /// <para>
+    /// With <c>DryRun</c> it reports what it read and writes nothing, so an
+    /// author importing eighty rows sees the four that are wrong while the
+    /// spreadsheet is still open in front of them.
+    /// </para>
+    /// <para>
+    /// One bad row never costs the good ones. Only a file that cannot be read at
+    /// all — no headings, no question column — is refused outright, and it is
+    /// refused before a single question is written.
+    /// </para>
+    /// </summary>
+    Task<ImportQuestionsResultDto> ImportAsync(ImportQuestionsDto input);
+
+    /// <summary>
+    /// The example spreadsheet, generated rather than documented.
+    /// <para>
+    /// The headings come from the same constants the parser matches against, so
+    /// the file an author downloads is by construction a file this server can
+    /// read. A page telling somebody which headings to type by hand is a page
+    /// that goes stale and takes the import with it.
+    /// </para>
+    /// </summary>
+    Task<string> GetImportTemplateAsync();
+
     /// <summary>Shared stimuli and the questions under each.</summary>
     Task<List<QuestionGroupDto>> GetGroupsAsync(Guid examId);
 

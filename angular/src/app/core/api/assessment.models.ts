@@ -312,3 +312,76 @@ export interface CreateUpdateQuestionGroupDto {
   stimulusMediaType?: string | null;
   displayOrder: number;
 }
+
+// ------------------------------------------------------- importing questions
+
+/**
+ * A spreadsheet of questions.
+ *
+ * The counterpart to the candidate import, for the other half of the setup
+ * cost: an author's questions are already in a spreadsheet, and retyping eighty
+ * of them with four options each is why authoring stops on the first evening.
+ *
+ * The file travels as bytes rather than as text so the byte-order mark Excel
+ * writes reaches the server, which is the one place that should be deciding
+ * what to do about it.
+ */
+export interface ImportQuestionsDto {
+  /** The file, base64 encoded — which is what a `byte[]` is over JSON. */
+  content: string;
+
+  examId?: string;
+  categoryId?: string;
+  levelId?: string;
+
+  /** Reads the file and reports what would happen without writing anything. */
+  dryRun?: boolean;
+}
+
+/** One row that will become a question, in words the author will recognise. */
+export interface ImportQuestionPreview {
+  line: number;
+  text: string;
+  type: string;
+  score: number;
+  difficulty: QuestionDifficulty;
+
+  options: string[];
+
+  /**
+   * What will be marked right, written out rather than numbered. The mistake
+   * worth catching here is a key one row off, and a list of numbers looks
+   * exactly as right when it is wrong.
+   */
+  correctAnswers: string[];
+}
+
+/**
+ * One row that will not become a question, and why.
+ *
+ * Carries the column as well as the row, because "row 14 is wrong" sends
+ * somebody to read nine cells and "the correct answer in row 14 names no
+ * option" sends them to one.
+ */
+export interface ImportQuestionProblem {
+  /** One-based over the file, so it is the row number the spreadsheet shows. */
+  line: number;
+
+  /** A localisation key naming the column at fault. */
+  column: string;
+
+  /** A localisation key, so the reason reads in the reader's language. */
+  reason: string;
+
+  content: string;
+}
+
+export interface ImportQuestionsResult {
+  created: number;
+
+  /** Matched by question text and left alone, so importing twice adds nothing twice. */
+  alreadyPresent: number;
+
+  preview: ImportQuestionPreview[];
+  problems: ImportQuestionProblem[];
+}

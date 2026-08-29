@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.Exams.Dtos;
@@ -38,6 +39,31 @@ public class QuestionController : AbpControllerBase
     /// </summary>
     [HttpGet("types")]
     public Task<List<QuestionTypeDescriptorDto>> GetTypesAsync() => _questions.GetTypesAsync();
+
+    /// <summary>
+    /// The example spreadsheet, generated rather than written by hand.
+    /// <para>
+    /// Declared before the <c>{id}</c> route so "import" is not read as an id.
+    /// Fetched by the screen and saved as a file rather than linked: a plain
+    /// anchor to this path resolves against the application rather than the API,
+    /// and carries no token even when it does not — which is how the results
+    /// export once navigated a coordinator to the dashboard.
+    /// </para>
+    /// </summary>
+    [HttpGet("import/template")]
+    public async Task<IActionResult> GetImportTemplateAsync()
+    {
+        var csv = await _questions.GetImportTemplateAsync();
+
+        return File(Encoding.UTF8.GetBytes(csv), "text/csv; charset=utf-8", "questions-template.csv");
+    }
+
+    /// <summary>
+    /// Reads a spreadsheet of questions. With <c>dryRun</c> it writes nothing.
+    /// </summary>
+    [HttpPost("import")]
+    public Task<ImportQuestionsResultDto> ImportAsync([FromBody] ImportQuestionsDto input) =>
+        _questions.ImportAsync(input);
 
     [HttpGet]
     public Task<PagedResultDto<QuestionDto>> GetListAsync([FromQuery] QuestionListRequestDto input) =>

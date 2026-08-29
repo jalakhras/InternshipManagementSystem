@@ -1,6 +1,11 @@
 <astro-page-header
   [title]="examTitle() || t('::Nav:QuestionBank')"
   [description]="t('::Question:List:Lede')">
+  <!-- Two blocks rather than one holding both buttons. A control-flow block is
+       projected into a named slot only when it wraps a *single* root element;
+       give it two and Angular projects neither, and the header's actions
+       silently disappear. Which is what happened here the moment the import
+       button was added beside "Add question". -->
   @if (canCreate()) {
     <!-- The import first, because an author with a bank already written is not
          going to retype it — and the only way they find out they do not have to
@@ -9,7 +14,9 @@
       <i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>
       {{ t('::QuestionImport:Open') }}
     </button>
+  }
 
+  @if (canCreate()) {
     <a slot="actions" class="btn btn-primary" [routerLink]="newLink()">
       <i class="bi bi-plus-lg" aria-hidden="true"></i>
       {{ t('::Question:Add') }}

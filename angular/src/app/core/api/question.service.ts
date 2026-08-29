@@ -1,8 +1,14 @@
 import { Injectable, inject } from '@angular/core';
 import { RestService } from '@abp/ng.core';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+
+import { environment } from '../../../environments/environment';
+
 import {
   CreateUpdateQuestionDto,
+  ImportQuestionsDto,
+  ImportQuestionsResult,
   PagedResult,
   QuestionDto,
   QuestionListRequest,
@@ -21,8 +27,10 @@ import {
 @Injectable({ providedIn: 'root' })
 export class QuestionService {
   private readonly rest = inject(RestService);
+  private readonly http = inject(HttpClient);
 
   private readonly base = '/api/assessment/questions';
+  private readonly api = environment.apis.default.url;
 
   getList(input: QuestionListRequest): Observable<PagedResult<QuestionDto>> {
     return this.rest.request<void, PagedResult<QuestionDto>>({
@@ -65,6 +73,33 @@ export class QuestionService {
 
   delete(id: string): Observable<void> {
     return this.rest.request<void, void>({ method: 'DELETE', url: `${this.base}/${id}` });
+  }
+
+  /**
+   * Reads a spreadsheet of questions.
+   *
+   * With `dryRun` it reports what it read and writes nothing, which is what the
+   * screen does before asking anybody to commit — an author importing eighty
+   * rows should see the four that are wrong while the spreadsheet is still open
+   * in front of them.
+   */
+  import(body: ImportQuestionsDto): Observable<ImportQuestionsResult> {
+    return this.rest.request<ImportQuestionsDto, ImportQuestionsResult>({
+      method: 'POST',
+      url: `${this.base}/import`,
+      body,
+    });
+  }
+
+  /**
+   * The example spreadsheet, as a file.
+   *
+   * Fetched rather than linked, for the reason recorded on the results export: a
+   * plain `<a href>` to this path resolves against the application instead of
+   * the API — different origins — and carries no token even when it does not.
+   */
+  importTemplate(): Observable<Blob> {
+    return this.http.get(`${this.api}${this.base}/import/template`, { responseType: 'blob' });
   }
 
   /**

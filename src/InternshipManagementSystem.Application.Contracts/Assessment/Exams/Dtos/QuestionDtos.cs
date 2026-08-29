@@ -223,3 +223,126 @@ public class QuestionTypeDescriptorDto
     /// <summary>Bootstrap Icons class for the type picker.</summary>
     public string Icon { get; set; } = default!;
 }
+
+// ------------------------------------------------------------------- import
+
+/// <summary>
+/// A spreadsheet of questions.
+/// <para>
+/// The counterpart to the candidate import, and it exists for the same reason:
+/// an exam author's question bank is already in a spreadsheet, and retyping
+/// eighty questions with four options each is why authoring stops on the first
+/// evening.
+/// </para>
+/// <para>
+/// The file is carried as bytes rather than as text so the byte-order mark
+/// Excel writes survives the journey and is dealt with in one place. Text would
+/// mean whichever client sent it had already decided the encoding, and a client
+/// that decided wrongly would produce mojibake nobody could trace.
+/// </para>
+/// </summary>
+public class ImportQuestionsDto
+{
+    /// <summary>The file exactly as the spreadsheet saved it.</summary>
+    [Required]
+    public byte[] Content { get; set; } = default!;
+
+    /// <summary>The exam these questions are written into, or null for the shared bank.</summary>
+    public Guid? ExamId { get; set; }
+
+    /// <summary>The domain a bank import files under. Required when there is no exam.</summary>
+    public Guid? CategoryId { get; set; }
+
+    /// <summary>The level a bank import targets. Null suits every level in the domain.</summary>
+    public Guid? LevelId { get; set; }
+
+    /// <summary>
+    /// Reads the file and reports what would happen without writing anything.
+    /// <para>
+    /// An author importing eighty rows should see the four that are wrong while
+    /// they can still fix the spreadsheet, not afterwards with half a bank
+    /// written.
+    /// </para>
+    /// </summary>
+    public bool DryRun { get; set; }
+}
+
+public class ImportQuestionsResultDto
+{
+    public int Created { get; set; }
+
+    /// <summary>
+    /// Matched by question text and left alone.
+    /// <para>
+    /// Importing a corrected sheet a second time must add the six new questions
+    /// and not a second copy of the seventy-four that were already there.
+    /// </para>
+    /// </summary>
+    public int AlreadyPresent { get; set; }
+
+    /// <summary>
+    /// What the file says, as questions, before anything is written.
+    /// <para>
+    /// The whole point of the dry run: an author sees the options and the answer
+    /// this import read out of their columns, and can tell at a glance that the
+    /// key landed on the row they meant.
+    /// </para>
+    /// </summary>
+    public List<ImportQuestionPreviewDto> Preview { get; set; } = new();
+
+    public List<ImportQuestionProblemDto> Problems { get; set; } = new();
+}
+
+/// <summary>One row that will become a question, in the words the author will recognise.</summary>
+public class ImportQuestionPreviewDto
+{
+    public int Line { get; set; }
+
+    public string Text { get; set; } = default!;
+
+    /// <summary>The resolved type identifier, so the screen can name it the way the picker does.</summary>
+    public string Type { get; set; } = default!;
+
+    public decimal Score { get; set; }
+
+    public QuestionDifficulty Difficulty { get; set; }
+
+    /// <summary>Every option, in the order the columns ran.</summary>
+    public List<string> Options { get; set; } = new();
+
+    /// <summary>
+    /// What this import will mark as right, written out.
+    /// <para>
+    /// Written out rather than given as numbers, because the mistake worth
+    /// catching here is a key that is one row off — and a list of numbers is
+    /// exactly as wrong-looking as a correct one.
+    /// </para>
+    /// </summary>
+    public List<string> CorrectAnswers { get; set; } = new();
+}
+
+/// <summary>
+/// One row that will not become a question, and why.
+/// <para>
+/// Carries the column as well as the row, because "row 14 is wrong" sends
+/// somebody to read nine cells and "the correct answer in row 14 names no
+/// option" sends them to one.
+/// </para>
+/// </summary>
+public class ImportQuestionProblemDto
+{
+    /// <summary>
+    /// One-based over the file, so it is the row number the author sees in their
+    /// spreadsheet — the headings being row 1.
+    /// </summary>
+    public int Line { get; set; }
+
+    /// <summary>A localisation key naming the column at fault.</summary>
+    public string Column { get; set; } = default!;
+
+    /// <summary>A localisation key, so the reason reads in the reader's language.</summary>
+    public string Reason { get; set; } = default!;
+
+    /// <summary>The row as written, so it can be recognised without opening the file.</summary>
+    public string Content { get; set; } = default!;
+}

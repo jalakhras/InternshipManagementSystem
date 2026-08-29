@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment.Catalog;
 using InternshipManagementSystem.Assessment.Exams.Dtos;
@@ -32,6 +33,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
     private readonly IRepository<Topic, Guid> _topics;
     private readonly QuestionPayloadValidator _validator;
     private readonly IGraderResolver _graders;
+    private readonly QuestionCsvParser _csv;
 
     public QuestionAppService(
         IRepository<Question, Guid> questions,
@@ -39,7 +41,8 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         IRepository<QuestionGroup, Guid> groups,
         IRepository<Topic, Guid> topics,
         QuestionPayloadValidator validator,
-        IGraderResolver graders)
+        IGraderResolver graders,
+        QuestionCsvParser csv)
     {
         _questions = questions;
         _exams = exams;
@@ -47,6 +50,14 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         _topics = topics;
         _validator = validator;
         _graders = graders;
+        _csv = csv;
+
+        // The import template and every problem this service reports name a
+        // column in the reader's language, so this service needs the resource.
+        // ApplicationService leaves it unset, and an unset resource answers a key
+        // with the key — which is how the author of an Arabic bank ends up
+        // reading "QuestionImport:Column:Correct".
+        LocalizationResource = typeof(Localization.InternshipManagementSystemResource);
     }
 
     [Authorize(InternshipManagementSystemPermissions.Questions.View)]
@@ -231,6 +242,266 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
         return Task.FromResult(descriptors);
     }
+
+    // ------------------------------------------------------------------- import
+
+    /// <summary>
+    /// Reads a spreadsheet of questions.
+    /// <para>
+    /// Behind <c>Questions.Create</c> and nothing else: this writes questions,
+    /// and it writes them where the caller could have written one by hand. The
+    /// dry run sits behind the same permission on purpose — a preview reads a
+    /// file the caller supplied and tells them what is in it, and letting
+    /// somebody without the permission run it would be lending them a parser.
+    /// </para>
+    /// <para>
+    /// One bad row never costs the good ones, which is the whole difference
+    /// between an import somebody uses twice and one they abandon. Only a file
+    /// with no readable headings is refused outright.
+    /// </para>
+    /// </summary>
+    [Authorize(InternshipManagementSystemPermissions.Questions.Create)]
+    public async Task<ImportQuestionsResultDto> ImportAsync(ImportQuestionsDto input)
+    {
+        if (input.ExamId is null && input.CategoryId is null)
+        {
+            // The same rule CreateAsync enforces. A question owned by nothing is
+            // written and then invisible: no exam draws it and no bank lists it.
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.QuestionBelongsNowhere);
+        }
+
+        if (input.Content is null || input.Content.Length == 0)
+        {
+            throw new BusinessException("IMS:QuestionImport:FileEmpty");
+        }
+
+        if (input.Content.Length > MaxImportBytes)
+        {
+            throw new BusinessException("IMS:QuestionImport:FileTooLarge")
+                .WithData("MaxMegabytes", MaxImportBytes / (1024 * 1024));
+        }
+
+        var sheet = _csv.Read(input.Content);
+        var result = new ImportQuestionsResultDto();
+
+        // What is already filed here, so importing a corrected sheet a second
+        // time adds the six new questions rather than a second copy of the
+        // seventy-four that were already there.
+        var scope = await ScopeAsync(input);
+
+        var existing = (await scope.Select(q => q.Text).ToListAsync())
+            .Select(QuestionCsvParser.Normalise)
+            .ToHashSet(StringComparer.Ordinal);
+
+        var order = await scope.MaxAsync(q => (int?)q.DisplayOrder) ?? 0;
+
+        var created = new List<Question>();
+
+        foreach (var row in sheet.Rows)
+        {
+            if (row.Reason is { } reason)
+            {
+                result.Problems.Add(new ImportQuestionProblemDto
+                {
+                    Line = row.Line,
+                    Column = row.Column ?? QuestionCsvParser.QuestionColumnKey,
+                    Reason = reason,
+                    Content = row.Content,
+                });
+
+                continue;
+            }
+
+            var draft = row.Question!;
+            var text = RichTextSanitiser.Sanitise(draft.Text);
+            var payload = QuestionCsvParser.PayloadFor(draft);
+
+            // The same validator a hand-written question goes through. A row can
+            // read cleanly and still describe a question no grader could score,
+            // and finding that out mid-exam is the failure the validator exists
+            // to prevent — an import must not be a way around it.
+            var blockers = _validator.Blocking(draft.Type, payload);
+
+            if (blockers.Count > 0)
+            {
+                result.Problems.Add(new ImportQuestionProblemDto
+                {
+                    Line = row.Line,
+                    Column = QuestionCsvParser.CorrectColumnKey,
+                    Reason = blockers[0],
+                    Content = row.Content,
+                });
+
+                continue;
+            }
+
+            if (!existing.Add(QuestionCsvParser.Normalise(text)))
+            {
+                // Matched and left alone, whether it was already filed here or
+                // simply appears twice in this file. Writing both would leave a
+                // paper that can ask the same question twice.
+                result.AlreadyPresent++;
+
+                continue;
+            }
+
+            var question = new Question(
+                GuidGenerator.Create(),
+                CurrentTenant.Id,
+                input.ExamId,
+                draft.Type,
+                text)
+            {
+                // A question belongs to an exam or to a domain, never to both:
+                // carrying a category on an exam's own question would put it in
+                // the bank listing as well, where nobody meant to publish it.
+                CategoryId = input.ExamId is null ? input.CategoryId : null,
+                LevelId = input.ExamId is null ? input.LevelId : null,
+                Payload = payload,
+                Score = draft.Score,
+                Difficulty = draft.Difficulty,
+                Explanation = RichTextSanitiser.Sanitise(draft.Explanation),
+                DisplayOrder = ++order,
+            };
+
+            created.Add(question);
+            result.Created++;
+
+            result.Preview.Add(new ImportQuestionPreviewDto
+            {
+                Line = row.Line,
+                Text = text,
+                Type = draft.Type,
+                Score = draft.Score,
+                Difficulty = draft.Difficulty,
+                Options = draft.Options.Select(o => o.Text).ToList(),
+
+                // Written out rather than numbered. The mistake worth catching
+                // here is a key one row off, and a list of numbers looks exactly
+                // as right when it is wrong.
+                CorrectAnswers = draft.Type == QuestionTypes.FillInTheBlank
+                    ? draft.AcceptedAnswers.ToList()
+                    : draft.Options.Where(o => o.IsCorrect).Select(o => o.Text).ToList(),
+            });
+        }
+
+        if (input.DryRun)
+        {
+            // Counted, previewed, nothing written.
+            return result;
+        }
+
+        if (created.Count > 0)
+        {
+            await _questions.InsertManyAsync(created, autoSave: true);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// The example spreadsheet.
+    /// <para>
+    /// Generated from the same column keys the parser matches against, so the
+    /// file an author downloads is by construction one this server can read. The
+    /// alternative — a help page listing headings to type by hand — goes stale
+    /// silently and takes the import with it.
+    /// </para>
+    /// <para>
+    /// The example rows are not decoration. They are how somebody learns that the
+    /// correct answer may be a number, a list of numbers, or the answer written
+    /// out, without first having to find prose that says so.
+    /// </para>
+    /// </summary>
+    [Authorize(InternshipManagementSystemPermissions.Questions.Create)]
+    public Task<string> GetImportTemplateAsync()
+    {
+        var csv = new StringBuilder();
+
+        // A byte-order mark, because the next thing that happens to this file is
+        // that somebody opens it in Excel — and without one every Arabic heading
+        // arrives as mojibake, which makes the template look broken before the
+        // author has typed anything.
+        csv.Append('﻿');
+
+        Row(csv,
+            L[QuestionCsvParser.TypeColumnKey],
+            L[QuestionCsvParser.QuestionColumnKey],
+            L[QuestionCsvParser.OptionColumnKey, 1],
+            L[QuestionCsvParser.OptionColumnKey, 2],
+            L[QuestionCsvParser.OptionColumnKey, 3],
+            L[QuestionCsvParser.OptionColumnKey, 4],
+            L[QuestionCsvParser.CorrectColumnKey],
+            L[QuestionCsvParser.MarksColumnKey],
+            L[QuestionCsvParser.DifficultyColumnKey],
+            L[QuestionCsvParser.ExplanationColumnKey]);
+
+        // One row per supported type, in the order an author meets them. Between
+        // them they demonstrate every way of naming the correct answer.
+        foreach (var sample in new[] { "1", "2", "3", "4" })
+        {
+            var options = L[$"QuestionImport:Sample:{sample}:Options"].Value
+                .Split('|', StringSplitOptions.TrimEntries);
+
+            Row(csv,
+                L[$"QuestionImport:Sample:{sample}:Type"],
+                L[$"QuestionImport:Sample:{sample}:Question"],
+                options.ElementAtOrDefault(0) ?? string.Empty,
+                options.ElementAtOrDefault(1) ?? string.Empty,
+                options.ElementAtOrDefault(2) ?? string.Empty,
+                options.ElementAtOrDefault(3) ?? string.Empty,
+                L[$"QuestionImport:Sample:{sample}:Correct"],
+                L[$"QuestionImport:Sample:{sample}:Marks"],
+                L[$"QuestionImport:Sample:{sample}:Difficulty"],
+                L[$"QuestionImport:Sample:{sample}:Explanation"]);
+        }
+
+        return Task.FromResult(csv.ToString());
+    }
+
+    /// <summary>Everything already filed where this import is about to write.</summary>
+    private async Task<IQueryable<Question>> ScopeAsync(ImportQuestionsDto input)
+    {
+        var questions = await _questions.GetQueryableAsync();
+
+        if (input.ExamId is { } examId)
+        {
+            return questions.Where(q => q.ExamId == examId);
+        }
+
+        return questions.Where(q =>
+            q.ExamId == null &&
+            q.CategoryId == input.CategoryId &&
+            q.LevelId == input.LevelId);
+    }
+
+    /// <summary>
+    /// One row of the template, escaped.
+    /// <para>
+    /// Quoted whenever the value carries a separator, a quote or a line break —
+    /// which a question written as prose very often does, and an unquoted one
+    /// would arrive back here split across two columns.
+    /// </para>
+    /// </summary>
+    private static void Row(StringBuilder csv, params object[] values)
+    {
+        csv.Append(string.Join(',', values.Select(value => Escape(value.ToString() ?? string.Empty))));
+        csv.Append("\r\n");
+    }
+
+    private static string Escape(string value) =>
+        value.IndexOfAny([',', '"', '\n', '\r', ';']) < 0
+            ? value
+            : '"' + value.Replace("\"", "\"\"") + '"';
+
+    /// <summary>
+    /// The largest sheet this will read.
+    /// <para>
+    /// A question bank is text. Anything past this is somebody who picked the
+    /// wrong file, and they are better told so than left waiting.
+    /// </para>
+    /// </summary>
+    private const long MaxImportBytes = 2 * 1024 * 1024;
 
     // ------------------------------------------------------------------- groups
 
