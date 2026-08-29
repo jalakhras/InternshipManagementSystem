@@ -1,0 +1,132 @@
+// The shape of a drawn paper. Logical properties — this mirrors in Arabic.
+
+:host {
+  display: block;
+  min-inline-size: 0;
+}
+
+.head-actions {
+  display: flex;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+}
+
+.lede {
+  margin: 0 0 var(--astro-space-4);
+  color: var(--text-secondary);
+  max-inline-size: 76ch;
+}
+
+.rules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-2);
+}
+
+.rule {
+  display: flex;
+  align-items: end;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  padding: var(--astro-space-3);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-lg);
+}
+
+// A rule the bank cannot fill. The paper comes out short and nothing errors,
+// so this has to be visible while somebody is still looking at it.
+.rule--short {
+  border-color: var(--astro-fail-600);
+  background: color-mix(in srgb, var(--astro-fail-600) 5%, var(--surface-raised));
+}
+
+.field {
+  display: grid;
+  gap: 0.25rem;
+  flex: 1;
+  min-inline-size: 9rem;
+}
+
+.field--narrow { flex: 0 0 6rem; min-inline-size: 6rem; }
+
+.field__label {
+  font-size: var(--astro-text-sm);
+  color: var(--text-secondary);
+}
+
+.available {
+  font-size: var(--astro-text-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  padding-block-end: 0.5rem;
+
+  strong { color: var(--astro-fail-600); font-weight: var(--astro-weight-medium); }
+}
+
+.icon {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  margin-block-end: 0.4rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.icon--danger { color: var(--astro-fail-600); }
+
+.summary {
+  display: flex;
+  gap: var(--astro-space-4);
+  flex-wrap: wrap;
+  margin-block-start: var(--astro-space-3);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.summary__total { font-weight: var(--astro-weight-medium); color: var(--text-primary); }
+.summary__warn { color: var(--astro-fail-600); }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-3);
+  margin-block-start: var(--astro-space-4);
+}
+
+.saved {
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--astro-space-2);
+  padding-block: var(--astro-space-7);
+  text-align: center;
+  color: var(--text-muted);
+
+  i { font-size: 1.75rem; }
+
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
+  &__text  { margin: 0; max-inline-size: 52ch; }
+}
+
+.spinner {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 2px solid var(--border-subtle);
+  border-block-start-color: var(--astro-brand-600);
+  border-radius: 50%;
+  animation: astro-spin .7s linear infinite;
+}
+
+@keyframes astro-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2s; }
+}

@@ -31,6 +31,12 @@ export const EXAM_ROUTES: Routes = [
       import('../questions/question-form.component').then(m => m.QuestionFormComponent),
   },
   {
+    // The shape of a drawn paper: how many questions of what kind. Without it
+    // "fill from the blueprint" on the papers screen has nothing to read.
+    path: ':examId/blueprint',
+    loadComponent: () => import('./exam-blueprint.component').then(m => m.ExamBlueprintComponent),
+  },
+  {
     // Sections and passages: how the exam is laid out, as distinct from what is
     // in it.
     path: ':examId/structure',

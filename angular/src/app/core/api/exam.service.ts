@@ -3,6 +3,7 @@ import { RestService } from '@abp/ng.core';
 import { Observable } from 'rxjs';
 import {
   BlueprintRuleDto,
+  CreateUpdateBlueprintRuleDto,
   CreateUpdateExamDto,
   ExamDto,
   ExamListRequest,
@@ -85,6 +86,25 @@ export class ExamService {
     return this.rest.request<void, BlueprintRuleDto[]>({
       method: 'GET',
       url: `${this.base}/${examId}/blueprint`,
+    });
+  }
+
+  /**
+   * Replaces the whole blueprint.
+   *
+   * Whole-list, because a blueprint is read as a shape — "six grammar, four
+   * listening, two hard" — and somebody editing it is restating the shape, not
+   * patching one line of it.
+   *
+   * This route existed on the server with no client method at all, while the
+   * papers screen offered "fill from the blueprint" as the recommended way to
+   * build a form. There was no blueprint to fill from, and no way to write one.
+   */
+  setBlueprint(examId: string, rules: CreateUpdateBlueprintRuleDto[]): Observable<BlueprintRuleDto[]> {
+    return this.rest.request<CreateUpdateBlueprintRuleDto[], BlueprintRuleDto[]>({
+      method: 'PUT',
+      url: `${this.base}/${examId}/blueprint`,
+      body: rules,
     });
   }
 }

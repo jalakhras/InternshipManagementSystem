@@ -155,6 +155,28 @@ export interface BlueprintRuleDto {
   availableCount: number;
 }
 
+/**
+ * One line of a blueprint: how many questions of what kind a paper draws.
+ *
+ * A blueprint is what makes two drawn papers comparable. Without one every
+ * candidate gets a random handful and the scores mean nothing side by side;
+ * with one, "six grammar, four listening, two of them hard" holds for everybody
+ * however the individual questions differ.
+ */
+export interface CreateUpdateBlueprintRuleDto {
+  /** Null means "any topic", which is the right answer for a single-subject exam. */
+  topicId?: string | null;
+
+  /** Null means "any difficulty". */
+  difficulty?: QuestionDifficulty | null;
+
+  /** Null means "any type". */
+  questionType?: string | null;
+
+  questionCount: number;
+  displayOrder: number;
+}
+
 // ---------------------------------------------------------------- questions
 
 export interface QuestionDto {

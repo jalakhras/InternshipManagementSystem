@@ -1,0 +1,147 @@
+<astro-page-header
+  [title]="t('::Blueprint:Title')"
+  [description]="examTitle() || t('::Blueprint:Lede')">
+  <div slot="actions" class="head-actions">
+    <a class="btn btn-outline-secondary" [routerLink]="['/exams', examId()]">
+      <i class="bi bi-arrow-right" aria-hidden="true"></i>
+      {{ t('::Form:BackToExam') }}
+    </a>
+    @if (canEdit()) {
+      <button type="button" class="btn btn-outline-secondary" (click)="add()">
+        <i class="bi bi-plus-lg" aria-hidden="true"></i>
+        {{ t('::Blueprint:AddRule') }}
+      </button>
+    }
+  </div>
+</astro-page-header>
+
+<p class="lede">{{ t('::Blueprint:Explain') }}</p>
+
+@if (error(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else {
+  @if (rules().length === 0) {
+    <div class="state">
+      <i class="bi bi-diagram-2" aria-hidden="true"></i>
+      <p class="state__title">{{ t('::Blueprint:NoneYet') }}</p>
+      <p class="state__text">{{ t('::Blueprint:NoneYetNote') }}</p>
+      @if (canEdit()) {
+        <button type="button" class="btn btn-primary" (click)="add()">{{ t('::Blueprint:AddRule') }}</button>
+      }
+    </div>
+  } @else {
+    <ul class="rules">
+      @for (rule of rules(); track $index) {
+        <li class="rule" [class.rule--short]="rule.availableCount >= 0 && rule.questionCount > rule.availableCount">
+          <label class="field field--narrow">
+            <span class="field__label">{{ t('::Blueprint:HowMany') }}</span>
+            <input
+              type="number"
+              min="1"
+              max="200"
+              class="form-control astro-numeric"
+              [disabled]="!canEdit()"
+              [ngModel]="rule.questionCount"
+              [name]="'count' + $index"
+              (ngModelChange)="patch($index, 'questionCount', +$event)" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Question:Topic') }}</span>
+            <select
+              class="form-select"
+              [disabled]="!canEdit()"
+              [ngModel]="rule.topicId"
+              [name]="'topic' + $index"
+              (ngModelChange)="patch($index, 'topicId', $event)">
+              <option value="">{{ t('::Blueprint:AnyTopic') }}</option>
+              @for (topic of topics(); track topic.id) {
+                <option [value]="topic.id">{{ topic.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Question:Difficulty') }}</span>
+            <select
+              class="form-select"
+              [disabled]="!canEdit()"
+              [ngModel]="rule.difficulty"
+              [name]="'difficulty' + $index"
+              (ngModelChange)="patch($index, 'difficulty', $event === '' ? null : +$event)">
+              <option [ngValue]="null">{{ t('::Blueprint:AnyDifficulty') }}</option>
+              @for (level of difficulties; track level.value) {
+                <option [ngValue]="level.value">{{ t(level.labelKey) }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field__label">{{ t('::Question:Filter:Type') }}</span>
+            <select
+              class="form-select"
+              [disabled]="!canEdit()"
+              [ngModel]="rule.questionType"
+              [name]="'type' + $index"
+              (ngModelChange)="patch($index, 'questionType', $event)">
+              <option value="">{{ t('::Blueprint:AnyType') }}</option>
+              @for (descriptor of types(); track descriptor.type) {
+                <option [value]="descriptor.type">{{ t(descriptor.nameKey) }}</option>
+              }
+            </select>
+          </label>
+
+          <!-- The number an author has to see here rather than discover when a
+               candidate receives a short paper. The builder contributes what it
+               can and never fails, so a blueprint that cannot be filled is silent. -->
+          <span class="available">
+            @if (rule.availableCount < 0) {
+              {{ t('::Blueprint:NotCountedYet') }}
+            } @else if (rule.questionCount > rule.availableCount) {
+              <strong>{{ t('::Blueprint:ShortBy', (rule.questionCount - rule.availableCount).toString()) }}</strong>
+            } @else {
+              {{ t('::Blueprint:Available', rule.availableCount.toString()) }}
+            }
+          </span>
+
+          @if (canEdit()) {
+            <button
+              type="button"
+              class="icon icon--danger"
+              [attr.aria-label]="t('::Delete')"
+              (click)="remove($index)">
+              <i class="bi bi-x-lg" aria-hidden="true"></i>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+
+    <div class="summary">
+      <span class="summary__total">{{ t('::Blueprint:Total', total().toString()) }}</span>
+      <span class="summary__bank">{{ t('::Blueprint:BankSize', bankSize().toString()) }}</span>
+
+      @if (unfillable().length > 0) {
+        <span class="summary__warn">{{ t('::Blueprint:CannotFill', unfillable().length.toString()) }}</span>
+      }
+    </div>
+
+    @if (canEdit()) {
+      <div class="actions">
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">
+          {{ t('::Save') }}
+        </button>
+        @if (saved()) {
+          <span class="saved" role="status">{{ t('::Saved') }}</span>
+        }
+      </div>
+    }
+  }
+}
