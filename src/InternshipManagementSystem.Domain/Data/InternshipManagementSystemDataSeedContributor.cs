@@ -41,6 +41,7 @@ namespace InternshipManagementSystem
             _unitOfWorkManager = unitOfWorkManager;
             _guidGenerator = guidGenerator;
             _permissionManager = permissionManager;
+            _permissionDefinitions = permissionDefinitions;
 
         }
 

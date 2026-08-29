@@ -151,7 +151,15 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
             throw new BusinessException(InternshipManagementSystemDomainErrorCodes.QuestionBelongsNowhere);
         }
 
-        var question = new Question(GuidGenerator.Create(), CurrentTenant.Id, input.ExamId, input.Type, input.Text);
+        // Sanitised before the entity ever holds it, not only in Apply below.
+        // Two assignments of the same field is how a reorder quietly reopens a hole.
+        var question = new Question(
+            GuidGenerator.Create(),
+            CurrentTenant.Id,
+            input.ExamId,
+            input.Type,
+            RichTextSanitiser.Sanitise(input.Text));
+
         Apply(question, input);
 
         await _questions.InsertAsync(question, autoSave: true);
@@ -171,7 +179,6 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
         var question = await _questions.GetAsync(id);
         question.Type = input.Type;
-        question.Text = input.Text;
         Apply(question, input);
 
         await _questions.UpdateAsync(question, autoSave: true);
@@ -300,6 +307,10 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
     private static void Apply(Question question, CreateUpdateQuestionDto input)
     {
+        // Sanitised here rather than at render time, so the stored value is the
+        // safe one. Anything that reads a question later — an export, a
+        // certificate, a client we have not written — gets what this produced.
+        question.Text = RichTextSanitiser.Sanitise(input.Text);
         question.CategoryId = input.CategoryId;
         question.LevelId = input.LevelId;
         question.QuestionGroupId = input.QuestionGroupId;
@@ -307,7 +318,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         question.TopicId = input.TopicId;
         question.Difficulty = input.Difficulty;
         question.Score = input.Score;
-        question.Explanation = input.Explanation;
+        question.Explanation = RichTextSanitiser.Sanitise(input.Explanation);
         question.TimeLimitInSeconds = input.TimeLimitInSeconds;
         question.MediaBlobName = input.MediaBlobName;
         question.MediaType = input.MediaType;

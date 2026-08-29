@@ -132,53 +132,65 @@
 
             <td class="row-actions">
               @if (busyId() === exam.id) {
-                <span class="astro-numeric muted">{{ t('::Working') }}</span>
+                <span class="muted">{{ t('::Working') }}</span>
               } @else {
-                <!-- The question bank is reached from the exam that owns it. Without
-                     this the builder exists but nothing in the product points at it. -->
-                @if (canAddQuestions()) {
-                  <a
-                    class="btn btn-sm btn-outline-secondary"
-                    [routerLink]="['/exams', exam.id, 'questions', 'new']">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
-                    {{ t('::Question:Add') }}
-                  </a>
-                }
+                <!-- Icon-only. Eight columns and four labelled buttons is a table
+                     nobody can read, and it was pushing the actions on top of the
+                     row. The name is still announced and still shown on hover. -->
+                <div class="row-actions__set">
+                  @if (canAddQuestions()) {
+                    <a
+                      class="row-action"
+                      [routerLink]="['/exams', exam.id, 'questions', 'new']"
+                      [attr.title]="t('::Question:Add')"
+                      [attr.aria-label]="t('::Question:Add') + ': ' + exam.title">
+                      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                    </a>
+                  }
 
-                @if (canEdit()) {
-                  <a
-                    class="btn btn-sm btn-outline-secondary"
-                    [routerLink]="['/exams', exam.id]"
-                    [attr.aria-label]="t('::Edit') + ': ' + exam.title">
-                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                    {{ t('::Edit') }}
-                  </a>
-                }
+                  @if (canEdit()) {
+                    <a
+                      class="row-action"
+                      [routerLink]="['/exams', exam.id]"
+                      [attr.title]="t('::Edit')"
+                      [attr.aria-label]="t('::Edit') + ': ' + exam.title">
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </a>
+                  }
 
-                <!-- Publishing is its own permission, not part of editing: deciding
-                     an exam is ready to send is a different act from writing it. -->
-                @if (canPublishRow(exam)) {
-                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="publish(exam)">
-                    <i class="bi bi-send" aria-hidden="true"></i>
-                    {{ t('::Exam:Publish') }}
-                  </button>
-                } @else if (canArchiveRow(exam)) {
-                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="archive(exam)">
-                    <i class="bi bi-archive" aria-hidden="true"></i>
-                    {{ t('::Exam:Archive') }}
-                  </button>
-                }
+                  <!-- Publishing is its own permission, not part of editing: deciding
+                       an exam is ready to send is a different act from writing it. -->
+                  @if (canPublishRow(exam)) {
+                    <button
+                      type="button"
+                      class="row-action"
+                      [attr.title]="t('::Exam:Publish')"
+                      [attr.aria-label]="t('::Exam:Publish') + ': ' + exam.title"
+                      (click)="publish(exam)">
+                      <i class="bi bi-send" aria-hidden="true"></i>
+                    </button>
+                  } @else if (canArchiveRow(exam)) {
+                    <button
+                      type="button"
+                      class="row-action"
+                      [attr.title]="t('::Exam:Archive')"
+                      [attr.aria-label]="t('::Exam:Archive') + ': ' + exam.title"
+                      (click)="archive(exam)">
+                      <i class="bi bi-archive" aria-hidden="true"></i>
+                    </button>
+                  }
 
-                @if (canDelete()) {
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-outline-danger"
-                    (click)="pendingDelete.set(exam)"
-                    [attr.aria-label]="t('::Delete') + ': ' + exam.title">
-                    <i class="bi bi-trash" aria-hidden="true"></i>
-                    {{ t('::Delete') }}
-                  </button>
-                }
+                  @if (canDelete()) {
+                    <button
+                      type="button"
+                      class="row-action row-action--danger"
+                      [attr.title]="t('::Delete')"
+                      [attr.aria-label]="t('::Delete') + ': ' + exam.title"
+                      (click)="pendingDelete.set(exam)">
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                    </button>
+                  }
+                </div>
               }
             </td>
           </tr>

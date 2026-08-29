@@ -147,13 +147,6 @@
   font-size: var(--astro-text-sm);
 }
 
-// The row action sits at the inline end of the row and does not stretch the
-// table: logical properties keep it on the correct side in both directions.
-.row-actions {
-  inline-size: 1%;
-  white-space: nowrap;
-  text-align: end;
-}
 
 // The loading, error and empty states, moved here from astro-data-state so that
 // one view decides which of them shows. See the note in the template.
@@ -187,13 +180,6 @@
   .spinner { animation-duration: 2s; }
 }
 
-// Row actions wrap on a phone rather than forcing the table wider.
-.row-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--astro-space-1);
-  justify-content: flex-end;
-}
 
 // --- Delete confirmation ----------------------------------------------------
 .scrim {
@@ -233,4 +219,44 @@
 
 :host-context([dir='rtl']) .confirm {
   transform: translate(50%, -50%);
+}
+
+// --- Row actions ------------------------------------------------------------
+// A td stays a td: turning it into a flex container takes it out of the table's
+// column sizing, which is what stacked four buttons on top of each row.
+.row-actions {
+  inline-size: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+.row-actions__set {
+  display: inline-flex;
+  gap: var(--astro-space-1);
+}
+
+// Icon-only, because eight columns and four labelled buttons is a table nobody
+// can read. The label is still there for anyone hearing the row rather than
+// seeing it, and as a tooltip for anyone unsure of an icon.
+.row-action {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 1px solid var(--astro-line);
+  border-radius: var(--astro-radius-sm);
+  background: var(--astro-surface-1);
+  color: var(--astro-ink-2);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--astro-brand-600);
+    color: var(--astro-brand-700);
+  }
+
+  &--danger:hover {
+    border-color: var(--astro-fail-fg);
+    color: var(--astro-fail-fg);
+  }
 }

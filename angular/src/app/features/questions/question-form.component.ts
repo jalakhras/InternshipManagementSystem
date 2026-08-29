@@ -9,6 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RichTextComponent } from '../../shared/ui/rich-text.component';
 
 import { QuestionService } from '../../core/api/question.service';
 import {
@@ -34,7 +35,7 @@ import { PAYLOAD_EDITORS } from './payload/payload-editor';
 @Component({
   selector: 'astro-question-form',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RichTextComponent],
   templateUrl: './question-form.component.html',
   styleUrl: './question-form.component.scss',
 })

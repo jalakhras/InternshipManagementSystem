@@ -45,14 +45,14 @@
 
       <div class="field">
         <label class="form-label" for="text">{{ t('::Question:Text') }}</label>
-        <textarea
-          id="text"
-          class="form-control"
-          rows="3"
-          required
-          [ngModel]="form().text"
-          (ngModelChange)="patch('text', $event)"
-          name="text"></textarea>
+        <!-- A question is not always a sentence. Chemistry needs subscripts,
+             programming needs a code block that keeps its indentation, and a
+             multi-part prompt needs a list. -->
+        <astro-rich-text
+          inputId="text"
+          [label]="t('::Question:Text')"
+          [value]="form().text"
+          (valueChange)="patch('text', $event)" />
       </div>
     </section>
 
@@ -136,13 +136,11 @@
 
       <div class="field">
         <label class="form-label" for="explanation">{{ t('::Question:Explanation') }}</label>
-        <textarea
-          id="explanation"
-          class="form-control"
-          rows="2"
-          [ngModel]="form().explanation"
-          (ngModelChange)="patch('explanation', $event)"
-          name="explanation"></textarea>
+        <astro-rich-text
+          inputId="explanation"
+          [label]="t('::Question:Explanation')"
+          [value]="form().explanation ?? ''"
+          (valueChange)="patch('explanation', $event)" />
         <!-- Only ever shown in Practice mode, after submission. A learner who sees
              only a score has not learned anything. -->
         <p class="hint">{{ t('::Question:Explanation:Hint') }}</p>

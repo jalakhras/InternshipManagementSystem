@@ -23,11 +23,11 @@ test.describe('Exam row actions', () => {
 
     // A published exam cannot be published again, and a draft cannot be archived.
     // Offering either would be an action that only ever fails.
-    await expect(row(page, DRAFT).getByRole('button', { name: 'Publish' })).toBeVisible();
-    await expect(row(page, DRAFT).getByRole('button', { name: 'Archive' })).toHaveCount(0);
+    await expect(row(page, DRAFT).getByRole('button', { name: /^Publish:/ })).toBeVisible();
+    await expect(row(page, DRAFT).getByRole('button', { name: /^Archive:/ })).toHaveCount(0);
 
-    await expect(row(page, PUBLISHED).getByRole('button', { name: 'Archive' })).toBeVisible();
-    await expect(row(page, PUBLISHED).getByRole('button', { name: 'Publish' })).toHaveCount(0);
+    await expect(row(page, PUBLISHED).getByRole('button', { name: /^Archive:/ })).toBeVisible();
+    await expect(row(page, PUBLISHED).getByRole('button', { name: /^Publish:/ })).toHaveCount(0);
   });
 
   test('hides every action from someone who may only read', async ({ page }) => {
@@ -38,9 +38,9 @@ test.describe('Exam row actions', () => {
     // exact, because Playwright matches accessible names by substring: a loose
     // "Publish" also matches the "Published" status filter, which would report a
     // permission leak that is not there.
-    await expect(page.getByRole('button', { name: 'Delete', exact: true })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: /Edit/ })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Publish', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Delete:/ })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /^Edit:/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /^Publish:/ })).toHaveCount(0);
   });
 
   test('asks before deleting, and names the exam it would delete', async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe('Exam row actions', () => {
     await stubExams(page);
     await gotoApp(page, '/exams');
 
-    await row(page, PUBLISHED).getByRole('button', { name: 'Delete' }).click();
+    await row(page, PUBLISHED).getByRole('button', { name: /^Delete:/ }).click();
 
     const dialog = page.getByRole('alertdialog');
     await expect(dialog).toBeVisible();
@@ -75,7 +75,7 @@ test.describe('Exam row actions', () => {
     });
 
     await gotoApp(page, '/exams');
-    await row(page, PUBLISHED).getByRole('button', { name: 'Delete' }).click();
+    await row(page, PUBLISHED).getByRole('button', { name: /^Delete:/ }).click();
     await page.getByRole('button', { name: 'Cancel' }).click();
 
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
@@ -96,8 +96,8 @@ test.describe('Exam row actions', () => {
     });
 
     await gotoApp(page, '/exams');
-    await row(page, PUBLISHED).getByRole('button', { name: 'Delete' }).click();
-    await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
+    await row(page, PUBLISHED).getByRole('button', { name: /^Delete:/ }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Delete', exact: true }).click();
 
     await expect.poll(() => deleted).toEqual(['11111111-1111-1111-1111-111111111111']);
   });
@@ -115,7 +115,7 @@ test.describe('Exam row actions', () => {
     );
 
     await gotoApp(page, '/exams');
-    await row(page, DRAFT).getByRole('button', { name: 'Publish' }).click();
+    await row(page, DRAFT).getByRole('button', { name: /^Publish:/ }).click();
 
     // The blocker is the only thing that tells the author what to do next.
     await expect(page.getByRole('alert')).toContainText('without questions');
@@ -127,7 +127,7 @@ test.describe('Exam row actions', () => {
     await gotoApp(page, '/exams');
 
     await expect(page.getByRole('table')).toBeVisible();
-    await page.locator('.row-actions .btn-outline-danger').first().click();
+    await page.locator('.row-action--danger').first().click();
 
     // Translate has no logical equivalent, so the RTL sign is written by hand —
     // the mistake that once parked a drawer two thirds of the way across a phone.
