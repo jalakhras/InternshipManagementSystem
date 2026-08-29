@@ -1,0 +1,223 @@
+<astro-page-header
+  [title]="examTitle() || t('::Nav:QuestionBank')"
+  [description]="t('::Question:List:Lede')">
+  @if (canCreate()) {
+    <a slot="actions" class="btn btn-primary" [routerLink]="['/exams', examId(), 'questions', 'new']">
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      {{ t('::Question:Add') }}
+    </a>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<div class="filters">
+  <div class="search">
+    <i class="bi bi-search" aria-hidden="true"></i>
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="t('::Question:SearchPlaceholder')"
+      [attr.aria-label]="t('::Question:SearchPlaceholder')"
+      [ngModel]="filter()"
+      (ngModelChange)="filter.set($event)"
+      (keyup.enter)="applyFilter()" />
+  </div>
+
+  <select
+    class="form-select type-filter"
+    [attr.aria-label]="t('::Question:Filter:Type')"
+    [ngModel]="type()"
+    (ngModelChange)="setType($event)">
+    <option value="">{{ t('::Question:Filter:AllTypes') }}</option>
+    @for (descriptor of types(); track descriptor.type) {
+      <option [value]="descriptor.type">{{ t(descriptor.nameKey) }}</option>
+    }
+  </select>
+
+  <div class="segmented" role="group" [attr.aria-label]="t('::Question:Difficulty')">
+    @for (level of difficulties; track level.value) {
+      <button
+        type="button"
+        class="segmented__option"
+        [class.segmented__option--active]="difficulty() === level.value"
+        [attr.aria-pressed]="difficulty() === level.value"
+        (click)="setDifficulty(level.value)">
+        {{ t(level.labelKey) }}
+      </button>
+    }
+  </div>
+</div>
+
+<!-- The three states live in this view rather than behind a child component's
+     inputs, for the reason recorded on the exam list. -->
+@if (loading()) {
+  <div class="state" role="status" aria-live="polite">
+    <span class="spinner" aria-hidden="true"></span>
+    <p class="state__text">{{ t('::Loading') }}</p>
+  </div>
+} @else if (error(); as message) {
+  <div class="state state--error" role="alert">
+    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+    <p class="state__title">{{ t('::CouldNotLoad') }}</p>
+    <p class="state__text">{{ message }}</p>
+    <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
+  </div>
+} @else if (isEmpty()) {
+  <div class="state">
+    <i class="bi {{ isFiltered() ? 'bi-search' : 'bi-patch-question' }}" aria-hidden="true"></i>
+    <p class="state__title">
+      {{ isFiltered() ? t('::Question:NoMatches') : t('::Question:NoneYet') }}
+    </p>
+    <p class="state__text">
+      {{ isFiltered() ? t('::Question:NoMatchesNote') : t('::Question:NoneYetNote') }}
+    </p>
+    @if (canCreate() && !isFiltered()) {
+      <a class="btn btn-primary" [routerLink]="['/exams', examId(), 'questions', 'new']">
+        {{ t('::Question:Add') }}
+      </a>
+    }
+  </div>
+}
+
+@if (!loading() && !error() && items().length > 0) {
+  <div class="astro-scroll-x">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Question:Text') }}</th>
+          <th scope="col">{{ t('::Question:Types') }}</th>
+          <th scope="col">{{ t('::Question:Difficulty') }}</th>
+          <th scope="col" class="num">{{ t('::Question:Score') }}</th>
+          <th scope="col">{{ t('::Question:Health') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (question of items(); track question.id) {
+          <tr>
+            <td>
+              <!-- Author HTML, sanitised on the way in and escaped again here by
+                   Angular. A prompt with a subscript in it should read as one. -->
+              <span class="prompt" [innerHTML]="question.text"></span>
+
+              @if (isFromBank(question)) {
+                <!-- Which half of the paper this came from. An author who cannot
+                     see the bank half will write it again. -->
+                <span class="badge-bank">
+                  <i class="bi bi-archive" aria-hidden="true"></i>
+                  {{ t('::Question:FromBank') }}
+                </span>
+              }
+            </td>
+
+            <td class="muted">{{ typeName(question) }}</td>
+            <td class="muted">{{ t(difficultyKey(question)) }}</td>
+            <td class="num astro-numeric">{{ question.score }}</td>
+
+            <td>
+              @switch (itemHealth(question)) {
+                @case ('unmeasured') {
+                  <span class="health health--quiet">{{ t('::Question:Health:Unmeasured') }}</span>
+                }
+                @case ('tooHard') {
+                  <span class="health health--bad" [attr.title]="t('::Question:Health:TooHard:Hint')">
+                    <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+                    {{ t('::Question:Health:TooHard') }}
+                  </span>
+                }
+                @case ('tooEasy') {
+                  <span class="health health--warn" [attr.title]="t('::Question:Health:TooEasy:Hint')">
+                    {{ t('::Question:Health:TooEasy') }}
+                  </span>
+                }
+                @default {
+                  <span class="health health--good">{{ t('::Question:Health:Healthy') }}</span>
+                }
+              }
+            </td>
+
+            <td class="row-actions">
+              @if (busyId() === question.id) {
+                <span class="muted">{{ t('::Working') }}</span>
+              } @else {
+                <div class="row-actions__set">
+                  @if (canEdit()) {
+                    <a
+                      class="row-action"
+                      [routerLink]="['/exams', examId(), 'questions', question.id]"
+                      [attr.title]="t('::Edit')"
+                      [attr.aria-label]="t('::Edit')">
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </a>
+                  }
+
+                  @if (canDelete()) {
+                    <button
+                      type="button"
+                      class="row-action row-action--danger"
+                      [attr.title]="t('::Delete')"
+                      [attr.aria-label]="t('::Delete')"
+                      (click)="pendingDelete.set(question)">
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                    </button>
+                  }
+                </div>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <nav class="pager" [attr.aria-label]="t('::Pagination')">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() === 0"
+        (click)="goToPage(page() - 1)">
+        <i class="bi bi-chevron-right astro-flip" aria-hidden="true"></i>
+        {{ t('::Previous') }}
+      </button>
+
+      <span class="pager__count astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
+
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        [disabled]="page() + 1 >= totalPages()"
+        (click)="goToPage(page() + 1)">
+        {{ t('::Next') }}
+        <i class="bi bi-chevron-left astro-flip" aria-hidden="true"></i>
+      </button>
+    </nav>
+  }
+}
+
+@if (pendingDelete(); as question) {
+  <div class="scrim" (click)="pendingDelete.set(null)"></div>
+
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmQuestionTitle">
+    <h2 class="confirm__title" id="confirmQuestionTitle">{{ t('::Question:Delete:Title') }}</h2>
+    <p class="confirm__body" [innerHTML]="question.text"></p>
+
+    <!-- Which of the two deletions this is. Removing a bank question takes it out
+         of every exam at that level, and nothing on the row says so otherwise. -->
+    <p class="confirm__note">
+      {{ isFromBank(question) ? t('::Question:Delete:BankNote') : t('::Question:Delete:Note') }}
+    </p>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="pendingDelete.set(null)">
+        {{ t('::Cancel') }}
+      </button>
+      <button type="button" class="btn btn-danger" (click)="confirmDelete()">
+        {{ t('::Delete') }}
+      </button>
+    </div>
+  </div>
+}

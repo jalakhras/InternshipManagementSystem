@@ -16,6 +16,11 @@ export const EXAM_ROUTES: Routes = [
   {
     // Questions live under their exam: a question has no meaning apart from one,
     // and the route says so.
+    path: ':examId/questions',
+    loadComponent: () =>
+      import('../questions/question-list.component').then(m => m.QuestionListComponent),
+  },
+  {
     path: ':examId/questions/new',
     loadComponent: () =>
       import('../questions/question-form.component').then(m => m.QuestionFormComponent),

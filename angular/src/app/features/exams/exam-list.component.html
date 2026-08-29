@@ -138,15 +138,17 @@
                      nobody can read, and it was pushing the actions on top of the
                      row. The name is still announced and still shown on hover. -->
                 <div class="row-actions__set">
-                  @if (canAddQuestions()) {
-                    <a
-                      class="row-action"
-                      [routerLink]="['/exams', exam.id, 'questions', 'new']"
-                      [attr.title]="t('::Question:Add')"
-                      [attr.aria-label]="t('::Question:Add') + ': ' + exam.title">
-                      <i class="bi bi-plus-lg" aria-hidden="true"></i>
-                    </a>
-                  }
+                  <!-- To the exam's questions rather than straight to a blank
+                       new one: an author opening this usually wants to see what
+                       is already there, and writing a duplicate is the cost of
+                       not showing them. -->
+                  <a
+                    class="row-action"
+                    [routerLink]="['/exams', exam.id, 'questions']"
+                    [attr.title]="t('::Exam:Questions')"
+                    [attr.aria-label]="t('::Exam:Questions') + ': ' + exam.title">
+                    <i class="bi bi-list-ul" aria-hidden="true"></i>
+                  </a>
 
                   @if (canEdit()) {
                     <a
