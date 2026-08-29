@@ -12,11 +12,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { Observable, shareReplay } from 'rxjs';
 
 import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
-import { AttemptState, TakerQuestion } from './take.models';
+import { AttemptState, SaveAnswerResult, TakerQuestion } from './take.models';
 import { ANSWER_INPUTS, AnswerInput, FALLBACK_ANSWER_INPUT } from './answers/answer-input';
 
 /**
@@ -123,6 +124,20 @@ export class TakeSittingComponent {
   private answerRef?: ComponentRef<AnswerInput>;
   private pendingResponse: string | null = null;
   private saveTimer?: ReturnType<typeof setTimeout>;
+
+  /**
+   * The save currently on the wire, so submitting can wait for it.
+   * <p>
+   * Saving is fire-and-forget everywhere else, which is right: a candidate
+   * moving between questions should never wait on the network. Submitting is
+   * the one place it is wrong. Answering the last question and pressing Finish
+   * straight away sent the submit alongside the save, and the two raced — the
+   * submit sometimes arrived first, and the exam was scored without the answer
+   * the candidate had just given. Silent, intermittent, and it costs them the
+   * mark.
+   * </p>
+   */
+  private inFlightSave: Observable<SaveAnswerResult> | null = null;
   private tickTimer?: ReturnType<typeof setInterval>;
   private enteredAt = Date.now();
   private keystrokes = 0;
@@ -286,7 +301,10 @@ export class TakeSittingComponent {
     this.pendingResponse = null;
     this.saving.set(true);
 
-    this.take
+    // Shared, so submitting can wait on the same request rather than issuing a
+    // second one — and so a subscriber arriving after it has landed still gets
+    // the answer instead of hanging.
+    const request = this.take
       .saveAnswer({
         questionId: question.id,
         response,
@@ -295,8 +313,19 @@ export class TakeSittingComponent {
         keystrokeCount: this.keystrokes,
         backspaceCount: this.backspaces,
       })
-      .subscribe({
+      .pipe(shareReplay({ bufferSize: 1, refCount: false }));
+
+    this.inFlightSave = request;
+
+    const settled = () => {
+      if (this.inFlightSave === request) {
+        this.inFlightSave = null;
+      }
+    };
+
+    request.subscribe({
         next: result => {
+          settled();
           this.saving.set(false);
           this.savedAt.set(new Date(result.savedAt));
 
@@ -311,6 +340,7 @@ export class TakeSittingComponent {
           }
         },
         error: err => {
+          settled();
           this.saving.set(false);
 
           // Kept, so the next save carries it. Losing an answer because one
@@ -355,10 +385,39 @@ export class TakeSittingComponent {
     this.submitting.set(true);
     this.confirmingSubmit.set(false);
 
-    if (!automatic) {
-      this.flush();
+    // Time ran out, or the server has already said the attempt is over. It ends
+    // either way, so waiting on a save would only delay the result screen.
+    if (automatic) {
+      this.send();
+      return;
     }
 
+    this.flush();
+
+    const pending = this.inFlightSave;
+
+    if (!pending) {
+      this.send();
+      return;
+    }
+
+    // The last answer has to reach the server before the submit does. It is the
+    // whole reason this waits: the two used to race, and the submit sometimes
+    // won.
+    pending.subscribe({
+      next: () => this.send(),
+      error: err => {
+        // Deliberately not submitted. Finalising is irreversible, and doing it
+        // while an answer is known to be missing turns a failed request into a
+        // lost mark. The response is still held, so pressing submit again
+        // retries the save first.
+        this.submitting.set(false);
+        this.error.set(this.reason(err));
+      },
+    });
+  }
+
+  private send(): void {
     this.take.submit().subscribe({
       next: () => this.router.navigate(['/exam', this.token(), 'result']),
       error: err => {
