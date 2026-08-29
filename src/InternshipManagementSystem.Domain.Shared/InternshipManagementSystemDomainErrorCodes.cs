@@ -130,6 +130,14 @@ public static class InternshipManagementSystemDomainErrorCodes
     // ---- Candidates ----
     public const string CandidateEmailAlreadyExists = "IMS:Candidate:EmailAlreadyExists";
 
+    // ---- Staff accounts ----
+
+    /// <summary>
+    /// A new account was asked for with no password. Enforced here rather than by
+    /// [Required] on the DTO, which the same DTO's update path cannot survive.
+    /// </summary>
+    public const string UserPasswordRequired = "IMS:User:PasswordRequired";
+
     // ---- Files ----
     public const string FileTooLarge = "IMS:File:TooLarge";
     public const string FileTypeNotAllowed = "IMS:File:TypeNotAllowed";

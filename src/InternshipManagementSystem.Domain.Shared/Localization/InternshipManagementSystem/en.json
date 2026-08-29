@@ -354,6 +354,7 @@
     "IMS:Question:WeightOutOfRange": "A weight is outside the allowed range of −1 to 1.",
     "IMS:Question:WeightsDoNotSumToOne": "The credited options must add up to the whole question: less and nobody can score full marks, more and a partial answer does.",
     "IMS:Review:ScoreAboveMaximum": "The mark awarded ({Awarded}) is above the question's maximum ({Maximum}).",
+    "IMS:User:PasswordRequired": "A new account needs a password.",
     "Language": "Language",
     "Link:Attempts": "Attempts",
     "Link:Candidate": "Person",

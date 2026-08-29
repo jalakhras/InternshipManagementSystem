@@ -65,6 +65,15 @@ namespace InternshipManagementSystem.IdentityManagement
             user.Name = input.FullName;
             user.Surname = string.Empty;
 
+            // Required here rather than by an attribute on the DTO, because the
+            // same DTO is the update payload and an account being edited must not
+            // have to carry a password it is not changing.
+            if (string.IsNullOrWhiteSpace(input.Password))
+            {
+                throw new BusinessException(
+                    InternshipManagementSystemDomainErrorCodes.UserPasswordRequired);
+            }
+
             // Same reason: a rejected password produced no error at all, and the
             // caller was handed a user they could not sign in as.
             (await _userManager.CreateAsync(user, input.Password)).CheckErrors();
@@ -107,12 +116,46 @@ namespace InternshipManagementSystem.IdentityManagement
                 await _userManager.SetPhoneNumberAsync(user, input.PhoneNumber);
             }
 
+            await SetPasswordAsync(user, input.Password);
+
             await SetRolesAsync(user, input.Roles);
 
             await _userRepository.UpdateAsync(user);
             await CurrentUnitOfWork.SaveChangesAsync();
 
             return await ToDtoAsync(user);
+        }
+
+        /// <summary>
+        /// Replaces the password, when one was typed.
+        /// <para>
+        /// The field was read on the way in, validated, carried through the DTO,
+        /// and then dropped. An administrator resetting the password of somebody
+        /// locked out typed a new one, pressed save, and was answered 200 — and
+        /// the account kept the old password. There is no worse answer than that
+        /// one: a refusal can be retried, and a lie is acted upon. They would go
+        /// and read the new password out to a colleague who cannot sign in with
+        /// it, and neither of them has anything to suspect.
+        /// </para>
+        /// <para>
+        /// Remove-then-add rather than a reset token, because there is nobody to
+        /// send a token to: this is an administrator setting a password on
+        /// another person's account, not that person recovering their own.
+        /// </para>
+        /// <para>
+        /// Blank means "leave it alone", which is what an empty password box on
+        /// an edit form means to the person looking at it.
+        /// </para>
+        /// </summary>
+        private async Task SetPasswordAsync(IdentityUser user, string? password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                return;
+            }
+
+            (await _userManager.RemovePasswordAsync(user)).CheckErrors();
+            (await _userManager.AddPasswordAsync(user, password)).CheckErrors();
         }
 
         /// <summary>

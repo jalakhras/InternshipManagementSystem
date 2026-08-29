@@ -354,6 +354,7 @@
     "IMS:Question:WeightOutOfRange": "أحد الأوزان خارج النطاق المسموح به من −١ إلى ١.",
     "IMS:Question:WeightsDoNotSumToOne": "يجب أن تُكمل الخيارات المحتسبة درجة السؤال كاملة: أقل من ذلك فلا أحد ينال الدرجة كاملة، وأكثر منه فتنالها إجابة ناقصة.",
     "IMS:Review:ScoreAboveMaximum": "الدرجة المرصودة ({Awarded}) تتجاوز درجة السؤال ({Maximum}).",
+    "IMS:User:PasswordRequired": "لا بدّ من كلمة مرور للحساب الجديد.",
     "Language": "اللغة",
     "Link:Attempts": "المحاولات",
     "Link:Candidate": "الشخص",
