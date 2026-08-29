@@ -94,7 +94,6 @@ public class InternshipManagementSystemPermissionDefinitionProvider : Permission
         users.AddChild(InternshipManagementSystemPermissions.IdentityManagement.Users.ManageRoles, L("Permission:ManageRoles"));
 
         var administration = group.AddPermission(InternshipManagementSystemPermissions.Administration.Default, L("Permission:Administration"));
-        administration.AddChild(InternshipManagementSystemPermissions.Administration.Access, L("Permission:Access"));
         administration.AddChild(InternshipManagementSystemPermissions.Administration.ManageSettings, L("Permission:ManageSettings"));
     }
 

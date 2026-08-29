@@ -92,7 +92,6 @@ export const InternshipManagementSystemPermissions = {
 
   Administration: {
     Default: 'Assessment.Administration',
-    Access: 'Assessment.Administration.Access',
     ManageSettings: 'Assessment.Administration.ManageSettings',
   },
 } as const;

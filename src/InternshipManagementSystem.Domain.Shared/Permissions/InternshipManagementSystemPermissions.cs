@@ -138,7 +138,11 @@ public static class InternshipManagementSystemPermissions
     public static class Administration
     {
         public const string Default = GroupName + ".Administration";
-        public const string Access = Default + ".Access";
+        // Access was removed. It promised "may reach the staff application" and
+        // guarded nothing at all — everybody who can sign in is staff, and being
+        // signed in is what the shell already requires. A permission that can be
+        // granted and enforces nothing is a promise the administration screen
+        // makes and the product does not keep.
         public const string ManageSettings = Default + ".ManageSettings";
     }
 }
