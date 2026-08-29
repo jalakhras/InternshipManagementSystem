@@ -39,6 +39,9 @@ public partial class InternshipManagementSystemDbContext :
     public DbSet<Assessment.Exams.QuestionGroup> QuestionGroups { get; set; }
     public DbSet<Assessment.Exams.Question> Questions { get; set; }
     public DbSet<Assessment.Tenancy.TenantBranding> TenantBranding { get; set; }
+    public DbSet<Assessment.Exams.ExamSection> ExamSections { get; set; }
+    public DbSet<Assessment.Exams.ExamForm> ExamForms { get; set; }
+    public DbSet<Assessment.Exams.ExamFormQuestion> ExamFormQuestions { get; set; }
     public DbSet<Assessment.Exams.ExamBlueprintRule> ExamBlueprintRules { get; set; }
 
     public DbSet<Assessment.People.Candidate> Candidates { get; set; }

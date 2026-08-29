@@ -21,6 +21,16 @@ public class QuestionGroup : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid ExamId { get; set; }
 
+    /// <summary>
+    /// The section this stimulus belongs to, or null on an exam with no sections.
+    /// <para>
+    /// A reading passage belongs in Reading and an audio clip in Listening. When
+    /// a section draws a form it takes whole groups, never part of one — half a
+    /// passage's questions is a passage the candidate read for nothing.
+    /// </para>
+    /// </summary>
+    public Guid? ExamSectionId { get; set; }
+
     /// <summary>Shown above the questions: "Read the passage and answer questions 1-5".</summary>
     public string? Instructions { get; set; }
 

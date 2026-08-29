@@ -20,6 +20,13 @@ public class ExamBlueprintRule : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid ExamId { get; set; }
 
+    /// <summary>
+    /// The section this rule fills, or null to draw from the whole exam. A
+    /// sectioned exam composes its paper section by section, because "twenty
+    /// questions across four skills" is not the same paper as "five of each".
+    /// </summary>
+    public Guid? ExamSectionId { get; set; }
+
     /// <summary>Draw from this competency. Null draws from any.</summary>
     public Guid? TopicId { get; set; }
 

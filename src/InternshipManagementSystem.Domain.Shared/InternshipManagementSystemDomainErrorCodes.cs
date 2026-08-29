@@ -10,6 +10,15 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string ExamHasNoQuestions = "IMS:Exam:NoQuestions";
     public const string ExamFormLargerThanBank = "IMS:Exam:FormLargerThanBank";
 
+    /// <summary>A named form cannot be published with nothing on it.</summary>
+    public const string ExamFormHasNoQuestions = "IMS:ExamForm:NoQuestions";
+
+    /// <summary>
+    /// The same question twice on one paper. It is scored twice and read twice,
+    /// and the taker reasonably concludes the exam is broken.
+    /// </summary>
+    public const string ExamFormHasDuplicateQuestions = "IMS:ExamForm:DuplicateQuestions";
+
     /// <summary>
     /// A question was submitted with neither an owning exam nor a domain to file it
     /// under, which would leave it invisible to both.

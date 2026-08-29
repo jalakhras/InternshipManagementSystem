@@ -48,6 +48,18 @@ public class Question : AuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Set when this question belongs to a shared stimulus. See <see cref="QuestionGroup"/>.</summary>
     public Guid? QuestionGroupId { get; set; }
 
+    /// <summary>
+    /// The part of the exam this question belongs to — Listening, Grammar, and so
+    /// on. Null on an exam that is not divided into sections, which is most of
+    /// them.
+    /// <para>
+    /// Carried on the question as well as on its group because a section holds
+    /// standalone questions too: a grammar section is thirty separate items with
+    /// no shared passage between them.
+    /// </para>
+    /// </summary>
+    public Guid? ExamSectionId { get; set; }
+
     /// <summary>The prompt shown to the taker.</summary>
     public string Text { get; set; } = default!;
 

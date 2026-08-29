@@ -44,6 +44,23 @@ public class Exam : AuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public int? QuestionsPerForm { get; set; }
 
+    /// <summary>
+    /// How a candidate's paper comes about: drawn for them as they start, one
+    /// named form for everybody, or spread across the published forms.
+    /// <para>
+    /// The default is the behaviour that existed before forms did, so no exam
+    /// changes by being loaded.
+    /// </para>
+    /// </summary>
+    public ExamDeliveryMode DeliveryMode { get; set; } = ExamDeliveryMode.DrawPerCandidate;
+
+    /// <summary>Which form everyone sits, when the mode is <see cref="ExamDeliveryMode.FixedForm"/>.</summary>
+    public Guid? FixedFormId { get; set; }
+
+    public ICollection<ExamSection> Sections { get; set; } = new List<ExamSection>();
+
+    public ICollection<ExamForm> Forms { get; set; } = new List<ExamForm>();
+
     /// <summary>Randomise question order per attempt, seeded by attempt id so a reload is stable.</summary>
     public bool ShuffleQuestions { get; set; } = true;
 

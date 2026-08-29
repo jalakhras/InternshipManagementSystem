@@ -116,6 +116,7 @@ public partial class InternshipManagementSystemDbContext
 
             b.HasIndex(x => x.ExamId);
             b.HasIndex(x => x.QuestionGroupId);
+            b.HasIndex(x => x.ExamSectionId);
             // The blueprint draws by topic and difficulty, so it indexes on both.
             b.HasIndex(x => new { x.ExamId, x.TopicId, x.Difficulty });
 
@@ -124,6 +125,44 @@ public partial class InternshipManagementSystemDbContext
             // filters on exactly this shape.
             b.HasIndex(x => new { x.TenantId, x.CategoryId, x.LevelId, x.TopicId, x.Difficulty })
                 .HasFilter("[ExamId] IS NULL");
+        });
+
+        builder.Entity<ExamSection>(b =>
+        {
+            b.ToTable(prefix + "ExamSections", schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Instructions).HasMaxLength(2048);
+            b.Property(x => x.MinimumPercentage).HasPrecision(5, 2);
+            b.HasIndex(x => new { x.ExamId, x.DisplayOrder });
+        });
+
+        builder.Entity<ExamForm>(b =>
+        {
+            b.ToTable(prefix + "ExamForms", schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Code).IsRequired().HasMaxLength(32);
+            b.Property(x => x.MaxScore).HasPrecision(9, 2);
+
+            // A code identifies a form on a result sheet, so two forms of one exam
+            // sharing one is a result nobody can trace back to a paper.
+            b.HasIndex(x => new { x.ExamId, x.Code }).IsUnique();
+            b.HasIndex(x => new { x.ExamId, x.Status });
+
+            b.HasMany(x => x.Questions).WithOne().HasForeignKey(x => x.ExamFormId);
+        });
+
+        builder.Entity<ExamFormQuestion>(b =>
+        {
+            b.ToTable(prefix + "ExamFormQuestions", schema);
+            b.ConfigureByConvention();
+            b.Property(x => x.Score).HasPrecision(9, 2);
+
+            // The same question twice on one form is caught at publish, but the
+            // database is where a guarantee belongs.
+            b.HasIndex(x => new { x.ExamFormId, x.QuestionId }).IsUnique();
+            b.HasIndex(x => new { x.ExamFormId, x.DisplayOrder });
         });
 
         builder.Entity<ExamBlueprintRule>(b =>
