@@ -76,12 +76,12 @@ import { sanitiseRichText } from './rich-text.sanitise';
       flex-wrap: wrap;
       gap: var(--astro-space-1);
       padding: var(--astro-space-1);
-      border: 1px solid var(--astro-line);
+      border: 1px solid var(--border-subtle);
       border-end-start-radius: 0;
       border-end-end-radius: 0;
       border-start-start-radius: var(--astro-radius-md);
       border-start-end-radius: var(--astro-radius-md);
-      background: var(--astro-surface-2);
+      background: var(--surface-sunken);
     }
 
     .toolbar__button {
@@ -92,12 +92,12 @@ import { sanitiseRichText } from './rich-text.sanitise';
       border: 0;
       border-radius: var(--astro-radius-sm);
       background: transparent;
-      color: var(--astro-ink-2);
+      color: var(--text-secondary);
       cursor: pointer;
 
       &:hover {
-        background: var(--astro-surface-3);
-        color: var(--astro-ink-1);
+        background: var(--surface-overlay);
+        color: var(--text-primary);
       }
     }
 
@@ -118,7 +118,7 @@ import { sanitiseRichText } from './rich-text.sanitise';
       :where(pre) {
         padding: var(--astro-space-2);
         border-radius: var(--astro-radius-sm);
-        background: var(--astro-surface-2);
+        background: var(--surface-sunken);
         overflow-x: auto;
         /* Code is read left to right whatever the surrounding page does. */
         direction: ltr;

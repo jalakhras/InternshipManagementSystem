@@ -91,7 +91,7 @@ import { OrderingItem, OrderingPayload, newId, readPayload, writePayload } from 
   styles: `
     :host { display: block; }
 
-    .lede { margin-block: 0 var(--astro-space-3); color: var(--astro-ink-3); font-size: .875rem; }
+    .lede { margin-block: 0 var(--astro-space-3); color: var(--text-muted); font-size: .875rem; }
 
     .items { display: grid; gap: var(--astro-space-2); }
 
@@ -108,8 +108,8 @@ import { OrderingItem, OrderingPayload, newId, readPayload, writePayload } from 
       inline-size: 2rem;
       block-size: 2rem;
       border-radius: 50%;
-      background: var(--astro-surface-2);
-      color: var(--astro-ink-2);
+      background: var(--surface-sunken);
+      color: var(--text-secondary);
       font-size: .8125rem;
       font-weight: 600;
     }
@@ -122,11 +122,11 @@ import { OrderingItem, OrderingPayload, newId, readPayload, writePayload } from 
       border: 0;
       border-radius: var(--astro-radius-sm);
       background: transparent;
-      color: var(--astro-ink-3);
+      color: var(--text-muted);
       cursor: pointer;
 
-      &:hover:not(:disabled) { color: var(--astro-ink-1); }
-      &--danger:hover:not(:disabled) { color: var(--astro-fail-fg); }
+      &:hover:not(:disabled) { color: var(--text-primary); }
+      &--danger:hover:not(:disabled) { color: var(--astro-fail-600); }
       &:disabled { opacity: .3; cursor: default; }
     }
 
@@ -144,14 +144,14 @@ import { OrderingItem, OrderingPayload, newId, readPayload, writePayload } from 
       cursor: pointer;
 
       span { display: grid; }
-      small { color: var(--astro-ink-3); }
+      small { color: var(--text-muted); }
     }
 
     .warning {
       display: flex;
       gap: var(--astro-space-2);
       margin-block-start: var(--astro-space-3);
-      color: var(--astro-warn-fg);
+      color: var(--astro-pending-600);
       font-size: .875rem;
     }
   `,

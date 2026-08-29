@@ -93,7 +93,7 @@ import { ScalePayload, readPayload, writePayload } from './payload.models';
   styles: `
     :host { display: block; }
 
-    .lede { margin-block: 0 var(--astro-space-3); color: var(--astro-ink-3); font-size: .875rem; }
+    .lede { margin-block: 0 var(--astro-space-3); color: var(--text-muted); font-size: .875rem; }
 
     .row-4 {
       display: grid;
@@ -108,12 +108,12 @@ import { ScalePayload, readPayload, writePayload } from './payload.models';
       gap: var(--astro-space-3);
       margin-block-start: var(--astro-space-4);
       padding: var(--astro-space-3);
-      border: 1px solid var(--astro-line);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--astro-radius-md);
-      background: var(--astro-surface-2);
+      background: var(--surface-sunken);
     }
 
-    .preview__label { font-size: .875rem; color: var(--astro-ink-3); }
+    .preview__label { font-size: .875rem; color: var(--text-muted); }
     .preview__points { display: flex; gap: var(--astro-space-1); }
 
     .preview__point {
@@ -121,10 +121,10 @@ import { ScalePayload, readPayload, writePayload } from './payload.models';
       place-items: center;
       inline-size: 2.25rem;
       block-size: 2.25rem;
-      border: 1px solid var(--astro-line);
+      border: 1px solid var(--border-subtle);
       border-radius: 50%;
-      background: var(--astro-surface-1);
-      color: var(--astro-ink-2);
+      background: var(--surface-raised);
+      color: var(--text-secondary);
       font-size: .875rem;
     }
 
@@ -132,7 +132,7 @@ import { ScalePayload, readPayload, writePayload } from './payload.models';
       display: flex;
       gap: var(--astro-space-2);
       margin-block-start: var(--astro-space-3);
-      color: var(--astro-warn-fg);
+      color: var(--astro-pending-600);
       font-size: .875rem;
     }
   `,

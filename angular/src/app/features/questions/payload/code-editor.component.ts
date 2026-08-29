@@ -72,7 +72,7 @@ import { CodePayload, readPayload, writePayload } from './payload.models';
     :host { display: block; }
 
     .field { margin-block-end: var(--astro-space-4); }
-    .hint { margin-block: var(--astro-space-1) 0; font-size: .8125rem; color: var(--astro-ink-3); }
+    .hint { margin-block: var(--astro-space-1) 0; font-size: .8125rem; color: var(--text-muted); }
 
     .code {
       font-family: var(--astro-font-mono);
@@ -87,8 +87,8 @@ import { CodePayload, readPayload, writePayload } from './payload.models';
       margin: 0;
       padding: var(--astro-space-2) var(--astro-space-3);
       border-radius: var(--astro-radius-sm);
-      background: var(--astro-surface-2);
-      color: var(--astro-ink-2);
+      background: var(--surface-sunken);
+      color: var(--text-secondary);
       font-size: .875rem;
     }
   `,

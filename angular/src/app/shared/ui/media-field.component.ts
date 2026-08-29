@@ -76,27 +76,27 @@ import { TranslateService } from '../../core/translate.service';
       justify-items: center;
       gap: var(--astro-space-1);
       padding-block: var(--astro-space-5);
-      border: 1px dashed var(--astro-line);
+      border: 1px dashed var(--border-subtle);
       border-radius: var(--astro-radius-md);
-      background: var(--astro-surface-2);
-      color: var(--astro-ink-3);
+      background: var(--surface-sunken);
+      color: var(--text-muted);
       cursor: pointer;
       text-align: center;
 
       &:hover, &--over {
         border-color: var(--astro-brand-600);
-        color: var(--astro-ink-2);
+        color: var(--text-secondary);
       }
 
       i { font-size: 1.5rem; }
     }
 
     .drop__input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
-    .drop__label { font-weight: 600; color: var(--astro-ink-1); }
+    .drop__label { font-weight: 600; color: var(--text-primary); }
     .drop__hint { font-size: .8125rem; }
 
     .preview {
-      border: 1px solid var(--astro-line);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--astro-radius-md);
       overflow: hidden;
     }
@@ -106,7 +106,7 @@ import { TranslateService } from '../../core/translate.service';
       inline-size: 100%;
       max-block-size: 22rem;
       object-fit: contain;
-      background: var(--astro-surface-2);
+      background: var(--surface-sunken);
     }
 
     .preview__player { inline-size: 100%; display: block; }
@@ -117,19 +117,19 @@ import { TranslateService } from '../../core/translate.service';
       justify-content: space-between;
       gap: var(--astro-space-2);
       padding: var(--astro-space-2);
-      border-block-start: 1px solid var(--astro-line);
+      border-block-start: 1px solid var(--border-subtle);
     }
 
     .preview__name {
       font-size: .875rem;
-      color: var(--astro-ink-2);
+      color: var(--text-secondary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .status { margin-block: var(--astro-space-2) 0; font-size: .875rem; color: var(--astro-ink-3); }
-    .status--error { color: var(--astro-fail-fg); }
+    .status { margin-block: var(--astro-space-2) 0; font-size: .875rem; color: var(--text-muted); }
+    .status--error { color: var(--astro-fail-600); }
   `,
 })
 export class MediaFieldComponent {

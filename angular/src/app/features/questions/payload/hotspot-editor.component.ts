@@ -85,13 +85,13 @@ import { HotspotPayload, HotspotRegion, newId, readPayload, writePayload } from 
   styles: `
     :host { display: block; }
 
-    .lede { margin-block: 0 var(--astro-space-3); color: var(--astro-ink-3); font-size: .875rem; }
+    .lede { margin-block: 0 var(--astro-space-3); color: var(--text-muted); font-size: .875rem; }
 
     .canvas {
       position: relative;
       display: inline-block;
       max-inline-size: 100%;
-      border: 1px solid var(--astro-line);
+      border: 1px solid var(--border-subtle);
       border-radius: var(--astro-radius-md);
       overflow: hidden;
       cursor: crosshair;
@@ -103,8 +103,8 @@ import { HotspotPayload, HotspotRegion, newId, readPayload, writePayload } from 
 
     .region {
       position: absolute;
-      border: 2px solid var(--astro-pass-fg);
-      background: color-mix(in srgb, var(--astro-pass-fg) 18%, transparent);
+      border: 2px solid var(--astro-pass-600);
+      background: color-mix(in srgb, var(--astro-pass-600) 18%, transparent);
       border-radius: 2px;
     }
 
@@ -125,7 +125,7 @@ import { HotspotPayload, HotspotRegion, newId, readPayload, writePayload } from 
       padding: 0;
       border: 0;
       border-radius: 50%;
-      background: var(--astro-fail-fg);
+      background: var(--astro-fail-600);
       color: #fff;
       font-size: .625rem;
       cursor: pointer;
@@ -138,13 +138,13 @@ import { HotspotPayload, HotspotRegion, newId, readPayload, writePayload } from 
       margin-block-start: var(--astro-space-3);
     }
 
-    .count { font-size: .875rem; color: var(--astro-ink-3); }
+    .count { font-size: .875rem; color: var(--text-muted); }
 
     .warning {
       display: flex;
       gap: var(--astro-space-2);
       margin-block-start: var(--astro-space-3);
-      color: var(--astro-warn-fg);
+      color: var(--astro-pending-600);
       font-size: .875rem;
     }
   `,

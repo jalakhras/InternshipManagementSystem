@@ -156,19 +156,19 @@
   gap: var(--astro-space-2);
   padding-block: var(--astro-space-7);
   text-align: center;
-  color: var(--astro-ink-3);
+  color: var(--text-muted);
 
   i { font-size: 1.75rem; }
 
-  &__title { margin: 0; font-weight: 600; color: var(--astro-ink-1); }
+  &__title { margin: 0; font-weight: 600; color: var(--text-primary); }
   &__text  { margin: 0; max-inline-size: 44ch; }
-  &--error i { color: var(--astro-fail-fg); }
+  &--error i { color: var(--astro-fail-600); }
 }
 
 .spinner {
   inline-size: 1.5rem;
   block-size: 1.5rem;
-  border: 2px solid var(--astro-line);
+  border: 2px solid var(--border-subtle);
   border-block-start-color: var(--astro-brand-600);
   border-radius: 50%;
   animation: astro-spin .7s linear infinite;
@@ -200,14 +200,14 @@
   transform: translate(-50%, -50%);
   inline-size: min(30rem, calc(100vw - 2rem));
   padding: var(--astro-space-5);
-  background: var(--astro-surface-1);
-  border: 1px solid var(--astro-line);
+  background: var(--surface-raised);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--astro-radius-lg);
   box-shadow: var(--astro-shadow-lg);
 
   &__title { margin: 0 0 var(--astro-space-2); font-size: 1.125rem; }
-  &__body  { margin: 0 0 var(--astro-space-2); color: var(--astro-ink-2); }
-  &__note  { margin: 0; font-size: .875rem; color: var(--astro-ink-3); }
+  &__body  { margin: 0 0 var(--astro-space-2); color: var(--text-secondary); }
+  &__note  { margin: 0; font-size: .875rem; color: var(--text-muted); }
 
   &__actions {
     display: flex;
@@ -244,10 +244,10 @@
   inline-size: 2rem;
   block-size: 2rem;
   padding: 0;
-  border: 1px solid var(--astro-line);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--astro-radius-sm);
-  background: var(--astro-surface-1);
-  color: var(--astro-ink-2);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
   cursor: pointer;
 
   &:hover {
@@ -256,7 +256,7 @@
   }
 
   &--danger:hover {
-    border-color: var(--astro-fail-fg);
-    color: var(--astro-fail-fg);
+    border-color: var(--astro-fail-600);
+    color: var(--astro-fail-600);
   }
 }

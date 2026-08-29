@@ -52,9 +52,11 @@ import { NumericPayload, readPayload, writePayload } from './payload.models';
       </div>
     </div>
 
+    <!-- The string carries its own two placeholders, so it has to be given them.
+         Called bare it printed "Accepts {0} — {1}" beside the numbers, in both
+         languages, which is worse than no preview at all. -->
     <p class="preview">
-      {{ t('::Question:Accepts') }}
-      <span class="astro-numeric">{{ lowerBound() }} — {{ upperBound() }}</span>
+      {{ t('::Question:Accepts', lowerBound().toString(), upperBound().toString()) }}
       {{ unit() }}
     </p>
 

@@ -191,3 +191,74 @@ video {
   max-inline-size: 100%;
   block-size: auto;
 }
+
+// --- Bootstrap, bent to the token layer -------------------------------------
+//
+// Bootstrap ships its own palette and it was never overridden, so the primary
+// action on every screen was #0d6efd — the exact blue the token file says it
+// deliberately avoided — and Publish was Bootstrap's green, which this system
+// reserves to mean "passed". A green Publish beside a blue Save also inverts the
+// hierarchy: the secondary action out-shouted the primary one.
+//
+// Mapped rather than restyled. Bootstrap builds every button, focus ring and
+// state from these few custom properties, so setting them once here keeps the
+// component library's behaviour and gives it our colours.
+:root {
+  --bs-primary: var(--astro-brand-700);
+  --bs-primary-rgb: 13, 92, 112;
+  --bs-link-color: var(--astro-brand-700);
+  --bs-link-hover-color: var(--astro-brand-800);
+  --bs-border-color: var(--border-subtle);
+  --bs-body-color: var(--text-primary);
+  --bs-body-bg: var(--surface-page);
+  --bs-secondary-color: var(--text-secondary);
+}
+
+.btn-primary {
+  --bs-btn-bg: var(--astro-brand-700);
+  --bs-btn-border-color: var(--astro-brand-700);
+  --bs-btn-hover-bg: var(--astro-brand-800);
+  --bs-btn-hover-border-color: var(--astro-brand-800);
+  --bs-btn-active-bg: var(--astro-brand-900);
+  --bs-btn-active-border-color: var(--astro-brand-900);
+  --bs-btn-disabled-bg: var(--astro-brand-300);
+  --bs-btn-disabled-border-color: var(--astro-brand-300);
+}
+
+// Secondary actions were measuring 4.37:1 in light and 3.98:1 in dark, which
+// reads as disabled rather than as available. Both now sit on body text colour.
+.btn-outline-secondary {
+  --bs-btn-color: var(--text-secondary);
+  --bs-btn-border-color: var(--border-strong);
+  --bs-btn-hover-color: var(--text-inverse);
+  --bs-btn-hover-bg: var(--text-secondary);
+  --bs-btn-hover-border-color: var(--text-secondary);
+  --bs-btn-active-bg: var(--text-primary);
+  --bs-btn-active-border-color: var(--text-primary);
+}
+
+.btn-outline-danger {
+  --bs-btn-color: var(--astro-fail-600);
+  --bs-btn-border-color: var(--astro-fail-600);
+  --bs-btn-hover-bg: var(--astro-fail-600);
+  --bs-btn-hover-border-color: var(--astro-fail-600);
+}
+
+.btn-danger {
+  --bs-btn-bg: var(--astro-fail-600);
+  --bs-btn-border-color: var(--astro-fail-600);
+  --bs-btn-hover-bg: var(--astro-fail-700);
+  --bs-btn-hover-border-color: var(--astro-fail-700);
+}
+
+// The paper plane points the way a message travels, so it mirrors with the text
+// the way the pager chevrons and the logout arrow already do. Applied by
+// selector rather than by remembering to add a class at every call site — it was
+// missed in three of them.
+[dir='rtl'] .bi-send,
+[dir='rtl'] .bi-box-arrow-right,
+[dir='rtl'] .bi-arrow-right,
+[dir='rtl'] .bi-arrow-left {
+  display: inline-block;
+  transform: scaleX(-1);
+}

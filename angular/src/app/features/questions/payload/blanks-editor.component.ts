@@ -89,7 +89,7 @@ import { BlankSpec, FillInTheBlankPayload, newId, readPayload, writePayload } fr
   styles: `
     :host { display: block; }
 
-    .lede { margin-block: 0 var(--astro-space-3); color: var(--astro-ink-3); font-size: .875rem; }
+    .lede { margin-block: 0 var(--astro-space-3); color: var(--text-muted); font-size: .875rem; }
 
     .blanks { display: grid; gap: var(--astro-space-3); }
 
@@ -106,14 +106,14 @@ import { BlankSpec, FillInTheBlankPayload, newId, readPayload, writePayload } fr
       inline-size: 2rem;
       block-size: 2rem;
       border-radius: 50%;
-      background: var(--astro-surface-2);
-      color: var(--astro-ink-2);
+      background: var(--surface-sunken);
+      color: var(--text-secondary);
       font-size: .8125rem;
       font-weight: 600;
     }
 
     .blank__body { display: grid; gap: var(--astro-space-1); }
-    .blank__hint { color: var(--astro-ink-3); font-size: .8125rem; }
+    .blank__hint { color: var(--text-muted); font-size: .8125rem; }
 
     .blank__remove {
       display: grid;
@@ -123,10 +123,10 @@ import { BlankSpec, FillInTheBlankPayload, newId, readPayload, writePayload } fr
       border: 0;
       border-radius: var(--astro-radius-sm);
       background: transparent;
-      color: var(--astro-ink-3);
+      color: var(--text-muted);
       cursor: pointer;
 
-      &:hover:not(:disabled) { color: var(--astro-fail-fg); }
+      &:hover:not(:disabled) { color: var(--astro-fail-600); }
       &:disabled { opacity: .3; cursor: default; }
     }
 
@@ -144,14 +144,14 @@ import { BlankSpec, FillInTheBlankPayload, newId, readPayload, writePayload } fr
       cursor: pointer;
 
       span { display: grid; }
-      small { color: var(--astro-ink-3); }
+      small { color: var(--text-muted); }
     }
 
     .warning {
       display: flex;
       gap: var(--astro-space-2);
       margin-block-start: var(--astro-space-3);
-      color: var(--astro-warn-fg);
+      color: var(--astro-pending-600);
       font-size: .875rem;
     }
   `,
