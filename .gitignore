@@ -263,3 +263,11 @@ src/InternshipManagementSystem.Blazor.Server.Tiered/Logs/*
 
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
+
+# ---- Angular (monorepo: angular/) ----
+angular/node_modules/
+angular/dist/
+angular/.angular/
+angular/src/app/proxy/
+npm-debug.log*
+yarn-error.log*

@@ -1,0 +1,157 @@
+<Project>
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+
+    <!-- One place to bump the whole stack. -->
+    <AbpVersion>10.6.0</AbpVersion>
+    <LeptonXLiteVersion>5.6.0</LeptonXLiteVersion>
+    <EfCoreVersion>10.0.11</EfCoreVersion>
+    <MsExtVersion>10.0.11</MsExtVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="ABP - Framework">
+    <PackageVersion Include="Volo.Abp.Autofac" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.AutoMapper" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Authorization" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.ObjectExtending" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Swashbuckle" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TestBase" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.AspNetCore.Serilog" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.AspNetCore.MultiTenancy" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Http.Client.IdentityModel" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Platform capabilities (new)">
+    <!-- ADR-06: replaces raw filesystem writes -->
+    <PackageVersion Include="Volo.Abp.BlobStoring" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BlobStoring.FileSystem" Version="$(AbpVersion)" />
+    <!-- E2-03: replaces NullEmailSender -->
+    <PackageVersion Include="Volo.Abp.MailKit" Version="$(AbpVersion)" />
+    <!-- ADR-05: server-side auto-submit -->
+    <PackageVersion Include="Volo.Abp.BackgroundWorkers" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Emailing">
+    <PackageVersion Include="Volo.Abp.Emailing" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Identity">
+    <PackageVersion Include="Volo.Abp.Identity.Application" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Identity.Application.Contracts" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Identity.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Identity.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Identity.EntityFrameworkCore" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Identity.HttpApi" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Identity.HttpApi.Client" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Account">
+    <PackageVersion Include="Volo.Abp.Account.Application" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Account.Application.Contracts" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Account.HttpApi" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Account.HttpApi.Client" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.Account.Web.OpenIddict" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - OpenIddict">
+    <PackageVersion Include="Volo.Abp.OpenIddict.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.OpenIddict.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.OpenIddict.EntityFrameworkCore" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Permission Management">
+    <PackageVersion Include="Volo.Abp.PermissionManagement.Application" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.Application.Contracts" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.Domain.Identity" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.Domain.OpenIddict" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.EntityFrameworkCore" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.HttpApi" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.PermissionManagement.HttpApi.Client" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Setting Management">
+    <PackageVersion Include="Volo.Abp.SettingManagement.Application" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.SettingManagement.Application.Contracts" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.SettingManagement.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.SettingManagement.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.SettingManagement.EntityFrameworkCore" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.SettingManagement.HttpApi" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.SettingManagement.HttpApi.Client" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Feature Management">
+    <PackageVersion Include="Volo.Abp.FeatureManagement.Application" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.FeatureManagement.Application.Contracts" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.FeatureManagement.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.FeatureManagement.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.FeatureManagement.EntityFrameworkCore" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.FeatureManagement.HttpApi" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.FeatureManagement.HttpApi.Client" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Tenant Management">
+    <PackageVersion Include="Volo.Abp.TenantManagement.Application" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TenantManagement.Application.Contracts" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TenantManagement.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TenantManagement.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TenantManagement.EntityFrameworkCore" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TenantManagement.HttpApi" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.TenantManagement.HttpApi.Client" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Audit / Background Jobs">
+    <PackageVersion Include="Volo.Abp.AuditLogging.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.AuditLogging.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.AuditLogging.EntityFrameworkCore" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BackgroundJobs.Abstractions" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BackgroundJobs.Domain" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BackgroundJobs.Domain.Shared" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.BackgroundJobs.EntityFrameworkCore" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - EF Core providers">
+    <PackageVersion Include="Volo.Abp.EntityFrameworkCore.SqlServer" Version="$(AbpVersion)" />
+    <PackageVersion Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="$(AbpVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ABP - Server-rendered auth UI (login pages only, not the Angular app)">
+    <PackageVersion Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite" Version="$(LeptonXLiteVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Microsoft">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Tools" Version="$(EfCoreVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.FileProviders.Embedded" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="$(MsExtVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.StaticFiles" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Validation">
+    <PackageVersion Include="FluentValidation" Version="12.1.1" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Logging">
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Async" Version="2.1.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Testing">
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.17" />
+    <PackageVersion Include="Shouldly" Version="4.3.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.extensibility.execution" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0" />
+  </ItemGroup>
+
+</Project>
