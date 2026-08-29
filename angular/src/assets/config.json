@@ -1,0 +1,9 @@
+{
+  "_comment": "Local development values, identical to what src/environments/environment.ts compiles in. The container image overwrites this file at start from environment variables (see docker/angular/docker-entrypoint.d/40-runtime-config.sh), so a deployment changes URLs without rebuilding the bundle. baseUrl is deliberately absent: the app reads its own origin from the page, which is right more often than a value typed into a deployment file.",
+  "apiUrl": "https://localhost:44373",
+  "issuer": "https://localhost:44373/",
+  "clientId": "InternshipManagementSystem_App",
+  "scope": "offline_access InternshipManagementSystem",
+  "requireHttps": true,
+  "appName": "Astrolabe"
+}

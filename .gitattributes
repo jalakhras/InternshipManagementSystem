@@ -1,1 +1,10 @@
 **/wwwroot/libs/** linguist-vendored
+
+# Files that are read by a Linux container. A CRLF checkout on a Windows machine
+# would be committed as-is and then fail inside the image with an error naming a
+# command that does not exist, because the carriage return is part of its name.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker/** text eol=lf
+docker-compose*.yml text eol=lf
+.dockerignore text eol=lf

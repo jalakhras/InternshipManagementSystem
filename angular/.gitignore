@@ -43,4 +43,7 @@ testem.log
 
 # System Files
 .DS_Store
-Thumbs.dbscreens/
+Thumbs.db
+
+# Screenshots of the candidate screens, for looking at.
+screens/

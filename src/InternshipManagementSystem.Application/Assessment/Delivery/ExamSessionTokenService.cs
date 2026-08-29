@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Security.Claims;
@@ -55,10 +55,41 @@ public class ExamSessionTokenService : ISingletonDependency
     /// </summary>
     private const int MinimumKeyLength = 32;
 
+    /// <summary>
+    /// What the issuer and audience were before they became configurable, and what
+    /// they still are unless a deployment says otherwise. Keeping them as the default
+    /// means every token already in a candidate's hands keeps validating.
+    /// </summary>
+    private const string DefaultSessionIssuer = "ims-exam-session";
+
+    private const string DefaultMediaIssuer = "ims-exam-media";
+
     private readonly SymmetricSecurityKey _key;
+
+    /// <summary>
+    /// Names this deployment on the tokens it mints, and refuses tokens that name a
+    /// different one.
+    /// <para>
+    /// A shared constant is survivable while the signing key is genuinely per
+    /// environment, and stops being survivable the first time somebody copies a
+    /// staging environment file onto a production host — after which a session token
+    /// minted against test data validates against real candidates. Distinct issuers
+    /// make that mistake fail closed rather than silently work.
+    /// </para>
+    /// </summary>
+    private readonly string _sessionIssuer;
+
+    private readonly string _sessionAudience;
+    private readonly string _mediaIssuer;
+    private readonly string _mediaAudience;
 
     public ExamSessionTokenService(IConfiguration configuration)
     {
+        _sessionIssuer = Configured(configuration["ExamSession:Issuer"], DefaultSessionIssuer);
+        _sessionAudience = Configured(configuration["ExamSession:Audience"], DefaultSessionIssuer);
+        _mediaIssuer = Configured(configuration["ExamSession:MediaIssuer"], DefaultMediaIssuer);
+        _mediaAudience = Configured(configuration["ExamSession:MediaAudience"], DefaultMediaIssuer);
+
         // No fallback, and no null check.
         //
         // This used to fall back to the app's encryption pass phrase "so a dev
@@ -83,6 +114,15 @@ public class ExamSessionTokenService : ISingletonDependency
 
         _key = new SymmetricSecurityKey(SHA256.HashData(Encoding.UTF8.GetBytes(secret)));
     }
+
+    /// <summary>
+    /// A key that is present but blank is the same as an absent one. An unset
+    /// environment variable arrives as the empty string rather than as null, and
+    /// signing tokens with an empty issuer would be a silent way to break every
+    /// deployment that forgot to fill one of these in.
+    /// </summary>
+    private static string Configured(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
     /// <summary>
     /// Mints a credential for one attempt. It expires with the attempt's own
@@ -111,8 +151,8 @@ public class ExamSessionTokenService : ISingletonDependency
         }
 
         var token = new JwtSecurityToken(
-            issuer: "ims-exam-session",
-            audience: "ims-exam-session",
+            issuer: _sessionIssuer,
+            audience: _sessionAudience,
             claims: claims,
             notBefore: DateTime.UtcNow.AddMinutes(-1),
             // Grace so the final submit still authenticates as the clock hits zero.
@@ -135,9 +175,9 @@ public class ExamSessionTokenService : ISingletonDependency
             var principal = new JwtSecurityTokenHandler().ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuer = true,
-                ValidIssuer = "ims-exam-session",
+                ValidIssuer = _sessionIssuer,
                 ValidateAudience = true,
-                ValidAudience = "ims-exam-session",
+                ValidAudience = _sessionAudience,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = _key,
                 ValidateLifetime = true,
@@ -196,8 +236,8 @@ public class ExamSessionTokenService : ISingletonDependency
         }
 
         var token = new JwtSecurityToken(
-            issuer: "ims-exam-media",
-            audience: "ims-exam-media",
+            issuer: _mediaIssuer,
+            audience: _mediaAudience,
             claims: claims,
 
             // No not-before. A grant is minted as the question is served and used
@@ -230,9 +270,9 @@ public class ExamSessionTokenService : ISingletonDependency
             var principal = new JwtSecurityTokenHandler().ValidateToken(token, new TokenValidationParameters
             {
                 ValidateIssuer = true,
-                ValidIssuer = "ims-exam-media",
+                ValidIssuer = _mediaIssuer,
                 ValidateAudience = true,
-                ValidAudience = "ims-exam-media",
+                ValidAudience = _mediaAudience,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = _key,
                 ValidateLifetime = true,

@@ -1,0 +1,115 @@
+name: CI
+
+# Every push and every pull request. The point is that a branch is known-good
+# before anyone looks at it, so this has to run on the branch, not only on the PR.
+on:
+  push:
+  pull_request:
+
+# A second push to the same branch makes the first run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # backend
+  #
+  # No database service. The integration tests run against SQLite in memory, which
+  # is what makes them fast enough that people run them.
+  # ---------------------------------------------------------------------------
+  backend:
+    name: build and test (.NET)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          # The lockfile-less equivalent: the package versions all live in
+          # Directory.Packages.props, so that file changing is exactly when the
+          # cache should miss.
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore InternshipManagementSystem.sln
+
+      - name: Build
+        run: dotnet build InternshipManagementSystem.sln --no-restore -c Release
+
+      - name: Test
+        run: dotnet test InternshipManagementSystem.sln --no-build -c Release --nologo -v q
+
+  # ---------------------------------------------------------------------------
+  # frontend
+  # ---------------------------------------------------------------------------
+  frontend:
+    name: build and browser tests (Angular)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: angular
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: angular/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npx ng build --configuration production
+
+      # Only the browser Chromium build, and only its dependencies. The stubbed
+      # projects both run on Chromium — desktop and a phone viewport — so pulling
+      # Firefox and WebKit would double the install for nothing.
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # desktop and mobile only.
+      #
+      # The third project, `live`, drives the real API against a seeded database
+      # and writes rows. It is not skipped here for being slow; it cannot run at
+      # all without a host and a database that this job does not have, and naming
+      # it would turn every CI run red for a reason unrelated to the change.
+      #
+      # These two stub the ABP endpoints in the browser, so they need `ng serve`
+      # and nothing else. Playwright starts it itself — see the webServer block in
+      # playwright.config.ts.
+      - name: Browser tests (desktop, mobile)
+        run: npx playwright test --project=desktop --project=mobile
+        env:
+          CI: 'true'
+
+      - name: Upload Playwright report
+        # The report is only interesting when something failed, and that is
+        # exactly when the run does not reach this step by default.
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: angular/playwright-report/
+          retention-days: 7

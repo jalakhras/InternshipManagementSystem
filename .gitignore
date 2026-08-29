@@ -284,3 +284,11 @@ angular/.playwright/
 
 # Uploaded exam media. Runtime data, not source.
 src/InternshipManagementSystem.HttpApi.Host/App_Data/blobs/
+
+# The compose environment file. It holds the SA password, the exam-session signing
+# key and the encryption pass phrase; .env.example is the tracked template.
+.env
+!.env.example
+
+# A signing certificate is a secret whatever it is named.
+*.pfx

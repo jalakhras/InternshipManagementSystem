@@ -63,6 +63,7 @@ The Internship Management System is a smart backend platform designed to manage 
 
 - `README.md`: Overview of the project.
 - `DeveloperGuide.md`: Setup instructions, development flow.
+- `deployment.md`: Containers, environment variables, migrations, CI | النشر والحاويات ومتغيّرات البيئة
 - `requirements.md`: Functional and non-functional requirements.
 - `use-cases.md`: Business-driven usage scenarios.
 - `user-stories.docx`: Personas, Epics, and detailed user stories.

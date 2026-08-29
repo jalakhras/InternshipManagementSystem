@@ -1,0 +1,157 @@
+# The whole stack: database, migrations, API, SPA.
+#
+#   cp .env.example .env      # then fill in the three secrets it names
+#   docker compose up --build
+#
+#   SPA      http://localhost:8080
+#   API      http://localhost:8081
+#   Swagger  http://localhost:8081/swagger
+#
+# Everything below is plain HTTP on loopback, which is what makes it work with no
+# certificates: OpenIddict allows a loopback redirect URI over http and refuses a
+# remote one. Putting this behind a real hostname means terminating TLS in front of
+# it and setting ForwardedHeaders__Enabled — see docs/deployment.md.
+
+name: ims
+
+services:
+  # ---------------------------------------------------------------------------
+  # db
+  # ---------------------------------------------------------------------------
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?set MSSQL_SA_PASSWORD in .env — see .env.example}
+      MSSQL_PID: Developer
+    ports:
+      # Exposed so a developer can point SSMS or azdata at it. Nothing in the
+      # stack reaches the database this way; the other services use the network.
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      # sqlcmd rather than a port check: the port opens well before the engine
+      # will accept a query, and the migrator would then fail on a race.
+      test:
+        - CMD-SHELL
+        - /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  # ---------------------------------------------------------------------------
+  # migrator — runs once, creates the schema, seeds, exits
+  # ---------------------------------------------------------------------------
+  migrator:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+      target: migrator
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    environment:
+      ConnectionStrings__Default: >-
+        Server=db,1433;Database=InternshipManagementSystem;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Max Pool Size=300
+      # What the seeded OpenIddict client will accept as a redirect target. Get
+      # this wrong and login fails at the very last step with an unhelpful
+      # "invalid redirect_uri", after everything else has appeared to work.
+      OpenIddict__Applications__InternshipManagementSystem_App__RootUrl: ${SPA_PUBLIC_URL:-http://localhost:8080}
+      OpenIddict__Applications__InternshipManagementSystem_Swagger__RootUrl: ${API_PUBLIC_URL:-http://localhost:8081}
+      StringEncryption__DefaultPassPhrase: ${STRING_ENCRYPTION_PASSPHRASE:?set STRING_ENCRYPTION_PASSPHRASE in .env}
+
+  # ---------------------------------------------------------------------------
+  # api
+  # ---------------------------------------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+      target: final
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    ports:
+      - "8081:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+
+      # Max Pool Size=300 is not decoration. The default exhausted the pool at 150
+      # concurrent candidates during a load test; carry it on every override.
+      ConnectionStrings__Default: >-
+        Server=db,1433;Database=InternshipManagementSystem;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;Max Pool Size=300
+
+      # Public URLs, as a browser sees them — not the container names. These end up
+      # in the OpenID discovery document, in CORS, and in the exam links that get
+      # emailed to candidates, all of which are read outside this network.
+      App__SelfUrl: ${API_PUBLIC_URL:-http://localhost:8081}
+      App__ClientUrl: ${SPA_PUBLIC_URL:-http://localhost:8080}
+      App__CorsOrigins: ${SPA_PUBLIC_URL:-http://localhost:8080}
+      App__RedirectAllowedUrls: ${SPA_PUBLIC_URL:-http://localhost:8080}
+      AuthServer__Authority: ${API_PUBLIC_URL:-http://localhost:8081}
+      AuthServer__RequireHttpsMetadata: "false"
+
+      ExamSession__SigningKey: ${EXAM_SESSION_SIGNING_KEY:?set EXAM_SESSION_SIGNING_KEY in .env — 32 characters or more}
+      StringEncryption__DefaultPassPhrase: ${STRING_ENCRYPTION_PASSPHRASE:?set STRING_ENCRYPTION_PASSPHRASE in .env}
+
+      # Uploads and the data-protection key ring both go to volumes. In the
+      # container's own filesystem they would be discarded on the next `up --build`,
+      # taking every uploaded question image with them.
+      BlobStoring__FileSystem__BasePath: /app/App_Data/blobs
+      DataProtection__KeysPath: /app/keys
+
+      # No mail relay in this stack. Without this, sending an invitation spends a
+      # connect timeout failing to reach a host that is not there.
+      Mailing__UseNullSender: "true"
+
+      # Set both when you put a TLS terminator in front of this. Empty known
+      # networks means "trust the immediate caller", which is only safe because
+      # nothing but the proxy can reach the container.
+      # ForwardedHeaders__Enabled: "true"
+
+      # Supply a real certificate for anything longer-lived than a demo: without
+      # one, OpenIddict generates development keys per container, so every token
+      # issued before a restart is rejected after it.
+      # OpenIddict__Certificate__Path: /app/certs/openiddict.pfx
+      # OpenIddict__Certificate__PassPhrase: ${OPENIDDICT_CERT_PASSPHRASE}
+    volumes:
+      - api-blobs:/app/App_Data/blobs
+      - api-keys:/app/keys
+
+  # ---------------------------------------------------------------------------
+  # web — the SPA behind nginx
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: docker/angular/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # The browser talks to the API directly, so this is the address on the host,
+      # not the address on this network.
+      API_URL: ${API_PUBLIC_URL:-http://localhost:8081}
+      OAUTH_ISSUER: ${API_PUBLIC_URL:-http://localhost:8081}
+      OAUTH_CLIENT_ID: InternshipManagementSystem_App
+      OAUTH_SCOPE: offline_access InternshipManagementSystem
+      APP_NAME: Astrolabe
+
+      # False only because this stack runs over plain HTTP. In a real deployment
+      # this is true, and anything else is a finding.
+      OAUTH_REQUIRE_HTTPS: "false"
+
+      # SPA_BASE_URL is deliberately unset: the app reads its own origin from the
+      # page, which stays correct however the container is published.
+
+volumes:
+  mssql-data:
+  api-blobs:
+  api-keys:

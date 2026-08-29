@@ -1,0 +1,36 @@
+# Both images build from the repository root, so everything the build does not
+# need is a file the daemon copies for nothing. Without this the context is
+# hundreds of megabytes of node_modules and build output, and every `docker build`
+# pays for it before running a single instruction.
+
+.git
+.github
+.vs
+.angular
+
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/TestResults
+**/test-results
+**/playwright-report
+
+# Logs written by a local run of the host or the migrator.
+Logs
+**/Logs
+
+# Never into an image: real secrets, and the local environment file.
+**/appsettings.secrets.json
+.env
+
+# Uploaded media from a local run. The container mounts a volume for this.
+**/App_Data
+
+# Documentation, archives and local scratch.
+docs
+screens
+angular/screens
+*.zip
+*.docx
+*.pdf
