@@ -189,4 +189,72 @@ test.describe('Question builder', () => {
 
     await expect(page.getByText('Selecting every option would score full marks')).toBeVisible();
   });
+
+  test('a question can carry a chart, a recording or a clip', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+
+    await page.route('**/api/assessment/media', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          blobName: 'tenant/abc.png',
+          originalFileName: 'eurusd-4h.png',
+          mediaType: 'image',
+          sizeInBytes: 1234,
+        }),
+      }),
+    );
+
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    // One control, and no URL to paste. The exam that prompted this was written
+    // by a trading coach, not a developer.
+    await expect(page.getByText('Choose a file, or drop one here')).toBeVisible();
+
+    await page.setInputFiles('input[type="file"]', {
+      name: 'eurusd-4h.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+    });
+
+    // The server decides what kind of thing it is, and the form shows it rather
+    // than naming a file the author has to take on trust.
+    await expect(page.locator('.preview__image')).toBeVisible();
+    await expect(page.getByText('eurusd-4h.png')).toBeVisible();
+  });
+
+  test('an attached file can be taken off again', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+
+    await page.route('**/api/assessment/media', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ blobName: 'tenant/abc.png', originalFileName: 'chart.png', mediaType: 'image', sizeInBytes: 1 }),
+      }),
+    );
+
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    await page.setInputFiles('input[type="file"]', {
+      name: 'chart.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'),
+    });
+
+    await expect(page.locator('.preview__image')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Remove', exact: true }).click();
+
+    // Back to the empty control, not to a broken image.
+    await expect(page.getByText('Choose a file, or drop one here')).toBeVisible();
+  });
 });

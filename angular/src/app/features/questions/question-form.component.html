@@ -54,6 +54,18 @@
           [value]="form().text"
           (valueChange)="patch('text', $event)" />
       </div>
+
+      <!-- A chart, a recording, a passage read aloud. On a trading or a
+           listening question the media is not decoration around the prompt, it
+           is the thing being asked about. -->
+      <div class="field">
+        <label class="form-label">{{ t('::Question:Media') }}</label>
+        <astro-media-field
+          [blobName]="form().mediaBlobName"
+          [mediaType]="form().mediaType"
+          (changed)="setMedia($event)" />
+        <p class="hint">{{ t('::Question:Media:Hint') }}</p>
+      </div>
     </section>
 
     <!-- ── The type-specific slot ──────────────────────────────────────── -->

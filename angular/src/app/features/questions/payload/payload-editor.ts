@@ -30,10 +30,15 @@ export type PayloadEditorLoader = () => Promise<Type<PayloadEditor>>;
 /**
  * The registry.
  *
- * A type absent from here still saves — the frame falls back to a raw JSON field
- * — so an editor is a convenience, not a gate. That matters because the server
- * deliberately accepts types this build does not know: it reports them as
- * human-graded rather than rejecting them.
+ * Every type this build ships has one. The raw JSON fallback in the frame stays,
+ * but only for a type from a LATER build than this client: the server
+ * deliberately accepts types it does not know, and the form must not be stricter
+ * than the platform.
+ *
+ * It is no longer something an author of a shipped type can meet. The rule is the
+ * owner's, and it is absolute: no input anywhere may require programming skill,
+ * to write a question or to answer one. A JSON textarea in front of a language
+ * teacher fails that rule however well it is documented.
  */
 export const PAYLOAD_EDITORS: Record<string, PayloadEditorLoader> = {
   'single-choice': () => import('./choice-editor.component').then(m => m.ChoiceEditorComponent),
@@ -43,4 +48,10 @@ export const PAYLOAD_EDITORS: Record<string, PayloadEditorLoader> = {
   text: () => import('./rubric-editor.component').then(m => m.RubricEditorComponent),
   'file-upload': () => import('./rubric-editor.component').then(m => m.RubricEditorComponent),
   'audio-response': () => import('./rubric-editor.component').then(m => m.RubricEditorComponent),
+  matching: () => import('./matching-editor.component').then(m => m.MatchingEditorComponent),
+  ordering: () => import('./ordering-editor.component').then(m => m.OrderingEditorComponent),
+  'fill-in-the-blank': () => import('./blanks-editor.component').then(m => m.BlanksEditorComponent),
+  scale: () => import('./scale-editor.component').then(m => m.ScaleEditorComponent),
+  code: () => import('./code-editor.component').then(m => m.CodeEditorComponent),
+  hotspot: () => import('./hotspot-editor.component').then(m => m.HotspotEditorComponent),
 };

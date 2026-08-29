@@ -93,3 +93,86 @@ export function writePayload(value: unknown): string {
 export function newId(prefix: string): string {
   return `${prefix}${Math.random().toString(36).slice(2, 8)}`;
 }
+
+// --- Matching ---------------------------------------------------------------
+
+export interface MatchingPair {
+  leftId: string;
+  leftText: string;
+  rightId: string;
+  rightText: string;
+}
+
+export interface MatchingPayload {
+  pairs: MatchingPair[];
+  allowPartialCredit: boolean;
+}
+
+// --- Ordering ---------------------------------------------------------------
+
+export interface OrderingItem {
+  id: string;
+  text: string;
+
+  /** One-based, and the list's own position is the source of truth in the editor. */
+  correctPosition: number;
+}
+
+export interface OrderingPayload {
+  items: OrderingItem[];
+  allowPartialCredit: boolean;
+}
+
+// --- Fill in the blanks -----------------------------------------------------
+
+export interface BlankSpec {
+  id: string;
+
+  /**
+   * Every spelling that counts. A blank with one accepted answer marks "colour"
+   * wrong for a student who wrote "color", which is a question about spelling
+   * conventions rather than about whatever it meant to ask.
+   */
+  acceptedAnswers: string[];
+}
+
+export interface FillInTheBlankPayload {
+  blanks: BlankSpec[];
+  caseSensitive: boolean;
+  allowPartialCredit: boolean;
+}
+
+// --- Rating scale -----------------------------------------------------------
+
+export interface ScalePayload {
+  min: number;
+  max: number;
+  minLabel?: string;
+  maxLabel?: string;
+}
+
+// --- Code -------------------------------------------------------------------
+
+export interface CodePayload {
+  language?: string;
+  starterTemplate?: string;
+  expectedOutput?: string;
+}
+
+// --- Click the image --------------------------------------------------------
+
+export interface HotspotRegion {
+  id: string;
+
+  /** Fractions of the image, so the target does not move between a phone and a desk. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  isCorrect: boolean;
+}
+
+export interface HotspotPayload {
+  imageBlobName: string;
+  regions: HotspotRegion[];
+}

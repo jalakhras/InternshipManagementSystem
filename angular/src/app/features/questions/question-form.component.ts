@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RichTextComponent } from '../../shared/ui/rich-text.component';
+import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 
 import { QuestionService } from '../../core/api/question.service';
 import {
@@ -36,7 +37,7 @@ import { PAYLOAD_EDITORS } from './payload/payload-editor';
 @Component({
   selector: 'astro-question-form',
   standalone: true,
-  imports: [FormsModule, RichTextComponent],
+  imports: [FormsModule, RichTextComponent, MediaFieldComponent],
   templateUrl: './question-form.component.html',
   styleUrl: './question-form.component.scss',
 })
@@ -202,6 +203,11 @@ export class QuestionFormComponent {
 
   patch<K extends keyof CreateUpdateQuestionDto>(key: K, value: CreateUpdateQuestionDto[K]): void {
     this.form.update(f => ({ ...f, [key]: value }));
+  }
+
+  setMedia(media: { blobName?: string; mediaType?: string }): void {
+    this.patch('mediaBlobName', media.blobName);
+    this.patch('mediaType', media.mediaType);
   }
 
   save(): void {

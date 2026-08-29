@@ -103,6 +103,7 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
             BlobName = blobName,
             // Kept for display only. It is never used to build a path.
             OriginalFileName = Path.GetFileName(file.FileName),
+            MediaType = ClassifyByExtension(extension),
             SizeInBytes = file.Length,
             Url = $"/api/assessment/media/{blobName}"
         };
@@ -133,4 +134,23 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
 
         await _blobs.DeleteAsync(blobName);
     }
+
+    /// <summary>
+    /// What kind of thing this is, from its extension.
+    /// <para>
+    /// Decided here rather than trusted from the request: the browser's declared
+    /// content type is caller input, and a question that renders a "picture" the
+    /// server never verified is a question rendering whatever was uploaded. The
+    /// extension itself is already checked against the allowlist above, so by the
+    /// time this runs the set is closed.
+    /// </para>
+    /// </summary>
+    private static string ClassifyByExtension(string extension) =>
+        extension.ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" or ".png" or ".webp" or ".gif" or ".svg" => "image",
+            ".mp3" or ".wav" or ".ogg" or ".m4a" or ".aac" => "audio",
+            ".mp4" or ".webm" or ".mov" or ".m4v" => "video",
+            _ => "document",
+        };
 }
