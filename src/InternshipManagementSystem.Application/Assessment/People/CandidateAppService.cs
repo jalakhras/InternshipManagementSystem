@@ -1,0 +1,534 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using InternshipManagementSystem.Assessment.Catalog;
+using InternshipManagementSystem.Assessment.Delivery;
+using InternshipManagementSystem.Assessment.People.Dtos;
+using InternshipManagementSystem.Permissions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Volo.Abp;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Repositories;
+
+namespace InternshipManagementSystem.Assessment.People;
+
+/// <summary>
+/// The people who sit exams, and the cohorts they belong to.
+/// </summary>
+[Authorize(InternshipManagementSystemPermissions.Candidates.Default)]
+public class CandidateAppService : ApplicationService, ICandidateAppService
+{
+    private readonly IRepository<Candidate, Guid> _candidates;
+    private readonly IRepository<CandidateGroup, Guid> _groups;
+    private readonly IRepository<CandidateGroupMember, Guid> _members;
+    private readonly IRepository<Attempt, Guid> _attempts;
+    private readonly IRepository<Category, Guid> _categories;
+
+    public CandidateAppService(
+        IRepository<Candidate, Guid> candidates,
+        IRepository<CandidateGroup, Guid> groups,
+        IRepository<CandidateGroupMember, Guid> members,
+        IRepository<Attempt, Guid> attempts,
+        IRepository<Category, Guid> categories)
+    {
+        _candidates = candidates;
+        _groups = groups;
+        _members = members;
+        _attempts = attempts;
+        _categories = categories;
+    }
+
+    // ------------------------------------------------------------- candidates
+
+    [Authorize(InternshipManagementSystemPermissions.Candidates.View)]
+    public async Task<PagedResultDto<CandidateDto>> GetListAsync(CandidateListRequestDto input)
+    {
+        var query = await _candidates.GetQueryableAsync();
+
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            // Name, address and reference together: a coordinator looking somebody
+            // up has whichever of the three they were given.
+            var term = input.Filter.Trim();
+
+            query = query.Where(c =>
+                c.FullName.Contains(term) ||
+                c.Email.Contains(term) ||
+                (c.Reference != null && c.Reference.Contains(term)));
+        }
+
+        if (input.CategoryId is { } categoryId)
+        {
+            query = query.Where(c => c.CategoryId == categoryId);
+        }
+
+        if (input.Status is { } status)
+        {
+            query = query.Where(c => c.Status == status);
+        }
+
+        if (input.GroupId is { } groupId)
+        {
+            var memberIds = (await _members.GetQueryableAsync())
+                .Where(m => m.CandidateGroupId == groupId)
+                .Select(m => m.CandidateId);
+
+            query = query.Where(c => memberIds.Contains(c.Id));
+        }
+
+        var totalCount = await query.CountAsync();
+
+        var page = await query
+            .OrderBy(c => c.FullName)
+            .Skip(input.SkipCount)
+            .Take(input.MaxResultCount)
+            .ToListAsync();
+
+        return new PagedResultDto<CandidateDto>(totalCount, await ProjectAsync(page));
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Candidates.View)]
+    public async Task<CandidateDto> GetAsync(Guid id)
+    {
+        var candidate = await _candidates.GetAsync(id);
+
+        return (await ProjectAsync([candidate])).Single();
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Candidates.Create)]
+    public async Task<CandidateDto> CreateAsync(CreateUpdateCandidateDto input)
+    {
+        await RequireFreeEmailAsync(input.Email, null);
+
+        var candidate = new Candidate(GuidGenerator.Create(), CurrentTenant.Id, input.FullName, Normalise(input.Email));
+
+        Apply(candidate, input);
+
+        await _candidates.InsertAsync(candidate, autoSave: true);
+
+        return await GetAsync(candidate.Id);
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Candidates.Edit)]
+    public async Task<CandidateDto> UpdateAsync(Guid id, CreateUpdateCandidateDto input)
+    {
+        var candidate = await _candidates.GetAsync(id);
+
+        await RequireFreeEmailAsync(input.Email, id);
+
+        candidate.FullName = input.FullName;
+        candidate.Email = Normalise(input.Email);
+        Apply(candidate, input);
+
+        await _candidates.UpdateAsync(candidate, autoSave: true);
+
+        return await GetAsync(id);
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Candidates.Delete)]
+    public async Task DeleteAsync(Guid id)
+    {
+        var sat = await (await _attempts.GetQueryableAsync()).AnyAsync(a => a.CandidateId == id);
+
+        if (sat)
+        {
+            // Their results reference them. Deleting the person would leave a score
+            // belonging to nobody, which is the one thing a result must never be.
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.CandidateHasAttempts);
+        }
+
+        await _candidates.DeleteAsync(id, autoSave: true);
+    }
+
+    // ----------------------------------------------------------------- import
+
+    [Authorize(InternshipManagementSystemPermissions.Candidates.Create)]
+    public async Task<ImportCandidatesResultDto> ImportAsync(ImportCandidatesDto input)
+    {
+        var result = new ImportCandidatesResultDto();
+
+        var existing = await (await _candidates.GetQueryableAsync())
+            .Select(c => new { c.Id, c.Email })
+            .ToDictionaryAsync(c => c.Email, c => c.Id, StringComparer.OrdinalIgnoreCase);
+
+        var lines = input.Text.Replace("\r\n", "\n").Split('\n');
+        var created = new List<Candidate>();
+        var forGroup = new List<Guid>();
+
+        // Emails seen in this paste, so a list that repeats somebody does not
+        // create them twice within one import.
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 0; index < lines.Length; index++)
+        {
+            var line = lines[index].Trim();
+
+            if (line.Length == 0)
+            {
+                continue;
+            }
+
+            var parsed = ParseLine(line);
+
+            if (parsed.Problem is { } problem)
+            {
+                result.Problems.Add(new ImportProblemDto
+                {
+                    Line = index + 1,
+                    Content = line,
+                    Reason = problem,
+                });
+
+                continue;
+            }
+
+            var (fullName, email, phone, reference) = parsed.Person!.Value;
+
+            if (existing.TryGetValue(email, out var alreadyId))
+            {
+                // Matched and left alone. Importing the same list twice must not
+                // double the roll, and it must not overwrite a name somebody has
+                // since corrected by hand.
+                result.AlreadyPresent++;
+                forGroup.Add(alreadyId);
+
+                continue;
+            }
+
+            if (!seen.Add(email))
+            {
+                result.Problems.Add(new ImportProblemDto
+                {
+                    Line = index + 1,
+                    Content = line,
+                    Reason = "IMS:Import:RepeatedInThisList",
+                });
+
+                continue;
+            }
+
+            var candidate = new Candidate(GuidGenerator.Create(), CurrentTenant.Id, fullName, email)
+            {
+                PhoneNumber = phone,
+                Reference = reference,
+                CategoryId = input.CategoryId,
+            };
+
+            created.Add(candidate);
+            forGroup.Add(candidate.Id);
+            result.Created++;
+        }
+
+        if (input.DryRun)
+        {
+            // Counted and reported, nothing written. Somebody pasting forty rows
+            // sees the three that are wrong before committing.
+            result.AddedToGroup = input.GroupId is null ? 0 : forGroup.Count;
+
+            return result;
+        }
+
+        if (created.Count > 0)
+        {
+            await _candidates.InsertManyAsync(created, autoSave: true);
+        }
+
+        if (input.GroupId is { } groupId && forGroup.Count > 0)
+        {
+            result.AddedToGroup = await AddToGroupAsync(groupId, forGroup);
+        }
+
+        return result;
+    }
+
+    // ---------------------------------------------------------------- cohorts
+
+    [Authorize(InternshipManagementSystemPermissions.Groups.View)]
+    public async Task<List<CandidateGroupDto>> GetGroupsAsync()
+    {
+        var groups = await (await _groups.GetQueryableAsync()).OrderBy(g => g.Name).ToListAsync();
+
+        if (groups.Count == 0)
+        {
+            return [];
+        }
+
+        var counts = await (await _members.GetQueryableAsync())
+            .GroupBy(m => m.CandidateGroupId)
+            .Select(g => new { GroupId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.GroupId, x => x.Count);
+
+        var categories = await LoadCategoriesAsync(groups.Select(g => g.CategoryId));
+
+        return groups
+            .Select(group => new CandidateGroupDto
+            {
+                Id = group.Id,
+                Name = group.Name,
+                Description = group.Description,
+                CategoryId = group.CategoryId,
+                CategoryName = Name(categories, group.CategoryId),
+                MemberCount = counts.GetValueOrDefault(group.Id),
+                CreationTime = group.CreationTime,
+            })
+            .ToList();
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Groups.Create)]
+    public async Task<CandidateGroupDto> CreateGroupAsync(CreateUpdateCandidateGroupDto input)
+    {
+        var group = new CandidateGroup(GuidGenerator.Create(), CurrentTenant.Id, input.Name)
+        {
+            Description = input.Description,
+            CategoryId = input.CategoryId,
+        };
+
+        await _groups.InsertAsync(group, autoSave: true);
+
+        return (await GetGroupsAsync()).First(g => g.Id == group.Id);
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Groups.Edit)]
+    public async Task<CandidateGroupDto> UpdateGroupAsync(Guid id, CreateUpdateCandidateGroupDto input)
+    {
+        var group = await _groups.GetAsync(id);
+
+        group.Name = input.Name;
+        group.Description = input.Description;
+        group.CategoryId = input.CategoryId;
+
+        await _groups.UpdateAsync(group, autoSave: true);
+
+        return (await GetGroupsAsync()).First(g => g.Id == id);
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Groups.Delete)]
+    public async Task DeleteGroupAsync(Guid id)
+    {
+        var members = await (await _members.GetQueryableAsync())
+            .Where(m => m.CandidateGroupId == id)
+            .ToListAsync();
+
+        // The cohort goes; the people in it do not. Deleting a heading must not
+        // delete a roll of students.
+        if (members.Count > 0)
+        {
+            await _members.DeleteManyAsync(members, autoSave: false);
+        }
+
+        await _groups.DeleteAsync(id, autoSave: true);
+    }
+
+    [Authorize(InternshipManagementSystemPermissions.Groups.Edit)]
+    public async Task<CandidateGroupDto> SetGroupMembersAsync(Guid id, SetGroupMembersDto input)
+    {
+        await _groups.GetAsync(id);
+
+        var existing = await (await _members.GetQueryableAsync())
+            .Where(m => m.CandidateGroupId == id)
+            .ToListAsync();
+
+        var wanted = input.CandidateIds.Distinct().ToHashSet();
+
+        var removed = existing.Where(m => !wanted.Contains(m.CandidateId)).ToList();
+
+        if (removed.Count > 0)
+        {
+            await _members.DeleteManyAsync(removed, autoSave: false);
+        }
+
+        var present = existing.Select(m => m.CandidateId).ToHashSet();
+
+        await AddToGroupAsync(id, wanted.Where(candidateId => !present.Contains(candidateId)).ToList());
+
+        return (await GetGroupsAsync()).First(g => g.Id == id);
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private async Task<int> AddToGroupAsync(Guid groupId, IReadOnlyCollection<Guid> candidateIds)
+    {
+        if (candidateIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var already = await (await _members.GetQueryableAsync())
+            .Where(m => m.CandidateGroupId == groupId)
+            .Select(m => m.CandidateId)
+            .ToListAsync();
+
+        var toAdd = candidateIds
+            .Distinct()
+            .Where(candidateId => !already.Contains(candidateId))
+            .Select(candidateId => new CandidateGroupMember(
+                GuidGenerator.Create(), CurrentTenant.Id, groupId, candidateId))
+            .ToList();
+
+        if (toAdd.Count > 0)
+        {
+            await _members.InsertManyAsync(toAdd, autoSave: true);
+        }
+
+        return toAdd.Count;
+    }
+
+    private async Task RequireFreeEmailAsync(string email, Guid? excluding)
+    {
+        var normalised = Normalise(email);
+
+        var taken = await (await _candidates.GetQueryableAsync())
+            .AnyAsync(c => c.Email == normalised && (excluding == null || c.Id != excluding));
+
+        if (taken)
+        {
+            // The address is how a link reaches them and how an import recognises
+            // somebody already on the roll. Two people sharing one makes both
+            // ambiguous.
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.CandidateEmailTaken);
+        }
+    }
+
+    private async Task<List<CandidateDto>> ProjectAsync(IReadOnlyCollection<Candidate> candidates)
+    {
+        if (candidates.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = candidates.Select(c => c.Id).ToList();
+
+        var memberships = await (await _members.GetQueryableAsync())
+            .Where(m => ids.Contains(m.CandidateId))
+            .ToListAsync();
+
+        var groupIds = memberships.Select(m => m.CandidateGroupId).Distinct().ToList();
+
+        var groupNames = groupIds.Count == 0
+            ? []
+            : await (await _groups.GetQueryableAsync())
+                .Where(g => groupIds.Contains(g.Id))
+                .ToDictionaryAsync(g => g.Id, g => g.Name);
+
+        var attemptCounts = await (await _attempts.GetQueryableAsync())
+            .Where(a => ids.Contains(a.CandidateId))
+            .GroupBy(a => a.CandidateId)
+            .Select(g => new { CandidateId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.CandidateId, x => x.Count);
+
+        var categories = await LoadCategoriesAsync(candidates.Select(c => c.CategoryId));
+
+        return candidates
+            .Select(candidate => new CandidateDto
+            {
+                Id = candidate.Id,
+                FullName = candidate.FullName,
+                Email = candidate.Email,
+                PhoneNumber = candidate.PhoneNumber,
+                CategoryId = candidate.CategoryId,
+                CategoryName = Name(categories, candidate.CategoryId),
+                Reference = candidate.Reference,
+                Status = candidate.Status,
+                GroupNames = memberships
+                    .Where(m => m.CandidateId == candidate.Id)
+                    .Select(m => groupNames.GetValueOrDefault(m.CandidateGroupId))
+                    .Where(name => name is not null)
+                    .Select(name => name!)
+                    .ToList(),
+                AttemptCount = attemptCounts.GetValueOrDefault(candidate.Id),
+                CreationTime = candidate.CreationTime,
+            })
+            .ToList();
+    }
+
+    private async Task<Dictionary<Guid, string>> LoadCategoriesAsync(IEnumerable<Guid?> ids)
+    {
+        var wanted = ids.Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
+
+        if (wanted.Count == 0)
+        {
+            return [];
+        }
+
+        return await (await _categories.GetQueryableAsync())
+            .Where(c => wanted.Contains(c.Id))
+            .ToDictionaryAsync(c => c.Id, c => c.Name);
+    }
+
+    private static string? Name(IReadOnlyDictionary<Guid, string> lookup, Guid? id) =>
+        id is { } value && lookup.TryGetValue(value, out var name) ? name : null;
+
+    private static void Apply(Candidate candidate, CreateUpdateCandidateDto input)
+    {
+        candidate.PhoneNumber = input.PhoneNumber;
+        candidate.CategoryId = input.CategoryId;
+        candidate.Reference = input.Reference;
+    }
+
+    private static string Normalise(string email) => email.Trim().ToLowerInvariant();
+
+    /// <summary>
+    /// Reads one pasted line.
+    /// <para>
+    /// Comma or tab, because a paste straight out of a spreadsheet arrives with
+    /// tabs and a paste out of a document arrives with commas, and asking somebody
+    /// which one they have is asking them to know something they should not need to.
+    /// </para>
+    /// </summary>
+    private static ParsedLine ParseLine(string line)
+    {
+        var parts = line
+            .Split(['	', ','], StringSplitOptions.TrimEntries)
+            .Where(part => part.Length > 0)
+            .ToList();
+
+        if (parts.Count < 2)
+        {
+            return new ParsedLine { Problem = "IMS:Import:NeedsNameAndEmail" };
+        }
+
+        // The address is found rather than assumed to be second: some rolls are
+        // written email-first, and refusing those would be refusing a valid list
+        // over a column order.
+        var emailIndex = parts.FindIndex(LooksLikeEmail);
+
+        if (emailIndex < 0)
+        {
+            // A complete-looking row whose address is not one. Told apart from a
+            // short row on purpose: "there is no address on this line" and "this
+            // line is missing a column" send somebody to different places.
+            return new ParsedLine { Problem = "IMS:Import:NotAnEmail" };
+        }
+
+        var email = parts[emailIndex].ToLowerInvariant();
+        var rest = parts.Where((_, i) => i != emailIndex).ToList();
+
+        return new ParsedLine
+        {
+            Person = (rest[0], email, rest.Count > 1 ? rest[1] : null, rest.Count > 2 ? rest[2] : null),
+        };
+    }
+
+    /// <summary>One pasted line, read: either a person or the reason it is not.</summary>
+    private readonly struct ParsedLine
+    {
+        public string? Problem { get; init; }
+
+        public (string FullName, string Email, string? Phone, string? Reference)? Person { get; init; }
+    }
+
+    /// <summary>
+    /// Deliberately loose. Rejecting a real address because it does not match a
+    /// clever pattern is worse than accepting one that later bounces, and the
+    /// bounce is visible where this is not.
+    /// </summary>
+    private static bool LooksLikeEmail(string value)
+    {
+        var at = value.IndexOf('@');
+
+        return at > 0 && at < value.Length - 1 && value.IndexOf('.', at) > at + 1;
+    }
+}

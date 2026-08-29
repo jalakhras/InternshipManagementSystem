@@ -38,6 +38,18 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string ExamFormAlreadyUsed = "IMS:ExamForm:AlreadyUsed";
 
     /// <summary>
+    /// Their results reference them. Deleting the person would leave a score
+    /// belonging to nobody.
+    /// </summary>
+    public const string CandidateHasAttempts = "IMS:Candidate:HasAttempts";
+
+    /// <summary>
+    /// The address is how a link reaches somebody and how an import recognises
+    /// them. Two people sharing one makes both ambiguous.
+    /// </summary>
+    public const string CandidateEmailTaken = "IMS:Candidate:EmailTaken";
+
+    /// <summary>
     /// A question was submitted with neither an owning exam nor a domain to file it
     /// under, which would leave it invisible to both.
     /// </summary>
