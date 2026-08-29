@@ -50,6 +50,24 @@ public abstract class ChoiceGraderBase : IQuestionGrader
 
         return new HashSet<string>(new[] { trimmed }, StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Turns a total weight into marks, floored at zero and capped at the question's.
+    /// <para>
+    /// Floored because a scoring system that can leave a taker worse off than not
+    /// answering teaches candidates not to answer, which measures their nerve
+    /// rather than their knowledge. A harmful option costs a taker the marks they
+    /// could have had; it does not take marks they earned elsewhere.
+    /// </para>
+    /// </summary>
+    protected static GradeResult Award(decimal totalWeight, decimal maxScore)
+    {
+        var awarded = Math.Round(maxScore * totalWeight, 2, MidpointRounding.AwayFromZero);
+
+        awarded = Math.Clamp(awarded, 0m, maxScore);
+
+        return GradeResult.Partial(awarded, maxScore);
+    }
 }
 
 /// <summary>Exactly one option is correct.</summary>
@@ -69,6 +87,16 @@ public class SingleChoiceGrader : ChoiceGraderBase
         if (selected.Count != 1)
         {
             return GradeResult.Wrong();
+        }
+
+        if (spec.Weighted == true)
+        {
+            // The chosen option is worth what the author priced it at. An option
+            // the payload does not know is worth nothing rather than a failure:
+            // a stale id in a stored answer must not make the question unscoreable.
+            var chosen = spec.Options.FirstOrDefault(o => selected.Contains(o.Id));
+
+            return Award(chosen?.Weight ?? 0m, maxScore);
         }
 
         var correctId = spec.Options.FirstOrDefault(o => o.IsCorrect)?.Id;
@@ -112,6 +140,21 @@ public class MultiSelectGrader : ChoiceGraderBase
         if (selected.Count == 0)
         {
             return GradeResult.Wrong();
+        }
+
+        if (spec.Weighted == true)
+        {
+            // Weights add up. The all-or-nothing rule below does not apply here
+            // and must not: a harmful option is already priced below zero, which
+            // is how weighted mode closes the same "tick everything" hole that
+            // rule was written to close. The validator refuses a weighted
+            // multi-select where nothing is priced below zero, so the two
+            // defences never both go missing.
+            var total = spec.Options
+                .Where(o => selected.Contains(o.Id))
+                .Sum(o => o.Weight ?? 0m);
+
+            return Award(total, maxScore);
         }
 
         var correctIds = spec.Options.Where(o => o.IsCorrect).Select(o => o.Id)

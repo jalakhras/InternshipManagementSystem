@@ -1,3 +1,4 @@
+using System.Linq;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.Grading;
 using Shouldly;
@@ -182,5 +183,84 @@ public class QuestionPayloadValidatorTests
         });
 
         _validator.Validate(QuestionTypes.SingleChoice, payload).ShouldBeEmpty();
+    }
+
+    // ---------------------------------------------------- weighted scoring
+
+    private static string Weighted(params (string Id, bool Correct, decimal? Weight)[] options) =>
+        PayloadJson.Write(new ChoicePayload
+        {
+            Weighted = true,
+            Options = options
+                .Select(o => new OptionPayload { Id = o.Id, Text = o.Id, IsCorrect = o.Correct, Weight = o.Weight })
+                .ToList(),
+        });
+
+    [Fact]
+    public void A_weighted_option_without_a_weight_is_refused()
+    {
+        // Treating the gap as zero would turn an unfinished edit into a quietly
+        // harsher question, with nothing on the payload to show it happened.
+        _validator.Blocking(QuestionTypes.SingleChoice, Weighted(("a", true, 1m), ("b", false, null)))
+            .ShouldContain("IMS:Question:WeightMissing");
+    }
+
+    [Theory]
+    [InlineData(1.5)]
+    [InlineData(-2)]
+    public void A_weight_outside_minus_one_to_one_is_refused(double weight)
+    {
+        _validator.Blocking(QuestionTypes.SingleChoice, Weighted(("a", true, 1m), ("b", false, (decimal)weight)))
+            .ShouldContain("IMS:Question:WeightOutOfRange");
+    }
+
+    [Fact]
+    public void The_correct_flag_and_a_weight_of_one_must_agree()
+    {
+        // One canonical best answer. Two sources of truth drift, and then the
+        // reviewer's key and the grader disagree about the same question.
+        _validator.Blocking(QuestionTypes.SingleChoice, Weighted(("a", true, 0.5m), ("b", false, 0m)))
+            .ShouldContain("IMS:Question:WeightConflictsWithCorrectFlag");
+
+        _validator.Blocking(QuestionTypes.SingleChoice, Weighted(("a", false, 1m), ("b", false, 0m)))
+            .ShouldContain("IMS:Question:WeightConflictsWithCorrectFlag");
+    }
+
+    [Fact]
+    public void A_weighted_multi_select_needs_something_priced_below_zero()
+    {
+        // Otherwise selecting every option scores at least as well as choosing
+        // carefully — the oldest exploit in multiple choice, arriving through the
+        // door that weighted mode opens by switching off the all-or-nothing rule.
+        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", true, 1m), ("b", false, 0.5m)))
+            .ShouldContain("IMS:Question:AllWeightsPositive");
+
+        _validator.Blocking(QuestionTypes.MultiSelect, Weighted(("a", true, 1m), ("b", false, -0.5m)))
+            .ShouldNotContain("IMS:Question:AllWeightsPositive");
+    }
+
+    [Fact]
+    public void A_single_choice_question_may_have_no_penalty_at_all()
+    {
+        // One pick means selecting everything is not available, so nothing needs
+        // pricing below zero to close it.
+        _validator.Blocking(QuestionTypes.SingleChoice, Weighted(("a", true, 1m), ("b", false, 0.4m)))
+            .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void None_of_the_weight_rules_touch_a_question_that_does_not_use_them()
+    {
+        var plain = PayloadJson.Write(new ChoicePayload
+        {
+            Options =
+            [
+                new OptionPayload { Id = "a", Text = "Right", IsCorrect = true },
+                new OptionPayload { Id = "b", Text = "Wrong", IsCorrect = false },
+            ],
+        });
+
+        _validator.Blocking(QuestionTypes.SingleChoice, plain).ShouldBeEmpty();
+        _validator.Blocking(QuestionTypes.MultiSelect, plain).ShouldBeEmpty();
     }
 }

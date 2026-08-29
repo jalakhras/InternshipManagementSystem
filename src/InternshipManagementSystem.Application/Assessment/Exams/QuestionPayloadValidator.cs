@@ -61,6 +61,8 @@ public class QuestionPayloadValidator : ITransientDependency
                     errors.Add("IMS:Question:DuplicateOptionId");
                 }
 
+                CheckWeights(spec, errors, requireAPenalty: false);
+
                 break;
             }
 
@@ -85,6 +87,10 @@ public class QuestionPayloadValidator : ITransientDependency
                     // measures nothing.
                     errors.Add("IMS:Question:AllOptionsCorrect");
                 }
+
+                // A weighted multi-select needs something priced below zero for the
+                // same reason: see CheckWeights.
+                CheckWeights(spec, errors, requireAPenalty: true);
 
                 break;
             }
@@ -257,4 +263,48 @@ public class QuestionPayloadValidator : ITransientDependency
             .Where(code => code is not "IMS:Question:CodeWithoutExpectedOutputIsManual"
                                and not "IMS:Question:UnknownTypeWillBeManual")
             .ToList();
+
+    /// <summary>
+    /// Rules that only apply once an author turns on weighted scoring.
+    /// <para>
+    /// Nothing here fires on a question that does not use it, so every question
+    /// written before weights existed validates exactly as it did.
+    /// </para>
+    /// </summary>
+    private static void CheckWeights(ChoicePayload spec, List<string> errors, bool requireAPenalty)
+    {
+        if (spec.Weighted != true)
+        {
+            return;
+        }
+
+        if (spec.Options.Any(o => o.Weight is null))
+        {
+            // Treating a missing weight as zero would turn an unfinished edit into
+            // a silently harsher question, and nothing on the saved payload would
+            // show that it had happened.
+            errors.Add("IMS:Question:WeightMissing");
+        }
+
+        if (spec.Options.Any(o => o.Weight is { } w && (w < -1m || w > 1m)))
+        {
+            errors.Add("IMS:Question:WeightOutOfRange");
+        }
+
+        // One canonical best answer. Without this the reviewer's key, the item
+        // statistics and the grader can each read a different option as correct.
+        if (spec.Options.Any(o => o.IsCorrect != (o.Weight == 1m)))
+        {
+            errors.Add("IMS:Question:WeightConflictsWithCorrectFlag");
+        }
+
+        if (requireAPenalty && spec.Options.All(o => (o.Weight ?? 0m) >= 0m))
+        {
+            // With nothing priced below zero, selecting every option scores at
+            // least as well as choosing carefully. That is the same hole the
+            // all-or-nothing rule closes for unweighted questions, arriving by a
+            // different door — and weighted mode switches that rule off.
+            errors.Add("IMS:Question:AllWeightsPositive");
+        }
+    }
 }

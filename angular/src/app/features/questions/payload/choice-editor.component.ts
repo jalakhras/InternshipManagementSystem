@@ -39,6 +39,23 @@ import { ChoiceOption, ChoicePayload, newId, readPayload, writePayload } from '.
             [placeholder]="t('::Question:OptionPlaceholder') + ' ' + (i + 1)"
             [attr.aria-label]="t('::Question:OptionPlaceholder') + ' ' + (i + 1)" />
 
+          @if (weighted()) {
+            <!-- The weight is what the option is worth, not a rank. Shown as a
+                 number rather than a slider because an author setting 0.6 means
+                 0.6, and a slider makes them aim at it. -->
+            <input
+              type="number"
+              class="form-control option__weight astro-numeric"
+              step="0.1"
+              min="-1"
+              max="1"
+              [ngModel]="option.weight ?? 0"
+              (ngModelChange)="setWeight(option.id, $event)"
+              [attr.aria-label]="t('::Question:Weight') + ' ' + (i + 1)" />
+
+            <span class="option__band">{{ t(bandKey(option)) }}</span>
+          }
+
           <button
             type="button"
             class="option__remove"
@@ -57,7 +74,17 @@ import { ChoiceOption, ChoicePayload, newId, readPayload, writePayload } from '.
         {{ t('::Question:AddOption') }}
       </button>
 
-      @if (!isSingleAnswer()) {
+      <!-- Offered on every choice type: a single-choice question with one best
+           answer and one defensible one is the case that prompted this. -->
+      <label class="partial">
+        <input type="checkbox" [checked]="weighted()" (change)="toggleWeighted()" />
+        <span>
+          <strong>{{ t('::Question:Weighted') }}</strong>
+          <small>{{ t('::Question:Weighted:Hint') }}</small>
+        </span>
+      </label>
+
+      @if (!isSingleAnswer() && !weighted()) {
         <label class="partial">
           <input
             type="checkbox"
@@ -90,6 +117,7 @@ export class ChoiceEditorComponent {
 
   readonly options = signal<ChoiceOption[]>([]);
   readonly allowPartialCredit = signal(false);
+  readonly weighted = signal(false);
 
   /** Single choice and true/false accept exactly one correct option. */
   readonly isSingleAnswer = computed(() => this.type() !== 'multi-select');
@@ -121,6 +149,26 @@ export class ChoiceEditorComponent {
       found.push('IMS:Question:DuplicateOptionId');
     }
 
+    if (this.weighted()) {
+      if (options.some(o => o.weight === undefined || o.weight === null)) {
+        found.push('IMS:Question:WeightMissing');
+      }
+
+      if (options.some(o => o.weight !== undefined && (o.weight < -1 || o.weight > 1))) {
+        found.push('IMS:Question:WeightOutOfRange');
+      }
+
+      if (options.some(o => o.isCorrect !== (o.weight === 1))) {
+        found.push('IMS:Question:WeightConflictsWithCorrectFlag');
+      }
+
+      // Weighted mode switches off the all-or-nothing rule, so without something
+      // priced below zero, selecting everything is never worse than choosing well.
+      if (!this.isSingleAnswer() && options.every(o => (o.weight ?? 0) >= 0)) {
+        found.push('IMS:Question:AllWeightsPositive');
+      }
+    }
+
     return found;
   });
 
@@ -146,6 +194,7 @@ export class ChoiceEditorComponent {
       );
 
       this.allowPartialCredit.set(parsed.allowPartialCredit ?? false);
+      this.weighted.set(parsed.weighted === true);
     });
   }
 
@@ -156,6 +205,54 @@ export class ChoiceEditorComponent {
 
   removeOption(id: string): void {
     this.options.update(list => list.filter(o => o.id !== id));
+    this.emit();
+  }
+
+  setWeight(id: string, value: number | string): void {
+    const weight = Number(value);
+
+    this.options.update(list =>
+      list.map(o =>
+        o.id === id
+          // The correct flag follows the weight rather than being set separately:
+          // the server refuses a question where the two disagree, and two controls
+          // for one fact is how they come to disagree.
+          ? { ...o, weight, isCorrect: weight === 1 }
+          : o,
+      ),
+    );
+
+    this.emit();
+  }
+
+  /** The band an option falls in, for the label beside its weight. */
+  bandKey(option: ChoiceOption): string {
+    const weight = option.weight ?? 0;
+
+    if (weight === 1) {
+      return '::Question:Weight:Best';
+    }
+
+    if (weight > 0) {
+      return '::Question:Weight:Acceptable';
+    }
+
+    return weight < 0 ? '::Question:Weight:Penalised' : '::Question:Weight:Neutral';
+  }
+
+  toggleWeighted(): void {
+    const on = !this.weighted();
+
+    this.weighted.set(on);
+
+    if (on) {
+      // Seeded from what the author has already said: the option they marked
+      // correct becomes the best answer, the rest start at nothing. Leaving the
+      // weights blank would show four validation warnings the moment the toggle
+      // is pressed.
+      this.options.update(list => list.map(o => ({ ...o, weight: o.isCorrect ? 1 : 0 })));
+    }
+
     this.emit();
   }
 
@@ -186,10 +283,17 @@ export class ChoiceEditorComponent {
   }
 
   private emit(): void {
+    const weighted = this.weighted();
+
     this.payloadChange.emit(
       writePayload({
-        options: this.options(),
+        // Weights are stripped when weighting is off, and the flag is omitted
+        // rather than written as false. A question that does not use this must
+        // serialise exactly as it did before the feature existed — otherwise
+        // every save rewrites every payload in the bank for no reason.
+        options: this.options().map(o => (weighted ? o : { ...o, weight: undefined })),
         allowPartialCredit: this.allowPartialCredit(),
+        ...(weighted ? { weighted: true } : {}),
       }),
     );
   }

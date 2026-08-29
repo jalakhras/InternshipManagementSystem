@@ -11,6 +11,13 @@ export interface ChoiceOption {
   text: string;
   isCorrect: boolean;
   blobName?: string;
+
+  /**
+   * Weighted questions only. The share of the marks this option is worth: 1 is
+   * the best answer, 0 is neutral, negative is actively harmful. Absent on every
+   * question that does not use weighting.
+   */
+  weight?: number;
 }
 
 export interface ChoicePayload {
@@ -21,6 +28,13 @@ export interface ChoicePayload {
    * still scores zero, or selecting everything would be optimal.
    */
   allowPartialCredit: boolean;
+
+  /**
+   * Scores by degree of correctness rather than right or wrong, so an answer can
+   * be wrong, acceptable, or the best one. When true, `allowPartialCredit` is
+   * ignored — weighted scoring is partial by construction.
+   */
+  weighted?: boolean;
 }
 
 export interface NumericPayload {

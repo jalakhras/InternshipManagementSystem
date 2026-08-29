@@ -131,4 +131,57 @@ test.describe('Question builder', () => {
 
     expect(overflows).toBe(false);
   });
+
+  test('scoring by degree of correctness is offered, and seeds itself sensibly', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    const marks = page.getByLabel('Mark as correct');
+    await marks.first().check();
+
+    await page.getByText('Score by degree of correctness').click();
+
+    // Seeded from what the author already said: the option marked correct becomes
+    // the best answer. Turning it on to four validation warnings would be worse
+    // than not offering it.
+    await expect(page.getByText('Best answer')).toBeVisible();
+    await expect(page.getByText('Not credited')).toBeVisible();
+  });
+
+  test('an option priced between zero and one reads as acceptable', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+    await page.getByLabel('Mark as correct').first().check();
+    await page.getByText('Score by degree of correctness').click();
+
+    await page.getByLabel('Weight 2').fill('0.6');
+
+    // The band names what the number means, so nobody has to hold the scale in
+    // their head while authoring.
+    await expect(page.getByText('Acceptable')).toBeVisible();
+  });
+
+  test('a weighted multi-select warns until something is priced below zero', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await gotoApp(page, '/exams/11111111-1111-1111-1111-111111111111/questions/new');
+
+    await page.getByRole('button', { name: /Multiple answers/ }).click();
+    await page.getByLabel('Mark as correct').first().check();
+    await page.getByText('Score by degree of correctness').click();
+
+    // Weighted mode switches off the all-or-nothing rule, so a negative weight is
+    // the only thing left standing between the bank and "tick every box".
+    await expect(page.getByText('No option is priced below zero')).toBeVisible();
+
+    await page.getByLabel('Weight 2').fill('-0.5');
+
+    await expect(page.getByText('No option is priced below zero')).toHaveCount(0);
+  });
 });

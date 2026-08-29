@@ -48,6 +48,14 @@ public sealed class OptionPayload
 
     /// <summary>Blob name when the option is an image rather than text.</summary>
     public string? BlobName { get; set; }
+
+    /// <summary>
+    /// Weighted mode only. The share of the question's marks this option is worth
+    /// if chosen: 1.0 is the best answer, 0 is neutral, negative is actively
+    /// harmful. Null on every question written before weighting existed, and on
+    /// every question that does not use it.
+    /// </summary>
+    public decimal? Weight { get; set; }
 }
 
 /// <summary>Payload for single-choice, multi-select and true/false.</summary>
@@ -61,6 +69,21 @@ public sealed class ChoicePayload
     /// scores zero, otherwise selecting everything would score full marks.
     /// </summary>
     public bool AllowPartialCredit { get; set; }
+
+    /// <summary>
+    /// Switches this question from right-or-wrong to per-option weighted scoring,
+    /// so an answer can be wrong, acceptable, or the best one.
+    /// <para>
+    /// Explicit rather than inferred from the presence of weights. Inferring it
+    /// would mean a stray value left behind during authoring silently changes how
+    /// a live question grades — and nothing about the saved question would say so.
+    /// </para>
+    /// <para>
+    /// When true, <see cref="AllowPartialCredit"/> is ignored: weighted scoring is
+    /// partial by construction, and the two models were never meant to combine.
+    /// </para>
+    /// </summary>
+    public bool? Weighted { get; set; }
 }
 
 /// <summary>Payload for a numeric answer accepted within a tolerance.</summary>

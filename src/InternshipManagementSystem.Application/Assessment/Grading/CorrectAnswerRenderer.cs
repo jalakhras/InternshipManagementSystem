@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
@@ -23,8 +25,19 @@ public static class CorrectAnswerRenderer
             case QuestionTypes.TrueFalse:
             {
                 var spec = PayloadJson.Read<ChoicePayload>(payload);
-                var correct = spec?.Options.Where(o => o.IsCorrect).Select(o => o.Text).ToList();
-                return correct is { Count: > 0 } ? string.Join(" • ", correct) : null;
+
+                if (spec is null)
+                {
+                    return null;
+                }
+
+                if (spec.Weighted == true)
+                {
+                    return RenderWeighted(spec);
+                }
+
+                var correct = spec.Options.Where(o => o.IsCorrect).Select(o => o.Text).ToList();
+                return correct.Count > 0 ? string.Join(" • ", correct) : null;
             }
 
             case QuestionTypes.Numeric:
@@ -84,6 +97,44 @@ public static class CorrectAnswerRenderer
                 // Human-graded and unscored types have no single key to show; the
                 // reviewer's comment is the feedback instead.
                 return null;
+        }
+    }
+
+    /// <summary>
+    /// Renders a weighted question as ranked bands rather than a list of correct
+    /// options.
+    /// <para>
+    /// A reviewer looking at a six-out-of-ten needs to see that the taker picked
+    /// something defensible rather than something wrong — otherwise the score is a
+    /// number with no account of itself, and the reviewer has to open the payload
+    /// to work out what happened.
+    /// </para>
+    /// <para>
+    /// Band labels are English here because this string is composed for a reviewer
+    /// screen that renders it verbatim. Localising it means returning the bands as
+    /// data instead of a sentence, which is a change to the review DTO rather than
+    /// to this renderer — recorded as a follow-up rather than half-done here.
+    /// </para>
+    /// </summary>
+    private static string? RenderWeighted(ChoicePayload spec)
+    {
+        var bands = new List<string>();
+
+        Add("Best answer", o => o.Weight == 1m);
+        Add("Acceptable", o => o.Weight is { } w && w > 0m && w < 1m);
+        Add("Not credited", o => (o.Weight ?? 0m) == 0m);
+        Add("Penalised", o => o.Weight is { } w && w < 0m);
+
+        return bands.Count > 0 ? string.Join(" • ", bands) : null;
+
+        void Add(string label, Func<OptionPayload, bool> matches)
+        {
+            var texts = spec.Options.Where(matches).Select(o => o.Text).ToList();
+
+            if (texts.Count > 0)
+            {
+                bands.Add($"{label}: {string.Join(", ", texts)}");
+            }
         }
     }
 }

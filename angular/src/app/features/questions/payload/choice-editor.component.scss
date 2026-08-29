@@ -110,3 +110,18 @@
   font-size: var(--astro-text-sm);
   max-inline-size: none;
 }
+
+// --- Weighted scoring -------------------------------------------------------
+.option__weight {
+  inline-size: 5rem;
+  flex: 0 0 auto;
+}
+
+// The band names what the number means, so an author setting 0.6 sees
+// "acceptable" rather than having to hold the scale in their head.
+.option__band {
+  flex: 0 0 auto;
+  min-inline-size: 6rem;
+  font-size: .8125rem;
+  color: var(--astro-ink-3);
+}
