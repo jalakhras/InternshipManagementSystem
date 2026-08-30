@@ -73,12 +73,40 @@
         <p class="arrival">{{ arrivalNotes(answer).join(' · ') }}</p>
       }
 
-      @if (answer.reviewerGuidance) {
-        <!-- Written for the reviewer and never shown to a candidate. -->
-        <p class="guidance">
-          <strong>{{ t('::Review:Guidance') }}</strong>
-          {{ answer.reviewerGuidance }}
-        </p>
+      <!-- The key, the guidance and the explanation: the three things written
+           for whoever marks this and never shown to the person who sat it.
+           The server has always sent all three — the DTO field even says "so the
+           reviewer is not marking blind" — and this screen rendered only the
+           middle one. So a marker judging a free-text answer had the answer and
+           nothing to measure it against, and was left estimating a mark that
+           decides whether somebody passed.
+
+           Beneath the candidate's answer rather than above it, and visibly
+           apart: read the key first and you mark what you expected to see
+           instead of what they wrote. -->
+      @if (answer.correctAnswer || answer.reviewerGuidance || answer.explanation) {
+        <div class="marker-notes">
+          @if (answer.correctAnswer) {
+            <p class="marker-notes__line">
+              <strong>{{ t('::Review:CorrectAnswer') }}</strong>
+              <span class="marker-notes__key">{{ answer.correctAnswer }}</span>
+            </p>
+          }
+
+          @if (answer.reviewerGuidance) {
+            <p class="marker-notes__line">
+              <strong>{{ t('::Review:Guidance') }}</strong>
+              {{ answer.reviewerGuidance }}
+            </p>
+          }
+
+          @if (answer.explanation) {
+            <p class="marker-notes__line">
+              <strong>{{ t('::Review:Explanation') }}</strong>
+              {{ answer.explanation }}
+            </p>
+          }
+        </div>
       }
 
       @if (answer.rubric.length > 0) {

@@ -500,13 +500,37 @@
   font-size: .8125rem;
 }
 
-.guidance {
+// Everything written for the marker and never shown to the candidate: the key,
+// the guidance, the explanation. One block, so it reads as one category of
+// thing — "what you are allowed to know that they were not" — rather than three
+// notes of unclear provenance scattered down the card.
+//
+// Semantic tokens, not the brand primitives this used to reach for: those are
+// fixed light values, so in dark mode the text went dark-on-dark and the one
+// place a marker looks for the model answer was the hardest thing to read.
+.marker-notes {
   margin: 0 0 var(--astro-space-3);
   padding: var(--astro-space-3);
-  border-inline-start: 3px solid var(--astro-brand-400);
-  background: var(--astro-brand-50);
-  color: var(--astro-brand-800);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--astro-radius-sm);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
   font-size: .9375rem;
+
+  &__line {
+    margin: 0;
+
+    + .marker-notes__line { margin-block-start: var(--astro-space-2); }
+
+    strong { color: var(--text-primary); margin-inline-end: var(--astro-space-1); }
+  }
+
+  // The model answer is the one a marker's eye should find first, and it is
+  // often a short string that needs to be read exactly.
+  &__key {
+    font-weight: var(--astro-weight-medium);
+    color: var(--text-primary);
+  }
 }
 
 .rubric { display: grid; gap: var(--astro-space-2); }

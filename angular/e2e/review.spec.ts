@@ -165,6 +165,42 @@ test.describe('Review', () => {
     await expect(page.getByText('Left blank')).toBeVisible();
   });
 
+  test('the marker is given the model answer, not left to estimate', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubReview(page, [
+      answer({
+        // Deliberately not a substring of the candidate's own words, so the
+        // assertion proves the key is on screen rather than matching their
+        // answer by accident.
+        correctAnswer: 'Falling participation into resistance',
+        reviewerGuidance: 'Full marks only if they mention volume.',
+        explanation: 'Reversals on falling volume are the standard case.',
+      }),
+    ]);
+
+    await gotoApp(page, `/review/${ATTEMPT}`);
+
+    // The server has always sent all three; the screen rendered only the
+    // guidance. So somebody marking a free-text answer had the answer and
+    // nothing to measure it against, and was estimating a mark that decides
+    // whether a candidate passed.
+    await expect(page.getByText('Falling participation into resistance')).toBeVisible();
+    await expect(page.getByText('Full marks only if they mention volume.')).toBeVisible();
+    await expect(page.getByText('Reversals on falling volume are the standard case.')).toBeVisible();
+  });
+
+  test('a question with no key shows the marker no empty headings', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubReview(page, [answer()]);
+
+    await gotoApp(page, `/review/${ATTEMPT}`);
+
+    // An essay has no model answer, and a "Model answer:" label with nothing
+    // after it reads as one that failed to load.
+    await expect(page.getByText('Model answer:')).toHaveCount(0);
+    await expect(page.getByText('Explanation:')).toHaveCount(0);
+  });
+
   test('does not scroll sideways on a phone in Arabic', async ({ page }) => {
     await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
     await stubReview(page, [answer({ rubric: [{ id: 'r1', name: 'السبب', maxScore: 5 }] })]);
