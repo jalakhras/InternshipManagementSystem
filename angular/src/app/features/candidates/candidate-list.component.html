@@ -185,7 +185,9 @@
 @if (importing()) {
   <div class="scrim" (click)="closeImport()"></div>
 
-  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="importTitle"
+    astroModal
+    (dismiss)="closeImport()">
     <h2 class="panel__title" id="importTitle">{{ t('::Candidate:Import:Title') }}</h2>
     <p class="panel__lede">{{ t('::Candidate:Import:Lede') }}</p>
 
@@ -286,7 +288,9 @@
 @if (pendingDelete(); as candidate) {
   <div class="scrim" (click)="pendingDelete.set(null)"></div>
 
-  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="deleteCandidateTitle">
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="deleteCandidateTitle"
+    astroModal
+    (dismiss)="pendingDelete.set(null)">
     <h2 class="confirm__title" id="deleteCandidateTitle">{{ t('::Candidate:Delete:Title') }}</h2>
     <p class="confirm__body">{{ candidate.fullName }}</p>
     <p class="confirm__note">{{ t('::Candidate:Delete:Note') }}</p>

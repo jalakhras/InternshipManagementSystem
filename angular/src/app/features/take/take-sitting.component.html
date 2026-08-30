@@ -184,7 +184,9 @@
 @if (confirmingSubmit()) {
   <div class="scrim" (click)="confirmingSubmit.set(false)"></div>
 
-  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="submitTitle">
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="submitTitle"
+    astroModal
+    (dismiss)="confirmingSubmit.set(false)">
     <h2 class="confirm__title" id="submitTitle">{{ t('::Take:Submit:Title') }}</h2>
 
     @if (unanswered() > 0) {

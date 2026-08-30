@@ -18,6 +18,7 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusChipComponent } from '../../shared/ui/status-chip.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * Creating and editing an exam.
@@ -30,7 +31,7 @@ import { StatusChipComponent } from '../../shared/ui/status-chip.component';
 @Component({
   selector: 'astro-exam-form',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent, StatusChipComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, StatusChipComponent, ModalDirective],
   templateUrl: './exam-form.component.html',
   styleUrl: './exam-form.component.scss',
 })

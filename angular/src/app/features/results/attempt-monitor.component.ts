@@ -10,6 +10,7 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * Who is sitting an exam right now.
@@ -27,7 +28,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-attempt-monitor',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent],
+  imports: [FormsModule, DatePipe, PageHeaderComponent, ModalDirective],
   templateUrl: './attempt-monitor.component.html',
   styleUrl: './attempt-monitor.component.scss',
 })

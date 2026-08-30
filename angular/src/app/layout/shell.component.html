@@ -87,7 +87,11 @@
         class="user__trigger"
         (click)="toggleUserMenu()"
         [attr.aria-expanded]="userMenuOpen()"
-        aria-haspopup="menu">
+        aria-haspopup="menu"
+        [attr.aria-label]="t('::Account:Menu')">
+        <!-- The icon is hidden from the name, so without the label above this
+             button announced as nothing at all: the one unnamed control in the
+             product, on every screen of it. -->
         <i class="bi bi-person-circle" aria-hidden="true"></i>
       </button>
 

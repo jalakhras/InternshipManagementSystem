@@ -12,6 +12,7 @@ import { permissionSignal } from '../../core/permission.signal';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.component';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 
 /**
  * The exam list.
@@ -23,7 +24,7 @@ import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.com
 @Component({
   selector: 'astro-exam-list',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, PageHeaderComponent, StatusChipComponent],
+  imports: [FormsModule, RouterLink, DatePipe, PageHeaderComponent, StatusChipComponent, ModalDirective],
   templateUrl: './exam-list.component.html',
   styleUrl: './exam-list.component.scss',
 })

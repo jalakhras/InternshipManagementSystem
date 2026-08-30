@@ -279,7 +279,9 @@
 @if (pendingDelete(); as exam) {
   <div class="scrim" (click)="pendingDelete.set(null)"></div>
 
-  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="confirm" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle"
+    astroModal
+    (dismiss)="pendingDelete.set(null)">
     <h2 class="confirm__title" id="confirmTitle">{{ t('::Exam:Delete:Title') }}</h2>
     <p class="confirm__body">{{ t('::Exam:Delete:Body', exam.title) }}</p>
     <p class="confirm__note">{{ t('::Exam:Delete:Note') }}</p>

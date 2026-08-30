@@ -547,4 +547,25 @@ test.describe('Taking an exam', () => {
     expect(blank, 'an unanswered question must be readable').toBeGreaterThanOrEqual(4.5);
   });
 
+
+  test('the submit dialog behaves like a dialog', async ({ page }) => {
+    await stubTake(page, { totalQuestions: 1 });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog).toBeVisible();
+
+    // It declared `aria-modal="true"` and honoured none of it: focus never
+    // entered, Escape did nothing, Tab walked straight out into the paper
+    // behind. A candidate under a running clock who reached this dialog by
+    // keyboard could neither confirm nor cancel nor get out of it.
+    const inside = await dialog.evaluate(box => box.contains(document.activeElement));
+    expect(inside, 'focus must move into the dialog').toBe(true);
+
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
+  });
 });

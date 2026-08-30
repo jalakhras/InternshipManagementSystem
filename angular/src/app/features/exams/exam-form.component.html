@@ -230,8 +230,15 @@
 
 <!-- ── Publish check ───────────────────────────────────────────────────── -->
 @if (showPublishPanel()) {
-  <div class="sheet" role="dialog" aria-modal="true" [attr.aria-label]="t('::Exam:Publish')">
-    <div class="sheet__panel">
+  <div class="sheet" [attr.aria-hidden]="true"></div>
+
+  <div
+    class="sheet__panel"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="t('::Exam:Publish')"
+    astroModal
+    (dismiss)="showPublishPanel.set(false)">
       <header class="sheet__head">
         <h2>{{ t('::Exam:Publish') }}</h2>
         <button
@@ -306,6 +313,5 @@
           <p>{{ t('::Loading') }}</p>
         </div>
       }
-    </div>
   </div>
 }

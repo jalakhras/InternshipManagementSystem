@@ -11,6 +11,16 @@ import { ALL_POLICIES, gotoApp, stubAbp } from './support/abp-stub';
  * thing that breaks quietly and is noticed by a customer.
  */
 test.describe('Shell', () => {
+  test('the account button says what it is', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await gotoApp(page, '/');
+
+    // It was the one unnamed control in the whole product, and it is on every
+    // screen: an icon marked aria-hidden inside a button with no label, so it
+    // announced as nothing at all. Somebody navigating by keyboard reached a
+    // button and could not be told what pressing it would do.
+    await expect(page.getByRole('button', { name: 'Your account' })).toBeVisible();
+  });
   test('renders right-to-left in Arabic', async ({ page }) => {
     await stubAbp(page, { culture: 'ar' });
     await gotoApp(page);
@@ -311,4 +321,5 @@ test.describe('Shell on a phone', () => {
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
   });
+
 });

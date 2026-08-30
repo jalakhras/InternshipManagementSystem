@@ -106,8 +106,15 @@
 }
 
 @if (ending(); as row) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Monitor:End:Title')">
-    <div class="dialog">
+  <div class="scrim" (click)="cancelEnd()"></div>
+
+  <div
+    class="dialog"
+    role="alertdialog"
+    aria-modal="true"
+    [attr.aria-label]="t('::Monitor:End:Title')"
+    astroModal
+    (dismiss)="cancelEnd()">
       <h2 class="dialog__title">{{ t('::Monitor:End:Title') }}</h2>
       <p class="dialog__body">{{ row.candidateName }} — {{ row.examTitle }}</p>
       <p class="dialog__body">{{ t('::Monitor:End:Body') }}</p>
@@ -130,13 +137,19 @@
           {{ t('::Cancel') }}
         </button>
       </div>
-    </div>
   </div>
 }
 
 @if (discarding(); as row) {
-  <div class="scrim" role="dialog" aria-modal="true" [attr.aria-label]="t('::Monitor:Delete:Title')">
-    <div class="dialog">
+  <div class="scrim" (click)="cancelDiscard()"></div>
+
+  <div
+    class="dialog"
+    role="alertdialog"
+    aria-modal="true"
+    [attr.aria-label]="t('::Monitor:Delete:Title')"
+    astroModal
+    (dismiss)="cancelDiscard()">
       <h2 class="dialog__title">{{ t('::Monitor:Delete:Title') }}</h2>
       <p class="dialog__body">{{ row.candidateName }} — {{ row.examTitle }}</p>
       <p class="dialog__body">{{ t('::Monitor:Delete:Body') }}</p>
@@ -149,6 +162,5 @@
           {{ t('::Cancel') }}
         </button>
       </div>
-    </div>
   </div>
 }

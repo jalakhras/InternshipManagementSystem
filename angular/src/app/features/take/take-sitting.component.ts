@@ -18,6 +18,7 @@ import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { AttemptState, IntegritySignalType, SaveAnswerResult, TakerQuestion } from './take.models';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 import {
   ANSWER_INPUTS,
   AnswerAttachment,
@@ -52,7 +53,7 @@ import {
   selector: 'astro-take-sitting',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [],
+  imports: [ModalDirective],
   templateUrl: './take-sitting.component.html',
   styleUrl: './take-sitting.component.scss',
 })
