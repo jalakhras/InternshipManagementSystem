@@ -1,4 +1,4 @@
-import { Component, Signal, computed, inject, signal } from '@angular/core';
+import { Component, Signal, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -13,6 +13,7 @@ import { TranslateService } from '../core/translate.service';
 import { permissionSignal } from '../core/permission.signal';
 import { NAVIGATION, NavItem, NavSection } from '../core/navigation';
 import { SettingsService } from '../core/api/settings.service';
+import { BrandService } from '../core/brand.service';
 import { MediaService } from '../core/media.service';
 
 /**
@@ -38,6 +39,7 @@ export class ShellComponent {
   private readonly auth = inject(AuthService);
   private readonly settings = inject(SettingsService);
   private readonly media = inject(MediaService);
+  private readonly brand = inject(BrandService);
 
   readonly dir = inject(DirectionService);
 
@@ -65,6 +67,17 @@ export class ShellComponent {
 
   /** Their mark, when they have uploaded one. The drawn astrolabe stands in until then. */
   readonly logoUrl = computed(() => this.media.objectUrl(this.settings.current()?.logoBlobName)());
+
+  /**
+   * Their colour, applied to the whole application rather than to one badge.
+   * <p>
+   * An effect and not a computed: this writes to the document, and it has to run
+   * again when the settings arrive — which is after the shell is built, and
+   * again if somebody changes the colour on the settings screen without
+   * reloading.
+   * </p>
+   */
+  private readonly paint = effect(() => this.brand.apply(this.settings.current()?.brandColor));
 
   readonly userMenuOpen = signal(false);
 

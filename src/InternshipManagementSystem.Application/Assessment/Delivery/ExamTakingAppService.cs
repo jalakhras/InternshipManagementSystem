@@ -180,6 +180,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             preview.OrganizationName = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.OrganizationName);
 
+            preview.OrganizationBrandColor = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.BrandColor);
+
             var logo = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.LogoBlobName);
 

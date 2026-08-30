@@ -1,4 +1,4 @@
--- Removes the rows the load test leaves behind.
+-- Removes the rows the test tooling leaves behind.
 --
 --   sqlcmd -S "(localdb)\MSSQLLocalDB" -d InternshipManagementSystem -i tools/purge-test-data.sql
 --
@@ -11,8 +11,21 @@
 -- The load test now reuses a fixed pool and stops adding to this. This script is
 -- for the ones already there.
 --
--- It touches only rows whose email begins with "load-", which nothing but
--- tools/load-test.js has ever created. Run it against a development database.
+-- The same is true of the live Playwright specs and the screenshot run, which
+-- create a candidate per run and let it sit an exam. A hundred of them had piled
+-- up in the host, where the only person who would ever look is somebody signing
+-- in as the platform operator to see what the product looks like — and what they
+-- saw was a roster of "screens-mtfm97dm@example.test", none of them in any class.
+--
+-- It touches only the address patterns the tooling itself generates:
+--
+--   load-…      tools/load-test.js
+--   screens-…   angular/e2e/live/screenshot.spec.ts
+--   live-…      angular/e2e/live/journey.spec.ts
+--   diag-…, probe-…   throwaway probes
+--
+-- Nothing a person would type looks like these. Run it against a development
+-- database.
 
 SET NOCOUNT ON;
 
@@ -24,7 +37,12 @@ SET QUOTED_IDENTIFIER ON;
 DECLARE @candidates TABLE (Id uniqueidentifier PRIMARY KEY);
 
 INSERT INTO @candidates (Id)
-SELECT Id FROM AppCandidates WHERE Email LIKE 'load-%@example.test';
+SELECT Id FROM AppCandidates
+WHERE Email LIKE 'load-%@example.test'
+   OR Email LIKE 'screens-%@example.test'
+   OR Email LIKE 'live-%@example.test'
+   OR Email LIKE 'diag-%@example.test'
+   OR Email LIKE 'probe-%@example.test';
 
 DECLARE @attempts TABLE (Id uniqueidentifier PRIMARY KEY);
 

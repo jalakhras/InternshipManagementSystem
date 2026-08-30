@@ -46,6 +46,9 @@ export interface ExamPreview {
   organizationName?: string;
   organizationLogoUrl?: string;
 
+  /** Painted onto the page, so the candidate is in the organisation's space. */
+  organizationBrandColor?: string;
+
   /** Minted on opening the link. Worth one attempt, and only in memory. */
   sessionToken?: string;
 }

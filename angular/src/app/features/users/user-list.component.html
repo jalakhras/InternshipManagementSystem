@@ -129,11 +129,11 @@
         @for (user of items(); track user.id) {
           <tr>
             <td>{{ user.fullName || '—' }}</td>
-            <td class="astro-ltr">{{ user.userName }}</td>
+            <td><span class="astro-ltr">{{ user.userName }}</span></td>
             <!-- Latin inside an Arabic table: isolated, or the dot and the @
                  drift to the wrong end. candidate-list renders the same data
                  the same way. -->
-            <td class="muted astro-ltr">{{ user.email }}</td>
+            <td class="muted"><span class="astro-ltr">{{ user.email }}</span></td>
             <td>
               @if (user.roles.length === 0) {
                 <!-- Worth showing rather than leaving blank: this account can sign

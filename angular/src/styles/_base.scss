@@ -44,6 +44,16 @@ body {
 
 // Latin fragments inside Arabic prose — a code sample, an email address, a
 // version — need their own embedding or the punctuation drifts to the wrong end.
+// A run of Latin text — an address, a username, a URL — held left-to-right
+// inside an Arabic page so it is not reordered around its punctuation.
+//
+// Put it on the text, never on the cell that holds it. It sets both
+// `direction: ltr` and `text-align: start`, and `start` resolves against
+// direction — so a <td class="astro-ltr"> aligns to the opposite edge from the
+// <th> above it, and a column of email addresses sits on the far side of the
+// column from its own heading. Exactly the trap .astro-numeric carries, in a
+// different class; both shipped, and both were reported as "the page is
+// crooked" rather than as anything a stylesheet would obviously explain.
 .astro-ltr {
   direction: ltr;
   unicode-bidi: isolate;

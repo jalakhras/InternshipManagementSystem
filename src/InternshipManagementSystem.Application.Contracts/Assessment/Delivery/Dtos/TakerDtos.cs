@@ -38,6 +38,17 @@ public class ExamPreviewDto
     /// <summary>Signed, because the person about to see it has no account.</summary>
     public string? OrganizationLogoUrl { get; set; }
 
+    /// <summary>
+    /// The organisation's accent colour, so the screen is painted in it.
+    /// <para>
+    /// Sent to the candidate for the same reason the name and the mark are: they
+    /// have no relationship with us and no reason to trust a page in a colour
+    /// they have never seen. This is the one screen in the product whose reader
+    /// did not choose the platform.
+    /// </para>
+    /// </summary>
+    public string? OrganizationBrandColor { get; set; }
+
     public string ExamTitle { get; set; } = default!;
     public string? Description { get; set; }
     public string CandidateName { get; set; } = default!;

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 
+import { BrandService } from '../../core/brand.service';
 import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
@@ -44,6 +45,7 @@ export class TakeEntryComponent {
 
 
   private readonly media = inject(MediaService);
+  private readonly brand = inject(BrandService);
 
   readonly token = input.required<string>();
 
@@ -60,6 +62,18 @@ export class TakeEntryComponent {
 
   /** An attempt already running. Resuming continues the same clock rather than restarting it. */
   readonly canResume = computed(() => !!this.preview()?.resumableAttemptId);
+
+  /**
+   * Paint the page in the organisation's colour as soon as the link resolves.
+   * <p>
+   * This screen's reader is the only one in the product who did not choose this
+   * platform: no account, no relationship with us, and a link from an
+   * organisation they do know. The name and the mark were already theirs here;
+   * the colour was not.
+   * </p>
+   */
+  private readonly paint = effect(() =>
+    this.brand.apply(this.preview()?.organizationBrandColor));
 
   private opened?: string;
 
