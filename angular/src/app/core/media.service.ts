@@ -44,7 +44,12 @@ export class MediaService {
       return null;
     }
 
-    if (/^https?:\/\//i.test(path)) {
+    // Anything that already carries its own scheme is left alone. Not only
+    // http(s): a `data:` or `blob:` URI is a complete address, and prefixing one
+    // with the API origin produces a string that fetches nothing — which is what
+    // happened the moment this helper was applied to a binding that sometimes
+    // receives an inline image.
+    if (/^[a-z][a-z0-9+.-]*:/i.test(path)) {
       return path;
     }
 

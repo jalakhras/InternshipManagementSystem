@@ -35,6 +35,17 @@ export interface TakeStubOptions {
   /** Serve hotspot questions: an image to point at, and no regions. */
   hotspot?: boolean;
 
+  /**
+   * The address the server puts on the picture.
+   * <p>
+   * Defaults to an inline `data:` URI so most tests need no network. That
+   * default is also why a real defect hid here for weeks: a `data:` URI needs no
+   * resolving, so a binding that failed to make the path absolute still worked
+   * in every test. Pass the server-relative form to exercise that.
+   * </p>
+   */
+  hotspotImageUrl?: string;
+
   /** Serve file-upload questions, whose answer is a file rather than text. */
   fileUpload?: boolean;
 }
@@ -215,7 +226,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       // a real area to point within — a one-pixel image gives the click nothing
       // to be a percentage of.
       display: options.hotspot
-        ? { imageUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjxsaW5lIHgxPSIwIiB5MT0iMjIwIiB4Mj0iNDAwIiB5Mj0iMjIwIiBzdHJva2U9IiMzNTYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==' }
+        ? { imageUrl: options.hotspotImageUrl ?? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjxsaW5lIHgxPSIwIiB5MT0iMjIwIiB4Mj0iNDAwIiB5Mj0iMjIwIiBzdHJva2U9IiMzNTYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==' }
         : {},
       savedResponse: undefined,
     };

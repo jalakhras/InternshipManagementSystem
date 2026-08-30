@@ -105,6 +105,13 @@ test.describe('What a coordinator can actually do by clicking', () => {
     await dialog.locator('input[name=candidateName]').fill(name);
     await dialog.locator('input[name=candidateEmail]').fill(email);
     await dialog.getByRole('button', { name: /^Save$|^حفظ$/ }).click();
+    await expect(dialog).toBeHidden({ timeout: 20_000 });
+
+    // Searched, not scanned: past one page of people the newest is not on the
+    // first one, and a test that only looks there fails for a reason that has
+    // nothing to do with what it is testing.
+    await page.locator('input[type=search]').fill(name);
+    await page.locator('input[type=search]').press('Enter');
     await expect(page.getByText(name)).toBeVisible({ timeout: 20_000 });
 
     // -------------------------------------------------- put them in a class

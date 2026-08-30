@@ -437,4 +437,46 @@ test.describe('Taking an exam', () => {
 
     expect(ratio, 'the verdict must be readable').toBeGreaterThanOrEqual(4.5);
   });
+
+  test('the hotspot picture is fetched from the API, not from the app', async ({ page }) => {
+    // A server-relative path, which is what the server actually sends. Every
+    // other test here uses the stub's inline `data:` URI, and that is why this
+    // defect survived: a `data:` URI needs no resolving, so a binding that never
+    // made the path absolute still drew a picture in every test.
+    await stubTake(page, {
+      hotspot: true,
+      hotspotImageUrl: '/api/assessment/media/tenant/picture.png',
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const src = await page.locator('.hotspot__image').getAttribute('src');
+
+    expect(src, 'the picture must be fetched from the API').toContain(
+      '/api/assessment/media/tenant/picture.png',
+    );
+
+    // Left relative, it resolves against the app's own origin — where the file
+    // is not — and a candidate opens a hotspot question to an empty frame with
+    // nothing to point at.
+    expect(src, 'a relative path resolves against the app, not the API').toMatch(/^https?:\/\//);
+  });
+
+  test('an inline picture is left exactly as it is', async ({ page }) => {
+    // The other half of making the path absolute, and it is not hypothetical:
+    // applying the helper to this binding broke every inline image on the first
+    // attempt, because the API origin was prepended to a complete `data:` URI
+    // and the result fetched nothing. An existing test caught it; this one names
+    // the rule so the next person does not have to rediscover it.
+    await stubTake(page, { hotspot: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const src = await page.locator('.hotspot__image').getAttribute('src');
+
+    expect(src, 'an address that carries its own scheme is already an address')
+      .toMatch(/^data:image\//);
+  });
 });

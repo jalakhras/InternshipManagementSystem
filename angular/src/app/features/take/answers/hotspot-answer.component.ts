@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { MediaService } from '../../../core/media.service';
 import { TranslateService } from '../../../core/translate.service';
 import { TakerQuestion } from '../take.models';
 
@@ -171,7 +172,24 @@ export class HotspotAnswerComponent {
   readonly response = input<string | undefined>();
   readonly responseChange = output<string>();
 
-  readonly imageUrl = computed(() => this.question().display?.['imageUrl'] as string | undefined);
+  private readonly media = inject(MediaService);
+
+  /**
+   * The picture, at an address the browser can actually reach.
+   * <p>
+   * The server sends a path relative to the API, and this was the one
+   * candidate-facing binding that used it raw — so it resolved against the app's
+   * own origin instead, and a candidate opened a hotspot question to an empty
+   * frame with nothing to click. Every sibling on this screen already goes
+   * through the same helper.
+   * </p>
+   * <p>
+   * It survived because the browser test feeds it a `data:` URI, which needs no
+   * resolving: the test was asserting its own stub.
+   * </p>
+   */
+  readonly imageUrl = computed(() =>
+    this.media.absolute(this.question().display?.['imageUrl'] as string | undefined) ?? undefined);
 
   private readonly chosen = signal<Point | null>(null);
 
