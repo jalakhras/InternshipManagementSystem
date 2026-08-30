@@ -111,7 +111,23 @@ public enum IntegritySignalType : byte
     /// <summary>A long answer typed with no corrections.</summary>
     NoCorrections = 3,
 
-    /// <summary>Developer tools appeared to open. Recorded, never blocked.</summary>
+    /// <summary>
+    /// Developer tools appeared to open.
+    /// <para>
+    /// <b>Nothing produces this, deliberately.</b> Every way a browser can guess
+    /// at it — a sudden gap between window and viewport, a timing difference
+    /// around <c>debugger</c> — is a guess, and it is wrong for ordinary things
+    /// people do: docking a window, zooming, a screen reader, a slow machine.
+    /// </para>
+    /// <para>
+    /// The whole design of these signals is that a person weighs them, which
+    /// only works while they are true. A guess recorded beside real observations
+    /// is not a weaker observation; it is a specific false claim about a named
+    /// candidate, and the marker has no way to tell it from the others. The
+    /// value is kept because attempts already reference these numbers, and
+    /// because if a reliable detection ever exists this is where it goes.
+    /// </para>
+    /// </summary>
     DevToolsOpened = 4,
 
     /// <summary>The page was reloaded mid-attempt.</summary>

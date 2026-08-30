@@ -438,6 +438,25 @@ export class TakeSittingComponent {
    * </p>
    */
   private watchIntegrity(): void {
+    // A reload mid-sitting, reported once.
+    //
+    // Worth a marker seeing: the clock is the server's, so reloading buys no
+    // time, and somebody doing it repeatedly is usually either fighting a bad
+    // connection or looking for a way to start the paper again. Which of those
+    // it was is exactly the judgement a person should make and software should
+    // not — so it is recorded and nothing else happens.
+    //
+    // Read from the Navigation Timing API rather than tracked in storage: the
+    // browser already knows how this page was entered, and a flag we set
+    // ourselves would survive into a different attempt on a shared machine and
+    // accuse the wrong person.
+    const entry = performance.getEntriesByType('navigation')[0] as
+      PerformanceNavigationTiming | undefined;
+
+    if (entry?.type === 'reload') {
+      this.take.reportSignal(IntegritySignalType.PageReloaded);
+    }
+
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') {
         this.take.reportSignal(IntegritySignalType.WindowBlur, this.question()?.id);

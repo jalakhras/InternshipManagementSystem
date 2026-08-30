@@ -423,6 +423,8 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             await RecordSignalAsync(attempt, IntegritySignalType.Paste, input.QuestionId, input.Response!.Length);
         }
 
+        await NoteHowItWasWrittenAsync(attempt, input);
+
         return new SaveAnswerResultDto
         {
             SavedAt = now,
@@ -504,6 +506,59 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         answer.KeystrokeCount += input.KeystrokeCount;
         answer.BackspaceCount += input.BackspaceCount;
         answer.AnsweredAt = now;
+    }
+
+    /// <summary>
+    /// Two things the browser already measured and nobody read.
+    /// <para>
+    /// <c>ImplausibleSpeed</c> and <c>NoCorrections</c> had names, translations,
+    /// and a sentence each waiting on the marker's screen — and nothing produced
+    /// either of them, so those sentences could never appear. The measurements
+    /// they need arrive with every save already: how long the candidate was on
+    /// the question, how many keys they pressed, how many were backspaces.
+    /// </para>
+    /// <para>
+    /// Both are deliberately hard to trip. An observation a marker cannot trust
+    /// is worse than none: it trains them to skim past all of them, including
+    /// the one that mattered. So the speed bar is set at ten characters a second
+    /// sustained — comfortably above a fast touch-typist, who runs at about
+    /// seven — and the no-corrections bar needs a long answer typed with not one
+    /// backspace, which is unusual in a way that composing carefully elsewhere
+    /// and retyping is not.
+    /// </para>
+    /// <para>
+    /// Neither fires on a pasted answer. Paste is already recorded and already
+    /// explains both: text that arrives at once is infinitely fast and has no
+    /// corrections. Reporting all three would be one event described three
+    /// times, which reads as three findings.
+    /// </para>
+    /// </summary>
+    private async Task NoteHowItWasWrittenAsync(Attempt attempt, SaveAnswerDto input)
+    {
+        var length = input.Response?.Length ?? 0;
+
+        if (length < 200 || input.WasPasted)
+        {
+            return;
+        }
+
+        var seconds = input.TimeSpentSeconds ?? 0;
+
+        if (seconds > 0 && length / seconds > 10)
+        {
+            await RecordSignalAsync(
+                attempt, IntegritySignalType.ImplausibleSpeed, input.QuestionId, length / seconds);
+        }
+
+        // Typed, not arrived: enough keystrokes to account for the text. Without
+        // this a long answer that appeared by some route the browser did not see
+        // as a paste would be reported as flawless typing rather than as text
+        // that was never typed.
+        if (length >= 300 && input.BackspaceCount == 0 && input.KeystrokeCount >= length / 2)
+        {
+            await RecordSignalAsync(
+                attempt, IntegritySignalType.NoCorrections, input.QuestionId, length);
+        }
     }
 
     /// <summary>

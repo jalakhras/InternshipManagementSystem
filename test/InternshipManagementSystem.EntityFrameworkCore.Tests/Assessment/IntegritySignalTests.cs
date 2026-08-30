@@ -166,6 +166,119 @@ public class IntegritySignalTests : InternshipManagementSystemEntityFrameworkCor
         });
     }
 
+    [Fact]
+    public async Task Text_arriving_faster_than_anyone_types_is_noted()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sitting = await SitAsync("signal-e");
+            var question = await _taking.GetQuestionAsync(sitting.SessionToken, 0);
+
+            // 600 characters in 20 seconds is thirty a second. A fast
+            // touch-typist sustains about seven.
+            await _taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = new string('x', 600),
+                TimeSpentSeconds = 20,
+                KeystrokeCount = 600,
+                BackspaceCount = 4,
+            });
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            report.Signals.ShouldContain(s => s.Type == IntegritySignalType.ImplausibleSpeed);
+        });
+    }
+
+    [Fact]
+    public async Task Somebody_writing_at_a_human_speed_is_not_noted()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sitting = await SitAsync("signal-f");
+            var question = await _taking.GetQuestionAsync(sitting.SessionToken, 0);
+
+            // The same 600 characters over eight minutes, with corrections. This
+            // is what writing an answer looks like.
+            await _taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = new string('x', 600),
+                TimeSpentSeconds = 480,
+                KeystrokeCount = 700,
+                BackspaceCount = 40,
+            });
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            // The half that decides whether the other half is worth anything. An
+            // observation a marker cannot trust trains them to skim past all of
+            // them, including the one that mattered.
+            report.Signals.ShouldBeEmpty();
+        });
+    }
+
+    [Fact]
+    public async Task A_long_answer_typed_without_one_correction_is_noted()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sitting = await SitAsync("signal-g");
+            var question = await _taking.GetQuestionAsync(sitting.SessionToken, 0);
+
+            await _taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = new string('y', 400),
+                TimeSpentSeconds = 300,
+                KeystrokeCount = 400,
+                BackspaceCount = 0,
+            });
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            report.Signals.ShouldContain(s => s.Type == IntegritySignalType.NoCorrections);
+        });
+    }
+
+    [Fact]
+    public async Task A_pasted_answer_is_reported_once_and_not_three_times()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sitting = await SitAsync("signal-h");
+            var question = await _taking.GetQuestionAsync(sitting.SessionToken, 0);
+
+            // Pasted text is infinitely fast and has no corrections, so all three
+            // rules would fire on it.
+            await _taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = new string('z', 500),
+                WasPasted = true,
+                TimeSpentSeconds = 3,
+                KeystrokeCount = 0,
+                BackspaceCount = 0,
+            });
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            // One event, described once. Three sentences about one paste read as
+            // three findings, and a marker counting flags would weigh it treble.
+            report.Signals.Count.ShouldBe(1);
+            report.Signals.Single().Type.ShouldBe(IntegritySignalType.Paste);
+        });
+    }
+
     // ------------------------------------------------------------------ helpers
 
     private sealed record Sitting(Guid AttemptId, string SessionToken);
