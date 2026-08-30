@@ -13,6 +13,7 @@ using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
@@ -30,6 +31,20 @@ namespace InternshipManagementSystem.Assessment.Results;
 /// </para>
 /// </summary>
 [Authorize(InternshipManagementSystemPermissions.Results.View)]
+/// <remarks>
+/// No generated controller. GetListAsync and GetAsync both became
+/// <c>GET api/app/result</c> — GetAsync takes an attempt id that is not named
+/// <c>id</c>, so it stayed a query parameter and the two paths collided — and
+/// Swashbuckle refused to build the whole document, so /swagger answered 500 and
+/// the API browser had been gone for some time with nobody filing anything.
+/// <para>
+/// Nothing is lost by switching it off: <c>ResultController</c> exposes every
+/// one of these at <c>/api/assessment/results</c>, with the route, the verb and
+/// the permission written where a person can read them. The generated pair was
+/// a second, undocumented way in that no client called.
+/// </para>
+/// </remarks>
+[RemoteService(IsEnabled = false)]
 public class ResultAppService : ApplicationService, IResultAppService
 {
     private readonly IRepository<Attempt, Guid> _attempts;

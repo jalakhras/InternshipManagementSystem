@@ -135,10 +135,12 @@ public class InternshipManagementSystemHttpApiHostModule : AbpModule
         // decide whether a replica is taking traffic.
         context.Services.AddHealthChecks();
 
-        Configure<AbpAspNetCoreMvcOptions>(options =>
-        {
-            options.ConventionalControllers.Create(typeof(InternshipManagementSystemApplicationModule).Assembly);
-        });
+        // The conventional controllers are registered by
+        // ConfigureConventionalControllers() above. They were registered a second
+        // time here as well, so every application service got two sets of routes
+        // and Swashbuckle refused to build the document at all — /swagger
+        // answered 500, which is how a whole API browser goes missing without
+        // anybody filing a bug.
     }
 
     /// <summary>
@@ -268,6 +270,21 @@ public class InternshipManagementSystemHttpApiHostModule : AbpModule
         }
     }
 
+    /// <summary>
+    /// Registers the application services as API controllers.
+    /// <para>
+    /// Required, and not merely conventional: it is what marks these as API
+    /// controllers rather than MVC ones. Removing it — tried, to be rid of the
+    /// duplicate /api/app surface — turned every authorisation refusal from 403
+    /// into a 302 to a login page, because ASP.NET challenges a UI controller
+    /// with a redirect. Thirteen role tests caught it. A redirect is not a
+    /// refusal an API client can act on, and it looks like success.
+    /// </para>
+    /// <para>
+    /// Registered exactly once. It used to be registered here and again inline in
+    /// ConfigureServices, so every service got two sets of routes.
+    /// </para>
+    /// </summary>
     private void ConfigureConventionalControllers()
     {
         Configure<AbpAspNetCoreMvcOptions>(options =>
