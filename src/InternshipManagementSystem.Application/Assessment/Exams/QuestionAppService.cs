@@ -194,12 +194,53 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         }
 
         var question = await _questions.GetAsync(id);
+
+        // What counted as correct before this edit, as the marker's screen would
+        // render it. Compared against what counts as correct after, so a change
+        // to the key is told apart from a change to the wording.
+        var keyBefore = CorrectAnswerRenderer.Render(question.Type, question.Payload);
+
         question.Type = input.Type;
         Apply(question, input);
+
+        var keyAfter = CorrectAnswerRenderer.Render(question.Type, question.Payload);
+
+        if (!string.Equals(keyBefore, keyAfter, StringComparison.Ordinal))
+        {
+            ForgetStatistics(question);
+        }
 
         await _questions.UpdateAsync(question, autoSave: true);
 
         return await GetAsync(question.Id);
+    }
+
+    /// <summary>
+    /// Drops what was learned about a question whose key has changed.
+    /// <para>
+    /// DifficultyIndex is a lifetime running mean and was never reset, so an
+    /// author who discovered a wrong key and fixed it inherited the wrong key's
+    /// statistics — and the product went on reporting them as fact. The question
+    /// would read "too hard" forever, because when the key was wrong almost
+    /// everybody got it wrong, and nothing ever diluted that.
+    /// </para>
+    /// <para>
+    /// That is the worst shape this defect could take: the author does the right
+    /// thing, and the evidence that they did keeps arguing against them. Better
+    /// to say "not measured yet" and mean it than to carry an average of two
+    /// different questions.
+    /// </para>
+    /// <para>
+    /// Only when the key changes. Fixing a typo in the wording is the same
+    /// question and keeps its history; a candidate answering it was answering
+    /// this question.
+    /// </para>
+    /// </summary>
+    private static void ForgetStatistics(Question question)
+    {
+        question.DifficultyIndex = null;
+        question.DiscriminationIndex = null;
+        question.TimesAnswered = 0;
     }
 
     [Authorize(InternshipManagementSystemPermissions.Questions.Delete)]

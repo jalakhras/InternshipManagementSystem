@@ -75,3 +75,17 @@
   color: var(--text-muted);
   font-style: italic;
 }
+
+// The row's own link to the question it is about. Underlined on hover only, so a
+// long table does not read as a wall of links, but coloured as a link from the
+// start — an author scanning for what to fix should see that the finding is
+// reachable without hovering to find out.
+.question--link {
+  color: var(--accent);
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    text-decoration: underline;
+  }
+}

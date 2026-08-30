@@ -1,6 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
+import { permissionSignal } from '../../core/permission.signal';
 
 import { ResultService } from '../../core/api/result.service';
 import { ItemAnalysisRow } from '../../core/api/result.models';
@@ -40,6 +42,15 @@ export class ItemAnalysisComponent {
   readonly error = signal<string | null>(null);
 
   readonly examOptions = signal<ExamDto[]>([]);
+  /**
+   * Whether to link a row to the question behind it.
+   *
+   * An observer may read this screen and holds nothing in the bank, so the link
+   * would take them to a permission refusal. They still get the analysis — the
+   * finding is theirs to read; only the repair is not.
+   */
+  readonly canEditQuestions = permissionSignal(P.Questions.Edit);
+
   readonly examId = signal('');
   readonly rows = signal<ItemAnalysisRow[]>([]);
 

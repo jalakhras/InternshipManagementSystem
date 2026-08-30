@@ -52,7 +52,20 @@
         @for (row of rows(); track row.questionId) {
           <tr [class.flagged]="!!row.flagKey">
             <td>
-              <span class="question">{{ row.text }}</span>
+              <!-- The row goes to the question. "These six are not measuring
+                   anything" is the most credible sentence this product can say to
+                   somebody who writes exams for a living, and until now it could
+                   not take them to a single one of the six — they had to carry the
+                   wording across to the bank and search for it. A diagnosis nobody
+                   can act on is a diagnosis nobody reads twice. -->
+              @if (canEditQuestions()) {
+                <a class="question question--link" [routerLink]="['/questions', row.questionId]">
+                  {{ row.text }}
+                </a>
+              } @else {
+                <span class="question">{{ row.text }}</span>
+              }
+
               <!-- The sentence, not the number, is what an author acts on. -->
               @if (row.flagKey) {
                 <span class="flag">{{ t(row.flagKey) }}</span>

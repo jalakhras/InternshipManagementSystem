@@ -294,6 +294,120 @@ public class QuestionAuthoringTests : InternshipManagementSystemEntityFrameworkC
         });
     }
 
+    [Fact]
+    public async Task Correcting_a_wrong_key_forgets_what_the_wrong_key_taught_us()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+
+            var question = await _questions.CreateAsync(new CreateUpdateQuestionDto
+            {
+                ExamId = exam.Id,
+                Type = QuestionTypes.SingleChoice,
+                Text = "Which is the capital?",
+                Score = 1m,
+                Payload = PayloadJson.Write(new ChoicePayload
+                {
+                    Options =
+                    [
+                        new OptionPayload { Id = "a", Text = "Cairo", IsCorrect = false },
+                        new OptionPayload { Id = "b", Text = "Alexandria", IsCorrect = true },
+                    ],
+                }),
+            });
+
+            var questions = GetRequiredService<IRepository<Question, Guid>>();
+
+            // A hundred candidates have answered it, and almost all got it wrong,
+            // because the key was on the wrong option.
+            var entity = await questions.GetAsync(question.Id);
+            entity.TimesAnswered = 100;
+            entity.DifficultyIndex = 0.04m;
+            await questions.UpdateAsync(entity, autoSave: true);
+
+            // The author spots it and moves the key to Cairo.
+            await _questions.UpdateAsync(question.Id, new CreateUpdateQuestionDto
+            {
+                ExamId = exam.Id,
+                Type = QuestionTypes.SingleChoice,
+                Text = "Which is the capital?",
+                Score = 1m,
+                Payload = PayloadJson.Write(new ChoicePayload
+                {
+                    Options =
+                    [
+                        new OptionPayload { Id = "a", Text = "Cairo", IsCorrect = true },
+                        new OptionPayload { Id = "b", Text = "Alexandria", IsCorrect = false },
+                    ],
+                }),
+            });
+
+            var after = await questions.GetAsync(question.Id);
+
+            // DifficultyIndex is a lifetime running mean and was never reset, so
+            // the question read "too hard" forever: when the key was wrong almost
+            // everybody got it wrong, and nothing ever diluted that. The author
+            // does the right thing and the evidence that they did keeps arguing
+            // against them.
+            after.TimesAnswered.ShouldBe(0);
+            after.DifficultyIndex.ShouldBeNull();
+            after.DiscriminationIndex.ShouldBeNull();
+        });
+    }
+
+    [Fact]
+    public async Task Fixing_a_typo_keeps_the_history()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+
+            var payload = PayloadJson.Write(new ChoicePayload
+            {
+                Options =
+                [
+                    new OptionPayload { Id = "a", Text = "Cairo", IsCorrect = true },
+                    new OptionPayload { Id = "b", Text = "Alexandria", IsCorrect = false },
+                ],
+            });
+
+            var question = await _questions.CreateAsync(new CreateUpdateQuestionDto
+            {
+                ExamId = exam.Id,
+                Type = QuestionTypes.SingleChoice,
+                Text = "Whcih is the capital?",
+                Score = 1m,
+                Payload = payload,
+            });
+
+            var questions = GetRequiredService<IRepository<Question, Guid>>();
+            var entity = await questions.GetAsync(question.Id);
+            entity.TimesAnswered = 100;
+            entity.DifficultyIndex = 0.62m;
+            await questions.UpdateAsync(entity, autoSave: true);
+
+            await _questions.UpdateAsync(question.Id, new CreateUpdateQuestionDto
+            {
+                ExamId = exam.Id,
+                Type = QuestionTypes.SingleChoice,
+                Text = "Which is the capital?",
+                Score = 1m,
+                Payload = payload,
+            });
+
+            var after = await questions.GetAsync(question.Id);
+
+            // The other half, and the reason the comparison is on the rendered key
+            // rather than on the payload: this is the same question, and the
+            // hundred people who answered it were answering it. Throwing away
+            // hard-won statistics for a spelling correction would teach an author
+            // not to correct spelling.
+            after.TimesAnswered.ShouldBe(100);
+            after.DifficultyIndex.ShouldBe(0.62m);
+        });
+    }
+
     private async Task<ExamDto> CreateExamAsync() =>
         await _exams.CreateAsync(new CreateUpdateExamDto
         {
