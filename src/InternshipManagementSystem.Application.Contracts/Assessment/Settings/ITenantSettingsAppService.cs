@@ -81,5 +81,4 @@ public class TenantSettingsDto
     public bool CollectIntegritySignals { get; set; }
 
     /// <summary>Whether people may create their own accounts.</summary>
-    public bool EnableSelfRegistration { get; set; }
 }

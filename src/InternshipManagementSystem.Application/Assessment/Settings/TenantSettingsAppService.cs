@@ -48,8 +48,6 @@ public class TenantSettingsAppService : ApplicationService, ITenantSettingsAppSe
                 InternshipManagementSystemSettings.ShowResultToCandidate, true),
             CollectIntegritySignals = await FlagAsync(
                 InternshipManagementSystemSettings.CollectIntegritySignals, true),
-            EnableSelfRegistration = await FlagAsync(
-                InternshipManagementSystemSettings.EnableSelfRegistration, false),
         };
     }
 
@@ -79,9 +77,6 @@ public class TenantSettingsAppService : ApplicationService, ITenantSettingsAppSe
         await SetAsync(
             InternshipManagementSystemSettings.CollectIntegritySignals,
             input.CollectIntegritySignals.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
-        await SetAsync(
-            InternshipManagementSystemSettings.EnableSelfRegistration,
-            input.EnableSelfRegistration.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
 
         return await GetAsync();
     }

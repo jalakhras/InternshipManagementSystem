@@ -131,19 +131,6 @@
           <small>{{ t('::Settings:Integrity:Hint') }}</small>
         </span>
       </label>
-
-      <label class="toggle">
-        <input
-          type="checkbox"
-          name="selfRegistration"
-          [disabled]="readOnly()"
-          [checked]="form().enableSelfRegistration"
-          (change)="patch('enableSelfRegistration', !form().enableSelfRegistration)" />
-        <span>
-          <strong>{{ t('::Settings:SelfRegistration') }}</strong>
-          <small>{{ t('::Settings:SelfRegistration:Hint') }}</small>
-        </span>
-      </label>
     </section>
 
     @if (canManage()) {

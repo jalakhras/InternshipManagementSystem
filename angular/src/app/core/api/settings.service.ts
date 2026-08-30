@@ -19,7 +19,6 @@ export interface TenantSettings {
   defaultPassingPercentage: number;
   showResultToCandidate: boolean;
   collectIntegritySignals: boolean;
-  enableSelfRegistration: boolean;
 }
 
 /**

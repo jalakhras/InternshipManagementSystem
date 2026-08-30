@@ -35,8 +35,7 @@ public class InternshipManagementSystemSettingDefinitionProvider : SettingDefini
             Tenant(InternshipManagementSystemSettings.BrandColor, null),
             Tenant(InternshipManagementSystemSettings.DefaultPassingPercentage, "60"),
             Tenant(InternshipManagementSystemSettings.ShowResultToCandidate, "true"),
-            Tenant(InternshipManagementSystemSettings.CollectIntegritySignals, "true"),
-            Tenant(InternshipManagementSystemSettings.EnableSelfRegistration, "false")
+            Tenant(InternshipManagementSystemSettings.CollectIntegritySignals, "true")
         );
     }
 

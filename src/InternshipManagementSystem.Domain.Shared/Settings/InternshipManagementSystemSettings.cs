@@ -91,6 +91,4 @@ public static class InternshipManagementSystemSettings
 
     // ---- Access ----
 
-    /// <summary>Whether people may create their own accounts.</summary>
-    public const string EnableSelfRegistration = Prefix + ".EnableSelfRegistration";
 }

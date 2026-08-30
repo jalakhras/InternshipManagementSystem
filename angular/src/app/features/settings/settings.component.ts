@@ -118,5 +118,4 @@ const blank = (): TenantSettings => ({
   defaultPassingPercentage: 60,
   showResultToCandidate: true,
   collectIntegritySignals: true,
-  enableSelfRegistration: false,
 });
