@@ -1,0 +1,170 @@
+<astro-page-header [title]="t('::Tenant:Title')" [description]="t('::Tenant:Lede')">
+  @if (canCreate()) {
+    <button slot="actions" type="button" class="btn btn-primary" (click)="newTenant()">
+      {{ t('::Tenant:New') }}
+    </button>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<astro-data-state
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="isEmpty()"
+  [emptyTitle]="t('::Tenant:None')"
+  (retry)="load()" />
+
+@if (!loading() && !error() && items().length > 0) {
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Tenant:Name') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (tenant of items(); track tenant.id) {
+          <tr>
+            <td class="tenantname">{{ tenant.name }}</td>
+
+            <td class="tenant-actions">
+              <div class="tenant-actions__set">
+                @if (canEdit()) {
+                  <button
+                    type="button"
+                    class="tenant-action"
+                    [attr.title]="t('::Edit')"
+                    [attr.aria-label]="t('::Edit') + ': ' + tenant.name"
+                    (click)="edit(tenant)">
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                }
+
+                @if (canDelete()) {
+                  <button
+                    type="button"
+                    class="tenant-action tenant-action--danger"
+                    [attr.title]="t('::Delete')"
+                    [attr.aria-label]="t('::Delete') + ': ' + tenant.name"
+                    (click)="askDelete(tenant)">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (draft().open) {
+  <div class="scrim" (click)="cancel()"></div>
+
+  <div
+    class="confirm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="tenantTitle"
+    astroModal
+    (dismiss)="cancel()">
+    <h2 id="tenantTitle" class="confirm__title">
+      {{ draft().id ? t('::Tenant:Edit') : t('::Tenant:New') }}
+    </h2>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Tenant:Name') }}</span>
+      <input
+        class="form-control"
+        name="tenantName"
+        autocomplete="off"
+        [ngModel]="draft().name"
+        (ngModelChange)="patch('name', $event)" />
+      <span class="field__hint">{{ t('::Tenant:Name:Hint') }}</span>
+    </label>
+
+    @if (!draft().id) {
+      <!-- Only when creating. An organisation with no way in is worse than none:
+           it exists, it holds a name somebody chose, and nobody can reach it. -->
+      <label class="field">
+        <span class="field__label">{{ t('::Tenant:AdminEmail') }}</span>
+        <input
+          type="email"
+          class="form-control"
+          name="adminEmail"
+          autocomplete="off"
+          [ngModel]="draft().adminEmail"
+          (ngModelChange)="patch('adminEmail', $event)" />
+      </label>
+
+      <label class="field">
+        <span class="field__label">{{ t('::Tenant:AdminPassword') }}</span>
+        <input
+          type="password"
+          class="form-control"
+          name="adminPassword"
+          autocomplete="new-password"
+          [ngModel]="draft().adminPassword"
+          (ngModelChange)="patch('adminPassword', $event)" />
+        <span class="field__hint">{{ t('::Tenant:Admin:Hint') }}</span>
+      </label>
+    }
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+        {{ t('::Cancel') }}
+      </button>
+      <button type="button" class="btn btn-primary" [disabled]="!canSave() || saving()" (click)="save()">
+        {{ t('::Save') }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (pendingDelete(); as tenant) {
+  <div class="scrim" (click)="cancelDelete()"></div>
+
+  <div
+    class="confirm"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="deleteTenantTitle"
+    astroModal
+    (dismiss)="cancelDelete()">
+    <h2 id="deleteTenantTitle" class="confirm__title">{{ t('::Tenant:Delete') }}</h2>
+    <p class="confirm__body">{{ t('::Tenant:Delete:Body', tenant.name) }}</p>
+
+    <!-- The name, typed back. This is the most destructive act in the product —
+         an organisation's exams, its people and every result they ever sat go
+         with it — and a dialog somebody can dismiss by reflex is not a
+         confirmation for that. -->
+    <label class="field">
+      <span class="field__label">{{ t('::Tenant:Delete:Confirm', tenant.name) }}</span>
+      <input
+        class="form-control"
+        name="typedName"
+        autocomplete="off"
+        [ngModel]="typedName()"
+        (ngModelChange)="typedName.set($event)" />
+    </label>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelDelete()">
+        {{ t('::Cancel') }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-danger"
+        [disabled]="!deleteConfirmed() || saving()"
+        (click)="confirmDelete()">
+        {{ t('::Delete') }}
+      </button>
+    </div>
+  </div>
+}

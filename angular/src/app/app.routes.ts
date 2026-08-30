@@ -94,6 +94,16 @@ export const APP_ROUTES: Routes = [
           import('./features/roles/role-list.component').then(m => m.RoleListComponent),
       },
       {
+        // Host only in practice: a tenant is never granted this, because an
+        // organisation cannot see that other organisations exist. That is most
+        // of what multi-tenancy means here.
+        path: 'organisations',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'AbpTenantManagement.Tenants' },
+        loadComponent: () =>
+          import('./features/tenants/tenant-list.component').then(m => m.TenantListComponent),
+      },
+      {
         // No permission guard: everybody signed in may read the settings, and the
         // screen is read-only without ManageSettings. Knowing the rules the exams
         // run under is not a privilege.

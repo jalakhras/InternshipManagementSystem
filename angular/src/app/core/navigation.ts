@@ -62,6 +62,7 @@ export const NAVIGATION: readonly NavSection[] = [
       { labelKey: '::Nav:Catalog', route: '/catalog', icon: 'bi-tags', permission: P.Catalog.View },
       { labelKey: '::Nav:Users', route: '/users', icon: 'bi-person-badge', permission: P.IdentityManagement.Users.View },
       { labelKey: '::Nav:Roles', route: '/roles', icon: 'bi-shield-check', permission: 'AbpIdentity.Roles' },
+      { labelKey: '::Nav:Tenants', route: '/organisations', icon: 'bi-buildings', permission: 'AbpTenantManagement.Tenants' },
       { labelKey: '::Nav:Settings', route: '/settings', icon: 'bi-sliders', permission: P.Administration.ManageSettings },
     ],
   },
