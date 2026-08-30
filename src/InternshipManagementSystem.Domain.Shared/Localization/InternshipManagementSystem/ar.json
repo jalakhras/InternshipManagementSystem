@@ -960,6 +960,7 @@
     "Candidate:Phone:Hint": "اختياري. طريقة ثانية للوصول إلى الشخص.",
     "Candidate:Category": "التصنيف",
     "Candidate:Category:None": "بلا تصنيف",
-    "Candidate:Category:Hint": "مجال الدراسة — غير الشعبة. الشعبة تُدار من شاشة المجموعات."
+    "Candidate:Category:Hint": "مجال الدراسة — غير الشعبة. الشعبة تُدار من شاشة المجموعات.",
+    "Review:AttachmentUnreadable": "تعذّر فتح المرفق. لا تضع درجةً على عملٍ لم تره — أبلغ المسؤول."
   }
 }

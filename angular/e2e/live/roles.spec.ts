@@ -277,6 +277,116 @@ test.describe('What each role can do, and what it is refused', () => {
     await allowed('marker', 'get', '/api/assessment/review/queue?maxResultCount=10');
   });
 
+  test('a marker can open an answer somebody uploaded, and nothing else', async () => {
+    // Reading media was guarded by a question permission, and the Marker role
+    // holds none of those — it holds the three Review permissions and no more.
+    // So a candidate who answered by uploading a file or recording themselves
+    // reached a marker who could not open either: the paperclip rendered, the
+    // link had no address, clicking did nothing, and the marker was left to put
+    // a number on work they had never seen.
+    // Against a real uploaded answer, because the endpoint answers 404 for a
+    // blob it will not serve *and* for one that is not there — so an assertion
+    // about a made-up path passes whether the permission works or not. This
+    // failed exactly that way on the first attempt.
+    const exam = await (
+      await allowed('admin', 'get', '/api/assessment/exams?maxResultCount=50')
+    ).json();
+
+    const published = exam.items.find((e: { status: number; questionCount: number }) => e.status === 1 && e.questionCount > 0);
+    expect(published, 'no published exam to attach an answer to').toBeTruthy();
+
+    const person = await (
+      await allowed('admin', 'post', '/api/assessment/candidates', {
+        fullName: `Attachment ${Date.now()}`,
+        email: `language-centre-attach-${Date.now()}@example.test`,
+      })
+    ).json();
+
+    const sent = await (
+      await allowed('admin', 'post', '/api/assessment/assignments', {
+        examId: published.id,
+        candidateId: person.id,
+        expiresAt: '2027-01-01T00:00:00Z',
+        maxAttempts: 1,
+        sendEmail: false,
+      })
+    ).json();
+
+    const token = sent.recipients[0].url.split('/').pop();
+
+    const opened = await (await as.get('admin')!.get(`/api/assessment/take/${token}`)).json();
+    const started = await (
+      await as.get('admin')!.post('/api/assessment/take/start', {
+        headers: { 'X-Exam-Session': opened.sessionToken },
+      })
+    ).json();
+
+    const uploaded = await as.get('admin')!.post('/api/assessment/media/answer', {
+      headers: { 'X-Exam-Session': started.sessionToken },
+      multipart: {
+        file: {
+          name: 'answer.png',
+          mimeType: 'image/png',
+          buffer: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk' +
+              'YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+            'base64',
+          ),
+        },
+      },
+    });
+
+    expect(uploaded.status(), 'the candidate must be able to upload an answer').toBe(200);
+
+    const { blobName: answerBlob } = await uploaded.json();
+
+    const answer = await as.get('marker')!.get(`/api/assessment/media/${answerBlob}`);
+
+    expect(
+      answer.status(),
+      'a marker must be able to open an answer somebody uploaded',
+    ).toBe(200);
+
+    // And the other half, which is why this was narrowed to `answers/` rather
+    // than granted wholesale: the question bank stays shut. A marker who could
+    // read any blob could read the model answers they are marking against.
+    //
+    // Against a real file, because a missing blob answers 404 either way and a
+    // test that cannot tell a refusal from an absence proves nothing.
+    const upload = await as.get('admin')!.post('/api/assessment/media', {
+      multipart: {
+        file: {
+          name: 'question.png',
+          mimeType: 'image/png',
+          // The smallest valid PNG: an 1×1 transparent pixel.
+          buffer: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk' +
+              'YPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+            'base64',
+          ),
+        },
+      },
+    });
+
+    expect(upload.status(), 'the administrator must be able to upload').toBe(200);
+
+    const { blobName } = await upload.json();
+
+    expect(await (await as.get('admin')!.get(`/api/assessment/media/${blobName}`)).status()).toBe(200);
+
+    const bank = await as.get('marker')!.get(`/api/assessment/media/${blobName}`);
+
+    // The same address, two roles, two outcomes — which is the whole assertion.
+    // 404 and not 403 on purpose: the endpoint does not reveal whether a blob it
+    // will not serve exists, so a refusal and an absence look alike from outside.
+    // That is right, and it is why this is tested against a file the
+    // administrator has just fetched successfully.
+    expect(
+      bank.status(),
+      'a marker must not be able to read question media',
+    ).not.toBe(200);
+  });
+
   test('a marker may read the integrity signals on an attempt, and a coordinator may not', async () => {
     // Found as the administrator, because the marker deliberately cannot list
     // results and so has no way to name an attempt from outside their own queue.

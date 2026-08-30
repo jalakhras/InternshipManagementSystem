@@ -256,13 +256,36 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
         // Staff, in their own tenant and nobody else's. Deliberately not the
         // tenant encoded in the name: an administrator who knew another
         // organisation's blob name could otherwise read it.
-        if (!await AuthorizationService.IsGrantedAsync(
+        if (await AuthorizationService.IsGrantedAsync(
                 InternshipManagementSystemPermissions.Questions.Default))
         {
-            return null;
+            return await _blobs.GetOrNullAsync(blobName);
         }
 
-        return await _blobs.GetOrNullAsync(blobName);
+        // A marker may open what they are marking.
+        //
+        // Reading was guarded by a question permission, and the Marker role holds
+        // none — it holds the three Review permissions and nothing else. So a
+        // candidate who answered by uploading a file or recording themselves
+        // arrived at a marker who could not open either. The paperclip rendered,
+        // the href was empty, clicking it did nothing, and the marker was left to
+        // put a number on work they had never seen.
+        //
+        // Narrowed to `answers/`, which is the only path an uploaded answer is
+        // ever written to (`{tenant}/answers/{attemptId}/…`) and never where
+        // question media goes. Granting `Questions.Default` instead would have
+        // opened the question bank — including model answers — to a role that is
+        // deliberately not allowed to see it.
+        var answers = $"{CurrentTenant.Id?.ToString("N") ?? "host"}/answers/";
+
+        if (blobName.StartsWith(answers, StringComparison.Ordinal)
+            && await AuthorizationService.IsGrantedAsync(
+                InternshipManagementSystemPermissions.Review.Grade))
+        {
+            return await _blobs.GetOrNullAsync(blobName);
+        }
+
+        return null;
     }
 
     [Authorize(InternshipManagementSystemPermissions.Questions.Edit)]

@@ -54,12 +54,26 @@ export class ReviewAttemptComponent {
    */
 
   fileUrl(url: string | null | undefined): string | null {
-
     const blob = url?.split('/api/assessment/media/')[1];
 
-
     return blob ? this.media.objectUrl(blob)() : null;
+  }
 
+  /**
+   * Whether the attachment could not be fetched.
+   *
+   * <p>
+   * A null URL means two different things — not here yet, and never coming —
+   * and the screen used to draw the same inert paperclip for both. A marker
+   * clicked it, nothing happened, and there was nothing anywhere to tell them
+   * why. The commonest cause was a permission: reading media was guarded by a
+   * question permission the Marker role does not hold.
+   * </p>
+   */
+  fileFailed(url: string | null | undefined): boolean {
+    const blob = url?.split('/api/assessment/media/')[1];
+
+    return blob ? this.media.failed(blob)() : false;
   }
 
 

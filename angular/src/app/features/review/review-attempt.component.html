@@ -60,10 +60,21 @@
         @if (answer.response) {
           <pre class="answer__text">{{ answer.response }}</pre>
         } @else if (answer.answerFileUrl) {
-          <a class="answer__file" [href]="fileUrl(answer.answerFileUrl)" target="_blank" rel="noopener">
-            <i class="bi bi-paperclip" aria-hidden="true"></i>
-            {{ answer.answerFileName || t('::Review:AttachedFile') }}
-          </a>
+          @if (fileFailed(answer.answerFileUrl)) {
+            <!-- Said, rather than drawn as a link that does nothing. A marker who
+                 cannot open the work must know that is what happened, because the
+                 alternative is marking it anyway. -->
+            <p class="answer__unreadable" role="alert">
+              {{ t('::Review:AttachmentUnreadable') }}
+            </p>
+          } @else if (fileUrl(answer.answerFileUrl); as href) {
+            <a class="answer__file" [href]="href" target="_blank" rel="noopener">
+              <i class="bi bi-paperclip" aria-hidden="true"></i>
+              {{ answer.answerFileName || t('::Review:AttachedFile') }}
+            </a>
+          } @else {
+            <p class="answer__loading">{{ t('::Loading') }}</p>
+          }
         } @else {
           <p class="answer__blank">{{ t('::Review:NoAnswer') }}</p>
         }

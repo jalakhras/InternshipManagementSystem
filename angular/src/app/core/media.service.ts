@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, Signal, inject, signal } from '@angular/core';
+import { Injectable, Signal, WritableSignal, inject, signal } from '@angular/core';
 
 import { environment } from '../../environments/environment';
 
@@ -77,11 +77,42 @@ export class MediaService {
       .subscribe({
         next: blob => url.set(URL.createObjectURL(blob)),
 
-        // Deliberately silent. A missing thumbnail is not worth an error banner
-        // over the form somebody is filling in.
-        error: () => this.objects.delete(blobName),
+        // Recorded rather than announced. A missing thumbnail is not worth an
+        // error banner over the form somebody is filling in — but a caller who
+        // needs to say "this could not be opened" has no other way to know,
+        // because a null signal means "not here yet" and "never coming" alike.
+        //
+        // The entry stays in the map on purpose. Deleting it meant the next
+        // change-detection pass called this method again, found nothing cached,
+        // and issued a fresh request — one failed image became a request per
+        // frame, for as long as the screen was open.
+        error: () => this.failed(blobName).set(true),
       });
 
     return url.asReadonly();
   }
+
+  /**
+   * Whether this blob was asked for and could not be fetched.
+   *
+   * <p>
+   * For callers where the difference matters. A marker looking at a candidate's
+   * uploaded answer needs to be told it cannot be opened; the alternative — and
+   * what the product did — is a paperclip that renders, looks like a link, and
+   * does nothing when clicked, leaving them to put a number on work they never
+   * saw.
+   * </p>
+   */
+  failed(blobName: string): WritableSignal<boolean> {
+    let flag = this.failures.get(blobName);
+
+    if (!flag) {
+      flag = signal(false);
+      this.failures.set(blobName, flag);
+    }
+
+    return flag;
+  }
+
+  private readonly failures = new Map<string, WritableSignal<boolean>>();
 }
