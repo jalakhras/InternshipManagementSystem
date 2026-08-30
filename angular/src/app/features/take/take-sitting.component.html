@@ -6,14 +6,43 @@
       {{ t('::Take:Progress', position().toString(), (state()?.totalQuestions ?? 0).toString()) }}
     </span>
 
+    <!-- One element, three jobs kept apart: the clock says the time, the glyph
+         says the urgency, and a separate region says the two things worth
+         interrupting a candidate for.
+
+         `role="timer"` keeps its implicit `aria-live="off"`, which the spec gives
+         it precisely so a value that changes every second does not flood the
+         buffer. Overriding it to "polite" made this clock the only thing a
+         candidate using a screen reader could hear — every second, over the
+         question they were trying to read.
+
+         And the name is built with `aria-labelledby` out of the label and the
+         digits together, because a timer takes its name from the author: an
+         `aria-label` here *replaced* the time instead of describing it, so the
+         one thing the element exists to say was the one thing never said. -->
     <span
       class="clock clock--{{ clockTone() }}"
       role="timer"
-      aria-live="polite"
-      [attr.aria-label]="t('::Take:TimeLeft')">
-      <i class="bi bi-clock" aria-hidden="true"></i>
-      <span class="astro-numeric">{{ clock() }}</span>
+      aria-labelledby="clockLabel clockValue">
+      <i
+        class="bi"
+        [class.bi-clock]="clockTone() === 'calm'"
+        [class.bi-alarm-fill]="clockTone() !== 'calm'"
+        aria-hidden="true"></i>
+      <span id="clockLabel" class="astro-visually-hidden">{{ t('::Take:TimeLeft') }}</span>
+      <span id="clockValue" class="astro-numeric">{{ clock() }}</span>
+
+      @if (clockTone() !== 'calm') {
+        <span class="clock__word">{{ t('::Take:Hurry') }}</span>
+      }
     </span>
+
+    <!-- Two announcements in a whole sitting: one at five minutes, one at one.
+         Empty the rest of the time, so this region only ever changes twice —
+         which is what makes it worth hearing. Running low used to be carried by
+         colour alone, and a candidate who cannot tell amber from grey was told
+         nothing at all. -->
+    <span class="astro-visually-hidden" role="status">{{ timeWarning() }}</span>
 
     <span class="saved" role="status">
       @if (saving()) {

@@ -118,6 +118,37 @@ export class TakeSittingComponent {
     return left <= 300 ? 'warn' : 'calm';
   });
 
+  /**
+   * The two moments worth interrupting somebody for.
+   * <p>
+   * A live region that changes every second is a region nobody can use: it
+   * drowns the question, the answer, and the save. This one is empty for almost
+   * the whole sitting and speaks exactly twice — at five minutes and at one —
+   * which is what makes those two sentences worth hearing.
+   * </p>
+   * <p>
+   * It also carries what colour used to carry alone. The clock turned amber and
+   * then red, and a candidate who cannot tell those apart was told nothing.
+   * </p>
+   */
+  readonly timeWarning = computed(() => {
+    const left = this.secondsRemaining();
+
+    if (left <= 0) {
+      return '';
+    }
+
+    if (left <= 60) {
+      return this.t('::Take:Warn:OneMinute');
+    }
+
+    if (left <= 300) {
+      return this.t('::Take:Warn:FiveMinutes');
+    }
+
+    return '';
+  });
+
   readonly unanswered = computed(() => {
     const state = this.state();
 

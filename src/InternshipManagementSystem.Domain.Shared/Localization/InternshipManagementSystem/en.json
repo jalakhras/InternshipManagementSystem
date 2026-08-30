@@ -988,6 +988,9 @@
     "Group:Empty:Body": "Nobody will be left in it. If you expected names here, the roll most likely failed to load — close it and open it again.",
     "Group:Empty:Confirm": "Yes, empty it",
     "IMS:Attempt:ClosedForUploads": "This sitting is over, so files can no longer be uploaded. A file that was already on its way when the time ran out is still accepted and kept.",
-    "Account:Menu": "Your account"
+    "Account:Menu": "Your account",
+    "Take:Hurry": "Time is short",
+    "Take:Warn:FiveMinutes": "Five minutes left.",
+    "Take:Warn:OneMinute": "One minute left."
   }
 }

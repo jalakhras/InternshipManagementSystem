@@ -394,3 +394,11 @@ textarea,
     font-size: .8125rem;
   }
 }
+
+// The tone must survive greyscale and a reader who cannot separate amber from
+// grey: the glyph changes shape and the weight changes with it, so colour is
+// confirmation rather than the carrier.
+.clock--warn,
+.clock--urgent { font-weight: var(--astro-weight-bold); }
+
+.clock__word { font-size: var(--astro-text-sm); }

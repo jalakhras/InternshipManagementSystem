@@ -568,4 +568,37 @@ test.describe('Taking an exam', () => {
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   });
+
+  test('the clock says the time, and does not shout it every second', async ({ page }) => {
+    await stubTake(page, { secondsRemaining: 1800 });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const clock = page.getByRole('timer');
+
+    // The name used to be an aria-label reading "Time left", which *replaced*
+    // the digits rather than describing them — so the one thing this element
+    // exists to say was the one thing a screen reader never said.
+    await expect(clock).toHaveAccessibleName(/Time remaining.*\d/);
+
+    // And `role="timer"` is given an implicit `aria-live="off"` by the spec for
+    // a reason: a value that changes every second floods the buffer. Overriding
+    // it to polite made this clock the only thing a candidate could hear, over
+    // the question they were trying to read.
+    await expect(clock).not.toHaveAttribute('aria-live', 'polite');
+  });
+
+  test('running low is said in words, not only in a colour', async ({ page }) => {
+    await stubTake(page, { secondsRemaining: 200 });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    // A candidate who cannot tell amber from grey was told nothing at all.
+    await expect(
+      page.getByRole('status').filter({ hasText: /minute/i }),
+    ).toHaveCount(1);
+    await expect(page.getByText('Time is short')).toBeVisible();
+  });
 });
