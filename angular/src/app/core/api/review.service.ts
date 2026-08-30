@@ -105,7 +105,7 @@ export class ReviewService {
   private readonly rest = inject(RestService);
   private readonly base = '/api/assessment/review';
 
-  getQueue(input: PagedRequest): Observable<PagedResult<ReviewQueueItem>> {
+  getQueue(input: PagedRequest & { finished?: boolean }): Observable<PagedResult<ReviewQueueItem>> {
     return this.rest.request<void, PagedResult<ReviewQueueItem>>({
       method: 'GET',
       url: `${this.base}/queue`,

@@ -11,7 +11,7 @@ namespace InternshipManagementSystem.Assessment.Review;
 public interface IReviewAppService : IApplicationService
 {
     /// <summary>Attempts waiting on a human, oldest first.</summary>
-    Task<PagedResultDto<ReviewQueueItemDto>> GetQueueAsync(PagedAndSortedResultRequestDto input);
+    Task<PagedResultDto<ReviewQueueItemDto>> GetQueueAsync(ReviewQueueRequestDto input);
 
     /// <summary>The pending answers on one attempt, with rubric, key and context.</summary>
     Task<List<ReviewAnswerDto>> GetAnswersAsync(Guid attemptId);

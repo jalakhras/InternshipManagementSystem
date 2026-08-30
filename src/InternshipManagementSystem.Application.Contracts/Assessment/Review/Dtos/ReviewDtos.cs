@@ -117,3 +117,23 @@ public class IntegritySignalDto
     public DateTime OccurredAt { get; set; }
     public int? Magnitude { get; set; }
 }
+
+/// <summary>
+/// Which sittings the marker wants to see.
+/// <para>
+/// The queue's job is what is waiting, and that stays the default. But an
+/// attempt left it the moment its last answer was marked and never came back, so
+/// a marker who typed 7 where they meant 17 had no route to the sitting at all —
+/// the queue no longer listed it, and nothing else does.
+/// </para>
+/// <para>
+/// A mark is a person's judgement and people revise judgements. Making the
+/// revision impossible does not make the first mark more correct; it makes it
+/// permanent, which is a different thing.
+/// </para>
+/// </summary>
+public class ReviewQueueRequestDto : Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto
+{
+    /// <summary>Sittings already marked, newest first, instead of those waiting.</summary>
+    public bool Finished { get; set; }
+}

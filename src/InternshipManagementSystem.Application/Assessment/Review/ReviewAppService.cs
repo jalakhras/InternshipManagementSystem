@@ -54,18 +54,28 @@ public class ReviewAppService : ApplicationService, IReviewAppService
 
     /// <summary>Oldest first: a candidate waiting longest is served first.</summary>
     [Authorize(InternshipManagementSystemPermissions.Review.ViewQueue)]
-    public async Task<PagedResultDto<ReviewQueueItemDto>> GetQueueAsync(PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<ReviewQueueItemDto>> GetQueueAsync(ReviewQueueRequestDto input)
     {
         var attempts = await _attempts.GetQueryableAsync();
         var candidates = await _candidates.GetQueryableAsync();
         var exams = await _exams.GetQueryableAsync();
 
-        var query = from attempt in attempts
-                    join candidate in candidates on attempt.CandidateId equals candidate.Id
-                    join exam in exams on attempt.ExamId equals exam.Id
-                    where attempt.IsSubmitted && attempt.NeedsManualReview
-                    orderby attempt.SubmittedAt
-                    select new { attempt, candidate.FullName, exam.Title };
+        // Waiting: oldest first, because somebody has been waiting longest for it.
+        // Already marked: newest first, because a mark being revisited is nearly
+        // always one just made.
+        var query = input.Finished
+            ? from attempt in attempts
+              join candidate in candidates on attempt.CandidateId equals candidate.Id
+              join exam in exams on attempt.ExamId equals exam.Id
+              where attempt.IsSubmitted && !attempt.NeedsManualReview
+              orderby attempt.SubmittedAt descending
+              select new { attempt, candidate.FullName, exam.Title }
+            : from attempt in attempts
+              join candidate in candidates on attempt.CandidateId equals candidate.Id
+              join exam in exams on attempt.ExamId equals exam.Id
+              where attempt.IsSubmitted && attempt.NeedsManualReview
+              orderby attempt.SubmittedAt
+              select new { attempt, candidate.FullName, exam.Title };
 
         var totalCount = await query.CountAsync();
         var page = await query.Skip(input.SkipCount).Take(input.MaxResultCount).ToListAsync();

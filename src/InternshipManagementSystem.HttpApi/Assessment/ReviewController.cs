@@ -33,7 +33,7 @@ public class ReviewController : AbpControllerBase
 
     [HttpGet("queue")]
     public Task<PagedResultDto<ReviewQueueItemDto>> GetQueueAsync(
-        [FromQuery] PagedAndSortedResultRequestDto input) =>
+        [FromQuery] ReviewQueueRequestDto input) =>
         _review.GetQueueAsync(input);
 
     /// <summary>

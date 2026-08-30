@@ -38,6 +38,25 @@ export class ReviewQueueComponent {
   readonly totalCount = signal(0);
   readonly page = signal(0);
 
+  /**
+   * Whether to list sittings already marked instead of those waiting.
+   * <p>
+   * The queue's job is what is waiting, so that stays the default. But an
+   * attempt left it the moment its last answer was marked and never came back —
+   * so a marker who typed 7 where they meant 17 had no route to that sitting at
+   * all. A mark is a person's judgement, and people revise judgements; making
+   * the revision impossible does not make the first mark more correct, only
+   * permanent.
+   * </p>
+   */
+  readonly finished = signal(false);
+
+  showFinished(value: boolean): void {
+    this.finished.set(value);
+    this.page.set(0);
+    this.load();
+  }
+
   readonly pageSize = 20;
 
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.items().length === 0);
@@ -52,7 +71,11 @@ export class ReviewQueueComponent {
     this.error.set(null);
 
     this.review
-      .getQueue({ skipCount: this.page() * this.pageSize, maxResultCount: this.pageSize })
+      .getQueue({
+        skipCount: this.page() * this.pageSize,
+        maxResultCount: this.pageSize,
+        finished: this.finished(),
+      })
       .subscribe({
         next: result => {
           this.items.set(result.items);

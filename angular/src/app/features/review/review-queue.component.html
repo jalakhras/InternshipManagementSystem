@@ -2,6 +2,30 @@
   [title]="t('::Nav:ReviewQueue')"
   [description]="t('::Review:Queue:Lede')" />
 
+<!-- Two views of the same list, not a filter buried in a menu: putting a mark
+     right is a thing markers do, and it should be one click from the queue
+     rather than something they have to know is possible. -->
+<div class="queue-scope" role="group" [attr.aria-label]="t('::Review:Queue:Lede')">
+  <button
+    type="button"
+    class="queue-scope__tab"
+    [class.queue-scope__tab--on]="!finished()"
+    [attr.aria-pressed]="!finished()"
+    (click)="showFinished(false)">
+    {{ t('::Review:Waiting') }}
+  </button>
+
+  <button
+    type="button"
+    class="queue-scope__tab"
+    [class.queue-scope__tab--on]="finished()"
+    [attr.aria-pressed]="finished()"
+    [attr.title]="t('::Review:Finished:Hint')"
+    (click)="showFinished(true)">
+    {{ t('::Review:Finished') }}
+  </button>
+</div>
+
 @if (loading()) {
   <div class="state" role="status" aria-live="polite">
     <span class="spinner" aria-hidden="true"></span>

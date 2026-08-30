@@ -432,3 +432,37 @@
   color: var(--astro-pending-700);
   font-size: .8125rem;
 }
+
+// Two tabs over one list. Named queue-scope rather than .tabs or .nav, both of
+// which Bootstrap already owns and would restyle without a word.
+.queue-scope {
+  display: flex;
+  gap: var(--astro-space-2);
+  margin-block-end: var(--astro-space-4);
+
+  &__tab {
+    // Past the minimum target size, and apart enough that the wrong one is hard
+    // to catch on a phone.
+    min-block-size: 2.75rem;
+    padding-inline: var(--astro-space-4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--astro-radius-full);
+    background: var(--surface-raised);
+    color: var(--text-secondary);
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    // Which one is showing is said by aria-pressed as well as by the fill, so it
+    // does not rest on colour alone.
+    &--on {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--surface-raised);
+      font-weight: var(--astro-weight-medium);
+    }
+  }
+}
