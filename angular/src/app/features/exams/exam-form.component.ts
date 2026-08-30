@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { CatalogService } from '../../core/api/catalog.service';
+import { SettingsService } from '../../core/api/settings.service';
 import { CategoryDto, LevelDto } from '../../core/api/catalog.models';
 import { ExamService } from '../../core/api/exam.service';
 import {
@@ -36,6 +37,7 @@ import { StatusChipComponent } from '../../shared/ui/status-chip.component';
 export class ExamFormComponent {
   private readonly exams = inject(ExamService);
   private readonly catalog = inject(CatalogService);
+  private readonly settings = inject(SettingsService);
   private readonly router = inject(Router);
 
   readonly t = inject(TranslateService).t;
@@ -81,6 +83,8 @@ export class ExamFormComponent {
     description: '',
     mode: ExamMode.Assessment,
     timeLimitInMinutes: 60,
+    // Replaced with the organisation's own default once settings arrive. Sixty
+    // is what a form shows before that lands, not a decision.
     passingPercentage: 60,
     shuffleQuestions: true,
     shuffleOptions: true,
@@ -106,6 +110,27 @@ export class ExamFormComponent {
   private loadedId?: string;
 
   constructor() {
+    // "Applied to a new exam unless its author changes it" — what the setting's
+    // own hint promises, and what nothing did. The pass mark was hardcoded at
+    // sixty here, so an organisation that set seventy on its settings screen
+    // watched every new exam come back at sixty and had to correct each one by
+    // hand, or not notice.
+    //
+    // Only for a new exam. An exam being edited keeps the mark it was published
+    // with; changing that under an author because a default moved would rewrite
+    // the rule somebody already sat under.
+    this.settings.load().subscribe({
+      next: settings => {
+        if (this.isNew() && settings.defaultPassingPercentage != null) {
+          this.form.update(form => ({
+            ...form,
+            passingPercentage: settings.defaultPassingPercentage,
+          }));
+        }
+      },
+      error: () => undefined,
+    });
+
     // Not read in the constructor. withComponentInputBinding() sets a routed
     // component's inputs after it is constructed, so `id` was always undefined
     // here: the exam was never fetched and the form opened as a new one, which

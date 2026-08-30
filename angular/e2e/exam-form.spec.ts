@@ -24,6 +24,34 @@ test.describe('Exam editor', () => {
     ).toBeVisible();
   });
 
+  test("a new exam takes the organisation's pass mark, not a number in the code", async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+
+    await page.route('**/api/assessment/settings', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          organizationName: 'Trading Academy',
+          defaultLanguage: 'ar',
+          timeZone: 'Asia/Riyadh',
+          defaultPassingPercentage: 75,
+          showResultToCandidate: true,
+          collectIntegritySignals: true,
+          enableSelfRegistration: false,
+        }),
+      }),
+    );
+
+    await gotoApp(page, '/exams/new');
+
+    // The setting's own hint says "applied to a new exam unless its author
+    // changes it", and the number was hardcoded at 60 — so an organisation that
+    // set 75 watched every new exam come back at 60 and either corrected each
+    // one by hand or did not notice.
+    await expect(page.getByLabel(/Pass mark/)).toHaveValue('75');
+  });
+
   test('says why the pass mark is a percentage', async ({ page }) => {
     await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
     await stubExamDetail(page);
