@@ -46,6 +46,63 @@ test.describe('Shell', () => {
   });
 
 
+  test("an organisation that runs in English starts its staff in English", async ({ page }) => {
+    await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
+
+    await page.route('**/api/assessment/settings', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          organizationName: 'Northern Language Centre',
+          defaultLanguage: 'en',
+          timeZone: 'Asia/Riyadh',
+          defaultPassingPercentage: 60,
+          showResultToCandidate: true,
+          collectIntegritySignals: true,
+        }),
+      }),
+    );
+
+    await gotoApp(page, '/');
+
+    // The setting was saved, read back, and applied nowhere — so a centre that
+    // chose English watched every member of its staff land in Arabic and had to
+    // tell each of them to switch.
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+  });
+
+  test("a person's own choice outlives the organisation's default", async ({ page }) => {
+    await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
+
+    await page.route('**/api/assessment/settings', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          organizationName: 'Northern Language Centre',
+          defaultLanguage: 'en',
+          timeZone: 'Asia/Riyadh',
+          defaultPassingPercentage: 60,
+          showResultToCandidate: true,
+          collectIntegritySignals: true,
+        }),
+      }),
+    );
+
+    // This person picked Arabic on a previous visit.
+    await page.addInitScript(() => localStorage.setItem('astro.language', 'ar'));
+
+    await gotoApp(page, '/');
+
+    // The half that decides whether the other half is worth having. A default
+    // that overrode somebody's own choice would be worse than no default: an
+    // English-speaking administrator at an Arabic centre would be switched back
+    // on every single visit.
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+  });
+
   test('switching language changes the text, not only the direction', async ({ page }) => {
     await stubAbp(page, { culture: 'ar' });
     await gotoApp(page);

@@ -79,6 +79,10 @@ export class ShellComponent {
    */
   private readonly paint = effect(() => this.brand.apply(this.settings.current()?.brandColor));
 
+  /** And the language it starts people in, unless they have chosen otherwise. */
+  private readonly speak = effect(() =>
+    this.dir.useOrganisationDefault(this.settings.current()?.defaultLanguage));
+
   readonly userMenuOpen = signal(false);
 
   /**

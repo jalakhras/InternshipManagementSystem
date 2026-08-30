@@ -46,11 +46,65 @@ export class DirectionService {
    * The direction is applied here rather than waiting for the fetch, so the layout
    * mirrors on the click instead of after a round trip.
    */
+  /**
+   * The language this organisation starts people in.
+   * <p>
+   * The setting was on the settings screen, saved, read back, and applied
+   * nowhere — so a centre that set English watched every one of its staff land
+   * in Arabic, and had to tell each of them to switch. Arabic is the platform's
+   * default and stays the fallback; this is the organisation's say over it.
+   * </p>
+   * <p>
+   * Only for somebody who has not chosen. A default that overrode a person's own
+   * choice would be worse than no default at all.
+   * </p>
+   */
+  useOrganisationDefault(culture: string | null | undefined): void {
+    if (!culture || this.hasOwnChoice() || culture === this.language()) {
+      return;
+    }
+
+    this.applyOnly(culture);
+  }
+
+  /**
+   * Whether this person has picked a language for themselves.
+   * <p>
+   * Read from what the switcher stored, not from the session: ABP always
+   * supplies a culture — from the browser, or its own default — so "the session
+   * has one" is true on a first visit and says nothing about whether anybody
+   * chose it. Storing the act of choosing is the only way to tell the two apart,
+   * and it is how the theme preference already works.
+   * </p>
+   */
+  private hasOwnChoice(): boolean {
+    try {
+      return !!localStorage.getItem('astro.language');
+    } catch {
+      // A browser that refuses storage should still get the organisation's
+      // default; the cost is that an explicit choice does not survive a reload.
+      return false;
+    }
+  }
+
   setLanguage(culture: string): void {
     if (culture === this.language()) {
       return;
     }
 
+    // Remembered as *this person's* choice, which is what outranks the
+    // organisation's default from here on.
+    try {
+      localStorage.setItem('astro.language', culture);
+    } catch {
+      // Nothing to do: the choice still applies for this visit.
+    }
+
+    this.applyOnly(culture);
+  }
+
+  /** Switches without recording a choice — used for the organisation's default. */
+  private applyOnly(culture: string): void {
     this.session.setLanguage(culture);
     this.applyLanguage(culture);
   }

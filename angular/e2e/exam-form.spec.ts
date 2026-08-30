@@ -33,7 +33,11 @@ test.describe('Exam editor', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           organizationName: 'Trading Academy',
-          defaultLanguage: 'ar',
+          // English, to match the culture above. The pair used to mean nothing;
+          // now the organisation's language actually starts people in it, so an
+          // English session under an Arabic organisation would switch mid-test —
+          // correct behaviour, and nothing to do with the pass mark.
+          defaultLanguage: 'en',
           timeZone: 'Asia/Riyadh',
           defaultPassingPercentage: 75,
           showResultToCandidate: true,
