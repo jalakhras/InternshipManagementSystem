@@ -77,6 +77,44 @@ test.describe('Assignments', () => {
     });
   };
 
+  const person = (over: Record<string, unknown> = {}) => ({
+    id: 'c9',
+    fullName: 'Rana Aziz',
+    email: 'rana@example.com',
+    status: 0,
+    groupNames: [],
+    attemptCount: 0,
+    creationTime: '2026-01-01T00:00:00Z',
+    ...over,
+  });
+
+  /**
+   * The people search, and the group's roll, which share one endpoint.
+   *
+   * Matched on the path rather than by glob so it cannot swallow
+   * `/candidates/groups`, which the panel needs answered separately and which
+   * this route would otherwise shadow — Playwright gives the last route
+   * registered the first refusal.
+   */
+  const stubPeople = async (page: import('@playwright/test').Page, people: unknown[]) => {
+    await page.route(
+      url => url.pathname === '/api/assessment/candidates',
+      route =>
+        route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ totalCount: people.length, items: people }),
+        }),
+    );
+  };
+
+  /** The body of the one POST that creates the links. */
+  const sentBody = (page: import('@playwright/test').Page) =>
+    page.waitForRequest(
+      request =>
+        request.method() === 'POST' && request.url().endsWith('/api/assessment/assignments'),
+    );
+
   test('shows what happened to each link rather than only that it exists', async ({ page }) => {
     await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
     await stubAssignments(page, [
@@ -183,6 +221,137 @@ test.describe('Assignments', () => {
 
     await page.getByLabel('Who gets it').selectOption('g1');
     await expect(page.getByRole('button', { name: 'Create the links' })).toBeEnabled();
+  });
+
+  test('sends to one person, with no class to hold them', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubAssignments(page, [], {
+      assignmentId: 'as1',
+      linksCreated: 1,
+      emailsSent: 1,
+      emailsFailed: 0,
+      recipients: [
+        { candidateId: 'c9', candidateName: 'Rana Aziz', email: 'rana@example.com', url: 'https://exam.test/exam/tok-9', emailSent: true },
+      ],
+    });
+    await stubPeople(page, [person()]);
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+    await page.getByRole('button', { name: 'Send this exam' }).first().click();
+
+    await page.getByRole('button', { name: 'One person' }).click();
+
+    // A coordinator who has added one student could send them nothing until they
+    // had invented a class to put them in — and on a new organisation, with no
+    // classes at all, the picker was empty and the button never enabled.
+    await expect(page.getByRole('button', { name: 'Create the links' })).toBeDisabled();
+
+    await page.getByLabel('Which person').fill('Rana');
+    await page.getByRole('button', { name: /Rana Aziz/ }).click();
+
+    await expect(page.getByRole('button', { name: 'Create the links' })).toBeEnabled();
+
+    const posted = sentBody(page);
+
+    await page.getByRole('button', { name: 'Create the links' }).click();
+
+    const body = (await posted).postDataJSON();
+
+    // One target, never two. The server refuses a request naming both, so a
+    // leftover class here would be a send that fails after the coordinator has
+    // already been told it is on its way.
+    expect(body.candidateId).toBe('c9');
+    expect(body.candidateGroupId).toBeUndefined();
+
+    // And everything downstream still runs: the link comes back and is shown
+    // once, in the panel that is the only chance to copy it.
+    await expect(page.getByText('shown once')).toBeVisible();
+    await expect(page.getByText('https://exam.test/exam/tok-9')).toBeVisible();
+  });
+
+  test('a class still goes to the whole class', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubAssignments(page, []);
+    await stubPeople(page, [
+      person({ id: 'c1', fullName: 'Layla Hassan', email: 'layla@example.com' }),
+      person({ id: 'c2', fullName: 'Omar Nasser', email: 'omar@example.com' }),
+    ]);
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+    await page.getByRole('button', { name: 'Send this exam' }).first().click();
+
+    await page.getByRole('button', { name: 'A class' }).click();
+    await page.getByLabel('Who gets it').selectOption('g1');
+
+    // Still shown before the button, because a link once sent is a link somebody
+    // has.
+    await expect(page.getByText('Layla Hassan')).toBeVisible();
+
+    const posted = sentBody(page);
+
+    await page.getByRole('button', { name: 'Create the links' }).click();
+
+    const body = (await posted).postDataJSON();
+
+    expect(body.candidateGroupId).toBe('g1');
+    expect(body.candidateId).toBeUndefined();
+
+    // The paper, the deadline, the attempts and the email toggle all still ride
+    // along, and the panel of created links still appears.
+    expect(body.maxAttempts).toBe(1);
+    expect(body.sendEmail).toBe(true);
+    expect(typeof body.expiresAt).toBe('string');
+
+    await expect(page.getByText('https://exam.test/exam/tok-1')).toBeVisible();
+  });
+
+  test('a class and a person can never both be chosen', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubAssignments(page, []);
+    await stubPeople(page, [person()]);
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+    await page.getByRole('button', { name: 'Send this exam' }).first().click();
+
+    await page.getByRole('button', { name: 'One person' }).click();
+    await page.getByLabel('Which person').fill('Rana');
+    await page.getByRole('button', { name: /Rana Aziz/ }).click();
+
+    // Switching sides drops what the other side held. If it did not, the button
+    // would stay enabled here and the request would carry two targets — which is
+    // the one thing the server will not take.
+    await page.getByRole('button', { name: 'A class' }).click();
+
+    await expect(page.getByRole('button', { name: 'Create the links' })).toBeDisabled();
+    await expect(page.getByText('rana@example.com')).toHaveCount(0);
+  });
+
+  test('the person picker fits a 390px phone in Arabic', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
+    await stubAssignments(page, []);
+    await stubPeople(page, [person()]);
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+    await page.getByRole('button', { name: 'أرسل هذا الامتحان' }).first().click();
+
+    const onePerson = page.getByRole('button', { name: 'شخص واحد' });
+
+    // 44px, because a finger is not a mouse pointer.
+    const box = await onePerson.boundingBox();
+
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+
+    await onePerson.click();
+    await page.getByLabel('أيّ شخص').fill('Rana');
+    await expect(page.getByRole('button', { name: /Rana Aziz/ })).toBeVisible();
+
+    const overflows = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
+    );
+
+    expect(overflows).toBe(false);
   });
 
   test('hides revoking and sending from someone who may only read', async ({ page }) => {

@@ -1,6 +1,8 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
+import { Subject, catchError, debounceTime, map, of, switchMap } from 'rxjs';
 
 import {
   AssignmentRecipient,
@@ -27,6 +29,33 @@ import { ModalDirective } from '../../shared/ui/modal.directive';
  * controls would let somebody set both.
  */
 const ROTATE = '__rotate__';
+
+/**
+ * Who a sitting goes to: a whole class, or one named person.
+ *
+ * One setting rather than two pickers, because the server refuses a request
+ * carrying both and "some of each" is a request nobody can check before the
+ * links are out. Holding the choice here is what makes both impossible to fill
+ * in at once — there is no state in which the panel has a class and a person.
+ */
+type Audience = 'group' | 'person';
+
+/**
+ * Below this a search is not worth running.
+ *
+ * One letter matches most of a centre, which is a list nobody reads and a query
+ * the database has to answer anyway.
+ */
+const MIN_SEARCH = 2;
+
+/**
+ * How many matches the person picker offers at a time.
+ *
+ * Short on purpose. This is a picker, not a roll: somebody looking for a named
+ * student refines the term, and a list long enough to scroll is a sign the term
+ * was too vague rather than something to page through.
+ */
+const SEARCH_LIMIT = 8;
 
 /**
  * Sending an exam out, and watching what happened to the links.
@@ -106,6 +135,25 @@ export class AssignmentComponent {
   // --- the send panel ---
   readonly sending = signal(false);
   readonly groupId = signal<string>('');
+
+  /**
+   * A class, or one person. Never both.
+   *
+   * A class was the only answer the screen had, so a coordinator who had added
+   * one student could send them nothing until they had invented a class to put
+   * them in — and on a new organisation, with no classes at all, the picker was
+   * empty and the button could never enable.
+   */
+  readonly audience = signal<Audience>('group');
+
+  readonly personQuery = signal('');
+  readonly personResults = signal<CandidateDto[]>([]);
+  readonly searching = signal(false);
+  readonly searchFailed = signal(false);
+
+  /** The one person this sitting goes to, once somebody has been picked out. */
+  readonly person = signal<CandidateDto | null>(null);
+
   readonly expiresAt = signal(this.defaultExpiry());
   readonly maxAttempts = signal(1);
   readonly sendEmail = signal(true);
@@ -121,9 +169,71 @@ export class AssignmentComponent {
   readonly totalPages = computed(() => Math.ceil(this.totalCount() / this.pageSize));
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.links().length === 0);
 
+  /**
+   * Whether there is somebody to send to at all.
+   *
+   * Reads whichever side the audience is set to and ignores the other, so the
+   * button can never be enabled by a leftover from the side nobody is looking
+   * at.
+   */
+  readonly canConfirm = computed(() =>
+    this.audience() === 'person' ? !!this.person() : !!this.groupId(),
+  );
+
+  /** Announced to a screen reader; the list itself is only visible. */
+  readonly searchStatus = computed(() => {
+    if (this.searching() || this.personQuery().trim().length < MIN_SEARCH) {
+      return '';
+    }
+
+    return this.searchFailed()
+      ? this.t('::Assignment:Person:Failed')
+      : this.t('::Assignment:Person:Results', this.personResults().length.toString());
+  });
+
   private loadedId?: string;
 
+  /** Keystrokes on the person search, before they have been slowed down. */
+  private readonly typed = new Subject<string>();
+
   constructor() {
+    // Searched on the server, one page of matches at a time. A centre with six
+    // hundred students is ordinary, and loading all of them to filter in the
+    // browser is what already broke the roll editor.
+    //
+    // `switchMap` rather than `mergeMap` because a slow answer to "lay" must not
+    // land after the answer to "layla" and put the wrong names under the cursor.
+    this.typed
+      .pipe(
+        // No `distinctUntilChanged` here. Typing a letter and deleting it inside
+        // the debounce window lands the same term twice, and dropping the second
+        // one would leave the box saying "loading" with nothing on the way.
+        debounceTime(250),
+        switchMap(term => {
+          const trimmed = term.trim();
+
+          if (trimmed.length < MIN_SEARCH) {
+            return of<CandidateDto[] | null>([]);
+          }
+
+          return this.candidates
+            .getList({ filter: trimmed, skipCount: 0, maxResultCount: SEARCH_LIMIT })
+            .pipe(
+              map(page => page.items),
+              // Swallowed inside the inner observable on purpose: an error that
+              // escapes into the outer pipe kills the stream, and the search box
+              // would go quietly dead for the rest of the panel's life.
+              catchError(() => of<CandidateDto[] | null>(null)),
+            );
+        }),
+        takeUntilDestroyed(),
+      )
+      .subscribe(found => {
+        this.searching.set(false);
+        this.searchFailed.set(found === null);
+        this.personResults.set(found ?? []);
+      });
+
     effect(() => {
       const id = this.examId();
 
@@ -218,6 +328,27 @@ export class AssignmentComponent {
   // -------------------------------------------------------------------- send
 
   /**
+   * Switches between sending to a class and sending to one person.
+   *
+   * Clearing the other side is the whole point. The server rejects a request
+   * naming both, and a screen that lets somebody fill in two and then tells them
+   * off has already wasted the minute they spent picking the second one.
+   */
+  setAudience(audience: Audience): void {
+    if (audience === this.audience()) {
+      return;
+    }
+
+    this.audience.set(audience);
+
+    if (audience === 'group') {
+      this.clearPerson();
+    } else {
+      this.setGroup('');
+    }
+  }
+
+  /**
    * Loads the people a chosen class would send to.
    *
    * Five hundred is far past any real class, and the count beside the name is
@@ -245,6 +376,38 @@ export class AssignmentComponent {
         this.loadingRecipients.set(false);
       },
     });
+  }
+
+  /**
+   * Looks somebody up by name, address or reference.
+   *
+   * The spinner goes on here rather than in the subscription so that the quarter
+   * second of debounce reads as the search it is, instead of as a box that
+   * ignored the last thing typed.
+   */
+  searchPeople(term: string): void {
+    this.personQuery.set(term);
+    this.searchFailed.set(false);
+    this.searching.set(term.trim().length >= MIN_SEARCH);
+
+    if (term.trim().length < MIN_SEARCH) {
+      this.personResults.set([]);
+    }
+
+    this.typed.next(term);
+  }
+
+  choosePerson(candidate: CandidateDto): void {
+    this.person.set(candidate);
+    this.personQuery.set('');
+    this.personResults.set([]);
+    this.searching.set(false);
+    this.searchFailed.set(false);
+  }
+
+  clearPerson(): void {
+    this.person.set(null);
+    this.searchPeople('');
   }
 
   /**
@@ -346,8 +509,10 @@ export class AssignmentComponent {
   openSend(): void {
     this.sending.set(true);
     this.result.set(null);
+    this.audience.set('group');
     this.groupId.set('');
     this.recipients.set([]);
+    this.clearPerson();
     this.expiresAt.set(this.defaultExpiry());
     this.maxAttempts.set(1);
     this.sendEmail.set(true);
@@ -365,12 +530,18 @@ export class AssignmentComponent {
     this.working.set(true);
     this.actionError.set(null);
 
+    // Exactly one of the two targets is ever set, because the audience decides
+    // which one is even read. The server rejects a request carrying both, and
+    // this is where that stays true rather than being checked afterwards.
+    const person = this.audience() === 'person';
+
     this.assignments
       .create({
         examId: this.examId(),
         examFormId: this.formId() === ROTATE ? undefined : this.formId() || undefined,
         rotateForms: this.formId() === ROTATE,
-        candidateGroupId: this.groupId() || undefined,
+        candidateId: person ? this.person()?.id : undefined,
+        candidateGroupId: person ? undefined : this.groupId() || undefined,
         expiresAt: new Date(this.expiresAt()).toISOString(),
         maxAttempts: this.maxAttempts(),
         sendEmail: this.sendEmail(),

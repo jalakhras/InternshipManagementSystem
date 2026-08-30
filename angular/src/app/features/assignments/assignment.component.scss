@@ -570,3 +570,104 @@
   gap: var(--astro-space-2);
   margin-block-start: var(--astro-space-4);
 }
+
+// ── Class or one person ──────────────────────────────────────────────────────
+// Two buttons rather than a third dropdown entry, because the two sides ask for
+// different controls underneath and a picker that changes what is below it
+// should look like a choice, not like a value.
+.audience {
+  display: flex;
+  gap: var(--astro-space-2);
+  flex-wrap: wrap;
+  margin-block-start: var(--astro-space-1);
+}
+
+.audience__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--astro-space-2);
+  flex: 1 1 10rem;
+  min-block-size: var(--astro-touch-min);
+  padding-inline: var(--astro-space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  cursor: pointer;
+
+  &:hover { color: var(--text-primary); }
+
+  // The chosen side carries the accent, which flips with the theme. The brand
+  // primitives do not, and reading white on white is how two of these went out.
+  &--on {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+    color: var(--accent-subtle-text);
+    font-weight: var(--astro-weight-medium);
+  }
+}
+
+// ── The person picker ────────────────────────────────────────────────────────
+.found {
+  list-style: none;
+  margin: var(--astro-space-2) 0 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-1);
+  max-block-size: 15rem;
+  overflow-y: auto;
+}
+
+.found__row {
+  display: grid;
+  gap: 0.125rem;
+  inline-size: 100%;
+  min-block-size: var(--astro-touch-min);
+  // Start edge, so a name reads from the same side as the page.
+  text-align: start;
+  padding: var(--astro-space-2) var(--astro-space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--accent);
+    background: var(--surface-sunken);
+  }
+}
+
+.found__name { font-weight: var(--astro-weight-medium); }
+
+.found__email {
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chosen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  flex-wrap: wrap;
+  margin-block-start: var(--astro-space-2);
+  padding: var(--astro-space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+}
+
+.chosen__who { display: grid; min-inline-size: 0; }
+.chosen__name { font-weight: var(--astro-weight-medium); }
+
+.chosen__email {
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

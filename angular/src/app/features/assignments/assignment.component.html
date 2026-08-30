@@ -222,39 +222,128 @@
       <h2 class="panel__title" id="sendTitle">{{ t('::Assignment:Send:Title') }}</h2>
       <p class="panel__lede">{{ t('::Assignment:Send:Lede') }}</p>
 
+      <!-- A class or one person, and only ever one of them on screen. The server
+           refuses a request naming both, so the choice is made here instead of
+           being caught afterwards — and a coordinator with one student no longer
+           has to invent a class to hold them. -->
       <div class="field">
-        <label class="form-label" for="sendGroup">{{ t('::Assignment:Group') }}</label>
-        <select id="sendGroup" class="form-select" [ngModel]="groupId()" (ngModelChange)="setGroup($event)">
-          <option value="">{{ t('::Assignment:ChooseGroup') }}</option>
-          @for (group of groups(); track group.id) {
-            <option [value]="group.id">{{ group.name }} ({{ group.memberCount }})</option>
-          }
-        </select>
-        <p class="hint">{{ t('::Assignment:Group:Hint') }}</p>
+        <span class="form-label" id="audienceLabel">{{ t('::Assignment:Audience') }}</span>
+
+        <div class="audience" role="group" aria-labelledby="audienceLabel">
+          <button
+            type="button"
+            class="audience__option"
+            [class.audience__option--on]="audience() === 'group'"
+            [attr.aria-pressed]="audience() === 'group'"
+            (click)="setAudience('group')">
+            <i class="bi bi-people" aria-hidden="true"></i>
+            {{ t('::Assignment:Audience:Group') }}
+          </button>
+
+          <button
+            type="button"
+            class="audience__option"
+            [class.audience__option--on]="audience() === 'person'"
+            [attr.aria-pressed]="audience() === 'person'"
+            (click)="setAudience('person')">
+            <i class="bi bi-person" aria-hidden="true"></i>
+            {{ t('::Assignment:Audience:Person') }}
+          </button>
+        </div>
       </div>
 
-      <!-- Who it goes to, by name.
-           A link, once sent, is a link somebody has — so the list is shown before
-           the button rather than after it. -->
-      @if (groupId()) {
+      @if (audience() === 'group') {
         <div class="field">
-          <span class="form-label">
-            {{ t('::Assignment:WillReceive', recipients().length.toString()) }}
-          </span>
+          <label class="form-label" for="sendGroup">{{ t('::Assignment:Group') }}</label>
+          <select id="sendGroup" class="form-select" [ngModel]="groupId()" (ngModelChange)="setGroup($event)">
+            <option value="">{{ t('::Assignment:ChooseGroup') }}</option>
+            @for (group of groups(); track group.id) {
+              <option [value]="group.id">{{ group.name }} ({{ group.memberCount }})</option>
+            }
+          </select>
+          <p class="hint">{{ t('::Assignment:Group:Hint') }}</p>
+        </div>
 
-          @if (loadingRecipients()) {
-            <p class="hint">{{ t('::Loading') }}</p>
-          } @else if (recipients().length === 0) {
-            <p class="hint hint--warn">{{ t('::Assignment:GroupEmpty') }}</p>
+        <!-- Who it goes to, by name.
+             A link, once sent, is a link somebody has — so the list is shown before
+             the button rather than after it. -->
+        @if (groupId()) {
+          <div class="field">
+            <span class="form-label">
+              {{ t('::Assignment:WillReceive', recipients().length.toString()) }}
+            </span>
+
+            @if (loadingRecipients()) {
+              <p class="hint">{{ t('::Loading') }}</p>
+            } @else if (recipients().length === 0) {
+              <p class="hint hint--warn">{{ t('::Assignment:GroupEmpty') }}</p>
+            } @else {
+              <ul class="who">
+                @for (member of recipients(); track member.id) {
+                  <li class="who__row">
+                    <span class="who__name">{{ member.fullName }}</span>
+                    <span class="who__email astro-ltr">{{ member.email }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      } @else {
+        <div class="field">
+          @if (person(); as chosen) {
+            <span class="form-label">{{ t('::Assignment:Person:Chosen') }}</span>
+
+            <div class="chosen">
+              <span class="chosen__who">
+                <span class="chosen__name">{{ chosen.fullName }}</span>
+                <span class="chosen__email astro-ltr">{{ chosen.email }}</span>
+              </span>
+
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="clearPerson()">
+                {{ t('::Assignment:Person:Change') }}
+              </button>
+            </div>
           } @else {
-            <ul class="who">
-              @for (person of recipients(); track person.id) {
-                <li class="who__row">
-                  <span class="who__name">{{ person.fullName }}</span>
-                  <span class="who__email astro-ltr">{{ person.email }}</span>
-                </li>
-              }
-            </ul>
+            <label class="form-label" for="sendPerson">{{ t('::Assignment:Person') }}</label>
+
+            <!-- Searched on the server. A centre with six hundred students is
+                 ordinary, and a picker that loads all of them to filter in the
+                 browser is the defect the roll editor already has. -->
+            <div class="search">
+              <i class="bi bi-search" aria-hidden="true"></i>
+              <input
+                id="sendPerson"
+                type="search"
+                class="form-control"
+                autocomplete="off"
+                [placeholder]="t('::Assignment:Person:Search')"
+                [ngModel]="personQuery()"
+                (ngModelChange)="searchPeople($event)" />
+            </div>
+
+            <p class="astro-visually-hidden" role="status" aria-live="polite">{{ searchStatus() }}</p>
+
+            @if (searching()) {
+              <p class="hint">{{ t('::Loading') }}</p>
+            } @else if (searchFailed()) {
+              <p class="hint hint--warn">{{ t('::Assignment:Person:Failed') }}</p>
+            } @else if (personQuery().trim().length < 2) {
+              <p class="hint">{{ t('::Assignment:Person:Hint') }}</p>
+            } @else if (personResults().length === 0) {
+              <p class="hint hint--warn">{{ t('::Assignment:Person:NoMatch') }}</p>
+            } @else {
+              <ul class="found">
+                @for (candidate of personResults(); track candidate.id) {
+                  <li>
+                    <button type="button" class="found__row" (click)="choosePerson(candidate)">
+                      <span class="found__name">{{ candidate.fullName }}</span>
+                      <span class="found__email astro-ltr">{{ candidate.email }}</span>
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
           }
         </div>
       }
@@ -318,7 +407,7 @@
         <button
           type="button"
           class="btn btn-primary"
-          [disabled]="working() || !groupId()"
+          [disabled]="working() || !canConfirm()"
           (click)="send()">
           {{ working() ? t('::Working') : t('::Assignment:Send:Confirm') }}
         </button>
