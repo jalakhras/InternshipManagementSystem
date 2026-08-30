@@ -500,8 +500,29 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         answer.AnsweredAt = now;
     }
 
+    /// <summary>
+    /// Records one observation, if this organisation and this exam collect them.
+    /// <para>
+    /// Both switches existed, both were written on their own screens, and
+    /// neither was ever read — so an organisation that turned integrity
+    /// recording off, and an author who left it off for a practice paper, were
+    /// recorded anyway. The setting's own hint says what it will do. Watching
+    /// people who were told they were not being watched is not a defaulting
+    /// bug; it is the promise being false.
+    /// </para>
+    /// <para>
+    /// Checked in the tenant the attempt belongs to, not whoever is signed in —
+    /// nobody is: the candidate has no account, and the request runs with the
+    /// multi-tenant filter disabled so it can see their row at all.
+    /// </para>
+    /// </summary>
     private async Task RecordSignalAsync(Attempt attempt, IntegritySignalType type, Guid? questionId, int? magnitude)
     {
+        if (!await CollectsSignalsAsync(attempt))
+        {
+            return;
+        }
+
         await _signals.InsertAsync(
             new IntegritySignal(GuidGenerator.Create(), attempt.TenantId, attempt.Id, type, Clock.Now)
             {
@@ -512,6 +533,28 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         attempt.IntegrityFlagCount++;
         await _attempts.UpdateAsync(attempt, autoSave: true);
+    }
+
+    /// <summary>
+    /// Whether anything should be observed at all: the organisation's setting
+    /// first, then this exam's own switch. Either one off means off.
+    /// </summary>
+    private async Task<bool> CollectsSignalsAsync(Attempt attempt)
+    {
+        using (CurrentTenant.Change(attempt.TenantId))
+        {
+            var tenantWide = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.CollectIntegritySignals);
+
+            if (bool.TryParse(tenantWide, out var enabled) && !enabled)
+            {
+                return false;
+            }
+        }
+
+        var exam = await _exams.FindAsync(attempt.ExamId);
+
+        return exam?.CollectIntegritySignals ?? true;
     }
 
     private async Task<List<AttemptQuestion>> LoadFormAsync(Guid attemptId) =>
@@ -580,6 +623,23 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         if (!attempt.IsGraded)
         {
             return result;
+        }
+
+        // The organisation may release results itself. The setting existed, its
+        // hint said so in writing — "disable it where a person must approve the
+        // result; a certificate that arrives before the coordinator sees it is
+        // hard to withdraw" — and nothing read it, so every candidate saw their
+        // score the moment marking finished.
+        using (CurrentTenant.Change(attempt.TenantId))
+        {
+            var shown = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.ShowResultToCandidate);
+
+            if (bool.TryParse(shown, out var visible) && !visible)
+            {
+                result.ScoreWithheld = true;
+                return result;
+            }
         }
 
         result.Score = attempt.Score;

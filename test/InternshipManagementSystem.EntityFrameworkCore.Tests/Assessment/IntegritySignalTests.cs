@@ -13,7 +13,9 @@ using InternshipManagementSystem.Assessment.People.Dtos;
 using InternshipManagementSystem.Assessment.Review;
 using Shouldly;
 using Volo.Abp.Domain.Repositories;
+using InternshipManagementSystem.Settings;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.SettingManagement;
 using Xunit;
 
 namespace InternshipManagementSystem.EntityFrameworkCore.Assessment;
@@ -128,6 +130,39 @@ public class IntegritySignalTests : InternshipManagementSystemEntityFrameworkCor
             // The browser used to report every paste separately as well, which
             // put back exactly the noise this keeps out.
             report.Signals.ShouldBeEmpty();
+        });
+    }
+
+    [Fact]
+    public async Task An_organisation_that_turned_recording_off_is_not_recorded()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var settings = GetRequiredService<ISettingManager>();
+
+            await settings.SetForCurrentTenantAsync(
+                InternshipManagementSystemSettings.CollectIntegritySignals, "false");
+
+            var sitting = await SitAsync("signal-d");
+
+            await _taking.ReportSignalAsync(sitting.SessionToken, new ReportIntegritySignalDto
+            {
+                Type = IntegritySignalType.WindowBlur,
+                Magnitude = 30,
+            });
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            // The switch is on a screen, its hint says what it does, and nothing
+            // read it — so a centre that turned observation off observed anyway.
+            // Watching people who were told they were not being watched is not a
+            // defaulting bug; it is the promise being false.
+            report.Signals.ShouldBeEmpty();
+
+            await settings.SetForCurrentTenantAsync(
+                InternshipManagementSystemSettings.CollectIntegritySignals, "true");
         });
     }
 

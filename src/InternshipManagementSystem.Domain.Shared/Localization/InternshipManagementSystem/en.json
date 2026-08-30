@@ -838,6 +838,8 @@
     "Take:Result:Pending": "Your answers are with a marker",
     "Take:Result:Pending:Body": "Some questions on this exam are marked by a person. Your result will be available once that is done.",
     "Take:Result:Review": "Going through your answers",
+    "Take:Result:Withheld": "We have your answers",
+    "Take:Result:Withheld:Body": "This organisation releases results itself once they are approved. Yours will come from them.",
     "Take:Resume": "Continue the exam",
     "Take:ResumeNotice": "You already started this exam. Continuing picks up where you left off, and the clock has been running since.",
     "Take:Rule:Autosave": "Every answer is saved as you go. You can leave a question and come back.",

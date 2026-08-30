@@ -14,7 +14,17 @@
       <p class="submitted">{{ t('::Take:SubmittedAt') }} {{ outcome.submittedAt | date: 'y/MM/dd HH:mm' }}</p>
       <h1 class="title">{{ outcome.examTitle }}</h1>
 
-      @if (!outcome.isFinal) {
+      @if (outcome.scoreWithheld) {
+        <!-- The organisation releases results itself. Said as its own sentence
+             rather than borrowing the marking one: "somebody is still marking
+             your answers" would leave this candidate refreshing a page that is
+             never going to change. -->
+        <div class="pending">
+          <i class="bi bi-envelope-check" aria-hidden="true"></i>
+          <p class="pending__title">{{ t('::Take:Result:Withheld') }}</p>
+          <p class="pending__body">{{ t('::Take:Result:Withheld:Body') }}</p>
+        </div>
+      } @else if (!outcome.isFinal) {
         <!-- No number at all while a person still has answers to mark. A
              provisional score that later changes is worse than waiting. -->
         <div class="pending">

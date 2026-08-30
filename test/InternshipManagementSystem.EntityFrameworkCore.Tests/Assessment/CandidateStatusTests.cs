@@ -12,7 +12,9 @@ using InternshipManagementSystem.Assessment.People;
 using InternshipManagementSystem.Assessment.People.Dtos;
 using Shouldly;
 using Volo.Abp.Domain.Repositories;
+using InternshipManagementSystem.Settings;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.SettingManagement;
 using Xunit;
 
 namespace InternshipManagementSystem.EntityFrameworkCore.Assessment;
@@ -165,6 +167,40 @@ public class CandidateStatusTests : InternshipManagementSystemEntityFrameworkCor
             // one. An empty page is the honest answer; quietly returning
             // everybody is the old defect wearing a different hat.
             page.Items.ShouldBeEmpty();
+        });
+    }
+
+    [Fact]
+    public async Task An_organisation_that_releases_results_itself_shows_the_candidate_none()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var settings = GetRequiredService<ISettingManager>();
+
+            await settings.SetForCurrentTenantAsync(
+                InternshipManagementSystemSettings.ShowResultToCandidate, "false");
+
+            await PublishExamAsync("status-g");
+            var person = await PersonAsync("status-g");
+
+            var token = await SendAsync(person);
+            var preview = await _taking.OpenLinkAsync(token);
+            var state = await _taking.StartAsync(preview.SessionToken!);
+
+            await _taking.SubmitAsync(state.SessionToken!);
+
+            var result = await _taking.GetResultAsync(state.SessionToken!);
+
+            // The setting's own hint promises this in writing: a certificate that
+            // arrives before the coordinator has seen it is hard to withdraw. It
+            // was written on a screen and read by nothing, so every candidate saw
+            // their score the moment marking finished.
+            result.ScoreWithheld.ShouldBeTrue();
+            result.Score.ShouldBe(0m);
+            result.TopicBreakdown.ShouldBeEmpty();
+
+            await settings.SetForCurrentTenantAsync(
+                InternshipManagementSystemSettings.ShowResultToCandidate, "true");
         });
     }
 

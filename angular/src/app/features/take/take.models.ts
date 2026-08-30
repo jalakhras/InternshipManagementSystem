@@ -162,6 +162,9 @@ export interface AttemptResult {
   /** False while a person still has answers to mark. The score is withheld until then. */
   isFinal: boolean;
 
+  /** The organisation releases results itself; no score is shown here at all. */
+  scoreWithheld: boolean;
+
   score: number;
   maxScore: number;
   scorePercentage: number;

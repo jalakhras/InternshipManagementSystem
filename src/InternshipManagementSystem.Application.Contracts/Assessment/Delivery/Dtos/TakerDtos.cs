@@ -198,6 +198,18 @@ public class AttemptResultDto
     /// <summary>False while a human still has answers to mark; the score is withheld until then.</summary>
     public bool IsFinal { get; set; }
 
+    /// <summary>
+    /// The organisation releases results itself, so this candidate is not shown
+    /// one however finished the marking is.
+    /// <para>
+    /// Distinct from <see cref="IsFinal"/> on purpose. "Somebody is still
+    /// marking your answers" and "your result will come from the centre" are
+    /// different sentences, and telling a candidate the first when the second is
+    /// true leaves them refreshing a page that will never change.
+    /// </para>
+    /// </summary>
+    public bool ScoreWithheld { get; set; }
+
     public decimal Score { get; set; }
     public decimal MaxScore { get; set; }
     public decimal ScorePercentage { get; set; }
