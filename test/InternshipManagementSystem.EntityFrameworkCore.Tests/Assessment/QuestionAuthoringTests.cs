@@ -246,6 +246,54 @@ public class QuestionAuthoringTests : InternshipManagementSystemEntityFrameworkC
 
     // ------------------------------------------------------------------ helpers
 
+    [Fact]
+    public async Task A_scale_question_cannot_carry_marks()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+
+            var thrown = await Should.ThrowAsync<BusinessException>(async () =>
+                await _questions.CreateAsync(new CreateUpdateQuestionDto
+                {
+                    ExamId = exam.Id,
+                    Type = QuestionTypes.Scale,
+                    Text = "How confident do you feel about this topic?",
+                    Score = 2m,
+                    Payload = PayloadJson.Write(new ScalePayload { Min = 1, Max = 5 }),
+                }));
+
+            // ScaleGrader always awards nothing, deliberately — it is a survey
+            // item with no right answer. But the attempt's maximum is the sum of
+            // every question on the paper, so two marks here is two marks off
+            // everybody, for a question nobody can get wrong.
+            thrown.Code.ShouldBe(
+                InternshipManagementSystemDomainErrorCodes.QuestionScaleCarriesNoMarks);
+        });
+    }
+
+    [Fact]
+    public async Task A_scale_question_with_no_marks_is_accepted()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+
+            var question = await _questions.CreateAsync(new CreateUpdateQuestionDto
+            {
+                ExamId = exam.Id,
+                Type = QuestionTypes.Scale,
+                Text = "How confident do you feel about this topic?",
+                Score = 0m,
+                Payload = PayloadJson.Write(new ScalePayload { Min = 1, Max = 5 }),
+            });
+
+            // The type is not being banned — asking how somebody feels is a real
+            // thing to put on a paper. It just cannot be marked out of anything.
+            question.Score.ShouldBe(0m);
+        });
+    }
+
     private async Task<ExamDto> CreateExamAsync() =>
         await _exams.CreateAsync(new CreateUpdateExamDto
         {

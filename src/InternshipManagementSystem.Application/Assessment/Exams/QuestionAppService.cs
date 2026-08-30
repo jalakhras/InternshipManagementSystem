@@ -621,6 +621,32 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
     private static void Apply(Question question, CreateUpdateQuestionDto input)
     {
+        // A scale item has no right answer, so ScaleGrader always awards nothing
+        // — deliberately; it is a survey question, reported rather than scored.
+        // But the attempt's maximum is the sum of every question on the paper, so
+        // marks put on one are added to what a candidate is measured against and
+        // can never be earned back. Two marks on a scale item is two marks off
+        // everybody, for answering a question that has no wrong answer.
+        //
+        // Refused rather than quietly zeroed: the author typed a number and is
+        // owed the reason it cannot stand.
+        if (input.Type == QuestionTypes.Scale)
+        {
+            if (input.Score != 0m)
+            {
+                throw new BusinessException(
+                    InternshipManagementSystemDomainErrorCodes.QuestionScaleCarriesNoMarks);
+            }
+        }
+        else if (input.Score <= 0m)
+        {
+            // The other half of the rule the attribute used to carry alone. A
+            // question worth nothing is one a candidate can skip with no cost,
+            // which is not something anybody means to put on a paper.
+            throw new BusinessException(
+                InternshipManagementSystemDomainErrorCodes.QuestionNeedsMarks);
+        }
+
         // Sanitised here rather than at render time, so the stored value is the
         // safe one. Anything that reads a question later — an export, a
         // certificate, a client we have not written — gets what this produced.

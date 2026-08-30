@@ -120,7 +120,23 @@ public class CreateUpdateQuestionDto
 
     public QuestionDifficulty Difficulty { get; set; } = QuestionDifficulty.Medium;
 
-    [Range(0.01, 1000)]
+    /// <summary>
+    /// Marks for this question. Zero only for a type that carries none.
+    /// <para>
+    /// The floor was 0.01, which made a scale question impossible to author
+    /// correctly: it has no right answer and its grader always awards nothing,
+    /// so whatever marks it was forced to carry were added to what every
+    /// candidate was measured against and could never be earned back. The type
+    /// existed, the picker offered it, and using it quietly cost everybody who
+    /// answered it.
+    /// </para>
+    /// <para>
+    /// The floor moves to zero here and the real rule is enforced in the
+    /// service, where the question's type is known: exactly zero for a scale
+    /// item, more than zero for everything else. An attribute cannot say that.
+    /// </para>
+    /// </summary>
+    [Range(0, 1000)]
     public decimal Score { get; set; } = 1m;
 
     [StringLength(4000)]

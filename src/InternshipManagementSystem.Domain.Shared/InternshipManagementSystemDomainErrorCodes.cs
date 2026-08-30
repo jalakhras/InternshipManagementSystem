@@ -138,6 +138,19 @@ public static class InternshipManagementSystemDomainErrorCodes
     /// through it. Closing an exam early is what revoking is for.</summary>
     public const string ExamLinkExpiryMovedBack = "IMS:ExamLink:ExpiryMovedBack";
 
+    /// <summary>
+    /// A scale item was given marks. There is no right answer on an
+    /// agree/disagree scale, so the marks can never be earned — they would only
+    /// be subtracted from everybody who answered it.
+    /// </summary>
+    public const string QuestionScaleCarriesNoMarks = "IMS:Question:ScaleCarriesNoMarks";
+
+    /// <summary>
+    /// A question that can be scored was given no marks. It costs a candidate
+    /// nothing to skip, so it is not a question anybody meant to ask.
+    /// </summary>
+    public const string QuestionNeedsMarks = "IMS:Question:NeedsMarks";
+
     // ---- Staff accounts ----
 
     /// <summary>
