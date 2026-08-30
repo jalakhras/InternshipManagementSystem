@@ -113,7 +113,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var exam = await _exams.GetAsync(link.ExamId);
         var candidate = await _candidates.GetAsync(link.CandidateId);
 
-        if (blockReason is null && !exam.IsOpenAt(now))
+        if (blockReason is null && !exam.IsOpenAt(await TenantNowAsync(link.TenantId, now)))
         {
             blockReason = exam.Status != ExamStatus.Published
                 ? InternshipManagementSystemDomainErrorCodes.ExamNotPublished
@@ -242,7 +242,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         }
 
         var exam = await _exams.GetAsync(link.ExamId);
-        if (!exam.IsOpenAt(now))
+        if (!exam.IsOpenAt(await TenantNowAsync(link.TenantId, now)))
         {
             throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamOutsideSchedule);
         }
@@ -555,6 +555,53 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         var exam = await _exams.FindAsync(attempt.ExamId);
 
         return exam?.CollectIntegritySignals ?? true;
+    }
+
+    /// <summary>
+    /// Now, as a clock on the wall in the organisation's own time zone.
+    /// <para>
+    /// A scheduled window is what a coordinator typed — nine in the morning where
+    /// they are — so the moment it is compared against has to be the same kind of
+    /// thing. The setting existed, its hint said "every exam clock and scheduled
+    /// window is read in this zone; getting it wrong opens exams at the wrong
+    /// hour", and nothing read it: the comparison used the server's own clock. On
+    /// one machine in one country that is invisible. On a container in UTC
+    /// serving a Riyadh academy it opens the exam three hours late, to a room
+    /// full of people already sitting there.
+    /// </para>
+    /// <para>
+    /// An unset or unrecognised zone falls back to the server's clock, which is
+    /// the behaviour that was there before — a bad zone id must not stop an exam
+    /// from opening at all.
+    /// </para>
+    /// </summary>
+    private async Task<DateTime> TenantNowAsync(Guid? tenantId, DateTime serverNow)
+    {
+        string? id;
+
+        using (CurrentTenant.Change(tenantId))
+        {
+            id = await SettingProvider.GetOrNullAsync(InternshipManagementSystemSettings.TimeZone);
+        }
+
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return serverNow;
+        }
+
+        try
+        {
+            return TimeZoneInfo.ConvertTimeFromUtc(
+                serverNow.ToUniversalTime(), TimeZoneInfo.FindSystemTimeZoneById(id));
+        }
+        catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
+        {
+            Logger.LogWarning(
+                "Tenant {TenantId} has an unusable time zone {TimeZone}; using the server clock.",
+                tenantId, id);
+
+            return serverNow;
+        }
     }
 
     private async Task<List<AttemptQuestion>> LoadFormAsync(Guid attemptId) =>

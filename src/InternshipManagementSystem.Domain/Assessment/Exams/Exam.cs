@@ -113,7 +113,21 @@ public class Exam : AuditedAggregateRoot<Guid>, IMultiTenant
         Status = ExamStatus.Published;
     }
 
-    public bool IsOpenAt(DateTime instant)
+    /// <summary>
+    /// Whether the exam is open at a moment given <b>in the organisation's own
+    /// time zone</b>.
+    /// <para>
+    /// The scheduled window is wall-clock: a coordinator typed 09:00 into a
+    /// date-and-time box meaning nine in the morning where they are. So the
+    /// instant handed in has to be the same kind of thing, and callers convert
+    /// before they call. Passing server-local time compares a Riyadh coordinator's
+    /// nine o'clock against a container's nine o'clock in UTC, and the exam opens
+    /// three hours late for a cohort sitting in a room waiting — which is exactly
+    /// what the time-zone setting's own hint warns about, for a setting that
+    /// until now nothing read.
+    /// </para>
+    /// </summary>
+    public bool IsOpenAt(DateTime tenantLocalInstant)
     {
         if (Status != ExamStatus.Published)
         {
@@ -125,7 +139,7 @@ public class Exam : AuditedAggregateRoot<Guid>, IMultiTenant
             return true;
         }
 
-        return instant >= (ScheduledStartTime ?? DateTime.MinValue)
-            && instant <= (ScheduledEndTime ?? DateTime.MaxValue);
+        return tenantLocalInstant >= (ScheduledStartTime ?? DateTime.MinValue)
+            && tenantLocalInstant <= (ScheduledEndTime ?? DateTime.MaxValue);
     }
 }
