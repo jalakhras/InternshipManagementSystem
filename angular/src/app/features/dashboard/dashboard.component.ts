@@ -1,4 +1,4 @@
-import { Component, Signal, inject } from '@angular/core';
+import { Component, Signal, inject, computed } from '@angular/core';
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { RouterLink } from '@angular/router';
@@ -18,12 +18,11 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
   template: `
     <header class="page-head">
       <h1>{{ t('::Dashboard:Title') }}</h1>
-      <p class="lede">{{ t('::Dashboard:Lede') }}</p>
+      <p class="lede">{{ t(leadKey()) }}</p>
     </header>
 
     <section class="starters" [attr.aria-label]="t('::Dashboard:GetStarted')">
-      @for (step of steps; track step.route) {
-        @if (!step.permission || can(step.permission)) {
+      @for (step of visible(); track step.route) {
           <a class="starter" [routerLink]="step.route">
             <span class="starter__icon" aria-hidden="true">
               <i class="bi {{ step.icon }}"></i>
@@ -34,7 +33,6 @@ import { InternshipManagementSystemPermissions as P } from '../../core/permissio
             </span>
             <i class="bi bi-chevron-right starter__go astro-flip" aria-hidden="true"></i>
           </a>
-        }
       }
     </section>
   `,
@@ -122,7 +120,48 @@ export class DashboardComponent {
       noteKey: '::Dashboard:Step:AssignNote',
       permission: P.Assignments.Create,
     },
+
+    // The two below are not steps in setting an exam up; they are what the
+    // marker and the observer came here to do. Without them this screen showed
+    // those two roles a heading, a promise of four steps, and nothing at all —
+    // the first screen of the product, for two of the five roles the business
+    // just defined.
+    {
+      route: '/review',
+      icon: 'bi-check2-square',
+      titleKey: '::Dashboard:Step:Review',
+      noteKey: '::Dashboard:Step:ReviewNote',
+      permission: P.Review.ViewQueue,
+    },
+    {
+      route: '/results',
+      icon: 'bi-bar-chart',
+      titleKey: '::Dashboard:Step:Results',
+      noteKey: '::Dashboard:Step:ResultsNote',
+      permission: P.Results.View,
+    },
   ];
+
+  /** The cards this particular person can actually use. */
+  readonly visible = computed(() =>
+    this.steps.filter(step => !step.permission || this.can(step.permission)));
+
+  /**
+   * "Four steps between here and your first exam" is true for somebody setting
+   * one up and false for everybody else. A marker has no steps to take here and
+   * should not be told they are four away from something.
+   */
+  readonly leadKey = computed(() => {
+    const shown = this.visible();
+
+    if (shown.length === 0) {
+      return '::Dashboard:Lede:Nothing';
+    }
+
+    return shown.some(step => step.permission === P.Exams.Create)
+      ? '::Dashboard:Lede'
+      : '::Dashboard:Lede:Work';
+  });
 
   /**
    * One signal per policy these cards ask about.
