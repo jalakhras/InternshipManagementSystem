@@ -293,6 +293,64 @@ test.describe('Taking an exam', () => {
     await expect(box).toHaveValue('Support is where buyers returned.');
   });
 
+  test('a hotspot question is answered by pointing, not by typing', async ({ page }) => {
+    const stub = await stubTake(page, { hotspot: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // The author draws regions on an image; the candidate used to be handed a
+    // textarea, which is not an answer to "point at the support level".
+    await expect(page.locator('textarea')).toHaveCount(0);
+
+    const frame = page.locator('.hotspot__frame');
+    const box = (await frame.boundingBox())!;
+
+    await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.75);
+
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await expect.poll(() => stub.saved.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+    // Percentages of the image, which is what the grader reads and what makes a
+    // phone and a desktop produce the same answer for the same place.
+    const sent = JSON.parse(stub.saved.at(-1)!.response!);
+
+    expect(sent.x).toBeGreaterThan(15);
+    expect(sent.x).toBeLessThan(35);
+    expect(sent.y).toBeGreaterThan(65);
+    expect(sent.y).toBeLessThan(85);
+  });
+
+  test('a hotspot can be answered without a mouse at all', async ({ page }) => {
+    const stub = await stubTake(page, { hotspot: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // WCAG 2.2 wants a non-pointer path for a single-pointer interaction, and
+    // here it is not a convenience: without it a candidate who cannot use a
+    // mouse cannot answer the question at all.
+    await page.locator('.hotspot__frame').focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowDown');
+
+    await expect.poll(() => stub.saved.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+    // Enter starts in the middle; two rights and one down move it from there.
+    const sent = JSON.parse(stub.saved.at(-1)!.response!);
+
+    expect(sent.x).toBe(52);
+    expect(sent.y).toBe(51);
+
+    // And it is said in words, which is the only feedback somebody using the
+    // keyboard gets.
+    await expect(page.getByText('You chose 52% across')).toBeVisible();
+  });
+
   test('the paper does not scroll sideways', async ({ page }) => {
     await stubTake(page);
 

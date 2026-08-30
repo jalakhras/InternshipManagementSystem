@@ -31,6 +31,9 @@ export interface TakeStubOptions {
 
   /** Serve free-text questions instead of choices, so there is a box to type in. */
   freeText?: boolean;
+
+  /** Serve hotspot questions: an image to point at, and no regions. */
+  hotspot?: boolean;
 }
 
 export interface TakeStub {
@@ -168,7 +171,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       position,
       totalQuestions: total,
       text: `Question ${number}: which level is support?`,
-      type: options.freeText ? 'text' : 'single-choice',
+      type: options.hotspot ? 'hotspot' : options.freeText ? 'text' : 'single-choice',
       score: 1,
       section: sectionAt(position),
       options: options.freeText
@@ -177,7 +180,12 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
             { id: 'a', text: 'The level price failed to fall below' },
             { id: 'b', text: 'The level price failed to rise above' },
           ],
-      display: {},
+      // A 400x300 chart, inline, so the test needs no network and the frame has
+      // a real area to point within — a one-pixel image gives the click nothing
+      // to be a percentage of.
+      display: options.hotspot
+        ? { imageUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjxsaW5lIHgxPSIwIiB5MT0iMjIwIiB4Mj0iNDAwIiB5Mj0iMjIwIiBzdHJva2U9IiMzNTYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==' }
+        : {},
       savedResponse: undefined,
     };
   }
