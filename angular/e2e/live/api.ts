@@ -72,3 +72,32 @@ export async function send<T>(
 export function unique(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
 }
+
+/**
+ * Signing in the way a person does: the login form.
+ * <para>
+ * Every other helper here takes a token from `/connect/token`, and the stubbed
+ * browser suite replaces the server altogether. So the product has had two kinds
+ * of coverage — real screens against a fake server, and a real server with no
+ * screens — and neither of them is a person clicking a real screen against a
+ * real server. Three journeys the owner reported broken on 2026-08-30 all lived
+ * in exactly that gap, and every one of 350 backend, 258 browser and 26 live
+ * tests passed while they were broken.
+ * </para>
+ */
+export async function signInThroughTheForm(
+  page: import('@playwright/test').Page,
+  user = 'admin',
+  password = '1q2w3E*',
+): Promise<void> {
+  await page.goto('/');
+
+  // ABP serves the login page from the API origin and returns here afterwards.
+  await page.waitForURL(/\/Account\/Login/, { timeout: 30_000 });
+
+  await page.locator('#LoginInput_UserNameOrEmailAddress').fill(user);
+  await page.locator('#LoginInput_Password').fill(password);
+  await page.getByRole('button', { name: /Login|دخول/ }).click();
+
+  await page.waitForURL(/localhost:4200/, { timeout: 30_000 });
+}

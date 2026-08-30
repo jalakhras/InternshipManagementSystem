@@ -958,8 +958,8 @@
     "Working": "Working…",
     "Candidate:Phone": "Phone",
     "Candidate:Phone:Hint": "Optional. A second way to reach somebody.",
-    "Candidate:Category": "Group",
-    "Candidate:Category:None": "No group",
-    "Candidate:Category:Hint": "Changeable after an import, which it was not before."
+    "Candidate:Category": "Category",
+    "Candidate:Category:None": "No category",
+    "Candidate:Category:Hint": "The subject area — not the class. Classes are managed on the Groups screen."
   }
 }

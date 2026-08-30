@@ -316,6 +316,14 @@
       {{ draft().id ? t('::Candidate:Edit') : t('::Candidate:Add') }}
     </h2>
 
+    <!-- Inside the dialog, because the dialog is what covers the page. The page
+         alert sits behind the scrim, so somebody adding a person whose address
+         is already on the roll pressed Save and watched nothing happen at all —
+         the refusal was there, underneath, where they could not see it. -->
+    @if (actionError(); as message) {
+      <div class="alert alert-danger" role="alert">{{ message }}</div>
+    }
+
     <label class="field">
       <span class="field__label">{{ t('::Candidate:Name') }}</span>
       <input

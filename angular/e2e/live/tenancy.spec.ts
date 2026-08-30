@@ -107,8 +107,13 @@ test.describe('Three organisations on one deployment', () => {
       // Everybody this organisation can see belongs to it. The seed gives every
       // person an address prefixed with their organisation, so a leak is visible
       // rather than merely a count that looks plausible.
+      // `load-` is the load suite's data and `ui-` is the click-through suite's,
+      // both created in whichever organisation those suites sign into. Neither is
+      // another organisation's person, and the assertion below is unchanged for
+      // everything that is.
       const strangers = emails.filter(
-        (email: string) => !email.startsWith(tenant) && !email.startsWith('load-'),
+        (email: string) =>
+          !email.startsWith(tenant) && !email.startsWith('load-') && !email.startsWith('ui-'),
       );
 
       expect(strangers, `${tenant} can see people from another organisation`).toEqual([]);

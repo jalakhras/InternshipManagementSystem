@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment.Media;
@@ -97,6 +98,23 @@ public class AssessmentMediaController : AbpControllerBase
         // sniff its way to something else.
         Response.Headers.XContentTypeOptions = "nosniff";
 
+        // An SVG is a document, and a document can carry script. Inside an <img>
+        // it cannot run any — that is the browser's rule, not ours — but somebody
+        // who opens the address directly gets a page, and this is a product where
+        // other people's uploads are shown to candidates and markers.
+        //
+        // So the file is served as the image it is, and told it may do nothing:
+        // no network of its own, no script, and sandboxed. The alternative we had
+        // was refusing to name it — and a logo served as application/octet-stream
+        // is a logo no browser will draw, uploaded without complaint, saved
+        // without complaint, and invisible for ever after with no error anywhere.
+        // That is not security; it is a promise the product does not keep.
+        if (blobName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+        {
+            Response.Headers.ContentSecurityPolicy =
+                "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+        }
+
         return File(stream, ContentTypeFor(blobName));
     }
 
@@ -120,10 +138,9 @@ public class AssessmentMediaController : AbpControllerBase
             ".webp" => "image/webp",
             ".gif" => "image/gif",
 
-            // Deliberately not image/svg+xml. An SVG served as an image is a
-            // document the browser will run script from, and these are shown inside
-            // an exam that other people's answers pass through.
-            ".svg" => "application/octet-stream",
+            // Named honestly, and locked down by the CSP set above rather than by
+            // refusing to say what it is.
+            ".svg" => "image/svg+xml",
 
             ".mp3" => "audio/mpeg",
             ".wav" => "audio/wav",

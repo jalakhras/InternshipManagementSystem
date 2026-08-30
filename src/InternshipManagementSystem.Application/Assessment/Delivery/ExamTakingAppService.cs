@@ -17,6 +17,7 @@ using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Data;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.SettingManagement;
 
 namespace InternshipManagementSystem.Assessment.Delivery;
 
@@ -52,6 +53,10 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     private readonly TakerQuestionProjector _projector;
     private readonly AttemptGradingService _grading;
     private readonly IDataFilter _dataFilter;
+
+    /// <summary>Read directly, so a tenant lookup can refuse to fall back.</summary>
+    private ISettingManager SettingManager =>
+        LazyServiceProvider.LazyGetRequiredService<ISettingManager>();
 
     public ExamTakingAppService(
         IRepository<ExamLink, Guid> links,
@@ -183,8 +188,18 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             preview.OrganizationBrandColor = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.BrandColor);
 
-            var logo = await SettingProvider.GetOrNullAsync(
-                InternshipManagementSystemSettings.LogoBlobName);
+            // This organisation's own logo only. Inheriting the host's gives a
+            // candidate their academy's name beside a broken image, because the
+            // file lives in the host's blob partition and their link cannot
+            // reach it. No logo at all draws the astrolabe, which is a mark
+            // rather than a hole.
+            var logo = CurrentTenant.Id is null
+                ? await SettingProvider.GetOrNullAsync(
+                    InternshipManagementSystemSettings.LogoBlobName)
+                : await SettingManager.GetOrNullForTenantAsync(
+                    InternshipManagementSystemSettings.LogoBlobName,
+                    CurrentTenant.Id.Value,
+                    fallback: false);
 
             if (!string.IsNullOrWhiteSpace(logo))
             {

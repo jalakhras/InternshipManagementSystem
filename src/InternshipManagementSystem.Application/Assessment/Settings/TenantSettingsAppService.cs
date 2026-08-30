@@ -33,8 +33,7 @@ public class TenantSettingsAppService : ApplicationService, ITenantSettingsAppSe
         {
             OrganizationName = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.OrganizationName),
-            LogoBlobName = await SettingProvider.GetOrNullAsync(
-                InternshipManagementSystemSettings.LogoBlobName),
+            LogoBlobName = await OwnLogoAsync(),
             BrandColor = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.BrandColor),
             DefaultLanguage = await SettingProvider.GetOrNullAsync(
@@ -79,6 +78,35 @@ public class TenantSettingsAppService : ApplicationService, ITenantSettingsAppSe
             input.CollectIntegritySignals.ToString(CultureInfo.InvariantCulture).ToLowerInvariant());
 
         return await GetAsync();
+    }
+
+    /// <summary>
+    /// This organisation's own logo, and never somebody else's.
+    /// <para>
+    /// Every other setting here falls back to the host's value, which is right:
+    /// a colour or a default language is a sensible thing to inherit. A logo is
+    /// not. It is the name of a file that lives in the uploading organisation's
+    /// own blob partition, so an organisation that inherited the host's logo
+    /// inherited an address it is not allowed to read — and the exam entry page
+    /// a candidate opens showed their academy's name beside a broken image.
+    /// </para>
+    /// <para>
+    /// Read tenant-only, so an organisation with no logo of its own falls back to
+    /// the drawn astrolabe, which is a mark, rather than to a 404, which is a hole.
+    /// </para>
+    /// </summary>
+    private async Task<string?> OwnLogoAsync()
+    {
+        if (CurrentTenant.Id is null)
+        {
+            return await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.LogoBlobName);
+        }
+
+        return await _settings.GetOrNullForTenantAsync(
+            InternshipManagementSystemSettings.LogoBlobName,
+            CurrentTenant.Id.Value,
+            fallback: false);
     }
 
     private Task SetAsync(string name, string? value) =>

@@ -54,7 +54,18 @@ public class InternshipManagementSystemDomainSharedModule : AbpModule
 
         Configure<AbpExceptionLocalizationOptions>(options =>
         {
-            options.MapCodeNamespace("InternshipManagementSystem", typeof(InternshipManagementSystemResource));
+            // "IMS", because that is the prefix the codes actually carry —
+            // `IMS:Candidate:EmailTaken`, not `InternshipManagementSystem:…`.
+            // ABP keys this on the part before the first colon, so the name here
+            // matched nothing and every business error in the product fell back
+            // to "an internal error occurred while processing your request".
+            //
+            // 107 messages were written, translated, and unreachable. A person
+            // adding somebody whose address was already on the roll was told the
+            // server had broken, rather than that the address was taken — so the
+            // one thing they could have fixed themselves was the one thing the
+            // product would not tell them.
+            options.MapCodeNamespace("IMS", typeof(InternshipManagementSystemResource));
         });
 
         Configure<AbpSettingOptions>(options =>
