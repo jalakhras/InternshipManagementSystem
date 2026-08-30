@@ -32,7 +32,6 @@ public class Candidate : AuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Free-text detail the tenant wants to keep: a job title, a course name.</summary>
     public string? Reference { get; set; }
 
-    public CandidateStatus Status { get; set; } = CandidateStatus.Pending;
 
     /// <summary>Set when the tenant also gave this person a login. Usually null.</summary>
     public Guid? UserId { get; set; }

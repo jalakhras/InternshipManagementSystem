@@ -37,6 +37,7 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
     private readonly IRepository<CandidateGroup, Guid> _groups;
     private readonly IRepository<CandidateGroupMember, Guid> _members;
     private readonly IRepository<Attempt, Guid> _attempts;
+    private readonly IRepository<ExamLink, Guid> _links;
     private readonly IRepository<Category, Guid> _categories;
     private readonly IRepository<Level, Guid> _levels;
 
@@ -45,6 +46,7 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         IRepository<CandidateGroup, Guid> groups,
         IRepository<CandidateGroupMember, Guid> members,
         IRepository<Attempt, Guid> attempts,
+        IRepository<ExamLink, Guid> links,
         IRepository<Category, Guid> categories,
         IRepository<Level, Guid> levels)
     {
@@ -52,6 +54,7 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         _groups = groups;
         _members = members;
         _attempts = attempts;
+        _links = links;
         _categories = categories;
         _levels = levels;
     }
@@ -82,7 +85,34 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
 
         if (input.Status is { } status)
         {
-            query = query.Where(c => c.Status == status);
+            // Derived, so the filter agrees with the column beside it. Both read
+            // the same three facts: has a live link, has an unsubmitted attempt,
+            // has a submitted one.
+            var links = (await _links.GetQueryableAsync())
+                .Where(l => !l.IsRevoked)
+                .Select(l => l.CandidateId);
+
+            var attempts = await _attempts.GetQueryableAsync();
+            var running = attempts.Where(a => !a.IsSubmitted).Select(a => a.CandidateId);
+            var finished = attempts.Where(a => a.IsSubmitted).Select(a => a.CandidateId);
+
+            query = status switch
+            {
+                CandidateStatus.Completed => query.Where(c => finished.Contains(c.Id)),
+
+                CandidateStatus.InProgress => query.Where(c =>
+                    running.Contains(c.Id) && !finished.Contains(c.Id)),
+
+                CandidateStatus.Invited => query.Where(c =>
+                    links.Contains(c.Id) && !running.Contains(c.Id) && !finished.Contains(c.Id)),
+
+                CandidateStatus.Pending => query.Where(c => !links.Contains(c.Id)),
+
+                // Nothing records a withdrawal, so nothing can match one. An
+                // empty page is the honest answer; quietly returning everybody
+                // would be the old bug wearing a different hat.
+                _ => query.Where(c => false),
+            };
         }
 
         if (input.GroupId is { } groupId)
@@ -432,6 +462,28 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         }
     }
 
+    /// <summary>
+    /// How far along one person is, from the three facts that actually record it.
+    /// <para>
+    /// Most advanced wins: somebody who has sat once and holds a second live
+    /// link is Completed, not Invited. A coordinator scanning a roll is looking
+    /// for who still has to sit, and burying that under a later invitation is
+    /// the thing that makes a status column useless.
+    /// </para>
+    /// </summary>
+    private static CandidateStatus StatusOf(
+        Guid id,
+        IReadOnlySet<Guid> invited,
+        IReadOnlySet<Guid> running,
+        IReadOnlySet<Guid> finished)
+    {
+        if (finished.Contains(id)) return CandidateStatus.Completed;
+        if (running.Contains(id)) return CandidateStatus.InProgress;
+        if (invited.Contains(id)) return CandidateStatus.Invited;
+
+        return CandidateStatus.Pending;
+    }
+
     private async Task<List<CandidateDto>> ProjectAsync(IReadOnlyCollection<Candidate> candidates)
     {
         if (candidates.Count == 0)
@@ -453,11 +505,23 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
                 .Where(g => groupIds.Contains(g.Id))
                 .ToDictionaryAsync(g => g.Id, g => g.Name);
 
-        var attemptCounts = await (await _attempts.GetQueryableAsync())
+        var attemptRows = await (await _attempts.GetQueryableAsync())
             .Where(a => ids.Contains(a.CandidateId))
+            .Select(a => new { a.CandidateId, a.IsSubmitted })
+            .ToListAsync();
+
+        var attemptCounts = attemptRows
             .GroupBy(a => a.CandidateId)
-            .Select(g => new { CandidateId = g.Key, Count = g.Count() })
-            .ToDictionaryAsync(x => x.CandidateId, x => x.Count);
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var finished = attemptRows.Where(a => a.IsSubmitted).Select(a => a.CandidateId).ToHashSet();
+        var running = attemptRows.Where(a => !a.IsSubmitted).Select(a => a.CandidateId).ToHashSet();
+
+        var invited = (await (await _links.GetQueryableAsync())
+            .Where(l => ids.Contains(l.CandidateId) && !l.IsRevoked)
+            .Select(l => l.CandidateId)
+            .ToListAsync())
+            .ToHashSet();
 
         var categories = await LoadCategoriesAsync(candidates.Select(c => c.CategoryId));
 
@@ -471,7 +535,7 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
                 CategoryId = candidate.CategoryId,
                 CategoryName = Name(categories, candidate.CategoryId),
                 Reference = candidate.Reference,
-                Status = candidate.Status,
+                Status = StatusOf(candidate.Id, invited, running, finished),
                 GroupNames = memberships
                     .Where(m => m.CandidateId == candidate.Id)
                     .Select(m => groupNames.GetValueOrDefault(m.CandidateGroupId))

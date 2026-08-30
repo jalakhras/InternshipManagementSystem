@@ -38,11 +38,43 @@ public enum ExamStatus : byte
 }
 
 /// <summary>What a candidate's overall evaluation currently says.</summary>
+/// <summary>
+/// Where a person is in the process, derived and never stored.
+/// <para>
+/// It used to be Pending/Passed/Failed, defaulted to Pending, and assigned by
+/// nothing anywhere — so the candidates screen reported "لم يُدعَ", <i>not
+/// invited</i>, about people who had sat the exam and submitted it, and the
+/// status filter could only return everything or nothing. The browser meanwhile
+/// had its own <c>CandidateStatus</c> with entirely different members; the two
+/// shared a name and agreed on nothing.
+/// </para>
+/// <para>
+/// Pass and fail were the wrong idea as well as the wrong data. A candidate
+/// sits many exams, so "passed" at the level of a person names no exam and
+/// answers no question. What a coordinator scanning a roll actually needs is
+/// how far along each person is, which is what this now says.
+/// </para>
+/// </summary>
 public enum CandidateStatus : byte
 {
+    /// <summary>Nobody has sent them anything yet.</summary>
     Pending = 0,
-    Passed = 1,
-    Failed = 2
+
+    /// <summary>Holds a live link and has not opened it.</summary>
+    Invited = 1,
+
+    /// <summary>Sitting an exam right now.</summary>
+    InProgress = 2,
+
+    /// <summary>Has sat and submitted at least once.</summary>
+    Completed = 3,
+
+    /// <summary>
+    /// Reserved. Nothing derives it, because nothing in the product can yet
+    /// record that somebody withdrew — and inventing it from silence would be
+    /// the same mistake this enum was just repaired from.
+    /// </summary>
+    Withdrawn = 4
 }
 
 /// <summary>Why an attempt ended.</summary>
