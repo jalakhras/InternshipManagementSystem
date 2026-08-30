@@ -317,4 +317,25 @@ test.describe('What a coordinator can actually do by clicking', () => {
     await expect(alert).not.toContainText(/internal error|خطأ داخلي/);
     await expect(alert).toContainText(/email|البريد/i);
   });
+
+  test('a roll that failed to load does not open, and cannot empty a class', async ({ page }) => {
+    await signInThroughTheForm(page);
+
+    // Only the members request fails. The other one — everybody — succeeds, and
+    // that asymmetry is the whole defect: the successful request cleared the
+    // loading flag, so the dialog rendered a complete and healthy-looking roll
+    // with nothing ticked, no error, and no reason for a coordinator to doubt
+    // it. The screen's own sentence, "what you leave ticked is the class", then
+    // made that emptiness authoritative.
+    await page.route('**/api/assessment/candidates?*groupId=*', route => route.abort());
+
+    await page.goto('/groups');
+    await page.getByRole('button', { name: /^Roll$|^الكشف$/ }).first().click();
+
+    // The editor must not open on state it failed to read. A message above an
+    // open dialog is not enough: it renders behind the scrim, and the save that
+    // destroys the class is still one click away.
+    await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 20_000 });
+    await expect(page.locator('.alert-danger').first()).toBeVisible({ timeout: 20_000 });
+  });
 });

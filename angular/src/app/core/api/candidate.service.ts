@@ -104,11 +104,26 @@ export class CandidateService {
    * from a register: they know who is in the class, not which two changed since
    * last week.
    */
-  setGroupMembers(id: string, candidateIds: string[]): Observable<CandidateGroupDto> {
-    return this.rest.request<{ candidateIds: string[] }, CandidateGroupDto>({
+  /**
+   * The whole roll, replaced.
+   *
+   * `confirmEmptied` is required by the server when the list is empty and the
+   * class is not, because an empty list arrives for two different reasons and
+   * only one of them is a decision. The other is a screen that failed to read
+   * the roll — and it deleted real classes before the server learned to ask.
+   */
+  setGroupMembers(
+    id: string,
+    candidateIds: string[],
+    confirmEmptied = false,
+  ): Observable<CandidateGroupDto> {
+    return this.rest.request<
+      { candidateIds: string[]; confirmEmptied: boolean },
+      CandidateGroupDto
+    >({
       method: 'PUT',
       url: `${this.base}/groups/${id}/members`,
-      body: { candidateIds },
+      body: { candidateIds, confirmEmptied },
     });
   }
 }

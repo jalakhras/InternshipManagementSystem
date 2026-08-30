@@ -111,6 +111,27 @@ public class SetGroupMembersDto
 {
     [Required]
     public List<Guid> CandidateIds { get; set; } = new();
+
+    /// <summary>
+    /// Says that emptying this class is what was meant.
+    /// <para>
+    /// Required only when the list is empty, and it exists because an empty list
+    /// arrives for two entirely different reasons: a coordinator who unticked
+    /// everybody, and a screen whose read of the current roll failed and which
+    /// therefore believes the class is empty. The server could not tell them
+    /// apart — an empty list was a complete and authoritative statement of
+    /// intent — and the second reason really did delete real classes.
+    /// </para>
+    /// <para>
+    /// A flag rather than a version stamp because it is the cheap half of the
+    /// right answer: it costs one field and stops a client that did not mean it,
+    /// which is the case that happened. The expensive half — sending the state
+    /// the request was computed from, so a stale save is refused — also fixes
+    /// two coordinators overwriting each other, and is written down in the
+    /// worklist rather than pretended away here.
+    /// </para>
+    /// </summary>
+    public bool ConfirmEmptied { get; set; }
 }
 
 // ------------------------------------------------------------------ import

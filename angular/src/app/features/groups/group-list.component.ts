@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 import { CandidateService } from '../../core/api/candidate.service';
 import {
@@ -222,19 +223,37 @@ export class GroupListComponent {
     // Everyone, then the ones already in this class ticked. A page of two
     // hundred is a scroll; a page that only shows members is a screen where
     // adding somebody is impossible.
-    this.candidates.getList({ skipCount: 0, maxResultCount: 500 }).subscribe({
-      next: page => {
-        this.people.set(page.items);
+    //
+    // Both together, and the editor opens only if both arrived. They used to be
+    // two independent subscriptions and the second had no error handler at all:
+    // when it failed, `chosen` stayed empty, the other request had already
+    // cleared the loading flag, and the dialog rendered a complete and healthy
+    // roll with nothing ticked and no error anywhere. The screen's own sentence
+    // — "what you leave ticked is the class" — then made that emptiness
+    // authoritative, and pressing Save sent `candidateIds: []`, which the server
+    // reads as "remove everybody". A class of twelve became a class of none,
+    // reported as a successful save, with no undo.
+    //
+    // The rule this encodes: a whole-list editor must never open on state it
+    // failed to read.
+    forkJoin({
+      everyone: this.candidates.getList({ skipCount: 0, maxResultCount: 500 }),
+      members: this.candidates.getList({ groupId: group.id, skipCount: 0, maxResultCount: 500 }),
+    }).subscribe({
+      next: ({ everyone, members }) => {
+        this.people.set(everyone.items);
+        this.chosen.set(new Set(members.items.map(p => p.id)));
         this.rollLoading.set(false);
       },
       error: err => {
         this.actionError.set(this.reason(err));
         this.rollLoading.set(false);
-      },
-    });
 
-    this.candidates.getList({ groupId: group.id, skipCount: 0, maxResultCount: 500 }).subscribe({
-      next: page => this.chosen.set(new Set(page.items.map(p => p.id))),
+        // Closed, not merely reported. Leaving the editor open with a message
+        // above it keeps the data loss one click away — and the message renders
+        // behind the dialog's own scrim, where nobody sees it.
+        this.rollFor.set(null);
+      },
     });
   }
 
@@ -261,6 +280,20 @@ export class GroupListComponent {
     return this.chosen().has(id);
   }
 
+  /** Asked before a class is emptied, and only then. */
+  readonly askingToEmpty = signal(false);
+
+  private confirmedEmptying = false;
+
+  confirmEmptying(): void {
+    this.confirmedEmptying = true;
+    this.saveRoll();
+  }
+
+  cancelEmptying(): void {
+    this.askingToEmpty.set(false);
+  }
+
   saveRoll(): void {
     const group = this.rollFor();
 
@@ -271,7 +304,22 @@ export class GroupListComponent {
     this.saving.set(true);
     this.actionError.set(null);
 
-    this.candidates.setGroupMembers(group.id, [...this.chosen()]).subscribe({
+    // Emptying a class on purpose is allowed and is sometimes exactly right —
+    // a course that ended. It is only the *unmeant* empty list the server
+    // refuses, so this says which of the two this is. The coordinator is asked
+    // first, because removing everybody from a class is not an ordinary save.
+    const emptying = this.chosen().size === 0;
+
+    if (emptying && !this.confirmedEmptying) {
+      this.saving.set(false);
+      this.askingToEmpty.set(true);
+      return;
+    }
+
+    this.confirmedEmptying = false;
+    this.askingToEmpty.set(false);
+
+    this.candidates.setGroupMembers(group.id, [...this.chosen()], emptying).subscribe({
       next: () => {
         this.saving.set(false);
         this.closeRoll();

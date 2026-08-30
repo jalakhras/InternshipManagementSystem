@@ -258,3 +258,29 @@
     </div>
   </div>
 }
+
+@if (askingToEmpty()) {
+  <div class="scrim" (click)="cancelEmptying()"></div>
+
+  <!-- Asked, because removing everybody from a class is not an ordinary save,
+       and because an empty roll is the exact shape a failed read takes. -->
+  <div
+    class="confirm"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="emptyRollTitle"
+    astroModal
+    (dismiss)="cancelEmptying()">
+    <h2 id="emptyRollTitle" class="confirm__title">{{ t('::Group:Empty:Title') }}</h2>
+    <p class="confirm__body">{{ t('::Group:Empty:Body') }}</p>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelEmptying()">
+        {{ t('::Cancel') }}
+      </button>
+      <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="confirmEmptying()">
+        {{ t('::Group:Empty:Confirm') }}
+      </button>
+    </div>
+  </div>
+}

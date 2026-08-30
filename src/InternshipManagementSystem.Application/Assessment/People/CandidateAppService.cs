@@ -387,6 +387,15 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
             .Where(m => m.CandidateGroupId == id)
             .ToListAsync();
 
+        // An empty list is not self-explanatory, and treating it as one cost a
+        // class its whole roll. It means "remove everybody" only when the caller
+        // says that is what they meant; otherwise it is a screen that failed to
+        // read the class and does not know it.
+        if (input.CandidateIds.Count == 0 && existing.Count > 0 && !input.ConfirmEmptied)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.GroupEmptyingNotConfirmed);
+        }
+
         var wanted = input.CandidateIds.Distinct().ToHashSet();
 
         var removed = existing.Where(m => !wanted.Contains(m.CandidateId)).ToList();

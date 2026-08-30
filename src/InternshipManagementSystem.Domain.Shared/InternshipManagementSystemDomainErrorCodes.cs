@@ -49,6 +49,8 @@ public static class InternshipManagementSystemDomainErrorCodes
     /// </summary>
     public const string CandidateEmailTaken = "IMS:Candidate:EmailTaken";
 
+    public const string GroupEmptyingNotConfirmed = "IMS:Group:EmptyingNotConfirmed";
+
     /// <summary>
     /// A form this tenant does not own, one that no longer exists, or one that
     /// belongs to a different exam than the sitting being sent.

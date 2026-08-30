@@ -966,6 +966,10 @@
     "Take:Map:Answered": "Question {0} — answered",
     "Take:Map:Blank": "Question {0} — no answer",
     "Take:Map:NoJumping": "This exam does not allow going back, so the map shows what is left but does not move you.",
-    "Take:Submit:GoToFirst": "Go to the first one with no answer"
+    "Take:Submit:GoToFirst": "Go to the first one with no answer",
+    "IMS:Group:EmptyingNotConfirmed": "The class was not saved: an empty list arrived without confirming that emptying it was meant. Most often the current roll failed to load — reopen it.",
+    "Group:Empty:Title": "Empty this class of everybody?",
+    "Group:Empty:Body": "Nobody will be left in it. If you expected names here, the roll most likely failed to load — close it and open it again.",
+    "Group:Empty:Confirm": "Yes, empty it"
   }
 }
