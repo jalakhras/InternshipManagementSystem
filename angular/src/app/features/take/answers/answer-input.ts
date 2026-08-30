@@ -20,6 +20,22 @@ export interface AnswerInput {
 
   /** Emits the response JSON. The frame owns saving, not the input. */
   readonly responseChange: OutputEmitterRef<string>;
+
+  /**
+   * Emitted instead by the two types whose answer is a file rather than text.
+   *
+   * Optional, because ten of the twelve inputs have no use for it. Kept separate
+   * from `response` rather than encoded into it: `response` is what the grader
+   * reads, and putting a blob name in there would make every grader's parse
+   * ambiguous to save one field here.
+   */
+  readonly attachment?: OutputEmitterRef<AnswerAttachment>;
+}
+
+/** A stored file standing in for a written answer. */
+export interface AnswerAttachment {
+  blobName: string;
+  fileName: string;
 }
 
 export type AnswerInputLoader = () => Promise<Type<AnswerInput>>;
@@ -47,6 +63,8 @@ export const ANSWER_INPUTS: Record<string, AnswerInputLoader> = {
   code: () => import('./text-answer.component').then(m => m.TextAnswerComponent),
   'fill-in-the-blank': () => import('./blanks-answer.component').then(m => m.BlanksAnswerComponent),
   hotspot: () => import('./hotspot-answer.component').then(m => m.HotspotAnswerComponent),
+  'file-upload': () => import('./upload-answer.component').then(m => m.UploadAnswerComponent),
+  'audio-response': () => import('./audio-answer.component').then(m => m.AudioAnswerComponent),
 };
 
 /** What a type with no input of its own falls back to. */

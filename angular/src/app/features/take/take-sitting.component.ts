@@ -18,7 +18,12 @@ import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { AttemptState, IntegritySignalType, SaveAnswerResult, TakerQuestion } from './take.models';
-import { ANSWER_INPUTS, AnswerInput, FALLBACK_ANSWER_INPUT } from './answers/answer-input';
+import {
+  ANSWER_INPUTS,
+  AnswerAttachment,
+  AnswerInput,
+  FALLBACK_ANSWER_INPUT,
+} from './answers/answer-input';
 
 /**
  * Sitting the exam.
@@ -123,6 +128,7 @@ export class TakeSittingComponent {
 
   private answerRef?: ComponentRef<AnswerInput>;
   private pendingResponse: string | null = null;
+  private pendingAttachment: AnswerAttachment | null = null;
   private saveTimer?: ReturnType<typeof setTimeout>;
   private blockedTimer?: ReturnType<typeof setTimeout>;
 
@@ -264,8 +270,27 @@ export class TakeSittingComponent {
 
       ref.instance.responseChange.subscribe((response: string) => this.onAnswered(response));
 
+      // The two types whose answer is a file. They have already stored it by the
+      // time this fires; what arrives is the name to hang on the answer.
+      ref.instance.attachment?.subscribe((file: AnswerAttachment) => this.onAttached(file));
+
       this.answerRef = ref;
     });
+  }
+
+  /**
+   * A stored file is the answer.
+   * <p>
+   * Sent at once rather than debounced: the upload has already happened, so
+   * there is nothing to coalesce, and the candidate should see it recorded
+   * immediately after waiting for it.
+   * </p>
+   */
+  onAttached(file: AnswerAttachment): void {
+    this.pendingAttachment = file;
+
+    this.markAnswered();
+    this.flush();
   }
 
   onAnswered(response: string): void {
@@ -295,14 +320,16 @@ export class TakeSittingComponent {
   private flush(): void {
     const question = this.question();
     const response = this.pendingResponse;
+    const attachment = this.pendingAttachment;
 
     clearTimeout(this.saveTimer);
 
-    if (!question || response === null) {
+    if (!question || (response === null && attachment === null)) {
       return;
     }
 
     this.pendingResponse = null;
+    this.pendingAttachment = null;
     this.saving.set(true);
 
     // Shared, so submitting can wait on the same request rather than issuing a
@@ -311,7 +338,9 @@ export class TakeSittingComponent {
     const request = this.take
       .saveAnswer({
         questionId: question.id,
-        response,
+        response: response ?? undefined,
+        answerBlobName: attachment?.blobName,
+        answerFileName: attachment?.fileName,
         timeSpentSeconds: Math.round((Date.now() - this.enteredAt) / 1000),
         wasPasted: this.wasPasted,
         keystrokeCount: this.keystrokes,
@@ -350,6 +379,7 @@ export class TakeSittingComponent {
           // Kept, so the next save carries it. Losing an answer because one
           // request failed is the worst thing this screen could do.
           this.pendingResponse = response;
+          this.pendingAttachment = attachment;
           this.error.set(this.reason(err));
         },
       });

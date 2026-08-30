@@ -351,6 +351,37 @@ test.describe('Taking an exam', () => {
     await expect(page.getByText('You chose 52% across')).toBeVisible();
   });
 
+  test('a file is the answer, and the answer carries it', async ({ page }) => {
+    const stub = await stubTake(page, { fileUpload: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // The type existed, the marker's screen already showed an attached file, and
+    // the candidate was handed a textarea — so the one thing the question asked
+    // for was the one thing they could not do.
+    await expect(page.locator('textarea')).toHaveCount(0);
+
+    await page.locator('input[type=file]').setInputFiles({
+      name: 'my-work.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('a scanned worksheet'),
+    });
+
+    // Confirmed to the candidate. An upload with no confirmation cannot be told
+    // apart from one that failed, and this is somebody who cannot try again
+    // afterwards.
+    await expect(page.getByText('We have: my-work.pdf')).toBeVisible();
+
+    await expect.poll(() => stub.saved.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+    // Storing the bytes is half of it: the answer has to carry the name, or the
+    // marker sees nothing.
+    expect(stub.saved.at(-1)!.answerBlobName).toBe('tenant/answers/a1/stored-file.pdf');
+    expect(stub.saved.at(-1)!.answerFileName).toBe('my-work.pdf');
+  });
+
   test('the paper does not scroll sideways', async ({ page }) => {
     await stubTake(page);
 

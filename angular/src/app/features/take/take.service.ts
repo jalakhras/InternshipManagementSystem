@@ -118,6 +118,26 @@ export class TakeService {
     return this.http.get<AttemptResult>(`${this.base}/result`, { headers: this.headers() });
   }
 
+  /**
+   * Stores a file the candidate's answer consists of, and returns its name.
+   *
+   * Its own endpoint rather than the staff one, authorised by the same session
+   * header everything else here carries: the candidate has no account, and the
+   * staff upload is behind a permission they will never hold.
+   */
+  uploadAnswerFile(file: File): Observable<{ blobName: string; originalFileName: string }> {
+    const body = new FormData();
+    body.append('file', file, file.name);
+
+    return this.http.post<{ blobName: string; originalFileName: string }>(
+      `${environment.apis.default.url}/api/assessment/media/answer`,
+      body,
+      // No Content-Type: the browser has to set the multipart boundary itself,
+      // and naming the type here strips it and the request arrives unparseable.
+      { headers: this.headers() },
+    );
+  }
+
   private headers(): Record<string, string> {
     return { 'X-Exam-Session': this.session() ?? '' };
   }

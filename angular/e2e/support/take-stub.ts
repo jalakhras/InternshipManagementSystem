@@ -34,11 +34,14 @@ export interface TakeStubOptions {
 
   /** Serve hotspot questions: an image to point at, and no regions. */
   hotspot?: boolean;
+
+  /** Serve file-upload questions, whose answer is a file rather than text. */
+  fileUpload?: boolean;
 }
 
 export interface TakeStub {
   /** Every answer the browser sent, so a test can assert what was saved. */
-  saved: { questionId: string; response?: string }[];
+  saved: { questionId: string; response?: string; answerBlobName?: string; answerFileName?: string }[];
   submitted: () => boolean;
   expireNow: () => void;
 }
@@ -53,11 +56,23 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
   const total = options.sections
     ? options.sections.reduce((sum, part) => sum + part.questions, 0)
     : options.totalQuestions ?? 3;
-  const saved: { questionId: string; response?: string }[] = [];
+  const saved: { questionId: string; response?: string; answerBlobName?: string; answerFileName?: string }[] = [];
 
   let submitted = false;
   let secondsRemaining = options.secondsRemaining ?? 1800;
   const answered = Array.from({ length: total }, () => false);
+
+  await page.route('**/api/assessment/media/answer', route =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        blobName: 'tenant/answers/a1/stored-file.pdf',
+        originalFileName: 'my-work.pdf',
+        sizeInBytes: 1024,
+      }),
+    }),
+  );
 
   await page.route('**/api/assessment/take/**', async route => {
     const url = new URL(route.request().url());
@@ -94,8 +109,18 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
     }
 
     if (method === 'PUT' && path === '/answer') {
-      const body = route.request().postDataJSON() as { questionId: string; response?: string };
-      saved.push({ questionId: body.questionId, response: body.response });
+      const body = route.request().postDataJSON() as {
+        questionId: string;
+        response?: string;
+        answerBlobName?: string;
+        answerFileName?: string;
+      };
+      saved.push({
+        questionId: body.questionId,
+        response: body.response,
+        answerBlobName: body.answerBlobName,
+        answerFileName: body.answerFileName,
+      });
 
       const index = Number(body.questionId.replace('q', '')) - 1;
       if (index >= 0 && index < answered.length) {
@@ -171,7 +196,13 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       position,
       totalQuestions: total,
       text: `Question ${number}: which level is support?`,
-      type: options.hotspot ? 'hotspot' : options.freeText ? 'text' : 'single-choice',
+      type: options.fileUpload
+        ? 'file-upload'
+        : options.hotspot
+          ? 'hotspot'
+          : options.freeText
+            ? 'text'
+            : 'single-choice',
       score: 1,
       section: sectionAt(position),
       options: options.freeText
