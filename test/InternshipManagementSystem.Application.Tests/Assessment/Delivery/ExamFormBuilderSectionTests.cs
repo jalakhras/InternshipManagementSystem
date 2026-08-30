@@ -253,6 +253,44 @@ public class ExamFormBuilderSectionTests
         paper.ShouldAllBe(q => q.ExamSectionId == Listening);
     }
 
+    [Fact]
+    public void A_sectioned_paper_is_still_the_size_the_exam_asked_for()
+    {
+        var exam = Exam(Section(Listening, "Listening", 0, questionsPerForm: 2));
+        exam.QuestionsPerForm = 4;
+
+        // Two filed, twenty not. Every unfiled question used to be appended,
+        // all of them — and the exam's own stated size was the one number this
+        // path never read. It was harmless only while filing a question into a
+        // section was impossible; the moment that became possible, an author
+        // with a bank of two hundred handed their candidate a paper of two
+        // hundred.
+        var bank = Bank((Listening, 2));
+        bank.AddRange(Questions(null, 20));
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 7);
+
+        paper.Count.ShouldBe(4);
+    }
+
+    [Fact]
+    public void An_exam_that_never_stated_a_size_still_gets_its_whole_bank()
+    {
+        var exam = Exam(Section(Listening, "Listening", 0, questionsPerForm: 2));
+
+        var bank = Bank((Listening, 2));
+        bank.AddRange(Questions(null, 5));
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 7);
+
+        // The half that decides whether the cap is safe to have. An author who
+        // never named a size has asked for everything and must keep getting it:
+        // dropping unfiled questions on a guess would delete authored content
+        // the moment somebody added their first heading, which is not a thing a
+        // heading should do.
+        paper.Count.ShouldBe(7);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /// <summary>The sections a paper visits, in order, collapsing each run into one entry.</summary>

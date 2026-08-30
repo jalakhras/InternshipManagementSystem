@@ -198,10 +198,37 @@ public class ExamFormBuilder : ITransientDependency
 
         var loose = exam.Blueprint.Where(r => r.ExamSectionId is null).ToList();
 
-        paper.AddRange(OrderBlocks(
-            exam,
-            loose.Count > 0 ? DrawByRules(loose, unfiled, taken, random) : unfiled,
-            random));
+        List<Question> tail;
+
+        if (loose.Count > 0)
+        {
+            tail = DrawByRules(loose, unfiled, taken, random);
+        }
+        else if (exam.QuestionsPerForm is int perForm && perForm > 0)
+        {
+            // Capped by the number the exam itself asks for, minus what the
+            // sections already supplied.
+            //
+            // Every unfiled question used to be appended, all of them, with no
+            // limit. That was harmless only while filing a question into a
+            // section was impossible — and the moment it became possible it
+            // turned into the first thing a real author would hit: file ten
+            // questions into Listening, leave a bank of a hundred and ninety
+            // unfiled, and the candidate is handed a paper of a hundred and
+            // ninety-five. The exam already carries the number it wants; the
+            // sectioned path was the one place that never read it.
+            tail = Draw(unfiled, Math.Max(0, perForm - paper.Count), random);
+        }
+        else
+        {
+            // No stated size and no rule, so the author has asked for everything
+            // and gets it. Dropping unfiled questions on a guess would delete
+            // authored content the moment somebody added their first heading,
+            // which is not a thing a heading should do.
+            tail = unfiled;
+        }
+
+        paper.AddRange(OrderBlocks(exam, tail, random));
 
         return paper;
     }
