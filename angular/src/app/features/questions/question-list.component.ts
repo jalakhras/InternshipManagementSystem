@@ -13,10 +13,12 @@ import {
   QuestionDto,
   QuestionTypeDescriptor,
 } from '../../core/api/assessment.models';
+import { ExamSectionDto } from '../../core/api/structure.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { QuestionSectionsService } from './question-sections.service';
 
 /** Stands in for "the bank" in the loaded-once check, which is otherwise keyed by exam id. */
 const BANK = '__bank__';
@@ -53,6 +55,7 @@ export class QuestionListComponent {
   private readonly questions = inject(QuestionService);
   private readonly exams = inject(ExamService);
   private readonly catalog = inject(CatalogService);
+  private readonly sectionsApi = inject(QuestionSectionsService);
 
   readonly t = inject(TranslateService).t;
 
@@ -77,6 +80,16 @@ export class QuestionListComponent {
   readonly type = signal<string>('');
   readonly categoryId = signal<string>('');
   readonly levelId = signal<string>('');
+
+  /**
+   * The parts of this exam, so a section can be named and filtered by.
+   *
+   * Empty on the bank screen and on an exam that was never split, and the column
+   * and the filter both stay hidden then rather than showing a dash beside every
+   * row of a paper that has no parts.
+   */
+  readonly sections = signal<ExamSectionDto[]>([]);
+  readonly sectionId = signal<string>('');
 
   /** The catalogue, for the bank screen's two filters. */
   readonly categories = signal<CategoryDto[]>([]);
@@ -131,7 +144,8 @@ export class QuestionListComponent {
 
   readonly isEmpty = computed(() => !this.loading() && !this.error() && this.items().length === 0);
   readonly isFiltered = computed(() =>
-    !!this.filter() || !!this.type() || this.difficulty() !== null || !!this.categoryId(),
+    !!this.filter() || !!this.type() || this.difficulty() !== null || !!this.categoryId()
+      || !!this.sectionId(),
   );
 
   /** Where the new-question and edit links go, which differs between the two screens. */
@@ -221,6 +235,12 @@ export class QuestionListComponent {
         error: () => this.examTitle.set(''),
       });
 
+      // A missing structure costs the section column and its filter, not the
+      // list — the same bargain the type catalogue above makes.
+      this.sectionsApi.getSections(id).subscribe({
+        next: sections => this.sections.set(sections),
+      });
+
       this.load();
     });
   }
@@ -229,10 +249,13 @@ export class QuestionListComponent {
     this.loading.set(true);
     this.error.set(null);
 
-    this.questions
+    // Through this feature's own client rather than the shared QuestionService,
+    // whose parameter list names each filter and so does not carry the section.
+    this.sectionsApi
       .getList({
         examId: this.examId(),
         bankOnly: this.isBank() ? true : undefined,
+        examSectionId: this.sectionId() || undefined,
         categoryId: this.categoryId() || undefined,
         levelId: this.levelId() || undefined,
         filter: this.filter() || undefined,
@@ -272,6 +295,11 @@ export class QuestionListComponent {
     this.applyFilter();
   }
 
+  setSection(value: string): void {
+    this.sectionId.set(value);
+    this.applyFilter();
+  }
+
   setType(value: string): void {
     this.type.set(value);
     this.applyFilter();
@@ -294,6 +322,21 @@ export class QuestionListComponent {
 
   typeName(question: QuestionDto): string {
     return this.typeLabel(question.type);
+  }
+
+  /**
+   * The part of the paper this question sits in, or nothing when it sits in none.
+   *
+   * Unfiled is the state worth seeing rather than hiding: a sectioned paper draws
+   * section by section, so an unfiled question is one no section will serve —
+   * and on a screen of two hundred rows that is invisible without this column.
+   */
+  sectionName(question: QuestionDto): string | null {
+    if (!question.examSectionId) {
+      return null;
+    }
+
+    return this.sections().find(s => s.id === question.examSectionId)?.name ?? null;
   }
 
   /**

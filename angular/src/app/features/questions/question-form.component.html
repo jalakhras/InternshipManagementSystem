@@ -122,6 +122,29 @@
         </div>
       }
 
+      <!-- Which part of the paper this question belongs to. Only offered once
+           the exam has been split, because an unsplit exam is a single part with
+           nowhere to file anything. Unlike the topic below, this one is drawn
+           on: a question left unfiled is one the listening section cannot serve,
+           however well it fits. -->
+      @if (sections().length > 0) {
+        <div class="field">
+          <label class="form-label" for="questionSection">{{ t('::Question:Section') }}</label>
+          <select
+            id="questionSection"
+            class="form-select"
+            name="questionSection"
+            [ngModel]="form().examSectionId ?? ''"
+            (ngModelChange)="patch('examSectionId', $event || undefined)">
+            <option value="">{{ t('::Question:Section:None') }}</option>
+            @for (section of sections(); track section.id) {
+              <option [value]="section.id">{{ section.name }}</option>
+            }
+          </select>
+          <p class="hint">{{ t('::Question:Section:Hint') }}</p>
+        </div>
+      }
+
       <!-- ── Filing ──────────────────────────────────────────────────────
            Where this question lives. Inside an exam it is optional and mostly
            useful for the topic breakdown on a result; in the bank the domain is

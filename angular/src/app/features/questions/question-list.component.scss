@@ -492,3 +492,12 @@
   gap: var(--astro-space-2);
   margin-block-start: var(--astro-space-2);
 }
+
+// An unfiled question on a sectioned paper is a question no section can draw,
+// so the cell is coloured as a pending state rather than greyed like a blank.
+// Quiet, though: it is a thing to notice while scanning, not an error.
+.unfiled {
+  color: var(--status-pending-text);
+  font-size: .8125rem;
+  white-space: nowrap;
+}

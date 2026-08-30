@@ -188,6 +188,15 @@ export interface QuestionDto {
   categoryId?: string | null;
   levelId?: string | null;
 
+  /**
+   * The part of the paper this question sits in, or absent for unfiled.
+   *
+   * Not a label. The paper is drawn section by section from the questions filed
+   * into each one, so this field is what decides whether a question can appear
+   * in the listening part at all.
+   */
+  examSectionId?: string | null;
+
   questionGroupId?: string;
 
   text: string;
@@ -236,6 +245,15 @@ export interface CreateUpdateQuestionDto {
   /** Optional even in the bank — a question with no level suits every level in its domain. */
   levelId?: string | null;
 
+  /**
+   * Which part of the paper to file this question into. Absent means unfiled.
+   *
+   * The server assigns this unconditionally on every save, so a form that omits
+   * it does not leave the section alone — it clears it. Anything editing a
+   * question has to carry the value it read.
+   */
+  examSectionId?: string | null;
+
   questionGroupId?: string;
   text: string;
   type: string;
@@ -256,6 +274,9 @@ export interface QuestionListRequest extends PagedRequest {
 
   /** Only questions owned by no exam. What the bank screen asks for. */
   bankOnly?: boolean;
+
+  /** Only questions filed into one part of the paper. */
+  examSectionId?: string;
 
   categoryId?: string;
   levelId?: string;

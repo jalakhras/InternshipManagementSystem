@@ -70,6 +70,22 @@
     }
   }
 
+  <!-- Only once the exam has parts. "Unfiled" is offered beside them because it
+       is the answer an author needs most: those are the questions a sectioned
+       paper will never draw. -->
+  @if (sections().length > 0) {
+    <select
+      class="form-select type-filter"
+      [attr.aria-label]="t('::Question:Filter:Section')"
+      [ngModel]="sectionId()"
+      (ngModelChange)="setSection($event)">
+      <option value="">{{ t('::Question:Filter:AllSections') }}</option>
+      @for (section of sections(); track section.id) {
+        <option [value]="section.id">{{ section.name }}</option>
+      }
+    </select>
+  }
+
   <select
     class="form-select type-filter"
     [attr.aria-label]="t('::Question:Filter:Type')"
@@ -140,6 +156,9 @@
       <thead>
         <tr>
           <th scope="col">{{ t('::Question:Text') }}</th>
+          @if (sections().length > 0) {
+            <th scope="col">{{ t('::Question:Section') }}</th>
+          }
           <th scope="col">{{ t('::Question:Types') }}</th>
           <th scope="col">{{ t('::Question:Difficulty') }}</th>
           <th scope="col" class="num">{{ t('::Question:Score') }}</th>
@@ -164,6 +183,19 @@
                 </span>
               }
             </td>
+
+            @if (sections().length > 0) {
+              <td>
+                @if (sectionName(question); as name) {
+                  <span class="muted">{{ name }}</span>
+                } @else {
+                  <!-- Said rather than left blank. On a sectioned paper an
+                       unfiled question is not merely uncategorised — it is one
+                       no section can draw, and a blank cell reads as tidy. -->
+                  <span class="unfiled">{{ t('::Question:Section:None') }}</span>
+                }
+              </td>
+            }
 
             <td class="muted">{{ typeName(question) }}</td>
             <td class="muted">{{ t(difficultyKey(question)) }}</td>

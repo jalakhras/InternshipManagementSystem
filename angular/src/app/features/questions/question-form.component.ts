@@ -22,8 +22,10 @@ import {
   QuestionDifficulty,
   QuestionTypeDescriptor,
 } from '../../core/api/assessment.models';
+import { ExamSectionDto } from '../../core/api/structure.models';
 import { TranslateService } from '../../core/translate.service';
 import { PAYLOAD_EDITORS } from './payload/payload-editor';
+import { QuestionSectionsService } from './question-sections.service';
 
 /**
  * Writing a question.
@@ -47,6 +49,7 @@ import { PAYLOAD_EDITORS } from './payload/payload-editor';
 export class QuestionFormComponent {
   private readonly questions = inject(QuestionService);
   private readonly catalog = inject(CatalogService);
+  private readonly sectionsApi = inject(QuestionSectionsService);
 
   readonly t = inject(TranslateService).t;
 
@@ -91,6 +94,15 @@ export class QuestionFormComponent {
    * pointed at one would be undrawable by every other exam at its level.
    */
   readonly passages = signal<QuestionGroupDto[]>([]);
+
+  /**
+   * The parts of this exam a question can be filed into.
+   *
+   * Empty for an exam that was never split, and the picker stays hidden then:
+   * a single-part paper has nowhere to file anything, and offering "unfiled" as
+   * the only choice would be a control with one option.
+   */
+  readonly sections = signal<ExamSectionDto[]>([]);
 
   /**
    * Levels under the chosen domain. A level belongs to one ladder, so offering
@@ -166,6 +178,13 @@ export class QuestionFormComponent {
       this.questions.getGroups(exam).subscribe({
         next: groups => this.passages.set(groups),
       });
+
+      // The sections cost the picker if they fail and nothing else. The value
+      // already on the form is what gets saved either way, so a section that
+      // cannot be named is still a section that survives the edit.
+      this.sectionsApi.getSections(exam).subscribe({
+        next: sections => this.sections.set(sections),
+      });
     });
 
     // Mounts the editor for the chosen type.
@@ -230,6 +249,15 @@ export class QuestionFormComponent {
     });
   }
 
+  /**
+   * Fills the form from the stored question.
+   *
+   * Every field is copied deliberately, and a field left out of this list is not
+   * merely unedited — the server assigns the whole question from what it is
+   * sent, so an omission here erases the stored value on the next save. That is
+   * what happened to the section: a question filed into "Listening" lost it the
+   * moment anyone opened it to fix a typo.
+   */
   private load(id: string): void {
     this.questions.get(id).subscribe({
       next: question => {
@@ -237,6 +265,7 @@ export class QuestionFormComponent {
           examId: question.examId,
           categoryId: question.categoryId,
           levelId: question.levelId,
+          examSectionId: question.examSectionId,
           questionGroupId: question.questionGroupId,
           text: question.text,
           type: question.type,

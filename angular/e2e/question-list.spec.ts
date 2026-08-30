@@ -1,7 +1,30 @@
-import { expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 import { ALL_POLICIES, gotoApp, stubAbp } from './support/abp-stub';
 
 const EXAM_ID = '11111111-1111-1111-1111-111111111111';
+const LISTENING = '33333333-3333-3333-3333-333333333333';
+const GRAMMAR = '44444444-4444-4444-4444-444444444444';
+
+const section = (id: string, name: string, displayOrder: number) => ({
+  id,
+  examId: EXAM_ID,
+  name,
+  instructions: null,
+  topicId: null,
+  topicName: null,
+  timeLimitInMinutes: null,
+  minimumPercentage: null,
+  questionsPerForm: null,
+  isQualifying: false,
+  displayOrder,
+  questionCount: 0,
+});
+
+/** The exam's parts. Absent — the default here — means the column stays hidden. */
+const stubSections = (page: Page, sections: unknown[]) =>
+  page.route('**/api/assessment/exam-structure/sections/*', route =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(sections) }),
+  );
 
 /**
  * An exam's questions.
@@ -134,9 +157,68 @@ test.describe('Question list', () => {
     await expect(page.getByRole('link', { name: 'Add question' })).toHaveCount(0);
   });
 
+  // ── Which part of the paper each question is in ────────────────────────────
+
+  test('names the part each question sits in, and says when it sits in none', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubList(page, [
+      question({ id: 'heard', text: 'Heard on the recording', examSectionId: LISTENING }),
+      question({ id: 'loose', text: 'Never filed anywhere', examSectionId: null }),
+    ]);
+    await stubSections(page, [section(LISTENING, 'Listening', 0), section(GRAMMAR, 'Grammar', 1)]);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions`);
+
+    await expect(page.getByRole('row', { name: /Heard on the recording/ })).toContainText('Listening');
+
+    // Said, not left blank. On a sectioned paper an unfiled question is one no
+    // part can draw, and across two hundred rows an empty cell reads as tidy.
+    await expect(page.getByRole('row', { name: /Never filed anywhere/ })).toContainText('Unfiled');
+  });
+
+  test('leaves the part column out of an exam that was never split', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubList(page, [question()]);
+    await stubSections(page, []);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions`);
+
+    await expect(page.getByRole('columnheader', { name: 'Section' })).toHaveCount(0);
+    await expect(page.getByLabel('Filter by section')).toHaveCount(0);
+  });
+
+  test('filtering by part asks the server for that part alone', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubList(page, [question({ examSectionId: LISTENING })]);
+    await stubSections(page, [section(LISTENING, 'Listening', 0), section(GRAMMAR, 'Grammar', 1)]);
+
+    // Registered last so it wins over the one stubList installed, and records
+    // what the screen actually asked for.
+    const asked: string[] = [];
+    await page.route('**/api/assessment/questions?**', route => {
+      asked.push(route.request().url());
+
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ totalCount: 0, items: [] }),
+      });
+    });
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions`);
+    await page.getByLabel('Filter by section').selectOption(GRAMMAR);
+
+    // Narrowed on the server, not in the browser: filtering a page of twenty
+    // rows would show whichever of them happened to be drawn first.
+    await expect.poll(() => asked.some(url => url.includes(`examSectionId=${GRAMMAR}`))).toBe(true);
+  });
+
   test('does not scroll sideways on a phone in Arabic', async ({ page }) => {
     await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
-    await stubList(page, [question(), question({ id: 'q2', examId: null })]);
+    await stubList(page, [question({ examSectionId: LISTENING }), question({ id: 'q2', examId: null })]);
+
+    // With the parts loaded, so the widest form of the table is the one measured.
+    await stubSections(page, [section(LISTENING, 'الاستماع', 0), section(GRAMMAR, 'القواعد', 1)]);
 
     await gotoApp(page, `/exams/${EXAM_ID}/questions`);
 

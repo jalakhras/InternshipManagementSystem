@@ -1,6 +1,75 @@
-import { expect, test } from '@playwright/test';
+import { Page, expect, test } from '@playwright/test';
 import { ALL_POLICIES, gotoApp, stubAbp } from './support/abp-stub';
 import { stubQuestions } from './support/question-stub';
+
+const EXAM_ID = '11111111-1111-1111-1111-111111111111';
+const QUESTION_ID = '22222222-2222-2222-2222-222222222222';
+const LISTENING = '33333333-3333-3333-3333-333333333333';
+const GRAMMAR = '44444444-4444-4444-4444-444444444444';
+
+const section = (id: string, name: string, displayOrder: number) => ({
+  id,
+  examId: EXAM_ID,
+  name,
+  instructions: null,
+  topicId: null,
+  topicName: null,
+  timeLimitInMinutes: null,
+  minimumPercentage: null,
+  questionsPerForm: null,
+  isQualifying: false,
+  displayOrder,
+  questionCount: 0,
+});
+
+/** The exam's parts, which decide whether the filing picker appears at all. */
+const stubSections = (page: Page, sections: unknown[], status = 200) =>
+  page.route('**/api/assessment/exam-structure/sections/*', route =>
+    route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(sections) }),
+  );
+
+/**
+ * One stored question, and whatever the form sends back for it.
+ *
+ * Registered before stubQuestions on purpose: Playwright matches routes
+ * last-registered-first, and this pattern would otherwise swallow the type
+ * catalogue that stubQuestions serves from the same path.
+ */
+async function stubOneQuestion(page: Page, stored: Record<string, unknown>): Promise<unknown[]> {
+  const sent: unknown[] = [];
+
+  await page.route(`**/api/assessment/questions/${QUESTION_ID}`, route => {
+    if (route.request().method() === 'PUT') {
+      sent.push(route.request().postDataJSON());
+    }
+
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(stored) });
+  });
+
+  return sent;
+}
+
+const storedQuestion = (over: Record<string, unknown> = {}) => ({
+  id: QUESTION_ID,
+  examId: EXAM_ID,
+  categoryId: null,
+  levelId: null,
+  examSectionId: null,
+  text: 'Whcih level is support?',
+  type: 'single-choice',
+  payload: JSON.stringify({
+    options: [
+      { id: 'a', text: 'Support', isCorrect: true },
+      { id: 'b', text: 'Resistance', isCorrect: false },
+    ],
+  }),
+  difficulty: 1,
+  score: 2,
+  displayOrder: 0,
+  isActive: true,
+  timesAnswered: 0,
+  ...over,
+});
 
 /**
  * Writing a question.
@@ -256,5 +325,94 @@ test.describe('Question builder', () => {
 
     // Back to the empty control, not to a broken image.
     await expect(page.getByText('Choose a file, or drop one here')).toBeVisible();
+  });
+
+  // ── Filing into a part of the paper ──────────────────────────────────────
+
+  test('offers the parts of the paper once the exam has been split', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubSections(page, [section(LISTENING, 'Listening', 0), section(GRAMMAR, 'Grammar', 1)]);
+    await stubQuestions(page);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/new`);
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    const picker = page.getByLabel('Section');
+
+    // Unfiled to start with. A question is filed deliberately or not at all —
+    // defaulting to the first part would put grammar questions in listening for
+    // every author who did not notice the control.
+    await expect(picker).toHaveValue('');
+    await expect(picker.getByRole('option')).toHaveText(['Unfiled', 'Listening', 'Grammar']);
+  });
+
+  test('does not offer the picker on an exam that was never split', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubSections(page, []);
+    await stubQuestions(page);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/new`);
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    // One part means nowhere to file anything, and a control with a single
+    // option is a question the author has to answer for no reason.
+    await expect(page.getByLabel('Section')).toHaveCount(0);
+  });
+
+  test('fixing a typo does not unfile the question from its part of the paper', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubSections(page, [section(LISTENING, 'Listening', 0), section(GRAMMAR, 'Grammar', 1)]);
+    const sent = await stubOneQuestion(page, storedQuestion({ examSectionId: LISTENING }));
+    await stubQuestions(page);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/${QUESTION_ID}`);
+
+    // Opens showing where the question already lives, rather than on "Unfiled" —
+    // which would have been the author's only clue that saving was about to
+    // move it.
+    await expect(page.getByLabel('Section')).toHaveValue(LISTENING);
+
+    await page.getByRole('spinbutton', { name: 'Marks' }).fill('3');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    // The server assigns the section from whatever the body carries, so a form
+    // that omits it does not leave the section alone — it clears it, and the
+    // listening part quietly loses a question to somebody correcting a spelling.
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0]).toMatchObject({ examSectionId: LISTENING, score: 3 });
+  });
+
+  test('keeps the question filed even when the parts cannot be loaded', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubSections(page, [], 500);
+    const sent = await stubOneQuestion(page, storedQuestion({ examSectionId: GRAMMAR }));
+    await stubQuestions(page);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/${QUESTION_ID}`);
+
+    await page.getByRole('spinbutton', { name: 'Marks' }).fill('4');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    // The picker is gone, because nothing can name the parts. Losing the picker
+    // is a degraded screen; losing the filing would be data destroyed by an
+    // unrelated outage.
+    await expect(page.getByLabel('Section')).toHaveCount(0);
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0]).toMatchObject({ examSectionId: GRAMMAR });
+  });
+
+  test('moving a question to another part sends the new one', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubSections(page, [section(LISTENING, 'Listening', 0), section(GRAMMAR, 'Grammar', 1)]);
+    const sent = await stubOneQuestion(page, storedQuestion({ examSectionId: LISTENING }));
+    await stubQuestions(page);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/${QUESTION_ID}`);
+
+    await page.getByLabel('Section').selectOption(GRAMMAR);
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    await expect.poll(() => sent.length).toBe(1);
+    expect(sent[0]).toMatchObject({ examSectionId: GRAMMAR });
   });
 });
