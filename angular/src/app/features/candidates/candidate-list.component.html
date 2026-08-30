@@ -339,6 +339,33 @@
     </label>
 
     <label class="field">
+      <span class="field__label">{{ t('::Candidate:Phone') }}</span>
+      <input
+        class="form-control astro-ltr"
+        name="candidatePhone"
+        type="tel"
+        autocomplete="off"
+        [ngModel]="draft().phoneNumber"
+        (ngModelChange)="patchDraft('phoneNumber', $event)" />
+      <span class="field__hint">{{ t('::Candidate:Phone:Hint') }}</span>
+    </label>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Candidate:Category') }}</span>
+      <select
+        class="form-select"
+        name="candidateCategory"
+        [ngModel]="draft().categoryId"
+        (ngModelChange)="patchDraft('categoryId', $event)">
+        <option value="">{{ t('::Candidate:Category:None') }}</option>
+        @for (category of categories(); track category.id) {
+          <option [value]="category.id">{{ category.name }}</option>
+        }
+      </select>
+      <span class="field__hint">{{ t('::Candidate:Category:Hint') }}</span>
+    </label>
+
+    <label class="field">
       <span class="field__label">{{ t('::Candidate:Reference') }}</span>
       <input
         class="form-control"

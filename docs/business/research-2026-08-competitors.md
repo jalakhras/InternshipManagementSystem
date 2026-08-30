@@ -125,9 +125,10 @@ psychometrician.
 
 ---
 
-## ١ · التوصيات العشر | The ten
+## ١ · التوصيات | The recommendations
 
-مرتّبةً بالقيمة على الكلفة. الأربع الأولى أيّامٌ لا أسابيع.
+مرتّبةً بالقيمة على الكلفة. الأربع الأولى أيّامٌ لا أسابيع. والحادية عشرة —
+البند ١١ — تنتمي إلى أعلى القائمة بالقيمة ووُضعت آخراً لسببٍ مذكورٍ في موضعها.
 
 ---
 
@@ -681,7 +682,16 @@ ClassMarker وTestGorilla وMettl وExamSoft وQuestionmark لن يبني أيٌ
 
 ## ٣ · ما نفعله أفضل ممّا وجدتُ | What this product does better
 
-هذه ليست مجاملة؛ كلّ بندٍ منها مقروءٌ من الشيفرة أو من وثائق المنافس.
+هذه ليست مجاملة؛ كلّ بندٍ منها مقروءٌ من الشيفرة أو من وثائق المنافس. **وقيدٌ
+عليها جميعاً:** المقارنة هنا مع الخمس الغربيّة وMoodle وCanvas، وهي التي قرأتُ
+وثائقها. المنافسون العرب الأربعة في §٠٫٥ لا تنشر أيٌّ منهم توثيقاً تقنيّاً
+عامّاً، فما دون هو ما لم أجده عندهم لا ما تأكّدتُ أنّهم لا يملكونه.
+
+Each item was read from the code or from the competitor's documentation. One
+limit on all of them: the comparison is against the five Western platforms plus
+Moodle and Canvas, whose documentation I read. None of the four Arabic vendors
+in §0.5 publishes public technical documentation, so what follows is what I did
+not find at them, not what I confirmed they lack.
 
 **١. سلّم تقييمٍ لكلّ سؤال.** `Answer.RubricScores` يحفظ درجة كلّ معيارٍ على حدة
 لكلّ سؤال. **Moodle لا تملك سلالم تقييمٍ في الاختبارات إطلاقاً** — التقييم المتقدّم
@@ -752,10 +762,37 @@ ClassMarker وTestGorilla وMettl وExamSoft وQuestionmark لن يبني أيٌ
 5. **هل أضرّ نقصُ التطبيع في البند ١ بممتحَنٍ حقيقيّ؟** قرأتُ الشيفرة لا البيانات.
    الخلل مؤكّد؛ حجم أثره غير معروف، وقياسه استعلامٌ واحد على الإجابات النصّيّة
    المُصفَّرة.
-6. **إمكانيّة استعمال «نفاذ» أو «الهويّة الرقميّة الإماراتيّة» لشركةٍ خاصّة** —
-   انتهت حصّة البحث في هذه الجلسة قبل التحقّق. سؤالٌ حقيقيّ وبلا جواب هنا.
-7. **هل تملك Moodle مساراً أصليّاً لاستيراد QTI** بخلاف مستورد Blackboard الذي
-   يقبل ملفّات QTI — النتائج متضاربة ومصدرها منتديات. غير محسوم، ويهمّ البند ٧.
+6. **«نفاذ» للقطاع الخاصّ.** ما تحقّقتُ منه: أنّ **قياس/هيئة تقويم التعليم
+   والتدريب تستعمل نفاذ بالفعل** طريقةَ دخولٍ للمتقدّمين إلى اختباراتها
+   المحوسبة — وهي سابقةٌ مباشرة في سياق الاختبارات. ما لم أتحقّق منه: **هل يستطيع
+   مورّدٌ خاصّ الارتباط بنفاذ، وبأيّ مسارٍ وبأيّ كلفة.** بوّابات `iam.gov.sa`
+   و`my.gov.sa` و`dga.gov.sa` كلّها ترفض القراءة. القراءة العمليّة أنّ الربط
+   الخاصّ قائم (البنوك ومشغّلو الاتّصالات يستعملونه)، **لكنّها قراءةٌ لا مصدر
+   رسميّ لها، فلا تدخل عرضاً**. و«الهويّة الرقميّة الإماراتيّة» لم تُبحَث أصلاً.
+   ([خدمة قياس على my.gov.sa](https://my.gov.sa/en/services/282464) **[مقتطف]**)
+7. **الفوترة الإلكترونيّة (فاتورة).** المرحلتان مؤكّدتان من موقع الهيئة نفسه:
+   **الإصدار من ٤ ديسمبر ٢٠٢١، والربط والتكامل من ١ يناير ٢٠٢٣**. **لكنّ الصفحة
+   لا تذكر نطاق الشمول ولا الأشخاص غير المقيمين ولا عتبات الموجات** — فسؤال «هل
+   تلزم مورّد SaaS يفوتر عميلاً سعوديّاً؟» **بلا جواب موثَّق هنا**. ما يُتداول في
+   نشرات المكاتب الاستشاريّة (أنّها تسري على المقيمين المسجَّلين في ضريبة القيمة
+   المضافة بحسب الإيراد، وتستثني غير المقيم) **لم أؤكّده على صفحةٍ رسميّة**.
+   ([هيئة الزكاة والضريبة والجمارك — الفوترة الإلكترونيّة](https://zatca.gov.sa/en/E-Invoicing/Pages/default.aspx))
+8. **كلّ ما يخصّ البند ١١**: نصّ اللائحة التنفيذيّة، ومواصفة الربط مع «مستقبل»،
+   ومعايير المركز، وهل ينطبق شيءٌ منها على مورّدٍ لا يقدّم التدريب.
+9. **ترتيب الأسماء العربيّة.** CLDR يشحن تخصيصَي فرزٍ للعربيّة (`standard`
+   و`compat`) يرتّبان أسرة الهمزة والتاء المربوطة صراحةً — **ولا يذكر الجدول
+   قاعدةً لتجاهل «ال» التعريف في الفرز**، ولم أجد مصدراً حاسماً في الاتّجاهين.
+   فـ«يُفرَز متجاهلاً ال» سؤالٌ مفتوح لا واقعة.
+   ([CLDR Arabic collation](https://www.unicode.org/cldr/charts/latest/collation/ar.html))
+10. **تقويم أمّ القرى.** ICU يدرج التقويم الهجريّ ضمن تقاويمه، **ولا توثّق الصفحة
+    التي قرأتُها فروق `islamic-civil` و`islamic-umalqura` ولا مدى التواريخ
+    المدعوم**. مسألةٌ حقيقيّة لعرض التواريخ في وثيقة النتيجة (البند ٥)، وغير
+    محسومة.
+    ([ICU calendars](https://unicode-org.github.io/icu/userguide/datetime/calendar/))
+11. **هل تملك Moodle مساراً أصليّاً لاستيراد QTI** بخلاف مستورد Blackboard الذي
+    يقبل ملفّات QTI — النتائج متضاربة ومصدرها منتديات. غير محسوم، ويهمّ البند ٧.
+12. **ادّعاء Qorrect دعمَ QTI** ورد في مدوّنتها العربيّة ولا يرد على صفحة المنتج.
+    يهمّ البند ٧ أيضاً، ولا يُبنى عليه.
 
 ---
 
@@ -771,7 +808,14 @@ ClassMarker وTestGorilla وMettl وExamSoft وQuestionmark لن يبني أيٌ
    القرار يشبه قرار «المصحّح يرى مؤشّرات النزاهة والمنسّق لا يراها»، وينبغي أن
    يُتّخذ بالمنطق نفسه.
 5. **البند ٧ يفترض أنّ الشاغل هو Moodle.** هل ذلك صحيحٌ في الأنبوب الفعليّ؟ إن كان
-   الشاغل جداول Excel، فالمستورد القائم يكفي والبند يسقط.
+   الشاغل جداول Excel، فالمستورد القائم يكفي والبند يسقط. **وإن كان الشاغل ورقاً
+   يُصحَّح بالماسح الضوئيّ** — وهو وارد: ثمّة موزّع سعوديّ حصريّ لـ Remark Office
+   OMR يبيع تصحيح أوراق عربيّة منذ ٢٠١٨ لجامعاتٍ ووزارات — فالمنافس ليس منصّةً بل
+   ورقة، والبند يسقط أيضاً وتحلّ محلّه مسألةٌ أخرى كلّيّاً.
+   ([مصادر المنظومة — الموزّع السعوديّ لـ Remark](https://sys.com.sa/))
+6. **البند ١١ يحتاج قراراً قبل تقدير.** من يقرأ لائحة المركز الوطنيّ التنفيذيّة
+   ومعاييره، ومتى؟ هذا أرخص عملٍ في الوثيقة كلّها — تنزيلٌ وقراءة — وأكثرها أثراً
+   في ترتيب ما بعده.
 
 ---
 
@@ -811,9 +855,32 @@ ClassMarker وTestGorilla وMettl وExamSoft وQuestionmark لن يبني أيٌ
 - [Canvas — anonymously graded quiz](https://community.instructure.com/t5/Instructor-Guide/How-do-I-create-an-anonymously-graded-quiz-using-New-Quizzes/ta-p/587640) **[مقتطف]**
 - [Canvas — rubric on a quiz](https://community.instructure.com/t5/Instructor-Guide/How-do-I-add-a-rubric-to-a-quiz/ta-p/1009) **[مقتطف]**
 
-**المعايير والسوق العربيّ**
+**السوق العربيّ — منافسون**
+
+- [Qorrect](https://qorrectassess.com/en/) · [higher education assessment](https://qorrectassess.com/en/higher-education-assessment-software) **[بائع]**
+- [QQ · Quality Questions (الرياض)](https://www.qqassessment.com/en/) **[بائع]**
+- [SwiftAssess · GamaLearn — عبر Capterra](https://www.capterra.ae/software/146145/swiftassess)
+- [Edaà · إداء](https://www.edaaportal.com/) **[بائع]**
+- [Classera](https://classera.com/en/products/classera-lms/) **[بائع]**
+- [مصادر المنظومة — الموزّع السعوديّ لـ Remark Office OMR](https://sys.com.sa/) **[بائع]**
+- [Evalufy — Arabic-first assessments](https://www.evalufy.com/blog/candidate-assessment-selection/arabic-first-assessments-dialects-msa-scoring-tips/) **[بائع]**
+- [بوّابة الهيئة السعوديّة للتخصّصات الصحّيّة على ExamSoft](https://ei.examsoft.com/GKWeb/login/scfhs)
+
+**التنظيم السعوديّ**
+
+- [المركز الوطنيّ للتعليم الإلكترونيّ](https://nelc.gov.sa/en) **[مقتطف — 403]**
+- [نسيج — اعتماد «مقدّم خدمة معتمد لتشغيل المنصّات التعليميّة»، ٢٢ سبتمبر ٢٠٢٥](https://naseej.com/news/the-national-elearning-center-grants-naseej-accreditation-as-certified-service-provider-for-educational-platforms-operation/)
+- [منصّة مستقبل · FutureX](https://futurex.sa/en/services)
+- [المدينة — مهلة الربط التقنيّ قبل ٣١ مارس ٢٠٢٦](https://www.al-madina.com/article/976478/)
+- [هيئة الزكاة والضريبة والجمارك — الفوترة الإلكترونيّة](https://zatca.gov.sa/en/E-Invoicing/Pages/default.aspx)
+- [خدمة قياس ومنها الدخول بنفاذ](https://my.gov.sa/en/services/282464) **[مقتطف — 403]**
+
+**المعايير واللغة**
 
 - [1EdTech — Open Badges 3.0](https://www.imsglobal.org/spec/ob/v3p0/)
+- [Unicode 16.0 — الفصل التاسع، النصّ العربيّ](https://www.unicode.org/versions/Unicode16.0.0/core-spec/chapter-9/)
+- [CLDR — تخصيصات الفرز العربيّ](https://www.unicode.org/cldr/charts/latest/collation/ar.html)
+- [ICU — التقاويم](https://unicode-org.github.io/icu/userguide/datetime/calendar/)
 - [مجمع الملك سلمان العالميّ للغة العربيّة — اختبار همزة الأكاديميّ](https://ksaa.gov.sa/ar/initiatives/50969-%D8%A7%D8%AE%D8%AA%D8%A8%D8%A7%D8%B1-%D9%87%D9%85%D8%B2%D8%A9-%D8%A7%D9%84%D8%A3%D9%83%D8%A7%D8%AF%D9%8A%D9%85%D9%8A)
 - [WhatsApp Business Platform — pricing and template categories](https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing)
 - [QuestPDF — content direction](https://www.questpdf.com/api-reference/content-direction.html) **[بائع]** · [bidirectional text issue #445](https://github.com/QuestPDF/QuestPDF/issues/445)

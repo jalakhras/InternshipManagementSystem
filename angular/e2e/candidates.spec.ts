@@ -53,6 +53,49 @@ test.describe('Candidates', () => {
     );
   };
 
+  test('correcting a name does not delete the phone number and the group', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubPeople(page, [
+      person({ phoneNumber: '+966500000001', categoryId: 'cat-1', categoryName: 'Adults' }),
+    ]);
+
+    await page.route('**/api/assessment/categories**', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([{ id: 'cat-1', name: 'Adults', isActive: true }]),
+      }),
+    );
+
+    let sent: Record<string, unknown> | null = null;
+
+    await page.route('**/api/assessment/candidates/c1', route => {
+      sent = route.request().postDataJSON() as Record<string, unknown>;
+
+      return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({}) });
+    });
+
+    await gotoApp(page, '/candidates');
+
+    await page.getByRole('button', { name: /Edit: Layla Hassan/ }).click();
+
+    const name = page.getByLabel('Name', { exact: true });
+    await name.fill('Layla Hassaan');
+
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+
+    await expect.poll(() => sent).not.toBeNull();
+
+    // The dialog loaded three of five fields and sent three of five, and the
+    // server assigns what it is given — so fixing a spelling silently erased
+    // this person's phone number and their group. No error, nothing on screen
+    // afterwards, and whoever finds the blank field later assumes it was never
+    // filled in.
+    expect(sent!['fullName']).toBe('Layla Hassaan');
+    expect(sent!['phoneNumber']).toBe('+966500000001');
+    expect(sent!['categoryId']).toBe('cat-1');
+  });
+
   test('lists people with their groups and how many attempts they have sat', async ({ page }) => {
     await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
     await stubPeople(page, [

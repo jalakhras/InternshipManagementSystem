@@ -955,6 +955,11 @@
     "User:Roles:Empty:Short": "No role",
     "User:Roles:None": "No roles are defined yet.",
     "User:UserName": "Username",
-    "Working": "Working…"
+    "Working": "Working…",
+    "Candidate:Phone": "Phone",
+    "Candidate:Phone:Hint": "Optional. A second way to reach somebody.",
+    "Candidate:Category": "Group",
+    "Candidate:Category:None": "No group",
+    "Candidate:Category:Hint": "Changeable after an import, which it was not before."
   }
 }

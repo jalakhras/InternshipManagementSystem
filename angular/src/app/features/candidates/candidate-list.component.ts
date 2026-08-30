@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import { CandidateService } from '../../core/api/candidate.service';
+import { CatalogService } from '../../core/api/catalog.service';
+import { CategoryDto } from '../../core/api/catalog.models';
 import {
   CandidateDto,
   CandidateGroupDto,
@@ -46,6 +48,11 @@ export class CandidateListComponent {
   readonly totalCount = signal(0);
   readonly groups = signal<CandidateGroupDto[]>([]);
 
+  /** For the edit dialog. A person's group is a category, not one of
+   * the classes above — deriving it from those would list a category
+   * once per class that uses it. */
+  readonly categories = signal<CategoryDto[]>([]);
+
   readonly filter = signal('');
   readonly groupId = signal<string>('');
   readonly page = signal(0);
@@ -83,11 +90,16 @@ export class CandidateListComponent {
   }
 
   edit(candidate: CandidateDto): void {
+    // Every field this person has, because saving sends every field. Loading
+    // three of five and sending three of five is how correcting a spelling
+    // deleted a phone number and a group.
     this.draft.set({
       open: true,
       id: candidate.id,
       fullName: candidate.fullName,
       email: candidate.email,
+      phoneNumber: candidate.phoneNumber ?? '',
+      categoryId: candidate.categoryId ?? '',
       reference: candidate.reference ?? '',
     });
   }
@@ -110,6 +122,8 @@ export class CandidateListComponent {
     const body: CreateUpdateCandidateDto = {
       fullName: draft.fullName.trim(),
       email: draft.email.trim(),
+      phoneNumber: draft.phoneNumber.trim() || undefined,
+      categoryId: draft.categoryId || undefined,
       reference: draft.reference.trim() || undefined,
     };
 
@@ -159,7 +173,17 @@ export class CandidateListComponent {
     return !!result && !this.importCommitted() && (result.created > 0 || result.addedToGroup > 0);
   });
 
+  private readonly catalog = inject(CatalogService);
+
   constructor() {
+    this.catalog.getCategories().subscribe({
+      next: categories => this.categories.set(categories),
+      error: () => {
+        // Same reasoning as the cohort list below: a dropdown that did
+        // not load must not take the roll of people down with it.
+      },
+    });
+
     this.candidates.getGroups().subscribe({
       next: groups => this.groups.set(groups),
       error: () => {
@@ -328,6 +352,8 @@ interface CandidateDraft {
   id: string | null;
   fullName: string;
   email: string;
+  phoneNumber: string;
+  categoryId: string;
   reference: string;
 }
 
@@ -336,5 +362,7 @@ const emptyDraft = (): CandidateDraft => ({
   id: null,
   fullName: '',
   email: '',
+  phoneNumber: '',
+  categoryId: '',
   reference: '',
 });

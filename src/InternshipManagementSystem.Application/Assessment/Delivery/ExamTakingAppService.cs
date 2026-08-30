@@ -417,11 +417,26 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             await _answers.UpdateAsync(answer, autoSave: true);
         }
 
-        // A paste large enough to be an imported answer is worth a reviewer's attention.
-        if (input.WasPasted && (input.Response?.Length ?? 0) > 120)
-        {
-            await RecordSignalAsync(attempt, IntegritySignalType.Paste, input.QuestionId, input.Response!.Length);
-        }
+        // Deliberately no paste signal here, and the reason matters.
+        //
+        // This was written when pasting was allowed, and it meant what it said:
+        // an answer this long arriving at once is worth a reviewer's attention.
+        // Then blocking landed. The text now never reaches the box — so there is
+        // no imported answer to report, and the flag on the way in only says the
+        // candidate *tried*.
+        //
+        // Left in place it did something worse than nothing. `WasPasted` stays
+        // set for the rest of the question, and the paper autosaves every 800ms,
+        // so one blocked Ctrl+V became a paste record on every save from then on,
+        // each one carrying a magnitude equal to the candidate's own typing. The
+        // marker opened a sitting and found a dozen quantified accusations of an
+        // event that never happened — and the two honest signals were buried
+        // underneath them.
+        //
+        // The attempt is recorded once, by the browser, at the moment it happens.
+        // `WasPasted` is still stored on the answer: it is what stops a long
+        // answer being called implausibly fast, which is the one thing it is
+        // still evidence of.
 
         await NoteHowItWasWrittenAsync(attempt, input);
 

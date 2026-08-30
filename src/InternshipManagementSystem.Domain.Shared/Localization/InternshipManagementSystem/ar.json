@@ -955,6 +955,11 @@
     "User:Roles:Empty:Short": "بلا دور",
     "User:Roles:None": "لم تُعرَّف أدوار بعد.",
     "User:UserName": "اسم المستخدم",
-    "Working": "جارٍ التنفيذ…"
+    "Working": "جارٍ التنفيذ…",
+    "Candidate:Phone": "الهاتف",
+    "Candidate:Phone:Hint": "اختياري. طريقة ثانية للوصول إلى الشخص.",
+    "Candidate:Category": "المجموعة",
+    "Candidate:Category:None": "بلا مجموعة",
+    "Candidate:Category:Hint": "يمكن تغييرها بعد الاستيراد؛ لم يكن ذلك ممكنًا من قبل."
   }
 }

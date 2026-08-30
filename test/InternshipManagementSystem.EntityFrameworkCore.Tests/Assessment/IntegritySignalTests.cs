@@ -249,15 +249,15 @@ public class IntegritySignalTests : InternshipManagementSystemEntityFrameworkCor
     }
 
     [Fact]
-    public async Task A_pasted_answer_is_reported_once_and_not_three_times()
+    public async Task One_event_is_not_described_three_times()
     {
         await AsTenantAsync(async () =>
         {
             var sitting = await SitAsync("signal-h");
             var question = await _taking.GetQuestionAsync(sitting.SessionToken, 0);
 
-            // Pasted text is infinitely fast and has no corrections, so all three
-            // rules would fire on it.
+            // Text that arrived at once is infinitely fast and has no
+            // corrections, so both of those rules would otherwise fire on it.
             await _taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
             {
                 QuestionId = question.Id,
@@ -272,12 +272,78 @@ public class IntegritySignalTests : InternshipManagementSystemEntityFrameworkCor
 
             var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
 
-            // One event, described once. Three sentences about one paste read as
-            // three findings, and a marker counting flags would weigh it treble.
-            report.Signals.Count.ShouldBe(1);
-            report.Signals.Single().Type.ShouldBe(IntegritySignalType.Paste);
+            // This assertion used to also require a Paste signal from the save,
+            // and that half is deliberately gone: pasting is blocked, so no text
+            // arrives that way and the save has nothing to report. The attempt is
+            // recorded by the browser when it happens.
+            //
+            // What the test was really for survives untouched and is the reason
+            // it still exists — several sentences about one event read as several
+            // findings, and a marker counting flags weighs it that many times.
+            report.Signals.ShouldBeEmpty();
         });
     }
+
+    [Fact]
+    public async Task One_blocked_paste_is_one_record_however_often_the_paper_saves()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sitting = await SitAsync("signal-paste-once");
+            var question = await _taking.GetQuestionAsync(sitting.SessionToken, 0);
+
+            // The paper autosaves roughly every 800ms, and the flag stays set for
+            // the rest of the question. So this is one blocked Ctrl+V followed by
+            // a candidate carrying on typing — six saves, one event.
+            for (var save = 1; save <= 6; save++)
+            {
+                await _taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
+                {
+                    QuestionId = question.Id,
+                    Response = new string('z', 100 * save + 100),
+                    TimeSpentSeconds = 60 * save,
+                    KeystrokeCount = 120 * save,
+                    BackspaceCount = 8 * save,
+                    WasPasted = true,
+                });
+            }
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            // Nothing was pasted: the browser refused it, so the text never
+            // reached the box. Recording it here — once per save, each carrying a
+            // magnitude equal to the candidate's own typing — put a dozen
+            // quantified accusations of an event that never happened in front of
+            // the marker, and buried the honest signals under them.
+            report.Signals.ShouldNotContain(signal => signal.Type == IntegritySignalType.Paste);
+        });
+    }
+
+    [Fact]
+    public async Task Trying_to_paste_is_still_recorded_once_by_the_browser()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sitting = await SitAsync("signal-paste-attempt");
+
+            // The half that keeps the removal honest. Dropping the save-time
+            // record must not make an attempt to paste invisible — the attempt is
+            // real and the marker is entitled to know it happened.
+            await _taking.ReportSignalAsync(sitting.SessionToken, new ReportIntegritySignalDto
+            {
+                Type = IntegritySignalType.Paste,
+            });
+
+            await _taking.SubmitAsync(sitting.SessionToken);
+
+            var report = await _review.GetIntegrityReportAsync(sitting.AttemptId);
+
+            report.Signals.Count(signal => signal.Type == IntegritySignalType.Paste).ShouldBe(1);
+        });
+    }
+
 
     // ------------------------------------------------------------------ helpers
 
