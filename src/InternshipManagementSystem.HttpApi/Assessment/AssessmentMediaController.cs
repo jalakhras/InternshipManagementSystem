@@ -38,6 +38,9 @@ public class AssessmentMediaController : AbpControllerBase
     /// </summary>
     private const string GrantParameter = "grant";
 
+    /// <summary>The candidate's credential, the same header the taking API reads.</summary>
+    private const string SessionHeader = "X-Exam-Session";
+
     private readonly IAssessmentMediaAppService _media;
 
     public AssessmentMediaController(IAssessmentMediaAppService media)
@@ -52,6 +55,17 @@ public class AssessmentMediaController : AbpControllerBase
     [HttpPost]
     [RequestSizeLimit(26 * 1024 * 1024)]
     public Task<MediaUploadResultDto> UploadAsync(IFormFile file) => _media.UploadAsync(file);
+
+    /// <summary>
+    /// A candidate's own answer file. The session token in the header is the
+    /// whole authorisation; the app service checks it and refuses everything
+    /// else.
+    /// </summary>
+    [HttpPost("answer")]
+    [AllowAnonymous]
+    [RequestSizeLimit(11 * 1024 * 1024)]
+    public Task<MediaUploadResultDto> UploadAnswerAsync(IFormFile file) =>
+        _media.UploadAnswerAsync(file, Request.Headers[SessionHeader].ToString());
 
     /// <summary>
     /// Serves a stored file to whoever is entitled to it.

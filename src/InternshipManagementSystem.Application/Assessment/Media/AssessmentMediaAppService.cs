@@ -57,6 +57,24 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
 
     private const long MaxFileSizeBytes = 25 * 1024 * 1024;
 
+    /// <summary>
+    /// What an unauthenticated candidate may write, and of what kinds.
+    /// <para>
+    /// Smaller than the staff limit and a shorter list: this is the only door in
+    /// the product an anonymous caller can push bytes through, and a recorded
+    /// answer or a scanned page is a few megabytes. Audio is here because a
+    /// spoken answer is recorded in the browser and arrives as webm or mp4
+    /// depending on which browser it was.
+    /// </para>
+    /// </summary>
+    private const long MaxAnswerSizeBytes = 10 * 1024 * 1024;
+
+    private static readonly HashSet<string> AllowedAnswerExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".pdf", ".doc", ".docx", ".txt", ".png", ".jpg", ".jpeg",
+        ".webm", ".mp4", ".m4a", ".ogg", ".mp3", ".wav"
+    };
+
     private readonly IBlobContainer<AssessmentBlobContainer> _blobs;
     private readonly ExamSessionTokenService _sessions;
     private readonly ILogger<AssessmentMediaAppService> _logger;
@@ -110,6 +128,85 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
             MediaType = ClassifyByExtension(extension),
             SizeInBytes = file.Length,
             Url = $"/api/assessment/media/{blobName}"
+        };
+    }
+
+    /// <summary>
+    /// Stores a candidate's own answer file, authorised by their exam session.
+    /// <para>
+    /// Uploading was staff-only, so the two question types whose whole answer
+    /// <i>is</i> a file — an uploaded document and a recorded spoken answer —
+    /// could not be answered at all. A speaking test with no way to record is not
+    /// a speaking test.
+    /// </para>
+    /// <para>
+    /// Anonymous at the framework level and decided here, the same shape the read
+    /// path uses, because a candidate is not a user of this system and never
+    /// becomes one. The session token is the whole authorisation: it is signed,
+    /// short-lived, minted for one attempt, and it stops being valid when that
+    /// attempt is submitted.
+    /// </para>
+    /// <para>
+    /// Tighter than the staff upload on purpose. This is the one place an
+    /// unauthenticated stranger can write bytes to our disk, so it takes a
+    /// smaller file, a shorter list of kinds, and files the blob under the
+    /// attempt that produced it — which is also what makes an uploaded answer
+    /// traceable to a sitting when somebody disputes a mark.
+    /// </para>
+    /// </summary>
+    [AllowAnonymous]
+    public async Task<MediaUploadResultDto> UploadAnswerAsync(IFormFile file, string sessionToken)
+    {
+        var claims = _sessions.Read(sessionToken)
+            ?? throw new AbpAuthorizationException("The exam session is invalid or has expired.");
+
+        if (claims.AttemptId == Guid.Empty)
+        {
+            // A session minted at the entry screen, before the attempt exists.
+            // There is nothing to attach a file to yet.
+            throw new AbpAuthorizationException("The exam has not been started.");
+        }
+
+        if (file is null || file.Length == 0)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.FileEmpty);
+        }
+
+        if (file.Length > MaxAnswerSizeBytes)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.FileTooLarge)
+                .WithData("MaxMegabytes", MaxAnswerSizeBytes / (1024 * 1024));
+        }
+
+        var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+
+        if (string.IsNullOrEmpty(extension) || !AllowedAnswerExtensions.Contains(extension))
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.FileTypeNotAllowed)
+                .WithData("Extension", extension ?? string.Empty);
+        }
+
+        // Nothing in the name comes from the caller: the tenant and the attempt
+        // are read off the signed token, and the rest is generated.
+        var blobName =
+            $"{claims.TenantId?.ToString("N") ?? "host"}/answers/{claims.AttemptId:N}/{GuidGenerator.Create():N}{extension}";
+
+        await using var stream = file.OpenReadStream();
+
+        using (CurrentTenant.Change(claims.TenantId))
+        {
+            await _blobs.SaveAsync(blobName, stream);
+        }
+
+        _logger.LogInformation(
+            "Stored answer blob {BlobName} for attempt {AttemptId} ({Bytes} bytes).",
+            blobName, claims.AttemptId, file.Length);
+
+        return new MediaUploadResultDto
+        {
+            BlobName = blobName,
+            OriginalFileName = file.FileName,
+            SizeInBytes = file.Length,
         };
     }
 

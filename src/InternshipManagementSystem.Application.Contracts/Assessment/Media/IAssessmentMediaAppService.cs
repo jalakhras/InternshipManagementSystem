@@ -13,6 +13,12 @@ public interface IAssessmentMediaAppService : IApplicationService
     Task<MediaUploadResultDto> UploadAsync(IFormFile file);
 
     /// <summary>
+    /// Stores a candidate's own answer file, authorised by their exam session
+    /// rather than by an account, because they do not have one.
+    /// </summary>
+    Task<MediaUploadResultDto> UploadAnswerAsync(IFormFile file, string sessionToken);
+
+    /// <summary>
     /// Reads a stored blob, or null when it does not exist or the caller is not
     /// entitled to it.
     /// </summary>
