@@ -10,6 +10,7 @@ using InternshipManagementSystem.Assessment.Media.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
 using Volo.Abp.BlobStoring;
@@ -79,13 +80,17 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
     private readonly ExamSessionTokenService _sessions;
     private readonly ILogger<AssessmentMediaAppService> _logger;
 
+    private readonly IRepository<Attempt, Guid> _attempts;
+
     public AssessmentMediaAppService(
         IBlobContainer<AssessmentBlobContainer> blobs,
         ExamSessionTokenService sessions,
+        IRepository<Attempt, Guid> attempts,
         ILogger<AssessmentMediaAppService> logger)
     {
         _blobs = blobs;
         _sessions = sessions;
+        _attempts = attempts;
         _logger = logger;
     }
 
@@ -165,6 +170,34 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
             // A session minted at the entry screen, before the attempt exists.
             // There is nothing to attach a file to yet.
             throw new AbpAuthorizationException("The exam has not been started.");
+        }
+
+        // The sitting has to still be open, and this is the check that makes a
+        // stored file mean something.
+        //
+        // Without it the upload succeeded whatever the clock said. A candidate
+        // recording an answer to a speaking question — talking, as people do,
+        // until told to stop — had their recording accepted and written to
+        // storage *after* the paper was submitted. The blob was real. Nothing
+        // ever linked it to an answer, because the save that would have linked
+        // it was refused for being late. So the recording sat on disk, the
+        // marker's screen showed nothing, the attempt was marked as needing no
+        // human at all, and the candidate was scored zero for an answer they had
+        // given.
+        //
+        // Refused here, so a file that exists is a file that arrived in time.
+        // The short grace on the other side is what keeps a genuine answer from
+        // becoming the casualty of this fix.
+        Attempt attempt;
+
+        using (CurrentTenant.Change(claims.TenantId))
+        {
+            attempt = await _attempts.GetAsync(claims.AttemptId);
+        }
+
+        if (!attempt.IsWithinUploadGrace(Clock.Now))
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.AttemptClosedForUploads);
         }
 
         if (file is null || file.Length == 0)

@@ -970,6 +970,7 @@
     "IMS:Group:EmptyingNotConfirmed": "The class was not saved: an empty list arrived without confirming that emptying it was meant. Most often the current roll failed to load — reopen it.",
     "Group:Empty:Title": "Empty this class of everybody?",
     "Group:Empty:Body": "Nobody will be left in it. If you expected names here, the roll most likely failed to load — close it and open it again.",
-    "Group:Empty:Confirm": "Yes, empty it"
+    "Group:Empty:Confirm": "Yes, empty it",
+    "IMS:Attempt:ClosedForUploads": "This sitting is over, so files can no longer be uploaded. A file that was already on its way when the time ran out is still accepted and kept."
   }
 }

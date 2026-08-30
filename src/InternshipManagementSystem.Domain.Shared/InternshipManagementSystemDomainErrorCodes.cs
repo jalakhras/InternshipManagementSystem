@@ -51,6 +51,8 @@ public static class InternshipManagementSystemDomainErrorCodes
 
     public const string GroupEmptyingNotConfirmed = "IMS:Group:EmptyingNotConfirmed";
 
+    public const string AttemptClosedForUploads = "IMS:Attempt:ClosedForUploads";
+
     /// <summary>
     /// A form this tenant does not own, one that no longer exists, or one that
     /// belongs to a different exam than the sitting being sent.

@@ -141,10 +141,17 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
         answered[index] = true;
       }
 
+      const expired = secondsRemaining <= 0;
+
       return json({
         savedAt: new Date().toISOString(),
         secondsRemaining,
-        isExpired: secondsRemaining <= 0,
+        isExpired: expired,
+
+        // What the real server does: past the deadline nothing is written unless
+        // the save carries only a file that was already on its way. `saved` and
+        // `isExpired` are not opposites, and the screen used to assume they were.
+        saved: !expired || Boolean(body?.answerBlobName && !body?.response),
       });
     }
 

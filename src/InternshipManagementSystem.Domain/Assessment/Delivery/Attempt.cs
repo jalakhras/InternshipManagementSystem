@@ -106,6 +106,27 @@ public class Attempt : AuditedAggregateRoot<Guid>, IMultiTenant
     public bool IsExpired(DateTime now) => now > DeadlineAt;
 
     /// <summary>
+    /// How long a file that was already being sent when the clock ran out may
+    /// still arrive and be attached.
+    /// <para>
+    /// A recording is not a keystroke. Somebody answering a speaking question
+    /// talks until they are told to stop, and their answer then has to travel —
+    /// a minute of audio is close to a megabyte, and on a poor connection it is
+    /// still in flight when the deadline passes. Refusing it at that instant
+    /// does not stop late work; it deletes work that was finished on time.
+    /// </para>
+    /// <para>
+    /// Short, and it buys nothing for anybody typing: only an attachment may
+    /// arrive inside it, never text.
+    /// </para>
+    /// </summary>
+    public const int UploadGraceSeconds = 60;
+
+    /// <summary>Whether a file still on its way may be accepted.</summary>
+    public bool IsWithinUploadGrace(DateTime now) =>
+        !IsSubmitted && now <= DeadlineAt.AddSeconds(UploadGraceSeconds);
+
+    /// <summary>
     /// Applies a freshly computed total. Passing is a percentage comparison, so an
     /// exam worth 200 marks is not judged against a threshold meant for one worth 100.
     /// </summary>

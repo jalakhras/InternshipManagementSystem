@@ -415,13 +415,21 @@ export class TakeSittingComponent {
         next: result => {
           settled();
           this.saving.set(false);
-          this.savedAt.set(new Date(result.savedAt));
+
+          // Only when something was actually written. The screen used to read
+          // the timestamp and put a tick beside "Saved" on every reply — including
+          // the one that refused the save for being late. A candidate was told
+          // their answer was safe at the exact moment it was thrown away, which
+          // is the worst possible thing to be wrong about at the worst possible
+          // moment.
+          if (result.saved) {
+            this.savedAt.set(new Date(result.savedAt));
+            this.markAnswered();
+          }
 
           // The authoritative clock. A browser whose time is wrong, or set back
           // on purpose, gains nothing by it.
           this.secondsRemaining.set(result.secondsRemaining);
-
-          this.markAnswered();
 
           if (result.isExpired) {
             this.submit(true);

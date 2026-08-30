@@ -243,6 +243,24 @@ public class SaveAnswerResultDto
 
     /// <summary>True when the deadline passed; the client should stop and submit.</summary>
     public bool IsExpired { get; set; }
+
+    /// <summary>
+    /// Whether the answer was actually written.
+    /// <para>
+    /// The two flags are not opposites. A save arriving after the deadline
+    /// normally stores nothing — and the screen still put a tick beside the word
+    /// "Saved", because it read the timestamp and never asked whether anything
+    /// had been kept. A candidate was told their answer was safe at the exact
+    /// moment it was refused.
+    /// </para>
+    /// <para>
+    /// And a late save can now genuinely store something: a file already on its
+    /// way when the clock ran out is accepted inside a short grace, which is
+    /// expired and saved at once. So the screen has to be told, not left to
+    /// infer.
+    /// </para>
+    /// </summary>
+    public bool Saved { get; set; }
 }
 
 /// <summary>What the taker sees once grading has settled.</summary>

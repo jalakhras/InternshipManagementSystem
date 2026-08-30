@@ -167,6 +167,9 @@ export interface SaveAnswerResult {
 
   /** True when the deadline has passed. The screen stops and submits. */
   isExpired: boolean;
+
+  /** Whether anything was actually written. Not the opposite of `isExpired`. */
+  saved: boolean;
 }
 
 export interface TopicScore {

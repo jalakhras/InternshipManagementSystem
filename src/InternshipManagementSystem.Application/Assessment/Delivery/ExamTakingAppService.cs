@@ -404,9 +404,32 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         // Past the deadline the save is refused, but the client is told so it can
         // submit cleanly instead of silently losing the keystroke.
-        if (attempt.IsExpired(now))
+        //
+        // With one exception, and it is not a loophole: a file that was already
+        // on its way. A recording is not a keystroke — somebody answering a
+        // speaking question talks until told to stop, and a minute of audio then
+        // has to travel. Refusing it at the instant the clock turns over does
+        // not stop late work; it throws away work that was finished on time, and
+        // that is exactly what happened: the file reached storage and the save
+        // that would have attached it was refused, so the answer existed
+        // everywhere except where anybody could see it.
+        //
+        // Only the attachment, never text. Someone still typing after time is up
+        // is a different thing entirely, and this must not become a way to do it.
+        var attachmentOnly =
+            !string.IsNullOrWhiteSpace(input.AnswerBlobName) && string.IsNullOrWhiteSpace(input.Response);
+
+        if (attempt.IsExpired(now) && !(attachmentOnly && attempt.IsWithinUploadGrace(now)))
         {
-            return new SaveAnswerResultDto { SavedAt = now, SecondsRemaining = 0, IsExpired = true };
+            return new SaveAnswerResultDto
+            {
+                SavedAt = now,
+                SecondsRemaining = 0,
+                IsExpired = true,
+
+                // Nothing was written, and the screen must not say otherwise.
+                Saved = false,
+            };
         }
 
         var onForm = await (await _attemptQuestions.GetQueryableAsync())
@@ -460,7 +483,13 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             SavedAt = now,
             // Always from the stored deadline: the client's clock never gets a vote.
             SecondsRemaining = attempt.SecondsRemaining(now),
-            IsExpired = false
+
+            // Still true when a late attachment was accepted, and it has to be:
+            // the file is kept, and the paper is still over. Saying otherwise
+            // would hand the candidate back time they do not have.
+            IsExpired = attempt.IsExpired(now),
+
+            Saved = true,
         };
     }
 

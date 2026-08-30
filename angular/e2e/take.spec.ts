@@ -546,4 +546,5 @@ test.describe('Taking an exam', () => {
     expect(answered, 'an answered question must be readable').toBeGreaterThanOrEqual(4.5);
     expect(blank, 'an unanswered question must be readable').toBeGreaterThanOrEqual(4.5);
   });
+
 });
