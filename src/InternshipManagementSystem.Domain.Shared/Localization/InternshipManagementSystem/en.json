@@ -961,6 +961,11 @@
     "Candidate:Category": "Category",
     "Candidate:Category:None": "No category",
     "Candidate:Category:Hint": "The subject area — not the class. Classes are managed on the Groups screen.",
-    "Review:AttachmentUnreadable": "This attachment could not be opened. Do not mark work you have not seen — tell an administrator."
+    "Review:AttachmentUnreadable": "This attachment could not be opened. Do not mark work you have not seen — tell an administrator.",
+    "Take:Map": "Question map",
+    "Take:Map:Answered": "Question {0} — answered",
+    "Take:Map:Blank": "Question {0} — no answer",
+    "Take:Map:NoJumping": "This exam does not allow going back, so the map shows what is left but does not move you.",
+    "Take:Submit:GoToFirst": "Go to the first one with no answer"
   }
 }

@@ -120,6 +120,44 @@
     }
   </main>
 
+  <!-- What is left, and a way to reach it. Numbers only: a map of a paper must
+       not say anything about the questions on it. -->
+  @if (map().length > 1) {
+    <nav class="qmap" [attr.aria-label]="t('::Take:Map')">
+      <ol class="qmap__list">
+        @for (item of map(); track item.position) {
+          <li>
+            <button
+              type="button"
+              class="qmap__item"
+              [class.qmap__item--answered]="item.answered"
+              [class.qmap__item--current]="item.current"
+              [disabled]="!canJump()"
+              [attr.aria-current]="item.current ? 'step' : null"
+              [attr.aria-label]="
+                t(item.answered ? '::Take:Map:Answered' : '::Take:Map:Blank', item.position.toString())
+              "
+              (click)="jumpTo(item.position)">
+              <span class="astro-numeric" aria-hidden="true">{{ item.position }}</span>
+
+              <!-- A tick, not a colour. An answer that is only a shade of green
+                   is invisible to a candidate who cannot tell it from the rest. -->
+              @if (item.answered) {
+                <i class="bi bi-check qmap__tick" aria-hidden="true"></i>
+              }
+            </button>
+          </li>
+        }
+      </ol>
+
+      @if (!canJump()) {
+        <!-- Said, because a row of numbers that does nothing when pressed reads
+             as a broken control rather than a deliberate one. -->
+        <p class="qmap__note">{{ t('::Take:Map:NoJumping') }}</p>
+      }
+    </nav>
+  }
+
   <footer class="actions">
     <button
       type="button"
@@ -156,6 +194,15 @@
         <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
         {{ t('::Take:Submit:Unanswered', unanswered().toString()) }}
       </p>
+
+      @if (canJump()) {
+        <!-- Telling somebody two questions are blank and leaving them to find
+             which two, with the clock running, is a warning that costs them time
+             instead of saving it. -->
+        <button type="button" class="btn btn-outline-secondary" (click)="goToFirstUnanswered()">
+          {{ t('::Take:Submit:GoToFirst') }}
+        </button>
+      }
     }
 
     <p class="confirm__body">{{ t('::Take:Submit:Body') }}</p>

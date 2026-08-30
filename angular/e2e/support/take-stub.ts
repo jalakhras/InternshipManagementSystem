@@ -14,6 +14,9 @@ export interface TakeStubOptions {
   accessible?: boolean;
   blockReason?: string;
   totalQuestions?: number;
+
+  /** Papers that refuse it exist, and the map must behave differently on them. */
+  allowBackNavigation?: boolean;
   secondsRemaining?: number;
   resumable?: boolean;
   isFinal?: boolean;
@@ -184,7 +187,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       answeredCount: answered.filter(Boolean).length,
       answered: [...answered],
       isSubmitted: submitted,
-      allowBackNavigation: true,
+      allowBackNavigation: options.allowBackNavigation ?? true,
       oneQuestionAtATime: true,
     };
   }

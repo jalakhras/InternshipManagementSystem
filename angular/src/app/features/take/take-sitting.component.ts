@@ -123,6 +123,61 @@ export class TakeSittingComponent {
     return state ? state.answered.filter(a => !a).length : 0;
   });
 
+  /**
+   * One entry per question: its number, whether it has an answer, and whether it
+   * is the one on screen.
+   * <p>
+   * The server has sent this map on every exchange since the paper was built —
+   * the field's own comment says it is "so the map can show what is left without
+   * fetching the paper" — and nothing ever drew it. So the submit dialog could
+   * tell a candidate that two questions had no answer and offer them no way to
+   * reach either one, with the clock running.
+   * </p>
+   */
+  readonly map = computed(() => {
+    const state = this.state();
+
+    if (!state) {
+      return [];
+    }
+
+    return state.answered.map((answered, index) => ({
+      position: index + 1,
+      answered,
+      current: index + 1 === this.position(),
+    }));
+  });
+
+  /**
+   * Whether the map is a way to move or only a picture of progress.
+   * <p>
+   * When an exam refuses back navigation, jumping is not offered at all —
+   * deliberately, and not only because going back is barred. Jumping *forward*
+   * would strand every question it skipped, since there would be no way to
+   * return to them: a candidate would gain a control that quietly cost them
+   * marks. So the map still shows what is left, and moving stays with Next.
+   * </p>
+   */
+  readonly canJump = computed(() => this.state()?.allowBackNavigation ?? false);
+
+  jumpTo(position: number): void {
+    if (this.canJump() && position !== this.position()) {
+      this.goTo(position);
+    }
+  }
+
+  /** From the submit dialog: the first question still without an answer. */
+  goToFirstUnanswered(): void {
+    const first = this.state()?.answered.findIndex(a => !a) ?? -1;
+
+    if (first < 0) {
+      return;
+    }
+
+    this.confirmingSubmit.set(false);
+    this.goTo(first + 1);
+  }
+
   readonly canGoBack = computed(() => (this.state()?.allowBackNavigation ?? false) && this.position() > 1);
   readonly isLast = computed(() => this.position() >= (this.state()?.totalQuestions ?? 1));
 

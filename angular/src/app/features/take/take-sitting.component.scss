@@ -329,3 +329,68 @@ textarea,
   font-size: .9375rem;
   text-align: center;
 }
+
+/**
+ * The question map.
+ *
+ * Named `qmap` and not `map`, `nav` or `progress`: Bootstrap is loaded and owns
+ * the last two, and a local class with a Bootstrap name is a bug waiting for
+ * somebody to load a page in a different order.
+ */
+.qmap {
+  padding-block: var(--astro-space-3);
+  border-block-start: 1px solid var(--border-subtle);
+
+  &__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--astro-space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__item {
+    position: relative;
+    // 44px, because a candidate under time pressure on a phone is the least
+    // forgiving target audience in the product.
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--astro-radius-sm);
+    background: var(--surface-raised);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+
+    &:disabled {
+      cursor: default;
+    }
+
+    &--answered {
+      border-color: var(--status-pass-text);
+      background: var(--status-pass-bg);
+      color: var(--status-pass-text);
+    }
+
+    &--current {
+      // Two signals, not one: the ring reads without colour, and it survives a
+      // candidate who cannot tell this green from that grey.
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+
+  &__tick {
+    position: absolute;
+    inset-block-end: 1px;
+    inset-inline-end: 3px;
+    font-size: .75rem;
+  }
+
+  &__note {
+    margin-block: var(--astro-space-2) 0;
+    color: var(--text-secondary);
+    font-size: .8125rem;
+  }
+}

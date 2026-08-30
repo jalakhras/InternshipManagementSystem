@@ -479,4 +479,71 @@ test.describe('Taking an exam', () => {
     expect(src, 'an address that carries its own scheme is already an address')
       .toMatch(/^data:image\//);
   });
+
+  test('the map shows what is left and reaches it', async ({ page }) => {
+    await stubTake(page, { totalQuestions: 3 });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const map = page.getByRole('navigation', { name: 'Question map' });
+    await expect(map).toBeVisible();
+
+    // Three questions, none answered yet, and the first is the one on screen.
+    await expect(map.getByRole('button')).toHaveCount(3);
+    await expect(map.getByRole('button', { name: 'Question 1 — no answer' })).toHaveAttribute(
+      'aria-current',
+      'step',
+    );
+
+    await page.getByText('The level price failed to fall below').click();
+    await expect(page.getByText('Saved')).toBeVisible();
+
+    // The state the server already sent on every exchange, and which nothing
+    // drew: answered or not, per question, without revealing anything about them.
+    await expect(map.getByRole('button', { name: 'Question 1 — answered' })).toBeVisible();
+
+    // And it moves. The submit dialog could say two questions had no answer and
+    // offer no way to reach either, with the clock running.
+    await map.getByRole('button', { name: 'Question 3 — no answer' }).click();
+
+    await expect(page.getByText('Question 3 of 3')).toBeVisible();
+  });
+
+  test('a paper that forbids going back shows the map but does not move you', async ({ page }) => {
+    await stubTake(page, { totalQuestions: 3, allowBackNavigation: false });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const map = page.getByRole('navigation', { name: 'Question map' });
+
+    // The half that keeps the other half safe. Jumping forward on a paper with
+    // no way back would strand every question it skipped — a control that
+    // quietly costs marks. So the map still shows progress and says why it does
+    // not move you, because a row of numbers that ignores a press reads as
+    // broken rather than deliberate.
+    await expect(map.getByRole('button').first()).toBeDisabled();
+    await expect(map.getByText(/does not allow going back/)).toBeVisible();
+  });
+
+  test('the map is readable in the dark too', async ({ page }) => {
+    await stubTake(page, { totalQuestions: 3 });
+    await page.addInitScript(() => localStorage.setItem('astro.theme', 'dark'));
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await page.getByText('The level price failed to fall below').click();
+
+    const map = page.getByRole('navigation', { name: 'Question map' });
+
+    // Written the day two other things on this same screen measured 1.01:1 and
+    // 1.06:1 in the dark. A new control on the candidate's paper gets checked
+    // before it ships, not after somebody cannot read it.
+    const answered = await contrastRatio(map.getByRole('button', { name: /answered/ }));
+    const blank = await contrastRatio(map.getByRole('button', { name: /no answer/ }).first());
+
+    expect(answered, 'an answered question must be readable').toBeGreaterThanOrEqual(4.5);
+    expect(blank, 'an unanswered question must be readable').toBeGreaterThanOrEqual(4.5);
+  });
 });

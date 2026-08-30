@@ -961,6 +961,11 @@
     "Candidate:Category": "التصنيف",
     "Candidate:Category:None": "بلا تصنيف",
     "Candidate:Category:Hint": "مجال الدراسة — غير الشعبة. الشعبة تُدار من شاشة المجموعات.",
-    "Review:AttachmentUnreadable": "تعذّر فتح المرفق. لا تضع درجةً على عملٍ لم تره — أبلغ المسؤول."
+    "Review:AttachmentUnreadable": "تعذّر فتح المرفق. لا تضع درجةً على عملٍ لم تره — أبلغ المسؤول.",
+    "Take:Map": "خريطة الأسئلة",
+    "Take:Map:Answered": "السؤال {0} — مُجاب",
+    "Take:Map:Blank": "السؤال {0} — بلا إجابة",
+    "Take:Map:NoJumping": "هذا الامتحان لا يسمح بالعودة، فالخريطة تُظهر ما بقي ولا تنقلك.",
+    "Take:Submit:GoToFirst": "اذهب إلى أوّل سؤال بلا إجابة"
   }
 }
