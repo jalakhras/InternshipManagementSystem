@@ -75,8 +75,8 @@ import { TakerQuestion } from '../take.models';
       inline-size: 2rem;
       block-size: 2rem;
       border-radius: 50%;
-      background: var(--astro-brand-50);
-      color: var(--astro-brand-700);
+      background: var(--accent-subtle);
+      color: var(--accent-subtle-text);
       font-weight: 600;
     }
 
@@ -93,7 +93,7 @@ import { TakerQuestion } from '../take.models';
       color: var(--text-secondary);
       cursor: pointer;
 
-      &:hover:not(:disabled) { border-color: var(--astro-brand-600); color: var(--astro-brand-700); }
+      &:hover:not(:disabled) { border-color: var(--astro-brand-600); color: var(--accent-subtle-text); }
       &:disabled { opacity: .35; cursor: default; }
     }
   `,

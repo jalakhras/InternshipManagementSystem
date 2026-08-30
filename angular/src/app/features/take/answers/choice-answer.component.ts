@@ -73,8 +73,14 @@ import { TakerQuestion } from '../take.models';
       &:hover { border-color: var(--astro-brand-400); }
 
       &--picked {
-        border-color: var(--astro-brand-600);
-        background: var(--astro-brand-50);
+        border-color: var(--accent);
+        background: var(--accent-subtle);
+
+        // Named, not inherited. The background was a fixed pale primitive while
+        // the inherited text colour flipped with the theme, so in dark mode the
+        // answer a candidate had just chosen measured 1.01:1 against it — they
+        // had to deselect it to read their own answer back.
+        color: var(--accent-subtle-text);
       }
     }
 

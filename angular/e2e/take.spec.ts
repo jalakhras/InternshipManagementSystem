@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { contrastRatio } from './support/contrast';
 import { stubTake } from './support/take-stub';
 
 /**
@@ -394,5 +395,46 @@ test.describe('Taking an exam', () => {
     );
 
     expect(overflows).toBe(false);
+  });
+
+  test('in the dark, a candidate can read the answer they chose', async ({ page }) => {
+    await stubTake(page);
+
+    // The theme a person actually chose, not the one the machine defaults to.
+    await page.addInitScript(() => localStorage.setItem('astro.theme', 'dark'));
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const choice = page.getByText('The level price failed to fall below');
+    await choice.click();
+
+    // 1.01:1 when this was written — the pale panel behind the chosen answer was
+    // a fixed colour that never flipped, while the text on it was a token that
+    // did. The candidate had to deselect their answer to read it back.
+    //
+    // "Visible" is not the question: a visibility assertion returns true for
+    // white on white. The question is whether there is anything to see.
+    const ratio = await contrastRatio(choice);
+
+    expect(ratio, 'the chosen answer must be readable').toBeGreaterThanOrEqual(4.5);
+  });
+
+  test('in the dark, a candidate can read whether they passed', async ({ page }) => {
+    await stubTake(page, { totalQuestions: 1 });
+    await page.addInitScript(() => localStorage.setItem('astro.theme', 'dark'));
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Submit' }).click();
+
+    await expect(page).toHaveURL(/result/);
+
+    // 1.06:1 when this was written. It is the one sentence on the page: the
+    // whole reason the candidate sat the exam, and they could not read it.
+    const ratio = await contrastRatio(page.locator('.score__verdict'));
+
+    expect(ratio, 'the verdict must be readable').toBeGreaterThanOrEqual(4.5);
   });
 });

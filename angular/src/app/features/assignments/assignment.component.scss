@@ -252,7 +252,7 @@
 
   &:hover {
     border-color: var(--astro-brand-600);
-    color: var(--astro-brand-700);
+    color: var(--accent-subtle-text);
   }
 
   &--danger:hover {
@@ -366,7 +366,7 @@
   border-radius: var(--astro-radius-md);
   background: var(--surface-sunken);
 
-  &--done { background: var(--astro-pass-50); }
+  &--done { background: var(--status-pass-bg); }
 
   &__line {
     margin: 0 0 var(--astro-space-1);
@@ -421,11 +421,11 @@
   white-space: nowrap;
 
   &--ready   { background: var(--surface-sunken);   color: var(--text-secondary); }
-  &--sent    { background: var(--astro-brand-50);   color: var(--astro-brand-700); }
-  &--started { background: var(--astro-pending-50); color: var(--astro-pending-700); }
-  &--spent   { background: var(--astro-pass-50);    color: var(--astro-pass-700); }
+  &--sent    { background: var(--accent-subtle);   color: var(--accent-subtle-text); }
+  &--started { background: var(--status-pending-bg); color: var(--status-pending-text); }
+  &--spent   { background: var(--status-pass-bg);    color: var(--status-pass-text); }
   &--expired { background: var(--surface-sunken);   color: var(--text-muted); }
-  &--revoked { background: var(--astro-fail-50);    color: var(--astro-fail-700); }
+  &--revoked { background: var(--status-fail-bg);    color: var(--status-fail-text); }
 }
 
 .row-2 {
@@ -453,11 +453,11 @@
   border-radius: var(--astro-radius-md);
   font-size: .9375rem;
 
-  &--warn { background: var(--astro-pending-50); color: var(--astro-pending-700); }
+  &--warn { background: var(--status-pending-bg); color: var(--status-pending-text); }
 
   // The links cannot be recovered, so this is the one chance to take them. Said
   // before somebody closes the panel rather than after.
-  &--once { background: var(--astro-brand-50); color: var(--astro-brand-800); }
+  &--once { background: var(--accent-subtle); color: var(--accent-subtle-text); }
 }
 
 .recipients {
@@ -481,7 +481,7 @@
   &__who { display: grid; }
   &__name { font-weight: 500; }
   &__email { color: var(--text-muted); font-size: .8125rem; }
-  &__error { color: var(--astro-pending-700); font-size: .8125rem; }
+  &__error { color: var(--status-pending-text); font-size: .8125rem; }
 
   &__url {
     font-size: .75rem;

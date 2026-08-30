@@ -26,11 +26,11 @@
   gap: var(--astro-space-2);
   padding: var(--astro-space-6);
   border-radius: var(--astro-radius-md);
-  background: var(--astro-pending-50);
+  background: var(--status-pending-bg);
   text-align: center;
 
   i { font-size: 1.75rem; color: var(--astro-pending-600); }
-  &__title { margin: 0; font-weight: 600; color: var(--astro-pending-700); }
+  &__title { margin: 0; font-weight: 600; color: var(--status-pending-text); }
   &__body { margin: 0; color: var(--text-secondary); }
 }
 
@@ -40,15 +40,24 @@
   gap: var(--astro-space-1);
   padding: var(--astro-space-6);
   border-radius: var(--astro-radius-md);
-  background: var(--astro-fail-50);
+  background: var(--status-fail-bg);
 
-  &--passed { background: var(--astro-pass-50); }
+  &--passed { background: var(--status-pass-bg); }
 
-  &__value { font-size: 3rem; font-weight: 700; line-height: 1; color: var(--astro-fail-700); }
-  &--passed &__value { color: var(--astro-pass-700); }
+  &__value { font-size: 3rem; font-weight: 700; line-height: 1; color: var(--status-fail-text); }
+  &--passed &__value { color: var(--status-pass-text); }
 
   &__marks { color: var(--text-secondary); }
-  &__verdict { margin-block-start: var(--astro-space-2); font-weight: 600; }
+  // Named for the same reason: passed or not passed is the one sentence on this
+  // page, and inherited text on a fixed pale panel measured 1.06:1 in dark mode.
+  // A candidate could not read whether they had passed.
+  &__verdict {
+    margin-block-start: var(--astro-space-2);
+    font-weight: 600;
+    color: var(--status-fail-text);
+  }
+
+  &--passed &__verdict { color: var(--status-pass-text); }
 }
 
 .breakdown {

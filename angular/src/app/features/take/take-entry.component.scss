@@ -77,8 +77,8 @@
   margin: 0 0 var(--astro-space-4);
   padding: var(--astro-space-3);
   border-radius: var(--astro-radius-md);
-  background: var(--astro-pending-50);
-  color: var(--astro-pending-700);
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
   font-size: .9375rem;
 }
 

@@ -50,7 +50,11 @@
   --astro-ink-200: #dde2e9;
   --astro-ink-300: #c3ccd6;
   --astro-ink-400: #94a1b0;
-  --astro-ink-500: #6b7988;
+  // Darkened from #6b7988, which measured 4.22 / 4.45 / 3.96 against the page,
+  // raised and sunken surfaces — under AA on all three, and the single cause of
+  // 262 contrast failures across twelve screens. This is the whole ramp's muted
+  // step and nothing else uses it, so one value fixes all of them.
+  --astro-ink-500: #5a6876;
   --astro-ink-600: #4e5c6b;
   --astro-ink-700: #3a4653;
   --astro-ink-800: #26303a;

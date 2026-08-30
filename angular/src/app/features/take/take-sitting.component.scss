@@ -65,8 +65,8 @@
   font-variant-numeric: tabular-nums;
 
   &--calm   { background: var(--surface-sunken);      color: var(--text-primary); }
-  &--warn   { background: var(--astro-pending-50);    color: var(--astro-pending-700); }
-  &--urgent { background: var(--astro-fail-50);       color: var(--astro-fail-700); }
+  &--warn   { background: var(--status-pending-bg);    color: var(--status-pending-text); }
+  &--urgent { background: var(--status-fail-bg);       color: var(--status-fail-text); }
 }
 
 .saved {
@@ -87,8 +87,8 @@
   align-items: center;
   gap: var(--astro-space-2);
   padding: var(--astro-space-2) var(--astro-space-5);
-  background: var(--astro-pending-50);
-  color: var(--astro-pending-700);
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
   font-size: .9375rem;
 }
 
@@ -286,8 +286,8 @@
     margin: 0 0 var(--astro-space-3);
     padding: var(--astro-space-3);
     border-radius: var(--astro-radius-md);
-    background: var(--astro-pending-50);
-    color: var(--astro-pending-700);
+    background: var(--status-pending-bg);
+    color: var(--status-pending-text);
   }
 
   &__actions {

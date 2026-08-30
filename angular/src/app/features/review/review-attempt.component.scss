@@ -252,7 +252,7 @@
 
   &:hover {
     border-color: var(--astro-brand-600);
-    color: var(--astro-brand-700);
+    color: var(--accent-subtle-text);
   }
 
   &--danger:hover {
@@ -366,7 +366,7 @@
   border-radius: var(--astro-radius-md);
   background: var(--surface-sunken);
 
-  &--done { background: var(--astro-pass-50); }
+  &--done { background: var(--status-pass-bg); }
 
   &__line {
     margin: 0 0 var(--astro-space-1);
@@ -415,8 +415,8 @@
   margin-block-end: var(--astro-space-5);
   padding: var(--astro-space-4);
   border-radius: var(--astro-radius-md);
-  background: var(--astro-pending-50);
-  color: var(--astro-pending-700);
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
 
   &__title {
     display: flex;
@@ -440,8 +440,8 @@
   margin-block-end: var(--astro-space-4);
   padding: var(--astro-space-3);
   border-radius: var(--astro-radius-md);
-  background: var(--astro-pass-50);
-  color: var(--astro-pass-700);
+  background: var(--status-pass-bg);
+  color: var(--status-pass-text);
 }
 
 .answer {
@@ -567,6 +567,6 @@
   display: flex;
   align-items: center;
   gap: .25rem;
-  color: var(--astro-pass-700);
+  color: var(--status-pass-text);
   font-size: .875rem;
 }
