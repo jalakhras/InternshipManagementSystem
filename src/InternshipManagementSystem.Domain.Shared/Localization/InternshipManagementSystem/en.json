@@ -819,6 +819,8 @@
     "Structure:Title": "Layout",
     "Take:AttemptsLeft": "Attempts left",
     "Take:Blank": "Blank {0}",
+    "Take:Blocked:Copy": "Copying the exam text is not available.",
+    "Take:Blocked:Paste": "Pasting is not available during the exam. Please type your answer here.",
     "Take:CannotOpen": "This link cannot be opened",
     "Take:CannotOpen:Help": "Contact whoever sent you this link. They can send a new one.",
     "Take:ChooseAnswer": "Choose your answer",

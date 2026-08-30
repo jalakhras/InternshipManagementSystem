@@ -299,3 +299,33 @@
 }
 
 :host-context([dir='rtl']) .confirm { transform: translate(50%, -50%); }
+
+// The paper cannot be selected; the answer can.
+//
+// Selecting the question is the first step in copying it out, and a drawn paper
+// is only worth drawing while its questions stay put. But the candidate's own
+// text has to behave like text — selecting a word to correct it is writing, not
+// copying — so the inputs opt back in.
+.stimulus,
+.question__prompt,
+.question__media {
+  user-select: none;
+}
+
+input,
+textarea,
+[contenteditable='true'] {
+  user-select: text;
+}
+
+// An explanation, not an alarm. It sits under the bar, states what happened, and
+// leaves.
+.blocked {
+  margin: 0;
+  padding: var(--astro-space-2) var(--astro-space-5);
+  border-block-end: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  color: var(--text-secondary);
+  font-size: .9375rem;
+  text-align: center;
+}

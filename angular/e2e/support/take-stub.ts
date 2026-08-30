@@ -28,6 +28,9 @@ export interface TakeStubOptions {
    * those.
    */
   sections?: { name: string; questions: number; instructions?: string }[];
+
+  /** Serve free-text questions instead of choices, so there is a box to type in. */
+  freeText?: boolean;
 }
 
 export interface TakeStub {
@@ -165,13 +168,15 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       position,
       totalQuestions: total,
       text: `Question ${number}: which level is support?`,
-      type: 'single-choice',
+      type: options.freeText ? 'text' : 'single-choice',
       score: 1,
       section: sectionAt(position),
-      options: [
-        { id: 'a', text: 'The level price failed to fall below' },
-        { id: 'b', text: 'The level price failed to rise above' },
-      ],
+      options: options.freeText
+        ? []
+        : [
+            { id: 'a', text: 'The level price failed to fall below' },
+            { id: 'b', text: 'The level price failed to rise above' },
+          ],
       display: {},
       savedResponse: undefined,
     };

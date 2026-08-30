@@ -124,6 +124,10 @@ export class TakeSittingComponent {
   private answerRef?: ComponentRef<AnswerInput>;
   private pendingResponse: string | null = null;
   private saveTimer?: ReturnType<typeof setTimeout>;
+  private blockedTimer?: ReturnType<typeof setTimeout>;
+
+  /** The key of the line explaining what was just refused, while it is showing. */
+  readonly blocked = signal<string | null>(null);
 
   /**
    * The save currently on the wire, so submitting can wait for it.
@@ -463,15 +467,43 @@ export class TakeSittingComponent {
       }
     };
 
-    // Noted, not reported. The paste travels with the next save, where the
-    // server records it only if the pasted text was long enough to be an
-    // imported answer — a deliberate threshold. Reporting every paste from here
-    // as well filed a second, unconditional observation for somebody pasting a
-    // single word, which is exactly the noise that threshold exists to keep out
-    // of a marker's report.
-    const onPaste = () => {
+    // Pasting into the paper is refused, not merely noted.
+    //
+    // Still recorded: an attempt that was stopped is more worth a marker's eye
+    // than one that succeeded, because it says what somebody tried to do. The
+    // save-time threshold no longer applies — nothing arrives to measure — so
+    // the attempt is reported from here.
+    //
+    // And it says so. A paste that silently does nothing reads as a broken text
+    // box, and somebody under time pressure will try it three more times before
+    // deciding the exam is broken. One line costs nothing and prevents that.
+    //
+    // This is a deterrent and not a control, and it is worth being clear about
+    // that: a second device, a screenshot, or the browser's own tools all defeat
+    // it. What it does stop is the easy path — an answer prepared elsewhere and
+    // dropped in.
+    const onPaste = (event: ClipboardEvent) => {
+      event.preventDefault();
+
       this.wasPasted = true;
+      this.take.reportSignal(IntegritySignalType.Paste, this.question()?.id);
+
+      this.blocked.set('::Take:Blocked:Paste');
+      this.clearBlockedSoon();
     };
+
+    // Copying the question out is the other half. A paper that can be selected
+    // and copied is a paper that can be sent to somebody else while the clock
+    // runs, and the whole point of drawing a different paper per candidate is
+    // that the questions do not travel.
+    const onCopy = (event: ClipboardEvent) => {
+      event.preventDefault();
+
+      this.blocked.set('::Take:Blocked:Copy');
+      this.clearBlockedSoon();
+    };
+
+    const onContextMenu = (event: MouseEvent) => event.preventDefault();
 
     const onKey = (event: KeyboardEvent) => {
       this.keystrokes++;
@@ -483,13 +515,34 @@ export class TakeSittingComponent {
 
     document.addEventListener('visibilitychange', onVisibility);
     document.addEventListener('paste', onPaste);
+    document.addEventListener('copy', onCopy);
+    document.addEventListener('cut', onCopy);
+    document.addEventListener('contextmenu', onContextMenu);
     document.addEventListener('keydown', onKey);
 
     this.destroyRef.onDestroy(() => {
       document.removeEventListener('visibilitychange', onVisibility);
       document.removeEventListener('paste', onPaste);
+      document.removeEventListener('copy', onCopy);
+      document.removeEventListener('cut', onCopy);
+      document.removeEventListener('contextmenu', onContextMenu);
       document.removeEventListener('keydown', onKey);
+
+      clearTimeout(this.blockedTimer);
     });
+  }
+
+  /**
+   * Takes the notice away on its own.
+   * <p>
+   * It is an explanation, not an error: nothing is wrong and there is nothing to
+   * dismiss. Leaving it on screen would make the candidate wonder whether it
+   * still applies.
+   * </p>
+   */
+  private clearBlockedSoon(): void {
+    clearTimeout(this.blockedTimer);
+    this.blockedTimer = setTimeout(() => this.blocked.set(null), 4000);
   }
 
   private resetObservations(): void {

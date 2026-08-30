@@ -253,6 +253,46 @@ test.describe('Taking an exam', () => {
     await expect(page.getByText('35%')).toBeVisible();
   });
 
+  test('a prepared answer cannot be pasted into the paper', async ({ page }) => {
+    await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+    await stubTake(page, { freeText: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    const box = page.locator('textarea').first();
+    await box.click();
+
+    // Put something on the clipboard the way a candidate would, then paste it.
+    await page.evaluate(() => navigator.clipboard.writeText('An answer written earlier'));
+    await page.keyboard.press('ControlOrMeta+V');
+
+    // The assertion is the field, not the notice: a page that showed the message
+    // and pasted anyway would pass a test that only looked for the message.
+    await expect(box).toHaveValue('');
+
+    // And it says why. A paste that silently does nothing reads as a broken text
+    // box, and somebody under time pressure tries it three more times before
+    // deciding the exam itself is broken.
+    await expect(page.getByText('Pasting is not available')).toBeVisible();
+  });
+
+  test('the candidate can still type their own answer', async ({ page }) => {
+    await stubTake(page, { freeText: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const box = page.locator('textarea').first();
+    await box.click();
+    await page.keyboard.type('Support is where buyers returned.');
+
+    // The half that matters more than the block. Refusing paste is worth
+    // nothing if it also makes the box hostile to somebody writing in it.
+    await expect(box).toHaveValue('Support is where buyers returned.');
+  });
+
   test('the paper does not scroll sideways', async ({ page }) => {
     await stubTake(page);
 

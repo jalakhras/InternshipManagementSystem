@@ -34,6 +34,13 @@
     </div>
   }
 
+  <!-- Why the keystroke did nothing. Polite, not accusing: most people who try
+       to paste are moving their own draft in, and being told "cheating detected"
+       for that would be both wrong and alarming at the worst moment. -->
+  @if (blocked(); as reason) {
+    <p class="blocked" role="status">{{ t(reason) }}</p>
+  }
+
   <main class="paper">
     @if (loading()) {
       <div class="state" role="status" aria-live="polite">

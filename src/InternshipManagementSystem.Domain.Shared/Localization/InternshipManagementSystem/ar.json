@@ -819,6 +819,8 @@
     "Structure:Title": "البنية",
     "Take:AttemptsLeft": "المحاولات المتبقية",
     "Take:Blank": "الفراغ {0}",
+    "Take:Blocked:Copy": "نسخ نصّ الامتحان غير متاح.",
+    "Take:Blocked:Paste": "اللصق غير متاح في الامتحان. اكتب إجابتك هنا.",
     "Take:CannotOpen": "تعذّر فتح هذا الرابط",
     "Take:CannotOpen:Help": "تواصل مع من أرسل لك الرابط، بإمكانه إرسال رابط جديد.",
     "Take:ChooseAnswer": "اختر إجابتك",
