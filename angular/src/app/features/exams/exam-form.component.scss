@@ -117,13 +117,24 @@ textarea.form-control { min-block-size: 5rem; }
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--astro-space-4);
   background: rgb(13 19 25 / 55%);
 }
 
 .sheet__panel {
+  // Positioned by itself, because it is no longer inside the overlay.
+  //
+  // The overlay used to wrap this box and centre it with `place-items: center`.
+  // Moving the dialog role onto the box — where a dialog role belongs — made
+  // them siblings, and a static box under a fixed overlay renders behind it:
+  // every button unclickable, while looking perfectly normal. Real clicks came
+  // back "intercepted by div.scrim".
+  position: fixed;
+  z-index: 61;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Logical properties do not cover translate, so the sign is written out.
+  transform: translate(-50%, -50%);
+
   inline-size: min(34rem, 100%);
   max-block-size: 85dvh;
   display: flex;

@@ -338,6 +338,13 @@ textarea,
  * somebody to load a page in a different order.
  */
 .qmap {
+  // The same column as the paper and the buttons under it. Left full-bleed the
+  // map sat on a different grid from the question it belongs to, and the ring
+  // around the current number — which is drawn outside the button — was clipped
+  // clean off by the viewport edge at every width tested.
+  inline-size: min(48rem, 100%);
+  margin-inline: auto;
+  padding-inline: var(--astro-space-4);
   padding-block: var(--astro-space-3);
   border-block-start: 1px solid var(--border-subtle);
 

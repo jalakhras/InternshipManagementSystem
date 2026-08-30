@@ -526,7 +526,10 @@
   font-size: var(--astro-text-xs);
 }
 
-.hint--warn { color: var(--astro-fail-600); }
+// A primitive with no dark counterpart measured 2.67:1 against the panel — the
+// same mistake, in new code, that made a candidate unable to read their own
+// answer yesterday. The semantic token flips; the primitive never did.
+.hint--warn { color: var(--status-fail-text); }
 
 // ── A reissued link ──────────────────────────────────────────────────────────
 // Shown once, like the first one. There is nowhere to read it back from: the
