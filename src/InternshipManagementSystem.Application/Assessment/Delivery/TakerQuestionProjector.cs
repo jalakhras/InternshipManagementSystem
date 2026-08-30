@@ -32,12 +32,14 @@ public class TakerQuestionProjector : ITransientDependency
     /// <param name="group">The shared stimulus, when the question has one.</param>
     /// <param name="totalQuestions">Length of this taker's paper.</param>
     /// <param name="mediaUrlFactory">Turns a blob name into a time-limited URL.</param>
+    /// <param name="section">Where this question sits among the exam's parts, when it has any.</param>
     public TakerQuestionDto Project(
         Question question,
         AttemptQuestion slot,
         QuestionGroup? group,
         int totalQuestions,
-        Func<string, string> mediaUrlFactory)
+        Func<string, string> mediaUrlFactory,
+        SectionPlacement? section = null)
     {
         var dto = new TakerQuestionDto
         {
@@ -62,6 +64,30 @@ public class TakerQuestionProjector : ITransientDependency
                 MediaType = group.StimulusMediaType,
                 MediaUrl = group.StimulusBlobName is null ? null : mediaUrlFactory(group.StimulusBlobName)
             };
+        }
+
+        if (section is not null)
+        {
+            dto.Section = new TakerSectionDto
+            {
+                Id = section.Section.Id,
+                Name = section.Section.Name,
+
+                // Only where they are true. A section's instructions are written to
+                // be read before it starts — "you will hear the recording once" —
+                // and repeating them over question fourteen is something a
+                // candidate has to read past under time pressure.
+                Instructions = section.Position == 1 ? section.Section.Instructions : null,
+
+                Position = section.Position,
+                QuestionCount = section.QuestionCount,
+                IsFirstQuestion = section.Position == 1
+            };
+
+            // Deliberately not sent: TimeLimitInMinutes, MinimumPercentage and
+            // IsQualifying. Nothing enforces any of the three yet, and a candidate
+            // shown "20 minutes for this part" by a screen that will not stop them
+            // at twenty has been misled more precisely than by being told nothing.
         }
 
         var savedOrder = PayloadJson.Read<List<string>>(slot.OptionOrder);
@@ -218,3 +244,18 @@ public class TakerQuestionProjector : ITransientDependency
         return dto;
     }
 }
+
+/// <summary>
+/// One question's place among the exam's parts: the section, and how far into it
+/// the candidate is.
+/// <para>
+/// Computed against the frozen paper rather than against the authored exam. Two
+/// candidates drawing different numbers of listening questions are each "3 of 6"
+/// or "3 of 8" according to the paper in front of them, and a section the draw
+/// never reached does not exist for them at all.
+/// </para>
+/// </summary>
+/// <param name="Section">The part of the exam, for its name and its instructions.</param>
+/// <param name="Position">Where in the section this question is, one-based.</param>
+/// <param name="QuestionCount">How many questions the section holds on this paper.</param>
+public sealed record SectionPlacement(ExamSection Section, int Position, int QuestionCount);

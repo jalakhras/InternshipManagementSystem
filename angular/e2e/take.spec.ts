@@ -159,6 +159,100 @@ test.describe('Taking an exam', () => {
     await expect(page.getByText('Listening')).toBeVisible();
   });
 
+  test('names the part of the exam the candidate is in', async ({ page }) => {
+    await stubTake(page, {
+      sections: [
+        { name: 'Listening', questions: 2, instructions: 'Each recording plays once.' },
+        { name: 'Grammar', questions: 2, instructions: 'Answer every question.' },
+      ],
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    // Somebody who does not know they have moved from listening into grammar
+    // does not know the rules moved with them, and cannot tell a coordinator
+    // afterwards which part went badly.
+    await expect(page.getByRole('heading', { name: 'Listening' })).toBeVisible();
+    await expect(page.getByText('Question 1 of 2 in this part')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Question 2 of 2 in this part')).toBeVisible();
+
+    // The heading changes with the part, not with the question.
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('heading', { name: 'Grammar' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Listening' })).toHaveCount(0);
+  });
+
+  test("shows a part's instructions where it begins, and not on the questions after", async ({ page }) => {
+    await stubTake(page, {
+      sections: [
+        { name: 'Listening', questions: 2, instructions: 'Each recording plays once.' },
+        { name: 'Grammar', questions: 1, instructions: 'Answer every question.' },
+      ],
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    // Written to be read before the part starts: how many questions, whether the
+    // audio plays once, whether they can go back.
+    await expect(page.getByText('Before you begin this part')).toBeVisible();
+    await expect(page.getByText('Each recording plays once.')).toBeVisible();
+
+    // And gone on the second question. Repeating them is something a candidate
+    // has to read past under time pressure.
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Question 2 of 2 in this part')).toBeVisible();
+    await expect(page.getByText('Each recording plays once.')).toHaveCount(0);
+
+    // The next part announces its own.
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Answer every question.')).toBeVisible();
+  });
+
+  test('an undivided exam shows no part heading at all', async ({ page }) => {
+    await stubTake(page);
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // Most exams are one paper. A heading saying so on every one of them is
+    // noise, and a candidate reading "in this part" on an exam with no parts is
+    // being told about a structure that does not exist.
+    await expect(page.getByText('in this part')).toHaveCount(0);
+    await expect(page.getByText('Before you begin this part')).toHaveCount(0);
+  });
+
+  test('reports the result by part of the exam as well as by skill', async ({ page }) => {
+    await stubTake(page, {
+      totalQuestions: 1,
+      sections: [
+        { name: 'Listening', questions: 1 },
+        { name: 'Grammar', questions: 1 },
+      ],
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await page.getByRole('button', { name: 'Next' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Submit' }).click();
+
+    await expect(page).toHaveURL(/result/);
+
+    // Both breakdowns, not one instead of the other. A topic is what a question
+    // measures; a part is what the candidate remembers sitting.
+    await expect(page.getByRole('heading', { name: 'By part of the exam' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'By skill' })).toBeVisible();
+
+    // The section figures, not the topic ones — 95 and 35 rather than 80.
+    await expect(page.getByText('95%')).toBeVisible();
+    await expect(page.getByText('35%')).toBeVisible();
+  });
+
   test('the paper does not scroll sideways', async ({ page }) => {
     await stubTake(page);
 

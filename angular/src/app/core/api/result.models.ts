@@ -70,6 +70,25 @@ export interface ResultDetail {
 
   /** Empty when the questions carry no topic. */
   byTopic: TopicScore[];
+
+  /**
+   * The same marks by the parts the paper was laid out in.
+   *
+   * Alongside the topics rather than instead of them: a topic is what a question
+   * measures, a section is where it sat on the paper. Empty on an exam with no
+   * sections.
+   */
+  bySection: SectionScore[];
+}
+
+/** How one sitting went in one part of the paper. */
+export interface SectionScore {
+  sectionId: string;
+  sectionName: string;
+  questionCount: number;
+  score: number;
+  maxScore: number;
+  scorePercentage: number;
 }
 
 export interface ResultAnswer {

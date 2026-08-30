@@ -86,6 +86,16 @@ public class TakerQuestionDto
     public TakerStimulusDto? Stimulus { get; set; }
 
     /// <summary>
+    /// The part of the exam this question sits in, when the exam has parts.
+    /// <para>
+    /// Null on the exams — most of them — that are one undivided paper. A
+    /// candidate who does not know they have moved from reading into listening
+    /// does not know the instructions have changed with it.
+    /// </para>
+    /// </summary>
+    public TakerSectionDto? Section { get; set; }
+
+    /// <summary>
     /// Choices with correctness stripped, in this taker's shuffled order.
     /// Empty for types that have no options.
     /// </summary>
@@ -102,6 +112,41 @@ public class TakerQuestionDto
     public string? SavedResponse { get; set; }
 
     public string? SavedFileName { get; set; }
+}
+
+/// <summary>
+/// Which part of the exam the candidate is in, and where in it they are.
+/// <para>
+/// Nothing here is answer-bearing: a name, a position, and instructions written
+/// to be read. The section's clock, its floor and its qualifying flag are
+/// deliberately absent — none of them is enforced yet, and a candidate told
+/// "twenty minutes for this section" by a screen that will not stop them at
+/// twenty has been lied to more precisely than by being told nothing.
+/// </para>
+/// </summary>
+public class TakerSectionDto
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; } = default!;
+
+    /// <summary>
+    /// Sent only on the first question of the section, because that is when it is
+    /// true. These are written to be read <i>before</i> a part starts — how many
+    /// questions, whether the audio plays once, whether they can go back — and
+    /// repeating them over question fourteen is noise a candidate has to read
+    /// past under time pressure.
+    /// </summary>
+    public string? Instructions { get; set; }
+
+    /// <summary>Where in this section the candidate is, one-based.</summary>
+    public int Position { get; set; }
+
+    /// <summary>How many questions this section holds on this candidate's paper.</summary>
+    public int QuestionCount { get; set; }
+
+    /// <summary>True on the first question of the section — where the heading is announced.</summary>
+    public bool IsFirstQuestion { get; set; }
 }
 
 /// <summary>The stimulus a group of questions shares.</summary>
@@ -221,6 +266,23 @@ public class AttemptResultDto
     public List<TopicScoreDto> TopicBreakdown { get; set; } = new();
 
     /// <summary>
+    /// The same marks read the other way: by the parts the exam was laid out in.
+    /// <para>
+    /// Alongside the topic breakdown rather than instead of it, because they are
+    /// different questions. A topic is what a question measures; a section is
+    /// where it sat on the paper — and a candidate who sat "Listening" wants to
+    /// see how they did on the thing they remember sitting.
+    /// </para>
+    /// <para>
+    /// In the exam's own order, not worst-first: a result that reorders the parts
+    /// of the paper is harder to read back against the paper. Empty on an exam
+    /// with no sections, and a section that contributed no questions to this
+    /// paper never appears.
+    /// </para>
+    /// </summary>
+    public List<SectionScoreDto> SectionBreakdown { get; set; } = new();
+
+    /// <summary>
     /// Populated only in Practice mode, and only after submission. In Assessment mode
     /// this stays empty — revealing keys would compromise the whole question bank.
     /// </summary>
@@ -232,6 +294,20 @@ public class TopicScoreDto
 {
     public Guid TopicId { get; set; }
     public string TopicName { get; set; } = default!;
+    public decimal Score { get; set; }
+    public decimal MaxScore { get; set; }
+    public decimal Percentage { get; set; }
+}
+
+/// <summary>How the taker did on one part of the paper.</summary>
+public class SectionScoreDto
+{
+    public Guid SectionId { get; set; }
+    public string SectionName { get; set; } = default!;
+
+    /// <summary>How many of this candidate's questions sat in this section.</summary>
+    public int QuestionCount { get; set; }
+
     public decimal Score { get; set; }
     public decimal MaxScore { get; set; }
     public decimal Percentage { get; set; }

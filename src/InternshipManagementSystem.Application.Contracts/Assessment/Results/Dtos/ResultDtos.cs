@@ -118,6 +118,36 @@ public class ResultDetailDto
     /// </para>
     /// </summary>
     public List<TopicScoreDto> ByTopic { get; set; } = new();
+
+    /// <summary>
+    /// The score broken down by the parts the paper was laid out in.
+    /// <para>
+    /// Alongside the topic breakdown, not instead of it: a topic is what a
+    /// question measures, a section is where it sat on the paper. A placement
+    /// coordinator reads the sections, because that is what the candidate sat and
+    /// what the report to the student names; the topics are what tell a teacher
+    /// what to teach.
+    /// </para>
+    /// <para>
+    /// Empty on an exam with no sections, and a section that contributed no
+    /// questions to this paper never appears.
+    /// </para>
+    /// </summary>
+    public List<SectionScoreDto> BySection { get; set; } = new();
+}
+
+/// <summary>How one sitting went in one part of the paper.</summary>
+public class SectionScoreDto
+{
+    public Guid SectionId { get; set; }
+
+    /// <summary>The section's name, or empty when it has been deleted since.</summary>
+    public string SectionName { get; set; } = default!;
+
+    public int QuestionCount { get; set; }
+    public decimal Score { get; set; }
+    public decimal MaxScore { get; set; }
+    public decimal ScorePercentage { get; set; }
 }
 
 public class ResultAnswerDto

@@ -57,6 +57,36 @@
     }
   </div>
 
+  @if (hasSections()) {
+    <!-- The parts of the paper, in the order they were sat. First, because it is
+         the shape the candidate and the report to them both use — and because a
+         placement decision is made on it. Absent entirely on the exams that are
+         one undivided paper, rather than an empty heading on every result. -->
+    <section class="section">
+      <h2 class="section__title">{{ t('::Results:Detail:BySection') }}</h2>
+
+      <ul class="topics">
+        @for (part of result.bySection; track part.sectionId) {
+          <li class="topic">
+            <div class="topic__head">
+              <span class="topic__name">{{ part.sectionName || '—' }}</span>
+              <span class="topic__figure astro-numeric">
+                {{ part.scorePercentage }}%
+                <span class="topic__raw">{{ part.score }} / {{ part.maxScore }}</span>
+              </span>
+            </div>
+            <div
+              class="bar"
+              role="img"
+              [attr.aria-label]="part.sectionName + ' ' + part.scorePercentage + '%'">
+              <span class="bar__fill" [style.inline-size.%]="part.scorePercentage"></span>
+            </div>
+          </li>
+        }
+      </ul>
+    </section>
+  }
+
   <!-- Above the answers, because this is the part somebody acts on. -->
   <section class="section">
     <h2 class="section__title">{{ t('::Results:Detail:ByTopic') }}</h2>

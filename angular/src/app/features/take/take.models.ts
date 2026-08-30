@@ -64,6 +64,32 @@ export interface TakerOption {
   mediaUrl?: string;
 }
 
+/**
+ * Which part of the exam the candidate is in.
+ *
+ * Absent on the exams — most of them — that are one undivided paper. Nothing
+ * about a section's clock, its floor or its qualifying flag is here, because
+ * none of the three is enforced yet and a candidate told "twenty minutes for
+ * this part" by a screen that will not stop them at twenty has been misled more
+ * precisely than by being told nothing.
+ */
+export interface TakerSection {
+  id: string;
+  name: string;
+
+  /** Sent only on the first question of the section, which is when they are true. */
+  instructions?: string;
+
+  /** Where in this section the candidate is, one-based. */
+  position: number;
+
+  /** How many questions this section holds on this candidate's paper. */
+  questionCount: number;
+
+  /** True on the question where the section begins. */
+  isFirstQuestion: boolean;
+}
+
 export interface TakerQuestion {
   id: string;
   position: number;
@@ -80,6 +106,9 @@ export interface TakerQuestion {
 
   /** A passage or a recording shared by several questions. */
   stimulus?: TakerStimulus;
+
+  /** The part of the exam this question sits in, when the exam has parts. */
+  section?: TakerSection;
 
   options: TakerOption[];
 
@@ -145,6 +174,16 @@ export interface TopicScore {
   percentage: number;
 }
 
+/** How the candidate did in one part of the paper. */
+export interface SectionScore {
+  sectionId: string;
+  sectionName: string;
+  questionCount: number;
+  score: number;
+  maxScore: number;
+  percentage: number;
+}
+
 export interface PracticeReviewItem {
   questionId: string;
   text: string;
@@ -173,6 +212,14 @@ export interface AttemptResult {
   submittedAt: string;
 
   topicBreakdown: TopicScore[];
+
+  /**
+   * The same marks read by the parts of the paper rather than by competency.
+   *
+   * Empty on an exam with no sections. In the exam's own order, so it reads back
+   * against the paper the candidate remembers sitting.
+   */
+  sectionBreakdown: SectionScore[];
 
   /** Practice mode only, and only after submitting. */
   review: PracticeReviewItem[];

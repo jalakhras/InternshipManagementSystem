@@ -41,6 +41,33 @@
         <p>{{ t('::Loading') }}</p>
       </div>
     } @else if (question(); as q) {
+      @if (q.section; as part) {
+        <!-- Which part of the exam this is. A candidate who does not know they
+             have moved from reading into listening does not know the rules moved
+             with them, and cannot tell a coordinator afterwards which part went
+             badly. -->
+        <div class="paper-section">
+          <h2 class="paper-section__name">{{ part.name }}</h2>
+          <span class="paper-section__count">
+            {{ t('::Take:Section:Progress', part.position.toString(), part.questionCount.toString()) }}
+          </span>
+        </div>
+
+        @if (part.isFirstQuestion && part.instructions) {
+          <!-- Only where the part begins. These are written to be read before it
+               starts — how many questions, whether the audio plays once, whether
+               they can go back — and repeating them over question fourteen is
+               something a candidate has to read past under time pressure. -->
+          <aside class="paper-section__brief" role="note">
+            <i class="bi bi-info-circle" aria-hidden="true"></i>
+            <div>
+              <p class="paper-section__brief-title">{{ t('::Take:Section:Brief') }}</p>
+              <p class="paper-section__brief-body">{{ part.instructions }}</p>
+            </div>
+          </aside>
+        }
+      }
+
       @if (q.stimulus; as stimulus) {
         <!-- A passage or a recording several questions share. Kept above the
              prompt and repeated on each of them, because scrolling back to find

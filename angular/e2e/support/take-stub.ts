@@ -18,6 +18,16 @@ export interface TakeStubOptions {
   resumable?: boolean;
   isFinal?: boolean;
   isPassed?: boolean;
+
+  /**
+   * Lay the paper out in parts, the way a placement test is.
+   *
+   * Each entry is a section name and how many of the paper's questions sit in
+   * it; the counts are laid over the paper in order. Off by default, because
+   * most exams are one undivided paper and the rest of this suite is about
+   * those.
+   */
+  sections?: { name: string; questions: number; instructions?: string }[];
 }
 
 export interface TakeStub {
@@ -34,7 +44,9 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
   // permissions, and the strings the taker screens read.
   await stubMinimalAbp(page, options.culture ?? 'en');
 
-  const total = options.totalQuestions ?? 3;
+  const total = options.sections
+    ? options.sections.reduce((sum, part) => sum + part.questions, 0)
+    : options.totalQuestions ?? 3;
   const saved: { questionId: string; response?: string }[] = [];
 
   let submitted = false;
@@ -155,6 +167,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       text: `Question ${number}: which level is support?`,
       type: 'single-choice',
       score: 1,
+      section: sectionAt(position),
       options: [
         { id: 'a', text: 'The level price failed to fall below' },
         { id: 'b', text: 'The level price failed to rise above' },
@@ -162,6 +175,41 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       display: {},
       savedResponse: undefined,
     };
+  }
+
+  /**
+   * Which part a position falls in, shaped the way the server shapes it.
+   *
+   * The instructions are attached to the section's first question and to no
+   * other, because that is the server's rule — they are written to be read
+   * before a part begins. A stub that attached them everywhere would let a
+   * client that shows them on every question pass.
+   */
+  function sectionAt(position: number) {
+    if (!options.sections) {
+      return undefined;
+    }
+
+    let start = 0;
+
+    for (const part of options.sections) {
+      if (position < start + part.questions) {
+        const within = position - start + 1;
+
+        return {
+          id: part.name.toLowerCase(),
+          name: part.name,
+          instructions: within === 1 ? part.instructions : undefined,
+          position: within,
+          questionCount: part.questions,
+          isFirstQuestion: within === 1,
+        };
+      }
+
+      start += part.questions;
+    }
+
+    return undefined;
   }
 
   function result() {
@@ -178,6 +226,17 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
         { topicId: 't1', topicName: 'Reading', score: 4, maxScore: 5, percentage: 80 },
         { topicId: 't2', topicName: 'Listening', score: 4, maxScore: 5, percentage: 80 },
       ],
+      // The parts the candidate actually sat, when the paper had parts. Numbers
+      // deliberately unlike the topic ones, so a screen reading the wrong array
+      // is visible rather than coincidentally right.
+      sectionBreakdown: (options.sections ?? []).map((part, index) => ({
+        sectionId: part.name.toLowerCase(),
+        sectionName: part.name,
+        questionCount: part.questions,
+        score: index === 0 ? 3 : 1,
+        maxScore: part.questions,
+        percentage: index === 0 ? 95 : 35,
+      })),
       review: [],
     };
   }

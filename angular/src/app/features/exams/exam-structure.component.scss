@@ -102,13 +102,50 @@
   white-space: nowrap;
 }
 
-// The part with teeth: fail this section and the exam is failed.
-.chip--strong {
-  background: color-mix(in srgb, var(--status-fail-mark) 12%, transparent);
-  color: var(--status-fail-text);
+// Saved, and read by nothing yet.
+//
+// This used to be .chip--strong — red, "the part with teeth" — on the qualifying
+// flag. It had no teeth: nothing in grading or delivery has ever read it, so the
+// screen was asserting a rule the software does not run. The three controls in
+// this state are now marked the same way and say so in words beside the value.
+.chip--inert {
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
 }
 
 .chip--muted { color: var(--text-muted); }
+
+// What is not enforced, said where the author is deciding it.
+//
+// Prefixed and its own name: .alert and .notice are Bootstrap's, and a vendor
+// sheet quietly restyling this box is how the sentence stops being read.
+.notyet {
+  display: flex;
+  gap: var(--astro-space-3);
+  margin-block-end: var(--astro-space-4);
+  padding: var(--astro-space-3) var(--astro-space-4);
+  border: 1px solid var(--status-pending-mark);
+  border-radius: var(--astro-radius-md);
+  background: var(--status-pending-bg);
+
+  > :where(i) { color: var(--status-pending-text); }
+}
+
+.notyet__title {
+  margin: 0 0 var(--astro-space-1);
+  font-weight: 600;
+  font-size: var(--astro-text-sm);
+  color: var(--status-pending-text);
+}
+
+.notyet__body {
+  margin: 0;
+  font-size: var(--astro-text-sm);
+  line-height: var(--astro-leading-body);
+  color: var(--text-secondary);
+
+  &--works { margin-block-start: var(--astro-space-2); }
+}
 
 .link {
   background: none;
@@ -208,6 +245,11 @@
 .field__hint {
   font-size: var(--astro-text-xs);
   color: var(--text-muted);
+
+  // On the three controls that save and are enforced by nothing. Coloured
+  // rather than muted, because muted is what a hint looks like and this is a
+  // warning about the field the author is filling in.
+  &--warn { color: var(--status-pending-text); }
 }
 
 .check {
@@ -221,6 +263,8 @@
     color: var(--text-muted);
     font-size: var(--astro-text-xs);
   }
+
+  .check__warn { color: var(--status-pending-text); }
 }
 
 // ── Delete confirmation ──────────────────────────────────────────────────────

@@ -33,6 +33,21 @@
       }
     </div>
 
+    <!-- Said plainly, on the screen, rather than left for an author to discover
+         after a cohort has sat the paper. Three controls here save and are read
+         by nothing: the section clock, the minimum percentage and the qualifying
+         flag. A control that stores a rule nobody enforces is worse than an
+         absent one — the author stops watching for the thing they believe the
+         software is watching for. -->
+    <div class="notyet" role="note">
+      <i class="bi bi-info-circle" aria-hidden="true"></i>
+      <div>
+        <p class="notyet__title">{{ t('::Section:NotEnforced:Title') }}</p>
+        <p class="notyet__body">{{ t('::Section:NotEnforced:Body') }}</p>
+        <p class="notyet__body notyet__body--works">{{ t('::Section:Enforced:Body') }}</p>
+      </div>
+    </div>
+
     @if (noSections()) {
       <p class="block__empty">{{ t('::Section:NoneYet') }}</p>
     }
@@ -53,17 +68,28 @@
               <span class="chip">{{ section.topicName }}</span>
             }
             @if (section.timeLimitInMinutes) {
-              <span class="chip">{{ t('::Section:Minutes', '' + section.timeLimitInMinutes) }}</span>
+              <!-- Marked on the row as well as in the notice above it. This chip is
+                   the only place the number is ever shown back to an author, and
+                   an unmarked "20 min" reads as a rule that is running. -->
+              <span class="chip chip--inert">
+                {{ t('::Section:Minutes', '' + section.timeLimitInMinutes) }}
+                · {{ t('::Section:NotEnforced:Chip') }}
+              </span>
             }
             @if (section.questionsPerForm) {
               <span class="chip">{{ t('::Form:Questions', '' + section.questionsPerForm) }}</span>
             }
             <!-- The part with teeth: fail this and you fail the exam. -->
             @if (section.isQualifying) {
-              <span class="chip chip--strong">{{ t('::Section:Qualifying') }}</span>
+              <span class="chip chip--inert">
+                {{ t('::Section:Qualifying') }} · {{ t('::Section:NotEnforced:Chip') }}
+              </span>
             }
             @if (section.minimumPercentage) {
-              <span class="chip">{{ t('::Section:Floor', '' + section.minimumPercentage) }}</span>
+              <span class="chip chip--inert">
+                {{ t('::Section:Floor', '' + section.minimumPercentage) }}
+                · {{ t('::Section:NotEnforced:Chip') }}
+              </span>
             }
             <span class="chip chip--muted">{{ t('::Section:Available', '' + section.questionCount) }}</span>
           </span>
@@ -111,6 +137,7 @@
 
           <label class="field field--wide">
             <span class="field__label">{{ t('::Section:Instructions') }}</span>
+            <span class="field__hint">{{ t('::Section:Instructions:Hint') }}</span>
             <textarea
               class="form-control"
               rows="2"
@@ -130,6 +157,7 @@
               [ngModel]="sectionDraft().timeLimitInMinutes"
               (ngModelChange)="patchSection('timeLimitInMinutes', $event ? +$event : null)" />
             <span class="field__hint">{{ t('::Section:TimeLimit:Hint') }}</span>
+            <span class="field__hint field__hint--warn">{{ t('::Section:NotEnforced:Field') }}</span>
           </label>
 
           <label class="field">
@@ -155,6 +183,7 @@
               [ngModel]="sectionDraft().minimumPercentage"
               (ngModelChange)="patchSection('minimumPercentage', $event ? +$event : null)" />
             <span class="field__hint">{{ t('::Section:Minimum:Hint') }}</span>
+            <span class="field__hint field__hint--warn">{{ t('::Section:NotEnforced:Field') }}</span>
           </label>
 
           <label class="check field--wide">
@@ -166,6 +195,7 @@
             <span>
               <strong>{{ t('::Section:Qualifying') }}</strong>
               <small>{{ t('::Section:Qualifying:Hint') }}</small>
+              <small class="check__warn">{{ t('::Section:NotEnforced:Field') }}</small>
             </span>
           </label>
         </div>

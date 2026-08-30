@@ -57,6 +57,7 @@ public class ResultAppService : ApplicationService, IResultAppService
     private readonly IRepository<ExamLink, Guid> _links;
     private readonly IRepository<Question, Guid> _questions;
     private readonly IRepository<Topic, Guid> _topics;
+    private readonly IRepository<ExamSection, Guid> _sections;
 
     public ResultAppService(
         IRepository<Attempt, Guid> attempts,
@@ -68,7 +69,8 @@ public class ResultAppService : ApplicationService, IResultAppService
         IRepository<ExamForm, Guid> forms,
         IRepository<ExamLink, Guid> links,
         IRepository<Question, Guid> questions,
-        IRepository<Topic, Guid> topics)
+        IRepository<Topic, Guid> topics,
+        IRepository<ExamSection, Guid> sections)
     {
         _attempts = attempts;
         _attemptQuestions = attemptQuestions;
@@ -80,6 +82,7 @@ public class ResultAppService : ApplicationService, IResultAppService
         _links = links;
         _questions = questions;
         _topics = topics;
+        _sections = sections;
     }
 
     public async Task<PagedResultDto<ResultRowDto>> GetListAsync(ResultListRequestDto input)
@@ -209,6 +212,12 @@ public class ResultAppService : ApplicationService, IResultAppService
             Summary = row,
             Answers = rows,
             ByTopic = Breakdown(rows),
+
+            // The same marks read the other way. A topic is what a question
+            // measures; a section is where it sat on the paper — and a placement
+            // coordinator reads the paper's own parts back, because that is what
+            // the candidate sat and what the report to the student names.
+            BySection = await BySectionAsync(slots, byAnswer),
         };
     }
 
@@ -437,6 +446,66 @@ public class ResultAppService : ApplicationService, IResultAppService
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// One sitting's marks, grouped by the part of the exam each question was
+    /// served under.
+    /// <para>
+    /// Read off the frozen paper, not off the questions. An author who re-files a
+    /// question or deletes a section next term must not silently rewrite what a
+    /// result from last term says; a section deleted since keeps its marks and
+    /// loses only its name.
+    /// </para>
+    /// <para>
+    /// In the exam's authored order rather than sorted, because this is read back
+    /// against the paper. Empty on an exam with no sections, and a section that
+    /// contributed nothing to this paper never appears — an empty heading claims a
+    /// part of the exam happened that did not.
+    /// </para>
+    /// </summary>
+    private async Task<List<SectionScoreDto>> BySectionAsync(
+        List<AttemptQuestion> slots,
+        Dictionary<Guid, Answer> byAnswer)
+    {
+        var served = slots.Where(s => s.ExamSectionId.HasValue).ToList();
+
+        if (served.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = served.Select(s => s.ExamSectionId!.Value).Distinct().ToList();
+
+        var sections = await (await _sections.GetQueryableAsync())
+            .Where(s => ids.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => new { s.Name, s.DisplayOrder });
+
+        return served
+            .GroupBy(s => s.ExamSectionId!.Value)
+            .Select(group =>
+            {
+                var max = group.Sum(s => s.Score);
+                var score = group.Sum(s => byAnswer.GetValueOrDefault(s.QuestionId)?.AwardedScore ?? 0m);
+                var section = sections.GetValueOrDefault(group.Key);
+
+                return new
+                {
+                    Order = section?.DisplayOrder ?? int.MaxValue,
+                    Dto = new SectionScoreDto
+                    {
+                        SectionId = group.Key,
+                        SectionName = section?.Name ?? string.Empty,
+                        QuestionCount = group.Count(),
+                        Score = score,
+                        MaxScore = max,
+                        ScorePercentage = max > 0 ? Math.Round(score / max * 100m, 1) : 0m,
+                    },
+                };
+            })
+            .OrderBy(row => row.Order)
+            .Select(row => row.Dto)
+            .ToList();
     }
 
     private static List<TopicScoreDto> Breakdown(List<ResultAnswerDto> answers)

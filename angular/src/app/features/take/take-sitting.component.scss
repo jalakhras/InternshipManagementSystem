@@ -104,6 +104,69 @@
   padding: var(--astro-space-6) var(--astro-space-5);
 }
 
+// The part of the exam the candidate is in.
+//
+// Named paper-section rather than section: Bootstrap does not style a bare
+// .section today, but the whole family of one-word names in a global vendor
+// sheet is how .progress on this very screen turned a candidate's position into
+// a sixteen-pixel grey pill with the sentence sliced off inside it. A prefix
+// costs nothing and the collision is silent.
+.paper-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--astro-space-2) var(--astro-space-3);
+  margin-block-end: var(--astro-space-4);
+  padding-block-end: var(--astro-space-2);
+  border-block-end: 2px solid var(--border-strong);
+}
+
+.paper-section__name {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+// "Question 2 of 6 in this part" — a sentence, so no .astro-numeric on it: that
+// sets direction: ltr and a family with no Arabic in it, which lays an Arabic
+// sentence out backwards in a font that cannot render it. Tabular figures give
+// the steadiness without either.
+.paper-section__count {
+  color: var(--text-secondary);
+  font-size: .875rem;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+// Shown once, where the part begins. Set apart from the question so it is read
+// before the first prompt rather than mistaken for part of it.
+.paper-section__brief {
+  display: flex;
+  gap: var(--astro-space-3);
+  margin-block-end: var(--astro-space-5);
+  padding: var(--astro-space-4);
+  border: 1px solid var(--border-subtle);
+  border-inline-start: 3px solid var(--border-strong);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+
+  > :where(i) { color: var(--text-secondary); }
+}
+
+.paper-section__brief-title {
+  margin: 0 0 var(--astro-space-1);
+  font-weight: 600;
+  font-size: .9375rem;
+}
+
+.paper-section__brief-body {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: var(--astro-leading-body);
+  white-space: pre-line;
+}
+
 .stimulus {
   margin-block-end: var(--astro-space-5);
   padding: var(--astro-space-4);

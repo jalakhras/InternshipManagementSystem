@@ -255,6 +255,16 @@ public class ExamStructureAppService : ApplicationService, IExamStructureAppServ
             .Where(r => r.ExamId == exam.Id)
             .ToListAsync();
 
+        // Loaded for the same reason as the blueprint: the builder reads both off
+        // the aggregate and a repository brings neither. Without it a generated
+        // form comes out flat while a drawn paper for the same exam comes out
+        // sectioned — the two disagreeing, which is the one thing sharing a
+        // builder was meant to prevent.
+        exam.Sections = await (await _sections.GetQueryableAsync())
+            .Where(s => s.ExamId == exam.Id)
+            .OrderBy(s => s.DisplayOrder)
+            .ToListAsync();
+
         var bank = await (await _questions.GetQueryableAsync())
             .Where(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId))
             .ToListAsync();

@@ -302,6 +302,12 @@ public partial class InternshipManagementSystemDbContext
             // The frozen form: one row per question on this taker's paper.
             b.HasIndex(x => new { x.AttemptId, x.Position });
             b.HasIndex(x => new { x.AttemptId, x.QuestionId }).IsUnique();
+
+            // Delivery and the result both slice one paper by section: which part
+            // the candidate is in, and what each part scored. Both read exactly
+            // this shape, and both run while somebody is sitting or reading their
+            // own result.
+            b.HasIndex(x => new { x.AttemptId, x.ExamSectionId, x.Position });
         });
 
         builder.Entity<Answer>(b =>

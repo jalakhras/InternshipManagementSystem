@@ -37,6 +37,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     private readonly IRepository<Exam, Guid> _exams;
     private readonly IRepository<Question, Guid> _questions;
     private readonly IRepository<QuestionGroup, Guid> _groups;
+    private readonly IRepository<ExamSection, Guid> _sections;
     private readonly IRepository<Candidate, Guid> _candidates;
     private readonly IRepository<Attempt, Guid> _attempts;
     private readonly IRepository<AttemptQuestion, Guid> _attemptQuestions;
@@ -57,6 +58,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         IRepository<Exam, Guid> exams,
         IRepository<Question, Guid> questions,
         IRepository<QuestionGroup, Guid> groups,
+        IRepository<ExamSection, Guid> sections,
         IRepository<Candidate, Guid> candidates,
         IRepository<Attempt, Guid> attempts,
         IRepository<AttemptQuestion, Guid> attemptQuestions,
@@ -79,6 +81,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         _exams = exams;
         _questions = questions;
         _groups = groups;
+        _sections = sections;
         _candidates = candidates;
         _attempts = attempts;
         _attemptQuestions = attemptQuestions;
@@ -132,9 +135,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             AttemptsUsed = link.AttemptsUsed,
             ExpiresAt = link.ExpiresAt,
             Mode = exam.Mode,
-            QuestionCount = exam.QuestionsPerForm
-                            ?? await (await _questions.GetQueryableAsync())
-                                     .CountAsync(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId))
+            QuestionCount = await ExpectedQuestionCountAsync(exam)
         };
 
         if (link.FirstOpenedAt is null)
@@ -281,6 +282,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         await _attempts.InsertAsync(attempt, autoSave: true);
 
         await LoadBlueprintAsync(exam);
+        await LoadSectionsAsync(exam);
         // Everything this exam may draw, not only what it owns. Filtering on
         // ExamId alone meant the shared bank existed in the schema and never
         // reached a paper: three forms for one level drew from three empty pools.
@@ -357,7 +359,8 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         var dto = _projector.Project(
             question, slot, group, form.Count,
-            blob => BuildMediaUrl(blob, attempt.DeadlineAt, attempt.TenantId));
+            blob => BuildMediaUrl(blob, attempt.DeadlineAt, attempt.TenantId),
+            await PlacementAsync(form, slot));
 
         var saved = await (await _answers.GetQueryableAsync())
             .FirstOrDefaultAsync(a => a.AttemptId == attempt.Id && a.QuestionId == question.Id);
@@ -623,6 +626,105 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         exam.Blueprint = rules;
     }
 
+    /// <summary>
+    /// How many questions the candidate is about to be asked, for the screen they
+    /// read before the clock starts.
+    /// <para>
+    /// Section-aware, because it had to become so the moment a section's own
+    /// count started being honoured. A placement test with twenty-four listening
+    /// items and a draw of eight used to serve all twenty-four, so the bank's size
+    /// was the right number to show; now it is not, and showing it would tell a
+    /// candidate to budget for three times the paper they will get.
+    /// </para>
+    /// <para>
+    /// An upper bound rather than a promise, in the same way the blueprint path
+    /// has always been: a rule or a section that cannot fill itself contributes
+    /// what it can rather than blocking somebody mid-exam.
+    /// </para>
+    /// </summary>
+    private async Task<int> ExpectedQuestionCountAsync(Exam exam)
+    {
+        var pools = await (await _questions.GetQueryableAsync())
+            .Where(Question.DrawableBy(exam.Id, exam.CategoryId, exam.LevelId))
+            .GroupBy(q => q.ExamSectionId)
+            .Select(g => new { SectionId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var total = pools.Sum(p => p.Count);
+
+        var sections = await (await _sections.GetQueryableAsync())
+            .Where(s => s.ExamId == exam.Id)
+            .ToListAsync();
+
+        if (sections.Count == 0)
+        {
+            // Exactly what it was before: the exam's own cap, or the whole bank.
+            return exam.QuestionsPerForm is { } flat && flat < total ? flat : total;
+        }
+
+        var available = pools.Where(p => p.SectionId.HasValue)
+                             .ToDictionary(p => p.SectionId!.Value, p => p.Count);
+
+        // Questions the author has not filed under a section are served whole, so
+        // they count in full.
+        var unfiled = pools.FirstOrDefault(p => p.SectionId is null)?.Count ?? 0;
+
+        return unfiled + sections.Sum(section =>
+        {
+            var pool = available.GetValueOrDefault(section.Id);
+
+            return section.QuestionsPerForm is { } cap && cap < pool ? cap : pool;
+        });
+    }
+
+    /// <summary>
+    /// Loads the exam's parts, for the same reason the blueprint is loaded: the
+    /// builder reads them off the aggregate and a repository does not bring them.
+    /// <para>
+    /// Forgetting this is silent. The paper still builds, and it builds flat — an
+    /// exam laid out in four skills delivers as one undifferentiated list, which
+    /// is exactly the state this work exists to end.
+    /// </para>
+    /// </summary>
+    private async Task LoadSectionsAsync(Exam exam)
+    {
+        exam.Sections = await (await _sections.GetQueryableAsync())
+            .Where(s => s.ExamId == exam.Id)
+            .OrderBy(s => s.DisplayOrder)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Where one slot sits among the parts of this candidate's paper.
+    /// <para>
+    /// Counted over the frozen form, not over the authored exam: two candidates
+    /// drawing different numbers of listening questions are each told the length
+    /// of the section they are actually sitting.
+    /// </para>
+    /// </summary>
+    private async Task<SectionPlacement?> PlacementAsync(List<AttemptQuestion> form, AttemptQuestion slot)
+    {
+        if (slot.ExamSectionId is not { } sectionId)
+        {
+            return null;
+        }
+
+        var section = await _sections.FindAsync(sectionId);
+
+        if (section is null)
+        {
+            // Deleted since the sitting started. The paper keeps its marks and its
+            // order; it simply stops naming a heading that no longer exists,
+            // rather than failing the request a candidate is mid-exam in.
+            return null;
+        }
+
+        var inSection = form.Where(f => f.ExamSectionId == sectionId).ToList();
+        var position = inSection.FindIndex(f => f.Id == slot.Id) + 1;
+
+        return new SectionPlacement(section, position, inSection.Count);
+    }
+
     private async Task<AttemptStateDto> BuildStateAsync(Attempt attempt)
     {
         var exam = await _exams.GetAsync(attempt.ExamId);
@@ -702,6 +804,12 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         result.TopicBreakdown = await BuildTopicBreakdownAsync(form, answers, questions);
 
+        // The same marks read the other way. A topic is what a question measures;
+        // a section is where it sat on the paper, and a candidate who remembers
+        // sitting "Listening" wants to see how they did on that. This is the half
+        // of the placement-test story the competency profile could not tell.
+        result.SectionBreakdown = await BuildSectionBreakdownAsync(form, answers);
+
         // Keys and explanations are released only in Practice mode, and only now that
         // the attempt is over. In Assessment mode this would compromise the bank.
         if (exam.Mode == ExamMode.Practice)
@@ -750,6 +858,66 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         })
         .OrderByDescending(t => t.Percentage)
         .ToList();
+    }
+
+    /// <summary>
+    /// The paper's marks, grouped by the part each question was served under.
+    /// <para>
+    /// Read off the frozen form rather than off the questions, which is the whole
+    /// point of recording the section there: an author who re-files a question or
+    /// deletes a section next term must not silently rewrite what an old result
+    /// says. A section deleted since keeps its marks and loses only its name.
+    /// </para>
+    /// <para>
+    /// Left in the exam's own order rather than sorted worst-first, unlike the
+    /// topic breakdown: a candidate reads this against the paper they remember
+    /// sitting, and reordering its parts makes that harder, not easier.
+    /// </para>
+    /// </summary>
+    private async Task<List<SectionScoreDto>> BuildSectionBreakdownAsync(
+        List<AttemptQuestion> form, List<Answer> answers)
+    {
+        var served = form.Where(f => f.ExamSectionId.HasValue).ToList();
+
+        if (served.Count == 0)
+        {
+            return new List<SectionScoreDto>();
+        }
+
+        var awarded = answers.Where(a => a.AwardedScore.HasValue)
+                             .ToDictionary(a => a.QuestionId, a => a.AwardedScore!.Value);
+
+        var sectionIds = served.Select(f => f.ExamSectionId!.Value).Distinct().ToList();
+
+        var sections = await (await _sections.GetQueryableAsync())
+            .Where(s => sectionIds.Contains(s.Id))
+            .ToDictionaryAsync(s => s.Id, s => new { s.Name, s.DisplayOrder });
+
+        return served
+            .GroupBy(f => f.ExamSectionId!.Value)
+            .Select(group =>
+            {
+                var max = group.Sum(f => f.Score);
+                var score = group.Sum(f => awarded.TryGetValue(f.QuestionId, out var s) ? s : 0m);
+                var section = sections.GetValueOrDefault(group.Key);
+
+                return new
+                {
+                    Order = section?.DisplayOrder ?? int.MaxValue,
+                    Dto = new SectionScoreDto
+                    {
+                        SectionId = group.Key,
+                        SectionName = section?.Name ?? "—",
+                        QuestionCount = group.Count(),
+                        Score = score,
+                        MaxScore = max,
+                        Percentage = max > 0 ? Math.Round(score / max * 100m, 1) : 0m
+                    }
+                };
+            })
+            .OrderBy(row => row.Order)
+            .Select(row => row.Dto)
+            .ToList();
     }
 
     private static List<PracticeReviewItemDto> BuildPracticeReview(

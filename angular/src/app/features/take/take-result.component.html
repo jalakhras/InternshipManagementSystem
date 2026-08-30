@@ -43,6 +43,25 @@
           </span>
         </div>
 
+        @if (outcome.sectionBreakdown.length > 0) {
+          <!-- The parts of the paper the candidate remembers sitting. A section
+               that drew no questions is not here at all: a "Listening 0%" row for
+               a part nobody was asked about is a worse answer than no row. -->
+          <section class="breakdown">
+            <h2 class="breakdown__title">{{ t('::Take:Result:BySection') }}</h2>
+
+            @for (part of outcome.sectionBreakdown; track part.sectionId) {
+              <div class="topic">
+                <span class="topic__name">{{ part.sectionName }}</span>
+                <span class="topic__bar" aria-hidden="true">
+                  <span class="topic__fill" [style.inline-size.%]="part.percentage"></span>
+                </span>
+                <span class="topic__value astro-numeric">{{ part.percentage }}%</span>
+              </div>
+            }
+          </section>
+        }
+
         @if (outcome.topicBreakdown.length > 0) {
           <!-- One percentage tells nobody what to do next. This is the part a
                student and a coordinator actually act on. -->

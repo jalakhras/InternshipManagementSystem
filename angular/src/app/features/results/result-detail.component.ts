@@ -38,6 +38,16 @@ export class ResultDetailComponent {
 
   readonly hasTopics = computed(() => (this.detail()?.byTopic.length ?? 0) > 0);
 
+  /**
+   * Whether this paper had parts at all.
+   *
+   * Unlike the topic block there is no "no sections yet" note for the empty
+   * case: most exams are one undivided paper, and a heading that appears on
+   * every result to say a feature was not used is noise on the screen a
+   * coordinator reads most.
+   */
+  readonly hasSections = computed(() => (this.detail()?.bySection.length ?? 0) > 0);
+
   private loadedId?: string;
 
   constructor() {
