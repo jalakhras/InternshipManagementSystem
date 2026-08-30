@@ -1,0 +1,233 @@
+<astro-page-header [title]="t('::Role:Title')" [description]="t('::Role:Lede')">
+  @if (canCreate()) {
+    <button slot="actions" type="button" class="btn btn-primary" (click)="newRole()">
+      {{ t('::Role:New') }}
+    </button>
+  }
+</astro-page-header>
+
+@if (actionError(); as message) {
+  <div class="alert alert-danger" role="alert">{{ message }}</div>
+}
+
+<astro-data-state
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="isEmpty()"
+  [emptyTitle]="t('::Role:None')"
+  (retry)="load()" />
+
+@if (!loading() && !error() && items().length > 0) {
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">{{ t('::Role:Name') }}</th>
+          <th scope="col">{{ t('::Role:Kind') }}</th>
+          <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
+        </tr>
+      </thead>
+
+      <tbody>
+        @for (role of items(); track role.id) {
+          <tr>
+            <td class="rolename">{{ role.name }}</td>
+
+            <td class="muted">
+              <!-- Said in words, not by a coloured dot: a seeded role is one
+                   whose name other code depends on, and that is the difference
+                   between "you may rename this" and "you may not". -->
+              @if (role.isStatic) {
+                {{ t('::Role:Kind:Static') }}
+              } @else {
+                {{ t('::Role:Kind:Custom') }}
+              }
+
+              @if (role.isDefault) {
+                · {{ t('::Role:Kind:Default') }}
+              }
+            </td>
+
+            <td class="role-actions">
+              <div class="role-actions__set">
+                @if (canManagePermissions()) {
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    (click)="openPermissions(role)">
+                    {{ t('::Role:Permissions') }}
+                  </button>
+                }
+
+                @if (canEdit() && !role.isStatic) {
+                  <button
+                    type="button"
+                    class="role-action"
+                    [attr.title]="t('::Edit')"
+                    [attr.aria-label]="t('::Edit') + ': ' + role.name"
+                    (click)="edit(role)">
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                }
+
+                @if (canDelete() && !role.isStatic) {
+                  <button
+                    type="button"
+                    class="role-action role-action--danger"
+                    [attr.title]="t('::Delete')"
+                    [attr.aria-label]="t('::Delete') + ': ' + role.name"
+                    (click)="askDelete(role)">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (draft().open) {
+  <div class="scrim" (click)="cancel()"></div>
+
+  <div
+    class="confirm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="roleTitle"
+    astroModal
+    (dismiss)="cancel()">
+    <h2 id="roleTitle" class="confirm__title">
+      {{ draft().id ? t('::Role:Edit') : t('::Role:New') }}
+    </h2>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Role:Name') }}</span>
+      <input
+        class="form-control"
+        name="roleName"
+        autocomplete="off"
+        [ngModel]="draft().name"
+        (ngModelChange)="patch('name', $event)" />
+      <span class="field__hint">{{ t('::Role:Name:Hint') }}</span>
+    </label>
+
+    <label class="toggle">
+      <input
+        type="checkbox"
+        name="isDefault"
+        [checked]="draft().isDefault"
+        (change)="patch('isDefault', !draft().isDefault)" />
+      <span>
+        <strong>{{ t('::Role:Default') }}</strong>
+        <small>{{ t('::Role:Default:Hint') }}</small>
+      </span>
+    </label>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+        {{ t('::Cancel') }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!draft().name.trim() || saving()"
+        (click)="save()">
+        {{ t('::Save') }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (editingFor(); as role) {
+  <div class="scrim" (click)="closePermissions()"></div>
+
+  <div
+    class="perms"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="permsTitle"
+    astroModal
+    (dismiss)="closePermissions()">
+    <h2 id="permsTitle" class="perms__title">{{ t('::Role:Permissions:For', role.name) }}</h2>
+    <p class="perms__lede">{{ t('::Role:Permissions:Lede') }}</p>
+
+    @if (permissionsLoading()) {
+      <p class="perms__loading" role="status">{{ t('::Loading') }}</p>
+    } @else {
+      <div class="perms__body">
+        @for (group of groups(); track group.name) {
+          <fieldset class="permgroup">
+            <legend class="permgroup__legend">
+              <label class="permgroup__all">
+                <!-- The group's own box: on when everything under it is on, and
+                     shown as partly on rather than off when only some are —
+                     an unticked box over ticked children is a lie about the
+                     state, and clicking it would be a surprise. -->
+                <input
+                  type="checkbox"
+                  [checked]="groupState(group) === 'all'"
+                  [indeterminate]="groupState(group) === 'some'"
+                  (change)="toggleGroup(group)" />
+                <span class="permgroup__name">{{ group.displayName }}</span>
+              </label>
+
+              <span class="permgroup__count astro-numeric">
+                {{ grantedIn(group) }} / {{ group.permissions.length }}
+              </span>
+            </legend>
+
+            <ul class="permlist">
+              @for (permission of group.permissions; track permission.name) {
+                <li class="permlist__item" [class.permlist__item--child]="!!permission.parentName">
+                  <label class="perm">
+                    <input
+                      type="checkbox"
+                      [checked]="isGranted(permission.name)"
+                      (change)="toggle(permission)" />
+                    <span>{{ permission.displayName }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+          </fieldset>
+        }
+      </div>
+
+      <div class="confirm__actions">
+        <button type="button" class="btn btn-outline-secondary" (click)="closePermissions()">
+          {{ t('::Cancel') }}
+        </button>
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="savePermissions()">
+          {{ t('::Save') }}
+        </button>
+      </div>
+    }
+  </div>
+}
+
+@if (pendingDelete(); as role) {
+  <div class="scrim" (click)="cancelDelete()"></div>
+
+  <div
+    class="confirm"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="deleteRoleTitle"
+    astroModal
+    (dismiss)="cancelDelete()">
+    <h2 id="deleteRoleTitle" class="confirm__title">{{ t('::Role:Delete') }}</h2>
+    <p class="confirm__body">{{ t('::Role:Delete:Body', role.name) }}</p>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelDelete()">
+        {{ t('::Cancel') }}
+      </button>
+      <button type="button" class="btn btn-danger" [disabled]="saving()" (click)="confirmDelete()">
+        {{ t('::Delete') }}
+      </button>
+    </div>
+  </div>
+}

@@ -61,6 +61,7 @@ export const NAVIGATION: readonly NavSection[] = [
     items: [
       { labelKey: '::Nav:Catalog', route: '/catalog', icon: 'bi-tags', permission: P.Catalog.View },
       { labelKey: '::Nav:Users', route: '/users', icon: 'bi-person-badge', permission: P.IdentityManagement.Users.View },
+      { labelKey: '::Nav:Roles', route: '/roles', icon: 'bi-shield-check', permission: 'AbpIdentity.Roles' },
       { labelKey: '::Nav:Settings', route: '/settings', icon: 'bi-sliders', permission: P.Administration.ManageSettings },
     ],
   },

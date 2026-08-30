@@ -84,6 +84,16 @@ export const APP_ROUTES: Routes = [
         loadChildren: () => import('./features/users/user.routes').then(m => m.USER_ROUTES),
       },
       {
+        // ABP's own permission, not one of ours: the identity module owns roles,
+        // and inventing a second name for the same authority is how two guards
+        // end up disagreeing.
+        path: 'roles',
+        canActivate: [permissionGuard],
+        data: { requiredPolicy: 'AbpIdentity.Roles' },
+        loadComponent: () =>
+          import('./features/roles/role-list.component').then(m => m.RoleListComponent),
+      },
+      {
         // No permission guard: everybody signed in may read the settings, and the
         // screen is read-only without ManageSettings. Knowing the rules the exams
         // run under is not a privilege.

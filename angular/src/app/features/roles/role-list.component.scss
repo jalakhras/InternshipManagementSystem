@@ -1,0 +1,158 @@
+// Shares the shape of the users screen beside it: the same table, the same row
+// actions, the same dialog. Two screens for two halves of one job should not
+// look like two products.
+
+.table-wrap { overflow-x: auto; }
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: var(--astro-space-3);
+    // Start edge, so the table reverses with the page.
+    text-align: start;
+    vertical-align: middle;
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  thead th {
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: var(--astro-text-xs);
+    font-weight: var(--astro-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+}
+
+.rolename { font-weight: var(--astro-weight-medium); }
+.muted { color: var(--text-secondary); }
+
+.role-actions {
+  inline-size: 1%;
+  white-space: nowrap;
+  text-align: end;
+
+  &__set {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--astro-space-2);
+  }
+}
+
+.role-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  // Past the minimum target size: these sit next to each other and one of them
+  // deletes something.
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  cursor: pointer;
+
+  &:hover { background: var(--surface-sunken); }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  &--danger { color: var(--status-fail-text); }
+}
+
+// --- the permission tree -----------------------------------------------------
+
+.perms {
+  position: fixed;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+
+  display: flex;
+  flex-direction: column;
+
+  inline-size: min(46rem, calc(100vw - 2rem));
+  max-block-size: min(44rem, calc(100vh - 3rem));
+  padding: var(--astro-space-5);
+  border-radius: var(--astro-radius-lg);
+  background: var(--surface-raised);
+  box-shadow: var(--astro-shadow-lg);
+}
+
+.perms__title { margin: 0 0 var(--astro-space-1); font-size: var(--astro-text-xl); }
+
+.perms__lede {
+  margin: 0 0 var(--astro-space-4);
+  color: var(--text-secondary);
+  font-size: .9375rem;
+}
+
+.perms__loading { color: var(--text-secondary); }
+
+// The list scrolls, the heading and the buttons do not: with sixty permissions
+// the save button would otherwise sit below the fold at the moment it is needed.
+.perms__body {
+  flex: 1;
+  overflow-y: auto;
+  margin-block-end: var(--astro-space-4);
+}
+
+.permgroup {
+  margin: 0 0 var(--astro-space-4);
+  padding: 0;
+  border: 0;
+}
+
+.permgroup__legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--astro-space-3);
+  inline-size: 100%;
+  padding-block-end: var(--astro-space-2);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.permgroup__all {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  cursor: pointer;
+}
+
+.permgroup__name { font-weight: var(--astro-weight-semibold); }
+
+.permgroup__count {
+  color: var(--text-muted);
+  font-size: var(--astro-text-sm);
+}
+
+.permlist {
+  margin: var(--astro-space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.permlist__item {
+  // Indented from the reading edge, so nesting reverses with the page.
+  &--child { padding-inline-start: var(--astro-space-5); }
+}
+
+.perm {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+
+  // Comfortable to hit, and enough apart that the wrong one is hard to catch.
+  min-block-size: 2.25rem;
+  cursor: pointer;
+
+  &:hover { color: var(--text-primary); }
+}
