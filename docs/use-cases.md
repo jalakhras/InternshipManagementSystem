@@ -16,10 +16,16 @@ Each case carries one status, claimed against the code rather than against inten
 Verified by opening the files: the Angular component, its route, the service
 method, the controller route attribute, and the application service behind it.
 
-**Pinned to `0842cc9`.** Four commits landed while this was being written and
-closed three of the breaks it had recorded — the media, the results export and the
-last dead navigation links. Where that happened it is said, because *how* those
-defects survived is more useful than the fact that they are gone.
+**Pinned to `75b534d`** (this revision; the previous one was pinned to `0842cc9`).
+Twenty-one commits landed between them and closed eight of the breaks recorded
+here: the staff password that answered 200 and changed nothing, the unbranded
+invitation, the missing resend, the missing expiry extension, the attempt monitor,
+the five seeded roles, the permission that enforced nothing, the item-analysis
+statistics that libelled correctly-keyed questions, and a fill-in-the-blank answer
+that scored zero however right it was. Where that happened it is said, because
+*how* those defects survived is more useful than the fact that they are gone. **A
+capability that had no case at all is now Use Case 17**: importing a question bank
+from a spreadsheet.
 
 | Status | Means | بالعربية |
 |---|---|---|
@@ -37,14 +43,27 @@ does nothing, the case is PARTIAL and the dead step is named.
 reviewer, a candidate, an administrator. The product intends to let a tenant
 rename these; today it can save its own words and no screen reads them.
 
+**Every case is traceable.** Each carries a **Screen** — the route a person is
+standing on — and a **Role**, one of the five seeded roles (`Admin`,
+`Coordinator`, `Author`, `Marker`, `Observer`) whose permissions are set out in
+`business/roles.md`. The candidate is deliberately not a role: they have no
+account, and their link is their entire credential.
+
+كلّ حالة هنا لها **شاشة** (المسار الذي يقف عليه الإنسان) و**دور** من الأدوار
+الخمسة المبذورة. والممتحَن ليس دوراً ولا حساباً — رابطه هو بطاقته.
+
 Story identifiers in brackets — `RES-01`, `PLT-09` — point at `user-stories.md`,
-where the acceptance criteria and the test plan live.
+where the acceptance criteria, the test plan and the full traceability matrix
+live.
 
 ---
 
 ## 🎯 Use Case 1: Set up the catalogue | إعداد الكتالوج
 **Status: BUILT** · `CAT-02`, `CAT-03`, `CAT-04`
 
+**Screen:** `/catalog`
+**Role:** `Author` (`Catalog.Manage`) · `Coordinator` and `Observer` read it through
+the pickers on other screens
 **Actors:** Training coordinator, Administrator
 **Preconditions:** A tenant exists, created by us out of band.
 **Description:** The centre describes what it teaches — its domains, the levels
@@ -77,6 +96,8 @@ count, so deactivating one is blind (`CAT-05`).
 ## 🎯 Use Case 2: Write a question the centre owns | كتابة سؤال يملكه المركز
 **Status: BUILT** · `BNK-01`, `BNK-02`, `BNK-05`, `BNK-06`
 
+**Screen:** `/questions` · `/questions/new` · `/questions/:questionId`
+**Role:** `Author` (`Questions.Create`, `.Edit`)
 **Actors:** Teacher
 **Preconditions:** A category exists (Use Case 1).
 **Description:** A teacher writes a question that belongs to a domain and level
@@ -109,6 +130,10 @@ draft/approved/retired lifecycle — only an on/off flag (`BNK-11`).
 ## 🎯 Use Case 3: Attach a chart, a recording or a clip | إرفاق صورة أو تسجيل بالسؤال
 **Status: BUILT — and it was broken until `3923129`, which is the interesting part** · `BNK-04`, `PLT-09`
 
+**Screen:** the question editor's media field · `/exams/:examId/structure` for a
+passage · the candidate's `/exam/:token/sitting`
+**Role:** `Author` (`Questions.Edit` carries media upload and deletion) · the
+candidate reads the file with a signed grant and no role at all
 **Actors:** Teacher, Candidate
 **Preconditions:** A question exists.
 **Description:** A question about a candlestick chart should show the chart; a
@@ -151,6 +176,10 @@ anonymous stranger holding a blob name gets 404 rather than the file.
 ## 🎯 Use Case 4: Build an exam and publish it | بناء اختبار ونشره
 **Status: BUILT** · `EXM-01`, `EXM-03`, `EXM-04`
 
+**Screen:** `/exams` · `/exams/new` · `/exams/:id`
+**Role:** `Author` (`Exams.Create`, `.Edit`, `.Publish`) — publishing is
+deliberately the author's, not the coordinator's: it is a statement that the paper
+is finished, which is an authoring judgement
 **Actors:** Training coordinator
 **Preconditions:** A category and level exist; questions exist.
 **Description:** An exam is created, given a time limit and a pass mark, and cannot
@@ -179,6 +208,9 @@ cannot open a window (`EXM-12`).
 ## 🎯 Use Case 5: Lay an exam out in sections and passages | تقسيم الاختبار إلى أقسام وقطع
 **Status: PARTIAL — authoring is complete; delivery ignores it entirely** · `EXM-06`, `EXM-07`, `EXM-08`, `TAK-09`, `RES-04`, `BNK-08`
 
+**Screen:** `/exams/:examId/structure`
+**Role:** `Author` (`Exams.Edit` — the structure service is guarded by exam
+permissions, not question ones)
 **Actors:** Teacher
 **Preconditions:** An exam exists.
 **Description:** A four-skills paper is divided into Listening, Reading, Grammar
@@ -217,6 +249,11 @@ should be sold as the profile until sections land.
 ## 🎯 Use Case 6: Approve the exact paper before it goes out | اعتماد الورقة قبل إرسالها
 **Status: BUILT** · `FRM-01`, `FRM-02`, `FRM-03`, `FRM-04`, `ASG-09`
 
+**Screen:** `/exams/:examId/forms` (build and publish) · `/assignments/:examId`
+(choose the paper, or rotate)
+**Role:** `Author` builds and publishes the form (`Exams.Edit`, `.Publish`);
+`Coordinator` chooses it at send time (`Assignments.Create`) without being able to
+read the questions on it
 **Actors:** Training coordinator, Reviewer
 **Preconditions:** A published exam with questions.
 **Description:** Rather than trusting a random draw, the centre builds "Form 1" as
@@ -264,6 +301,8 @@ printable paper or answer key (`FRM-08`).
 ## 🎯 Use Case 7: Bring in a class and put it at a level | إدخال الشعبة وربطها بمستوى
 **Status: PARTIAL — import works; a person cannot be added or corrected by hand** · `IMP-05`, `PPL-01`, `PPL-02`, `PPL-05`, `PPL-07`
 
+**Screen:** `/candidates` (paste import) · `/groups` (the class and its roll)
+**Role:** `Coordinator` (`Candidates.*`, `Groups.*`)
 **Actors:** Training coordinator
 **Preconditions:** A category and level exist.
 **Description:** Forty students are brought in from a spreadsheet and organised
@@ -296,8 +335,12 @@ under-16s have none, cannot enter its roll at all — by import or by hand.
 ---
 
 ## 🎯 Use Case 8: Send an exam to a class | إرسال الاختبار إلى شعبة
-**Status: BUILT, with the invitation unbranded** · `ASG-02`, `ASG-03`, `ASG-04`, `ASG-05`
+**Status: BUILT** · `ASG-02`, `ASG-03`, `ASG-04`, `ASG-05`, `ASG-06`, `ASG-07`, `ASG-08`
 
+**Screen:** `/assignments` (which exam) → `/assignments/:examId` (recipients, paper,
+expiry, attempts, links) · `/results/running` while it is being sat
+**Role:** `Coordinator` (`Assignments.Create`, `.Revoke`, `.SendEmail`,
+`Attempts.View`, `.ForceSubmit`)
 **Actors:** Training coordinator, Candidate
 **Preconditions:** A published exam and a class with members.
 **Description:** Forty links are created in one action, one per person, each
@@ -317,32 +360,48 @@ individually revocable — and nobody needs an account.
 6. A link sent to the wrong person is revoked and reports itself as revoked rather
    than as invalid.
 
-7. While the exam is running, the coordinator watches it: **Results → In progress**
-   lists the sittings under way, and one that is stuck or was started in error can
-   be ended — recording who ended it and why, and grading it — or discarded
-   outright behind a second confirmation. Each of the three actions carries its own
-   permission. *(This landed in the working tree while this document was being
-   written; it is not in `0842cc9`.)*
+7. Before sending, the screen shows **who will receive it** — names and addresses,
+   not a count — and refuses an empty class rather than sending to nobody in
+   silence.
+8. A student who deleted the email gets a **reissued** link: a new address that
+   kills the old one and buys no extra attempt. A student who was ill gets the
+   expiry **extended**, forwards only — pulling it backwards would end a sitting
+   under somebody in the middle of it, and closing early is what revoke is for.
+9. While the exam is running, the coordinator watches it: **Results → In progress**
+   (`/results/running`) lists the sittings under way and refreshes itself quietly.
+   One that is stuck can be ended — everything answered so far counts in full, and
+   the reason is recorded in the coordinator's own words on the attempt, because
+   "the system did it" is not an answer anybody can defend weeks later. A sitting
+   that should never have started can be discarded; a **graded** attempt cannot,
+   because that is somebody's result and removing it is a disappearance rather than
+   a correction.
 
-**Known gaps, and each one is a place a pilot stops.** There is no resend: the
-plaintext token is returned once at creation and only its hash is kept, so a
-student who deletes the email needs a new link, not the same one (`ASG-06`). There
-is no way to extend an expiry for someone who was ill (`ASG-07`). Sending to one
-person means creating a class of one (`ASG-01`).
+**The invitation is now the centre's.** It carries the organisation's name in the
+subject and in both language bodies, and a start button in the organisation's
+colour. A tenant that has not named itself gets a sentence that reads correctly
+with no name rather than a placeholder standing in for one. The colour is validated
+before it reaches a `style` attribute, and names and titles are escaped before
+being put into HTML — this is the one message that reaches a person with no account
+and no prior relationship with us, and a single stray angle bracket was enough to
+rebuild the message around itself. **The logo is deliberately not included**: it is
+served behind a signed grant that a mail client does not carry, so it would arrive
+as a broken image, which is worse for trust than no image (`BRD-03`).
 
-**The invitation is not the centre's.** It is a hardcoded bilingual message
-carrying the candidate's name, the exam title, the duration, the expiry and a long
-token link — with no organisation name, no logo and no support address. An
-unbranded message with a long token link, sent to a teenager, from nobody they
-recognise, is a description of a phishing email (`BRD-03`). SMTP also points at a
-local address with no credentials, so no invitation has ever actually been
-delivered.
+**Known gaps.** Sending to one person still means creating a class of one
+(`ASG-01`). And SMTP points at a local address with no credentials, so on a
+deployment without a mail relay no invitation is delivered — the links are still
+created and still copyable by hand.
 
 ---
 
 ## 🎯 Use Case 9: A candidate sits the exam | جلوس الممتحن للاختبار
-**Status: BUILT** · `TAK-01` through `TAK-07`, `TAK-11`, `TAK-12`
+**Status: BUILT** · `TAK-01` through `TAK-07`, `TAK-11`, `TAK-12`, `GRD-10`
 
+**Screen:** `/exam/:token` → `/exam/:token/sitting` → `/exam/:token/result` —
+outside the shell and **outside authentication**
+**Role:** none, and that is the design. The candidate has no account, no password
+and no code to type: the link is their entire credential, exchanged once for a
+signed session token held in memory and sent as `X-Exam-Session`.
 **Actors:** Candidate
 **Preconditions:** A valid link.
 **Description:** Someone with no account, on a phone, in Arabic, sits a timed exam
@@ -397,6 +456,11 @@ repository (`PLT-03`), and no language switch on the taker (`TAK-14`).
 ## 🎯 Use Case 10: Mark what a person has to mark | تصحيح ما يحتاج إلى مصحِّح
 **Status: BUILT, with two sharp gaps** · `GRD-01` to `GRD-06`
 
+**Screen:** `/review` (the queue) → `/review/:attemptId` (award marks)
+**Role:** `Marker` — the smallest role in the product, four permissions and one
+sidebar item. A marker cannot list results, cannot see the roster, cannot see a
+candidate record, and cannot see an exam or a question outside the attempt in front
+of them.
 **Actors:** Reviewer
 **Preconditions:** A submitted attempt containing at least one written answer.
 **Description:** Objective questions are marked the instant the exam is submitted;
@@ -429,14 +493,29 @@ what needs a human waits in a queue.
   "so a reopened attempt shows its marks" that can never run. A marker who mistypes
   a score has no route back (`GRD-07`).
 
-And the observations the reviewer reads are mislabelled, for the reason in Use
-Case 9: they are all recorded as pastes.
+**And the observations are narrower than the enum implies.** Six signal types are
+defined and given plain-language sentences in the report — paste, window blur,
+implausible speed, no corrections, developer tools, page reloaded — and the exam
+screen reports **two** of them. The other four have a name, a translation and a
+sentence, and are never produced. A marker reading "what was observed" is reading
+paste and tab-switching, and nothing else.
+
+**A third gap, unrelated to marking but paid for here.** A `scale` question is
+recorded and scored **zero**, and is never routed to a marker: its grader returns a
+settled zero rather than manual review. That is defensible for a confidence rating
+that is meant to be read rather than counted, and it is not defensible on a paper
+with a total — so it should be said before one is put on such a paper.
 
 ---
 
 ## 🎯 Use Case 11: Read the results and get them out | قراءة النتائج وتصديرها
 **Status: BUILT — the export was fixed in `3923129`** · `RES-01`, `RES-02`, `RES-03`, `RES-05`, `RES-12`
 
+**Screen:** `/results` (roster and summary) → `/results/:attemptId` (one answer
+sheet with its competency breakdown)
+**Role:** `Coordinator` and `Observer` (`Results.View`, `.Export`). Neither sees an
+integrity flag count unless they also hold `Review.ViewIntegritySignals`, which
+neither does — the roster zeroes it rather than omitting the column.
 **Actors:** Training coordinator
 **Preconditions:** Attempts have been sat.
 **Description:** The coordinator who bought the product finds out what happened.
@@ -481,6 +560,12 @@ the whole bank, so "your questions are yours" is a claim we cannot demonstrate
 ## 🎯 Use Case 12: Find the questions that have stopped measuring | كشف الأسئلة التي لم تعد تقيس
 **Status: PARTIAL — the screen is good; a row does not open the question** · `RES-06`, `RES-07`
 
+**Screen:** `/results/questions`
+**Role:** `Observer` (`Results.ViewItemAnalysis`). **Not the author**, who is the
+person this screen is for: `ViewItemAnalysis` nests under `Results.View` and the
+two combine with AND, so granting it to an author would also grant them every
+named candidate and what they scored. The author therefore gets neither. This is
+recorded rather than worked around; see `business/roles.md`.
 **Actors:** Teacher, Training coordinator
 **Preconditions:** At least twenty people have answered a question.
 **Description:** The centre is told, in plain language, which of its questions are
@@ -500,6 +585,18 @@ not working — without anyone having to know what a discrimination index is.
 this product can say to an assessment professional, and it can now say it.** What
 it cannot do is take the teacher to the question, which is most of the value.
 
+**The statistics were libelling correct questions, and that is fixed.** The
+analysis compares the top and bottom quarter of candidates, and a group that never
+answered a question was being scored as though everybody in it got it wrong. Named
+papers are assigned per class, so the top quarter is routinely everybody who sat
+Form A — and every Form B question then showed strongly negative discrimination and
+was flagged "nearly always a wrong answer key", sorted to the top of the list. A
+whole form's worth. It now reports discrimination as **unmeasurable** rather than
+as zero, says so on the screen, and refuses to measure at all when the cohort's
+totals sit too close together for the quartile split to be anything but row order.
+*A statistic that is confidently wrong is worse than one that declines to answer,
+because an author acts on it.*
+
 **Two things behind the screen are unfinished.** Discrimination is computed at read
 time, per exam, and thrown away — `Question.DiscriminationIndex` is a column
 assigned nowhere, permanently null, and the item-health chip on the question list
@@ -512,8 +609,13 @@ this screen then reports them as fact (`BNK-12`).
 ---
 
 ## 🎯 Use Case 13: Put the centre's own name on it | وضع اسم المركز وهويته
-**Status: PARTIAL — nine settings are saved; two are read** · `BRD-01`, `BRD-02`, `BRD-03`, `CAT-01`, `ADM-06`
+**Status: PARTIAL — nine settings are saved; four are read** · `BRD-01`, `BRD-02`, `BRD-03`, `CAT-01`, `ADM-06`
 
+**Screen:** `/settings`
+**Role:** `Admin` (`Administration.ManageSettings`). The **route itself carries no
+guard**, deliberately, so anyone signed in can read the rules their exams run
+under; only the write is guarded, and the sidebar link is hidden without the
+permission.
 **Actors:** Administrator
 **Preconditions:** Signed in with the settings permission.
 **Description:** The centre's students and staff should see the centre, not a
@@ -521,24 +623,29 @@ platform they have never heard of.
 
 **Flow:**
 1. Administrator opens **Settings**.
-2. Sets the organisation name, an alternate-language name, a logo, a brand colour, a
-   support email, a certificate footer, a default language, a time zone and several
-   assessment defaults. Everything saves. **✅**
+2. Sets the organisation name, a logo, a brand colour, a default language, a time
+   zone, a default pass mark, and three switches. Everything saves. **✅**
 3. The organisation's name replaces the product's in the staff shell and on the
    exam entry page a candidate sees. **✅**
 4. The logo appears, in the shell and on the exam page. **✅ since `3923129`.**
-5. The brand colour changes how the product looks. **❌ Nothing changes.**
-6. The invitation email carries the centre's identity. **❌ It carries none.**
+5. The invitation email carries the centre's name and colour. **✅ since
+   `4e59b1a`** — see Use Case 8.
+6. The brand colour changes how the **product** looks. **❌ It reaches the
+   invitation email and nothing else.**
 7. The centre's own vocabulary — "Students" instead of "Candidates" — appears
    across the screens. **❌ It is saved and read by no screen.**
 
 **Where it breaks, exactly.** The brand colour appears in the Angular source only
 inside the settings feature — no CSS custom property is ever set from it, so an
-administrator picks a colour, saves it, sees "saved", and nothing anywhere changes.
-Seven of the nine saved settings are read by nothing outside the settings screen,
-including the switch that is supposed to turn integrity observation off, which is a
-consent problem rather than a configuration one. And the vocabulary editor writes a
-record that only the catalogue screen reads back.
+administrator picks a colour, saves it, sees "saved", and the only thing that
+changes is the button in an email. **Five of the nine settings are read by nothing
+outside the settings screen**: self-registration, the default language, the time
+zone, the default pass mark, and the switch that is supposed to turn integrity
+observation off. The last of those is a consent problem rather than a configuration
+one, and it has a twin: the same switch on an individual exam
+(`Exam.CollectIntegritySignals`) is saved and never consulted either — signals are
+recorded regardless of both. And the vocabulary editor writes a record that only
+the catalogue screen reads back.
 
 **One thing this screen fixed that is worth recording.** Two rival settings
 services existed alongside it, and ABP generates a conventional controller for
@@ -556,8 +663,13 @@ reached by exactly the people it was built for.
 ---
 
 ## 🎯 Use Case 14: Give staff accounts and decide what they may do | إدارة حسابات الموظفين وصلاحياتهم
-**Status: PARTIAL — the password field reports success and changes nothing** · `ADM-01`, `ADM-02`, `ADM-05`
+**Status: BUILT — the password defect and the dead permission are both closed** · `ADM-01`, `ADM-02`, `ADM-05`
 
+**Screen:** `/users`
+**Role:** `Admin` alone. Staff accounts and tenant settings are the two things no
+other role gets. `Users.ManageRoles` is a deliberate escalation guard: this product
+has already had the failure where anybody who could correct a colleague's phone
+number could tick `Admin` on their own record.
 **Actors:** Administrator
 **Preconditions:** Signed in as an administrator.
 **Description:** A new coordinator is given an account with the roles their job
@@ -573,14 +685,32 @@ needs, and a marker is not given the answer keys to the whole bank.
    number could make themselves an administrator.**
 4. Removes somebody who has left. **⚠ Only by hard delete; there is no
    deactivation.**
-5. Resets a locked-out colleague's password. **❌ The request succeeds and the
-   password is unchanged.**
+5. Resets a locked-out colleague's password. **✅ since `b07d970`.** Leaving the
+   field blank keeps the current one; filling it replaces it, **and the old one
+   stops working** — which was the broken half.
+6. Corrects a colleague's phone number without touching their password or their
+   roles. **✅** — the required-password rule moved to creation, where it belongs,
+   and a country-code number is no longer refused by a ten-character column.
 
-**Where it breaks, exactly.** The edit form shows a password field and the client
-sends it. The update method never touches the password — there is no reset call
-anywhere in it. The administrator will tell their colleague a password that does
-not work. There is also no guard against an administrator removing their own last
+**What this cost, and why it is written down.** For a while the edit form showed a
+password field, the client sent it, validation passed, the DTO carried it — and
+nothing used it. The request answered **200**. An administrator would dictate a new
+password to a colleague who could not sign in with it, and neither of them had
+anything to make them suspicious. A refusal invites a retry; a lie gets built on.
+It was proved fixed with `CheckPasswordAsync`, not with a status code, because the
+status code was never the thing that was wrong — and `tools/probe-round-trip.js`
+exists because of it: it sends a distinguishable value to every editable field and
+reports every field that comes back unchanged.
+
+**Still open:** there is no guard against an administrator removing their own last
 administrative role.
+
+**Five roles now exist where there were two.** `Admin`, `Coordinator`, `Author`,
+`Marker`, `Observer`, seeded per tenant, and `angular/e2e/live/roles.spec.ts` is the
+first test in this project that watches one of them be **refused**. Until then the
+only role was `Admin`, which held every permission — so no permission here had ever
+been exercised as a restriction, only ever as a grant that was always present. A
+permission that is only ever granted is not a permission; it is a checkbox.
 
 **Permissions are grouped by what a person does**, and the seeded administrator
 role is granted by walking the permission tree rather than a hand-written list —
@@ -600,15 +730,29 @@ attributes combine with AND rather than override, so a "manage the classes" role
 passed the route guard, watched the screen mount, and had every request refused
 (`ADM-02`).
 
-**One declared permission still enforces nothing**, `Administration.Access`, and
-should be removed. Five others were closed rather than deleted, which was the
-better answer.
+**The permission that enforced nothing is gone.** `Administration.Access` promised
+"may reach the staff application" and guarded nothing at all — everybody who can
+sign in is staff, and being signed in is what the shell already requires. It was
+**removed rather than enforced**, because a permission that can be granted and
+changes nothing is a promise the administration screen makes and the product does
+not keep. It was found by a static check that now stands permanently: every defined
+permission must be enforced somewhere, by an attribute or by an explicit check.
+
+Two sibling checks stand beside it — every application service carries a
+class-level `[Authorize]` (the candidate's own path being the single exception,
+named individually with its reason), and every policy named in an attribute is
+actually defined. These exist because the test host calls
+`AddAlwaysAllowAuthorization`, so **no `[Authorize]` in this solution is executed by
+any integration test**. The static checks close what can be closed without a
+running request; they do not close the rest.
 
 ---
 
 ## 🎯 Use Case 15: Bring an existing exam in | استيراد اختبار قائم
 **Status: NOT BUILT** · `IMP-01` to `IMP-04`
 
+**Screen:** none exists
+**Role:** would be `Author` (`Questions.Create`)
 **Actors:** Training coordinator
 **Preconditions:** The centre holds its exam as a Word file or a Google Forms
 export.
@@ -628,21 +772,31 @@ to retype them to try this product.
    lands in the shared bank at that level.
 6. Nothing is written until they confirm.
 
-**Nothing of this exists.** No parser, no import screen, no route, no symbol.
+**Nothing of this exists.** No document parser, no `.docx` reader, no import screen
+for a document, no route, no symbol.
 
-**This is the single highest-leverage unbuilt thing in the product.** The candidate
-roll importer proves the team can build this well — dry run, per-line errors,
-idempotent re-import. The destination now exists too: the catalogue, bank
-ownership and topic filing all landed this month, so an importer would have
-somewhere correct to write. Without it, a trial dies in its second week on data
-entry, and onboarding cost — three to five days of somebody's time per tenant — is
-what actually sets the price floor.
+**But the door it was guarding is now open by another route.** Use Case 17 —
+importing a question bank from a spreadsheet — landed in `9da7c46` and takes a
+centre from "our questions are in a file" to a populated bank without retyping.
+That covers the common case: most centres' question banks are in a spreadsheet or
+can be pasted into one. What remains unbuilt is the harder case — a Word document
+or a Google Forms export, where the structure has to be *inferred* from numbered
+prompts and option lines rather than read from named columns, and where a picture
+referenced in the text was never in the file.
+
+So this is no longer the single highest-leverage unbuilt thing. It is the second,
+and the gap it still leaves is a centre whose two hundred questions live in a
+document nobody will convert.
 
 ---
 
 ## 🎯 Use Case 16: Place a student by their profile | توزيع الطالب حسب مستواه
 **Status: NOT BUILT** · `RES-04`, `EXM-06`, `TAK-09`, `BPR-04`
 
+**Screen:** `/exams/:examId/structure` authors the sections; no screen reports
+them
+**Role:** `Author` writes the sections, `Coordinator` and `Observer` would read the
+profile
 **Actors:** Training coordinator
 **Preconditions:** A sectioned placement exam.
 **Description:** A new student sits one paper and the centre learns which class to
@@ -667,49 +821,131 @@ profile and do not promise a section-by-section report.
 
 ---
 
+## 🎯 Use Case 17: Bring a question bank in from a spreadsheet | استيراد بنك الأسئلة من جدول
+**Status: BUILT — new in `9da7c46`** · `IMP-06`
+
+**Screen:** the import panel on `/questions` and on `/exams/:examId/questions`
+**Role:** `Author` (`Questions.Create`)
+**Actors:** Teacher, Training coordinator
+**Preconditions:** A category exists, or an exam to import into.
+**Description:** A centre whose questions are already in a spreadsheet gets them
+into the bank without retyping any of them — and without writing a single line of
+anything.
+
+**Flow:**
+1. Author opens **Import from a spreadsheet** and downloads the sample file. Its
+   column headings are generated from **the same localisation keys the reader
+   matches**, so the file we hand out is never a file we reject.
+2. Fills it in, or renames the columns in their own file to match, and saves it as
+   CSV. The screen says where that option is in Excel, and that Arabic needs UTF-8
+   specifically.
+3. Chooses the file. **Nothing is written.** The preview shows what will be created
+   and what is wrong.
+4. Reads the problems. Each carries the **row number as the spreadsheet shows it**
+   and the column name, so the fix is one cell rather than nine.
+5. Confirms. Good rows are added; rows already present are left alone; one bad row
+   costs the good ones nothing.
+
+**What makes this hold up.** The correct-answer cell accepts three shapes because
+people write three: the option number (`٢`), several numbers (`١،٣`), or the answer
+written out (`القاهرة`). True/false accepts صح/خطأ, نعم/لا, ١/٠ — and the two
+options are generated in the language the answer was written in, so an Arabic bank
+does not get `True`/`False`. Arabic text is normalised before any comparison:
+alif forms, tāʾ marbūṭa, alif maqṣūra, hamza carriers, diacritics, tatwīl, and both
+sets of digits. The file is read as Excel actually writes it — the byte-order mark,
+comma or semicolon or tab depending on the machine's locale, all three line
+endings, and standard quoting, so a question containing a comma survives and a
+question spanning two lines does not shift every row number after it.
+
+**Two refusals worth naming.** A file with no "question" column or no "type" column
+is refused outright, because the type of a question is not something to guess.
+And in English, "multiple choice" is refused as **ambiguous** and the author is
+asked to say "single choice" or "multiple choice"— half of English speakers mean
+one answer and half mean several, and guessing produces a bank that marks wrongly
+and looks fine. In Arabic «اختيار من متعدد» reads as one answer and is accepted.
+
+**And the rule it does not become a way around.** Every imported row goes through
+the same validation a hand-written question does, so importing is not a route past
+the checks that stop an ungradable question reaching a candidate.
+
+**Known gaps.** Four types only (single choice, multiple choice, true/false, short
+answer); no media column; two megabytes and two thousand rows per file.
+
+---
+
 ## What a customer can and cannot be shown today | ما يمكن عرضه اليوم
 
 Walked end to end, in order, as a demonstration:
 
-| # | Step | |
-|---|---|---|
-| 1 | Set up a catalogue | ✅ |
-| 2 | Write questions the centre owns | ✅ |
-| 3 | Attach a chart or a recording | ✅ |
-| 4 | Build an exam, be stopped from publishing a broken one | ✅ |
-| 5 | Write the blueprint the paper is drawn to | ✅ |
-| 6 | Divide it into sections | ⚠ saves, does nothing |
-| 7 | Build and approve a named paper | ✅ |
-| 8 | Import a class roll | ✅ |
-| 9 | Put the class at a level | ✅ |
-| 10 | Send the exam, choosing the approved paper | ✅ unbranded email |
-| 11 | Sit it — clock, autosave, resume, submit | ✅ |
-| 12 | Watch the sittings in progress, end a stuck one | ✅ uncommitted |
-| 13 | Mark the written answers | ✅ without the model answer |
-| 14 | Read the roster, the profile and the answer sheet | ✅ |
-| 15 | Export the results | ✅ |
-| 16 | See which questions stopped measuring | ✅ no link to the question |
-| 17 | Put the centre's name and logo on it | ✅ colour does nothing |
+| # | Step | | Case |
+|---|---|---|---|
+| 1 | Set up a catalogue | ✅ | 1 |
+| 2 | Write questions the centre owns | ✅ | 2 |
+| 3 | Import a question bank from a spreadsheet | ✅ | 17 |
+| 4 | Attach a chart or a recording | ✅ | 3 |
+| 5 | Build an exam, be stopped from publishing a broken one | ✅ | 4 |
+| 6 | Write the blueprint the paper is drawn to | ✅ | 4 |
+| 7 | Divide it into sections | ⚠ saves, does nothing | 5 |
+| 8 | Build and approve a named paper | ✅ | 6 |
+| 9 | Import a class roll | ✅ | 7 |
+| 10 | Put the class at a level | ✅ | 7 |
+| 11 | Send the exam, choosing the approved paper | ✅ | 8 |
+| 12 | The invitation arrives carrying the centre's name and colour | ✅ needs an SMTP relay | 8 |
+| 13 | Sit it — clock, autosave, resume, submit | ✅ | 9 |
+| 14 | Watch the sittings in progress, end a stuck one, record why | ✅ | 8 |
+| 15 | Mark the written answers | ✅ without the model answer | 10 |
+| 16 | Read the roster, the profile and the answer sheet | ✅ | 11 |
+| 17 | Export the results | ✅ | 11 |
+| 18 | See which questions stopped measuring | ✅ no link to the question | 12 |
+| 19 | Put the centre's name and logo on it | ✅ colour reaches the email only | 13 |
+| 20 | Give five people five different jobs, and watch one be refused | ✅ | 14 |
 
-**Fifteen of seventeen steps work end to end.** A month ago the same walk had two,
-and at the start of this document it had eleven of fifteen — three of the breaks it
-recorded were fixed while it was being written.
+**Nineteen of twenty steps work end to end**, and the twentieth — sections — is
+the one marked as saving and doing nothing.
 
 **The honest sentence for a meeting:**
 
-> A centre can build an exam from questions it owns, filed under its own domains
-> and competencies; approve the exact paper before it goes out; send it to a class
-> at a level; watch somebody sit it on a phone in Arabic with a clock it cannot
-> cheat; mark what needs a person; read the roster, the answer sheet and the
-> competency profile; export it; and be told which of its questions have stopped
-> measuring.
+> A centre can bring its question bank in from a spreadsheet or write it here,
+> filed under its own domains and competencies; approve the exact paper before it
+> goes out; send it to a class at a level in a message carrying the centre's own
+> name; watch somebody sit it on a phone in Arabic with a clock it cannot cheat;
+> watch the room while they sit it and end a sitting that hung, on the record; mark
+> what needs a person; read the roster, the answer sheet and the competency
+> profile; export it; be told which of its questions have stopped measuring; and
+> give five members of staff five different jobs with five different sets of keys.
 
-Every clause of that is demonstrable today. **What still cannot be said** is
-anything about a section-by-section result, an exam imported rather than typed, or
-an installation on the customer's own hardware — and the invitation their students
-receive still comes from nobody.
+Every clause of that is demonstrable today.
 
-**And one defect this walk does not show, because a demonstration would not:** a
-fill-in-the-blank answer is scored zero however right it is (Use Case 9). That is
-the one item on this page that would end a pilot with a complaint rather than a
-shrug.
+---
+
+## What this product does not do | ما لا يفعله هذا المنتج
+
+Stated plainly, because a document that promises what is not there is worse than
+one that is merely incomplete. The full list, with the code that was read to
+confirm each line, is **`README.md` §3**. In short:
+
+**Absent outright.** Candidate accounts (by design — the link is the credential).
+Importing an exam from a Word document or a Google Forms export (Use Case 15).
+Certificates. Any form of proctoring: no webcam, no screen share, no lockdown
+browser. Code execution — a code answer is compared against an expected output as
+text and nothing is ever run. On-premises installation. A global list of everything
+that has been sent (links are read per exam). Printing a paper. Comparing one
+candidate to another. Re-opening a mark that has been awarded, sharing the marking
+queue out between markers, or measuring how consistently two markers agree.
+
+**Saved, and read by nothing.** Sections and everything on them — their clock,
+their floor, their qualifying flag (Use Case 5). The tenant's own vocabulary (Use
+Case 13). Five tenant settings: self-registration, default language, time zone,
+default pass mark, and the switch that is supposed to stop integrity observation.
+The brand colour anywhere but the invitation email. The same integrity switch on an
+individual exam.
+
+**Half there.** Six integrity signal types are defined and two are ever produced. A
+`scale` question is recorded and scores zero rather than going to a marker. A
+blueprint rule that cannot find enough questions contributes what it can, so the
+paper comes out shorter with no signal at delivery time. Item analysis cannot be
+granted to the author it is for, because it cannot be separated from the roster.
+Roles have no Arabic names.
+
+**والوعد الذي لا يُقطَع هنا هو نصف قيمة هذه الوثيقة.** ما ليس في المنتج مذكورٌ
+باسمه، لا مُخفَّفاً ولا مُؤجَّلاً إلى «قريباً».

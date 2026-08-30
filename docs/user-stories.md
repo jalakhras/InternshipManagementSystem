@@ -17,14 +17,28 @@ rather than a platform term.
 EF configuration, `src/InternshipManagementSystem.HttpApi/` and
 `angular/src/app/`. Where a claim was surprising, the file is named.
 
-**Pinned to `0842cc9`, and a warning about that.** Four commits landed while this
-revision was being written, and between them they closed six stories in it — the
-media URLs, the results export, the tenant logo, the blueprint editor and the last
-two dead navigation links. A seventh, the attempt monitor (`ASG-08`), is complete
-in the working tree, is not yet committed, and is recorded as BUILT because a
-person can walk it. **A status document for this repository has a shelf life
-measured in hours.** Worth knowing before acting on any single row below; the shape
-of the tables is more durable than the rows.
+**Pinned to `75b534d`, and a warning about that.** The previous revision was pinned
+to `0842cc9`; twenty-one commits landed between the two and closed eleven stories —
+`ASG-03` (a branded invitation), `ASG-06` (reissue a link), `ASG-07` (extend an
+expiry), `ASG-08` (end a sitting, now committed), `ADM-01` (five real roles),
+`ADM-02` (the permission that enforced nothing, removed), `ADM-05` (the password
+that answered 200 and changed nothing), `GRD-10` (an answer graded in the shape the
+browser sent it), `RES-06` and `RES-07` (statistics that stop libelling correct
+questions), and `TAK-05` (submit no longer races an in-flight save). Two stories
+are new: `IMP-06` and `PLT-11`. **A status document for this repository has a shelf
+life measured in hours.** Worth knowing before acting on any single row below; the
+shape of the tables is more durable than the rows.
+
+**Every story is traceable.** Each carries an identifier, a status, a priority and
+an actor. The **screen** each one belongs to and the **role** that holds it are set
+out for all of them in the traceability matrix at the end of this document — one
+row per story, so a reader can go from a story to the route a person stands on and
+the permission that lets them stand there. The five roles are `Admin`,
+`Coordinator`, `Author`, `Marker` and `Observer`, defined in `business/roles.md`;
+the candidate is deliberately not a role, because they have no account.
+
+كلّ قصّة لها مُعرِّف وحالة وأولويّة وصاحب، **ولها شاشة ودور** في مصفوفة التتبّع في
+آخر هذه الوثيقة.
 
 | Status | Means |
 |---|---|
@@ -720,6 +734,73 @@ counts and the two named rows.
 needs a unique email address. A vocational academy where siblings share a family
 address, or where under-16s have none, cannot import its roll at all. See PPL-01,
 where the same rule blocks the manual route as well.*
+
+#### IMP-06 · Import a question bank from a spreadsheet
+**MUST · BUILT** — *new; landed in `9da7c46`* · ⚠ constraint
+
+As a **teacher**, I want to bring our existing questions in from a spreadsheet, so
+that trying this product does not begin with retyping two hundred questions.
+
+**Acceptance**
+1. **No JSON in any cell, and no syntax to learn.** Columns are Type, Question,
+   Option 1–4, Correct answer, Marks, Difficulty, Explanation. Only two are
+   required — Type and Question. *(Built. This is the authoring constraint applied
+   to the one place it is most tempting to break: an import format is where "just
+   put the payload in a column" usually wins.)*
+2. Column headings are matched in **Arabic and English**, and in the obvious
+   synonyms of each; unknown columns — a reference number, an author's name — are
+   ignored rather than made a reason to reject the file. *(Built.)*
+3. The correct-answer cell accepts the **three shapes people actually write**: the
+   option number (`٢`), several numbers (`١،٣`), or the answer written out
+   (`القاهرة`). True/false accepts صح/خطأ, نعم/لا, ١/٠, and the two options are
+   generated **in the language the answer was written in**, so an Arabic bank does
+   not end up with `True`/`False` options. *(Built.)*
+4. **An ambiguous type is refused rather than guessed.** English "multiple choice"
+   is rejected as ambiguous and the author is asked to say "single choice" or
+   "multiple choice", because half of English speakers mean one answer and half
+   mean several — and guessing produces a bank that marks wrongly and looks
+   correct. Arabic «اختيار من متعدد» reads as one answer and is accepted. *(Built.)*
+5. The file is read **as Excel writes it**, not as we wish it were: byte-order
+   mark, comma or semicolon or tab depending on the machine's locale, all three
+   line endings, and standard quoting — so a question containing a comma survives,
+   and a question spanning two lines does not shift every row number after it.
+   *(Built.)*
+6. Arabic is normalised before any matching: alif forms, tāʾ marbūṭa, alif
+   maqṣūra, hamza carriers, diacritics, tatwīl, and both sets of digits. *(Built —
+   and this is also what makes duplicate detection work on a re-import.)*
+7. **Nothing is written before it is shown.** A dry run reports what will be
+   created and what is wrong; one bad row costs the good rows nothing; a duplicate
+   is left as it is. Only a file with no Question column or no Type column is
+   refused outright. *(Built.)*
+8. An error carries **the row number as the spreadsheet shows it** and the column
+   name, so the fix is one cell rather than nine. *(Built.)*
+9. **Every imported row goes through the same validation a hand-written question
+   does**, so importing is not a route around the checks that stop an ungradable
+   question reaching a candidate. *(Built — and this is the criterion that makes
+   the feature safe rather than merely convenient.)*
+10. The sample file is generated **from the same localisation keys the reader
+   matches**, with a test that feeds it back into the importer — so the file we
+   hand out can never become a file we reject. *(Built.)*
+
+**Tests** — 57 in total: 38 on the reader alone, one of which builds a spreadsheet
+from the real localisation files in both languages and asserts the reader reads it;
+2 pass the resulting payload through the grader, because the reader and the grader
+are two halves of this feature and nothing structural joins them; 11 integration;
+8 in the browser at two sizes.
+
+**Known gaps** — four question types (single choice, multiple choice, true/false,
+short answer); no media column; two megabytes and two thousand rows per file.
+
+*This is the answer to Epic 3's central problem arriving by a different road than
+IMP-01 planned. It does not read a Word document or a Google Forms export, and
+those are still unbuilt — but most centres' banks are in a spreadsheet or can be
+pasted into one, so the onboarding cost this epic exists to remove is largely
+removed.*
+
+*A pre-existing defect surfaced while building it and is worth recording:
+`astro-page-header` does not project `slot="actions"` content unless it is wrapped
+in a single-rooted `@if`, so adding a second button hid **both** — including the
+existing "Add question".*
 
 ---
 
@@ -1528,7 +1609,24 @@ does not affect the rest. *e2e*: assign to five, revoke one, three remain valid
 plus the untouched one.
 
 #### ASG-03 · Deliver the invitation
-**MUST · PARTIAL** — *sending is built; the message is ours, not theirs*
+**MUST · BUILT** — *the message is now the centre's; it still needs an SMTP relay to
+arrive* — closed in `4e59b1a`
+
+*Was PARTIAL: the only message that reaches a person with no account and no prior
+relationship with us carried no organisation name, no logo and no support address —
+"an exam has been assigned to you" and a link to a domain they had never seen,
+which is precisely the shape of message people are taught not to open. The name was
+sitting in the tenant's own settings, read by nothing the candidate could see. It
+now carries the organisation's name in the subject and in both language bodies, and
+a start button in the organisation's colour; a tenant that has not named itself
+gets a sentence that reads correctly with no name rather than a placeholder. The
+colour is validated before it reaches a `style` attribute — a colour field that
+accepts any text accepts `red; background-image:url(...)`, i.e. a tracking pixel
+sent over our signature — and names and titles are escaped before entering HTML.
+The message is built by a pure function separate from sending, so what reaches a
+candidate is verifiable without a mail server: ten tests. **The logo is
+deliberately omitted**: it is served behind a signed grant a mail client does not
+carry, so it would arrive broken, which is worse for trust than no image.*
 
 As a **candidate**, I want to receive the link by email, so that I can find it
 when I am ready to sit.
@@ -1590,7 +1688,15 @@ of revoked, expired and exhausted. *integration*: permission; in-flight attempt
 unaffected. *e2e*: revoke, then open the link and read the reason.
 
 #### ASG-06 · Resend an invitation
-**SHOULD · NOT BUILT**
+**SHOULD · BUILT** — *as reissue, not resend* — closed in `a2fbf91`
+
+*The token is stored hashed and cannot be recovered, so "send them the same link
+again" is not available and should not be made available. The honest answer is the
+ability to issue another: `ReissueLinkAsync` mints a new address, invalidates the
+previous one, clears the first-opened stamp, and **does not reset the attempts
+already used** — somebody who lost their link is not somebody who wants to sit the
+exam again. Four tests: the new one works, the old one stops, no attempt is bought,
+and a deliberately revoked link is not quietly resurrected.*
 
 As a **training coordinator**, I want to resend a link, so that a student who
 deleted the email is not blocked.
@@ -1610,7 +1716,25 @@ either storing it encrypted rather than only hashed, or accepting that a lost li
 is replaced rather than resent. That is a decision, not a task.*
 
 #### ASG-07 · Extend an expiry
-**SHOULD · NOT BUILT**
+**SHOULD · BUILT** — closed in `7dd405e`
+
+*`ExtendLinkAsync` moves a deadline **forwards only**. Forwards, because pulling it
+backwards ends a sitting under somebody in the middle of it with no warning and no
+appeal — closing an exam early is what revoke is for, and revoke tells the person
+holding the link what happened. A date already in the past is refused by name,
+because somebody who mistypes the year deserves to be told rather than left
+watching a link fail. The address does not change: the link is still in the
+candidate's inbox and the problem is a deadline, not an address. And extending does
+not restore a spent attempt — a coordinator fixing a date must not hand out retakes
+without knowing it. Four tests, one of which **ages** the link rather than creating
+it expired, because `CreateAsync` rightly refuses a past date: what needed
+simulating was Friday arriving, not a coordinator typing last week. The dialog
+pre-fills a week from today rather than from the old date, which may be months
+gone.*
+
+*Before this, the only tool a coordinator had for somebody who missed the deadline
+was reissue — which does not touch the expiry, so it handed them a **new address
+that was already expired**, and nothing on the screen said so.*
 
 As a **training coordinator**, I want to push back an expiry, so that a student
 who was ill is not made to start again.
@@ -1624,7 +1748,7 @@ who was ill is not made to start again.
 link works again.
 
 #### ASG-08 · End someone's attempt
-**SHOULD · BUILT** — *complete in the working tree, uncommitted at the pinned revision*
+**SHOULD · BUILT** — committed in `719c1e0`; seven integration tests
 
 As an **administrator**, I want to end an attempt that is stuck or was started in
 error, so that it can be graded or discarded rather than sitting open.
@@ -1645,10 +1769,16 @@ error, so that it can be graded or discarded rather than sitting open.
 **Tests** — *integration*: end reason, grading runs, each permission. *e2e*: force
 submit while a taker session is open and confirm the next save is refused.
 
-*This landed in the working tree while this document was being written, and it
-retires three permissions this revision had listed as declared-but-dead —
-`Attempts.View`, `.ForceSubmit` and `.Delete`. It is recorded as BUILT because a
-person can walk it today; it was not committed at `0842cc9`.*
+*It retired three permissions the previous revision had listed as
+declared-but-dead — `Attempts.View`, `.ForceSubmit` and `.Delete`. Two decisions in
+it are worth keeping: **ending a sitting marks everything answered up to that
+moment in full**, because the candidate did that work and the reason they stopped is
+not their score's problem; and the reason is recorded **in the coordinator's own
+words** on the attempt, because ending somebody's exam early gets questioned weeks
+later — by the candidate, by an auditor, by the coordinator's own manager — and
+"the system did it" is not an answer anybody can defend. Attempts past their
+deadline are hidden by default: they close themselves within a minute, and listing
+them invites somebody to intervene where they need not.*
 
 #### ASG-09 · Choose which form a sitting uses
 **SHOULD · BUILT**
@@ -1786,10 +1916,37 @@ late in the exam does not cost me the work already done.
 3. The saved response is returned when the question is reopened. *(Built.)*
 4. A failed save is visible to the candidate and retried, never silently dropped.
    *(Built — a failed save re-queues the response rather than discarding it.)*
+5. **Submit does not race a save that is still in flight.** *(Built in `75b534d`.
+   Saves are fired and not awaited, which is right while the candidate is moving
+   between questions — nobody should wait on the network to turn a page — and wrong
+   at the one moment there is no going back. "Finish" sent the save, then sent the
+   submit straight after; the two raced, and the submit could arrive first, grading
+   the exam **without the answer just written**. Submit now waits for the pending
+   save, and **if the save fails there is no submit**: completing an irreversible
+   action knowing an answer is missing turns a failed request into a lost mark. The
+   answer is held in memory, so another press retries. Auto-submit at time-up waits
+   for nothing: the session is over at the server regardless, and delaying the
+   result screen helps nobody.)*
+6. The unanswered count is honest. *(Built in `a2fbf91` — it used to wait for the
+   server's reply, and the submit dialog opened before that arrived, so a candidate
+   who had answered everything was told "you have 1 unanswered question". A question
+   is now counted as answered the moment it is answered: the candidate knows they
+   answered it, and it is not our place to doubt them because our request has not
+   come back.)*
 
 **Tests** — *integration*: one `Answer` row per question per attempt after repeated
 saves. *e2e*: answer, navigate away, return, see the answer; simulate a failed save
 and see the indicator.
+
+*Criterion 5 is recorded as a **reasoned defensive change, not a proven fix**, and
+that distinction is the honest part. No test could be built that failed without it:
+Playwright serialises its interception handlers and each action takes long enough
+for the save to complete before the next press, so the window in which the race
+occurs never opens under test. A test that passes with and without the fix is worse
+than no test, so it was deleted rather than left to imply a guard it does not
+provide. What exists is an indicator, not proof: `journey.spec` had been failing
+intermittently at 66.67% — two of three, i.e. the last answer lost — and has not
+failed in eighteen re-runs since. The flake may yet have another cause.*
 
 #### TAK-06 · Trust the clock
 **MUST · BUILT**
@@ -1934,7 +2091,8 @@ practice teaches me something.
 endpoint. *e2e*: practice reveals, assessment does not.
 
 #### TAK-13 · Be observed honestly, or not at all
-**SHOULD · PARTIAL** — *both halves are wrong: the payload does not bind, and nothing is disclosed*
+**SHOULD · PARTIAL** — *the payload binds now; the candidate is still not told, and
+the off switch still switches nothing*
 
 As a **candidate**, I want to know what is being recorded about how I answer, so
 that I am not surveilled without being told.
@@ -1944,23 +2102,42 @@ that I am not surveilled without being told.
    recorded — pastes, focus loss, timing — before the attempt starts. *(Not built.
    The rules list on the entry screen carries exactly three items: the timer,
    autosave, and one attempt. Nothing mentions observation.)*
-2. Signals are recorded and counted. *(Recorded, and **mislabelled**. The client
-   posts `{ kind, detail }`; `ReportIntegritySignalDto` declares `Type`,
-   `QuestionId` and `Magnitude`. Neither field binds, so `Type` takes its default —
-   `Paste`, which is enum zero — and every window-blur, every focus loss and every
-   fast answer is stored as a paste with a null magnitude.)*
-3. No signal ever ends an attempt, changes a score or blocks an action. *(True.)*
+2. Signals are recorded and labelled correctly. *(**Built.** The client posts
+   `{ type, questionId, magnitude }` against a DTO declaring exactly those, with a
+   numeric enum mirroring the server's, so a window-blur is stored as a
+   window-blur. It previously posted `{ kind, detail }` — **no field bound**, `Type`
+   took its default of enum zero, and every focus loss in the product was stored as
+   a paste. Nothing rendered the raw list, which is the only reason it went
+   unnoticed.)*
+2a. **Paste is noted, not double-reported.** *(Built, and the reasoning is worth
+   keeping: the paste flag travels with the next save, where the server records a
+   signal only if the pasted text was long enough to be an imported answer.
+   Reporting every paste from the browser as well filed a second, unconditional
+   observation for somebody pasting a single word — exactly the noise the threshold
+   exists to keep out of a marker's report.)*
+3. No signal ever ends an attempt, changes a score or blocks an action. *(True, and
+   this is the story's whole point.)*
 4. When the exam has signals off, nothing is recorded and nothing is claimed.
-   *(Not built — `ReportSignalAsync` never consults `exam.CollectIntegritySignals`,
-   so a tenant that turned observation off is still observed.)*
+   *(**Not built**, at either level. `RecordSignalAsync` never consults
+   `Exam.CollectIntegritySignals`, and nothing anywhere consults the tenant setting
+   of the same name. Both switches are offered, both save, and neither switches
+   anything off. A tenant that turned observation off is still observed.)*
+5. **Only signal types the product actually produces are declared.** *(Not built.
+   Six types are defined — `Paste`, `WindowBlur`, `ImplausibleSpeed`,
+   `NoCorrections`, `DevToolsOpened`, `PageReloaded` — each with a name, a
+   translation and a plain-language sentence in the marker's report, and **two are
+   ever produced**. A marker reading "what was observed" is reading paste and
+   tab-switching, and an enum that suggests otherwise is a promise about how
+   closely somebody is being watched.)*
 
 **Tests** — *unit*: the DTO binds what the client sends — a contract test, because
-this is a contract failure. *integration*: signals off records nothing; no code
+this was a contract failure. *integration*: signals off records nothing; no code
 path lets a signal change a score. *e2e*: the notice appears before starting.
 
-*Three separate promises broken by one unbound payload: the candidate is not told,
-the tenant's off switch does nothing, and the reviewer is shown a list of pastes
-that were not pastes. See GRD-06, which renders it.*
+*Two of the three broken promises remain, and both are consent rather than
+mechanics: **the candidate is never told what is recorded**, and **the off switch
+does nothing at either level**. In some jurisdictions the second of those is not a
+preference. See GRD-06, which renders the report.*
 
 #### TAK-14 · Sit the exam in Arabic
 **MUST · PARTIAL** — *the rendering is right; the candidate cannot choose*
@@ -2227,7 +2404,8 @@ I can train them.
 produces the expected figure.
 
 #### GRD-10 · Grade what the browser actually sent
-**MUST · NOT BUILT** — *new; a scoring defect on a shipped type* · ⚠ constraint
+**MUST · BUILT** — *the fill-in-the-blank case is fixed and the safety net is
+in place; the general matrix test is not* — `4a43679` · ⚠ constraint
 
 As a **candidate**, I want my answer to be read by the grader in the shape the
 exam screen produced it, so that a correct answer is not scored zero because two
@@ -2237,15 +2415,20 @@ halves of the product disagree about a format.
 1. Every shipped question type has an answer component whose emitted shape is the
    shape its grader parses, asserted by a test that pairs the two.
 2. `fill-in-the-blank` is answered through a control that emits a map of blank id
-   to typed text. *(Today it is registered to `text-answer.component`, which emits
-   a bare string; `FillInTheBlankGrader` parses a `Dictionary<string, string>`,
-   gets null from `PayloadJson.Read`, and returns **Wrong** — not manual review.
-   A candidate can only score on this type by typing JSON into an exam, which is
-   the authoring constraint broken at the worst possible place.)*
+   to typed text. *(**Built.** There is now an input with one box per blank. Before
+   it, the type was registered to `text-answer.component`, which emits a bare
+   string; `FillInTheBlankGrader` parses a `Dictionary<string, string>`, got null
+   from `PayloadJson.Read`, and returned **Wrong** — not manual review. A candidate
+   could only score on this type by typing JSON into an exam, which is the
+   authoring constraint broken at the worst possible place, and nobody was ever
+   going to notice because it did not ask for a person either.)*
 3. A response a grader cannot parse is routed to a person, never scored zero.
-   That is the safety net GRD-02 provides for a thrown grader and does not provide
-   for a confidently wrong one.
+   *(**Built** — and this is the half that matters more than the specific fix. It
+   is the safety net GRD-02 provides for a *thrown* grader and did not provide for a
+   *confidently wrong* one. With it in place, the next instance of this shape costs
+   a marker's time rather than a candidate's marks.)*
 4. No answer component falls back to a textarea for a type the product ships.
+   *(Not verified in this revision.)*
 
 **Tests** — *unit*: a matrix test enumerating `QuestionTypes` and asserting, for
 each, that the registered answer component's emitted shape parses in the registered
@@ -2257,6 +2440,12 @@ marks. *e2e*: author one, sit it, answer it correctly, read a non-zero score.
 integrity signal: each side is tested in isolation and correct, and the seam
 between them is where the product lives. It is the third instance in this
 codebase, which makes it a pattern rather than a bug.*
+
+*Still open: **the matrix test in criterion 1 does not exist.** The specific defect
+is fixed and the net beneath it is real, but nothing structurally pairs an answer
+component with the grader that reads it, so the next divergence will be found the
+same way this one was — by a person reading code. That is the whole of what remains
+of this story.*
 
 ---
 
@@ -2409,6 +2598,19 @@ so that I can retire the ones that measure nothing.
 4. A question with too few responses reports "not enough data" rather than a
    meaningless index. *(Built — flags are suppressed under twenty answers, which
    is the right call and is stated in the code.)*
+4a. **A group that never answered a question is not scored as though it got it
+   wrong.** *(Built in `4a574ab`, and this was a live defect that told authors
+   correctly-keyed questions were mis-keyed. Discrimination compares the top and
+   bottom quarter of candidates; named papers are assigned per class, so the top
+   quarter is routinely everybody who sat Form A — and every Form B question then
+   showed strongly negative discrimination, was flagged "nearly always a wrong
+   answer key", and was sorted to the top of the list. A whole form's worth. The
+   share for a group that answered nothing is now **null**, and discrimination is
+   reported as unmeasurable rather than as zero.)*
+4b. **The analysis refuses to measure at all when the quartile split means
+   nothing.** *(Built — when the cohort's totals sit within five percentage points
+   of each other, top and bottom are row order wearing a statistic's clothes.
+   Unmeasurable rows sort last rather than first.)*
 5. Statistics are per tenant and never aggregate across tenants.
 6. Recomputation is idempotent, and a material edit to a question resets its
    statistics. *(Not built — see BNK-12, where the running mean is now
@@ -2421,7 +2623,14 @@ on assembly rather than on grading.
 *The cheapest correct move is probably to stop pretending the column exists:
 persist what `GetItemAnalysisAsync` computes, or delete
 `Question.DiscriminationIndex` and let the analysis screen own the number. What
-should not continue is a DTO field the UI reads that is always null.*
+should not continue is a DTO field the UI reads that is always null. **Re-verified
+at this revision: `Question.DiscriminationIndex` is still read in four places and
+assigned in none.***
+
+*One more thing this epic learned the hard way, worth carrying: **a statistic that
+is confidently wrong is worse than one that declines to answer**, because an author
+acts on it. The fixed version says "unmeasurable" in three separate situations, and
+each of those is a place where the previous version said a number.*
 
 #### RES-07 · See which questions are not measuring anything
 **SHOULD · PARTIAL** — *the screen is built and good; a row does not open the question*
@@ -2443,7 +2652,9 @@ I can fix them without knowing what a discrimination index is.
    to reach one, which is most of the value.)*
 4. Nothing is auto-retired; every action is the author's. *(Built.)*
 5. The screen shows nothing rather than zeros when there is not enough data.
-   *(Built.)*
+   *(Built, and strengthened in `4a574ab`: a question whose discrimination cannot
+   be measured now says **"غير قابل للقياس"** on the screen and sorts last, rather
+   than showing a zero that reads as a verdict.)*
 6. Rows are ordered worst first. *(Built, and stated in the code: the point of the
    screen is the questions to fix, and alphabetical order is how they stay
    unfixed.)*
@@ -2600,11 +2811,21 @@ As an **administrator**, I want a bad colour rejected when I enter it, so that I
 do not end up looking unbranded with no explanation.
 
 **Acceptance**
-1. Only `#rrggbb` is accepted. *(`TenantBranding.IsUsableColor` is written, is
-   referenced by an EF comment, and is **called from nowhere**. The service stores
-   whatever hex string it is handed.)*
+1. Only `#rgb` or `#rrggbb` is accepted. *(**Built** — `TenantSettingsDto` carries
+   a `[RegularExpression]` on `BrandColor`, so the write is refused at the model
+   boundary rather than stored and discovered later.)*
+1a. **The colour is validated again before it reaches an HTML attribute.**
+   *(Built in `4e59b1a`, and this one is a security property rather than a tidiness
+   one. `InvitationEmail` re-checks the value against a hex pattern and falls back
+   to a default if it does not match, because a colour field that accepts arbitrary
+   text accepts `red; background-image:url(...)` — a tracking pixel delivered over
+   our signature to the inbox of somebody we have never met. The tenant's
+   administrator is trusted with their own organisation, not with their
+   candidates' mail.)*
 2. Rejection is at the point of entry, with a message, not a silent fallback.
-   *(Not built.)*
+   *(Partly — the server refuses, and the native colour picker cannot produce a bad
+   value, so the message has not been needed. A hand-typed value still fails at the
+   API rather than in the field.)*
 3. The colour is chosen from a picker as well as typeable. *(Built — a native
    colour input, which is also why criterion 1 has not bitten yet: the control
    cannot easily produce a bad value, so the validation gap is latent rather than
@@ -2612,17 +2833,20 @@ do not end up looking unbranded with no explanation.
 4. Derived hover, active and subtle variants keep their contrast ratios whatever
    colour is chosen, with a test at a very light and a very dark brand colour.
    *(Not built — no contrast derivation exists anywhere.)*
-5. **The saved colour changes how the product looks.** *(Not built.
-   `brandColor` appears in `angular/src` only in the settings feature and its
-   interface. No CSS custom property is ever set from it, so an administrator picks
-   a colour, saves it, sees "saved", and nothing anywhere changes.)*
+5. **The saved colour changes how the product looks.** *(Not built, and re-checked
+   at this revision. `brandColor` appears in `angular/src` only in the settings
+   feature and its interface; no CSS custom property is ever set from it. The one
+   place the colour is now read is the invitation email's start button. So an
+   administrator picks a colour, saves it, sees "saved", and the only thing that
+   changes is a button in a message they will never see.)*
 
 **Tests** — *unit*: `IsUsableColor` across valid, short, long, non-hex and null;
 the contrast derivation at both extremes. *integration*: the service rejects.
 *e2e*: set a brand colour and assert a token-driven surface actually changes.
 
 #### BRD-03 · Carry the branding to where it matters
-**MUST · PARTIAL** — *the exam entry page carries it; the invitation does not*
+**MUST · PARTIAL** — *the exam entry page and the invitation now carry it; the
+result page and the shell do not*
 
 As a **candidate**, I want the exam page and the invitation to carry the
 organisation that invited me, so that it does not read as a phishing attempt.
@@ -2632,14 +2856,19 @@ organisation that invited me, so that it does not read as a phishing attempt.
    and done properly: the logo URL is minted as a signed media grant, so an
    anonymous candidate fetches it without an account and without opening the
    container.)*
-2. **The invitation email carries them.** *(Not built. The body is a hardcoded
-   bilingual HTML string interpolating candidate name, exam title, duration, expiry
-   and URL. No tenant name, no logo, no colour, no support address. This is the
-   surface where "reads as phishing" is a literal description: an unbranded
-   message with a long token link.)*
-3. The result page and the certificate carry them.
-4. The brand colour flows through the token layer to all of them. *(Blocked by
-   BRD-02 criterion 5 — the colour reaches nothing.)*
+2. **The invitation email carries them.** *(**Built** in `4e59b1a` — the name in
+   the subject and in both language bodies, and a start button in the tenant's
+   colour. A tenant that has not named itself gets a sentence that reads correctly
+   with no name, rather than a placeholder standing in for one. Built as a pure
+   function separate from sending, so what reaches a candidate is verifiable without
+   a mail server: ten tests. **The logo is deliberately excluded**: it is served
+   behind a signed grant a mail client does not carry, so it would arrive as a
+   broken image — worse for trust than no image. The name and the colour need no
+   authorisation to render.)*
+3. The result page and the certificate carry them. *(Not built; there is no
+   certificate at all.)*
+4. The brand colour flows through the token layer to all of them. *(Not built — the
+   colour reaches the invitation email and nothing else; see BRD-02 criterion 5.)*
 5. The support address shown during an exam is the tenant's, not ours. *(Stored,
    not shown.)*
 6. None of these surfaces requires a login to render the branding correctly.
@@ -2714,14 +2943,50 @@ a marker is not given the answer keys to the whole bank.
 **Tests** — *integration*: each permission gates its own endpoint. *e2e*: log in
 as a role holding only `Review.Grade` and confirm the exam screens are absent.
 
-*Six declared permissions enforced nothing when this revision opened. Five have
-since been closed rather than deleted, which was the better outcome:
-`Users.ManageRoles` is now checked — and only when the role list actually changes,
-since anyone who could edit a colleague's phone number could otherwise make
-themselves an administrator; `Assignments.SendEmail` now behaves like a permission;
-and `Attempts.View`, `.ForceSubmit` and `.Delete` are enforced by the attempt
-monitor (ASG-08). **`Administration.Access` remains a grantable checkbox that
-grants nothing** and should be removed.*
+6. **Five roles exist and each is a different job**, seeded per tenant by
+   `SeedAssessmentRolesAsync`: `Admin` (65 permissions), `Coordinator` (25),
+   `Author` (14), `Marker` (4), `Observer` (6). *(Built in `816b0b2`.)*
+7. A role holding a leaf permission also holds every permission it hangs from,
+   because ASP.NET **ANDs** class-level and method-level `[Authorize]`. The seeder
+   expands each leaf by walking the definition tree rather than by splitting on
+   dots — `Assessment.IdentityManagement.Users.View` has three dotted prefixes and
+   only two of them are permissions. *(Built.)*
+8. A refusal is observable. *(Built — `angular/e2e/live/roles.spec.ts` is the first
+   test in this project that watches a role be **refused**.)*
+
+*Six declared permissions enforced nothing when the previous revision opened. All
+six are now resolved. Five were closed rather than deleted, which was the better
+outcome: `Users.ManageRoles` is now checked — and only when the role list actually
+changes, since anyone who could edit a colleague's phone number could otherwise
+make themselves an administrator; `Assignments.SendEmail` now behaves like a
+permission; and `Attempts.View`, `.ForceSubmit` and `.Delete` are enforced by the
+attempt monitor (ASG-08). The sixth, `Administration.Access`, was **removed**: it
+promised "may reach the staff application" and guarded nothing, because everybody
+who can sign in is staff and being signed in is what the shell already requires. A
+permission that enforces nothing is a promise the administration screen makes and
+the product does not keep.*
+
+*Until `816b0b2` there was one role — `Admin`, holding everything — which means no
+permission in this product had ever been exercised as a **restriction**, only ever
+as a grant that was always present. A permission that is only ever granted is not a
+permission; it is a checkbox. Two real defects surfaced the moment somebody tried
+to seed a role per tenant: `IdentityRole` leaves the tenant id null and nothing
+filled it in, so every role created inside `ICurrentTenant.Change` was written as a
+**host** role that the guard checking for it could not then see — 19 duplicates
+each of two roles and four accounts accumulated in the host while every tenant
+stayed role-less; and `/api/assessment/results/export` answered **500 instead of
+403**, because it returns `IActionResult` and ABP's exception filter converts an
+authorisation exception to 403 only for object results. A test asserting merely
+"not 2xx" would have passed.*
+
+*Also closed in an earlier pass: the seeder re-granted every permission on every
+start, which looked idempotent and was not — a deliberately revoked permission came
+back after the next deployment. Each is now offered once and remembered.*
+
+*What the permission tree could not express is recorded in `business/roles.md`:
+item analysis cannot be separated from the roster, a role cannot carry an Arabic
+name, `Assignments.SendEmail` cannot be separated from `Create` at the route, and
+there is no list-of-assignments endpoint.*
 
 *Also closed in the same pass: the seeder re-granted every permission on every
 start, which looked idempotent and was not — a deliberately revoked permission came
@@ -2804,7 +3069,8 @@ that the structure survives contact with a deadline.
 **Tests** — *unit*: `ModuleBoundaryTests` and `ContractBoundaryTests`.
 
 #### ADM-05 · Manage staff accounts
-**SHOULD · PARTIAL** — *the screen exists; the password field is a no-op*
+**SHOULD · BUILT** — *the password no-op is closed; two smaller gaps remain* —
+`b07d970`
 
 As an **administrator**, I want to create staff users and set their roles, so that
 a new coordinator can start work.
@@ -2818,24 +3084,45 @@ a new coordinator can start work.
    colleague's phone number is not a route to making yourself an administrator.
    *(Built, and this was an open privilege-escalation hole until `3923129`.)*
 3. Users are deleted. *(Built.)*
-4. **A password can be reset.** *(Not built, and it reports success. The form shows
-   a password field on edit and the client sends it; `UpdateAsync` never touches
-   the password — there is no `RemovePasswordAsync`, `AddPasswordAsync` or
-   `ResetPasswordAsync` call anywhere. The request returns 200 and the password is
-   unchanged, so an administrator resetting a locked-out colleague's password will
-   tell them a password that does not work.)*
-5. **An account can be deactivated.** *(Not built — no `IsActive`, no lockout. The
+4. **A password can be reset.** *(Built. Blank means "leave it alone"; a value
+   means `RemovePasswordAsync` then `AddPasswordAsync`, both with their results
+   checked. The old password stops working, which was the broken half.)*
+5. **Editing anything else does not require re-typing a password.** *(Built. The
+   `[Required]` lived on a DTO carrying both create and update, so correcting a
+   colleague's phone number answered "the password field is required" — for a field
+   the screen itself labels "leave blank to keep the current one". The screen was
+   telling the truth and the server was lying. The rule moved into `CreateAsync`
+   where it belongs.)*
+6. **A phone number with a country code is accepted.** *(Built. It was capped at
+   ten characters beside a comment claiming sixteen — `+966501234567` is thirteen —
+   and it was implicitly *required*, because nullable reference types are on and
+   ASP.NET Core reads a non-nullable `string` as a required field with no attribute
+   to warn you.)*
+7. **An account can be deactivated.** *(Not built — no `IsActive`, no lockout. The
    only removal is a hard delete, which is the wrong tool for "this person has
    left".)*
-6. An administrator cannot remove their own last administrative role. *(Not
+8. An administrator cannot remove their own last administrative role. *(Not
    built — no self-lockout guard exists.)*
 
-**Tests** — *integration*: a password set through this screen authenticates
-afterwards — the assertion that would have caught criterion 4; and the self-lockout
-refusal. *e2e*: create a user, assign a role, log in as them.
+**Tests** — *integration*: four exist — a new account is refused with no password,
+an edit with no password keeps the old one, an edit with a password replaces it
+**and the old one stops working**, and a number with a country code is accepted.
+Still needed: the self-lockout refusal. *e2e*: create a user, assign a role, log in
+as them.
+
+*Criterion 4 is the reason `tools/probe-round-trip.js` exists, and the reason it is
+worth reading about even if you never run it. The password was read from the form,
+passed validation, carried in the DTO to `UpdateAsync` — and then used by nobody.
+No failure, no log line, **and a 200**. This class of defect is invisible to the
+tests that usually guard a write, because those check the status code and the
+status code was correct; only sending a value and reading it back finds it. The
+probe does exactly that for every field a coordinator can edit, and reports every
+one that came back unchanged. It reports and does not judge — a field may be
+deliberately unreadable — but it narrows "somewhere among forty fields" to three
+lines worth looking at. Its current count is zero.*
 
 #### ADM-06 · Configure the tenant
-**COULD · PARTIAL** — *nine settings are written; two are read*
+**COULD · PARTIAL** — *nine settings are written; four are read*
 
 As an **administrator**, I want tenant-wide settings in one place, so that
 thresholds are not compiled into the product.
@@ -2856,13 +3143,20 @@ thresholds are not compiled into the product.
    `Administration.ManageSettings`, enforced on both sides. *(Built — every input
    carries a disabled binding and the service carries the attribute. Undermined by
    the menu hiding the link from the read-only audience; see ADM-02.)*
-3. **A changed setting takes effect.** *(Two do: `OrganizationName` and
-   `LogoBlobName` are read by the exam entry page. The other seven — `BrandColor`,
-   `DefaultLanguage`, `TimeZone`, `DefaultPassingPercentage`,
-   `ShowResultToCandidate`, `CollectIntegritySignals` and `EnableSelfRegistration`
-   — are persisted and read by nothing outside the settings screen itself. An
-   administrator who turns off `CollectIntegritySignals` is still observed, which
-   is a consent problem rather than a configuration one; see TAK-13.)*
+3. **A changed setting takes effect.** *(Four now do. `OrganizationName` is read by
+   the exam entry page **and** the invitation email; `LogoBlobName` by the exam
+   entry page; `BrandColor` by the invitation email and nothing else. The remaining
+   five — `DefaultLanguage`, `TimeZone`, `DefaultPassingPercentage`,
+   `ShowResultToCandidate` and `EnableSelfRegistration` — are persisted and read by
+   nothing outside the settings screen itself. Verified by grepping each constant:
+   the only hits are `TenantSettingsAppService` reading its own writes.*
+
+   *`CollectIntegritySignals` deserves naming separately, because it is not merely
+   unread — it is unread **twice**. The tenant-level switch is read by nothing, and
+   the per-exam switch (`Exam.CollectIntegritySignals`) is persisted, offered on the
+   exam editor with a hint explaining what it does, and never consulted by
+   `RecordSignalAsync`. Turning it off, at either level, turns nothing off. That is
+   a consent problem rather than a configuration one; see TAK-13.)*
 4. The exposure ceiling (RES-08) and the file size limit are settings rather than
    constants. *(Not built — both are compiled in, and this screen is where they
    belong.)*
@@ -3177,9 +3471,12 @@ the build rather than by a customer.
 3. The route list is complete. *(It covers eleven routes. `api/assessment/take/*`,
    `review/*`, `exam-structure/*`, `assignments/*` and the results export are not
    among them.)*
-4. **Something runs it.** *(Not built. There is no CI of any kind, so this runs
-   when a person remembers — which is the same failure mode it was written to
-   replace, one level up.)*
+4. **Something runs it.** *(Still not built, but the reason has narrowed. CI now
+   exists (`PLT-11`) and runs the .NET suite and the browser suites — but this tool
+   needs a running host and a seeded database, which the job does not have, so it
+   is in the same position as the `live` Playwright project. It runs when a person
+   remembers, which is the same failure mode it was written to replace, one level
+   up.)*
 
 **Tests** — this story is a test. Its acceptance is that it is complete and that it
 runs unattended.
@@ -3191,6 +3488,59 @@ catalogue — and each time a person reading code found it. The tool is the righ
 response. PLT-09 is the same lesson one layer further out, and is not yet covered
 by anything.*
 
+#### PLT-11 · Run somewhere other than the machine it was written on
+**MUST · BUILT** — *new; landed in `41c97d3`*
+
+As an **operator**, I want to deploy this without editing source, so that a
+customer's exams do not depend on one developer's laptop.
+
+**Acceptance**
+1. **Nothing environment-specific is compiled in.** The exam-session issuer and
+   audience, the media-grant issuer and audience, the attachment path and the null
+   mail sender are configuration with local defaults, so local development is
+   unchanged. *(Built — eight string literals and one `#if DEBUG` removed. The
+   attachment path was being computed from `GetCurrentDirectory` while its
+   `appsettings.json` key sat dead and unread.)*
+2. **The SPA is one image promoted between environments**, not an image per
+   environment: it reads `assets/config.json` at boot and overlays it on the values
+   compiled in. *(Built.)*
+3. Migrations run as their own short-lived container, before the API and not
+   inside its startup — with more than one replica, migrate-on-start races itself.
+   *(Built.)*
+4. **A missing secret stops the stack, naming itself.** *(Built. `ExamSession:SigningKey`
+   is required and at least 32 characters, and the host refuses to construct
+   without it — the previous `??` fallback signed every token in every environment
+   with the SHA-256 of the empty string. A stack that comes up with a blank
+   exam-session signing key is worse than one that does not come up.)*
+5. Keys that did not exist at all now do: an OpenIddict signing certificate
+   (without which tokens die on every restart and two replicas reject each other's),
+   forwarded-headers configuration, a data-protection key path, and `/health`.
+   *(Built.)*
+6. A list separated by commas is trimmed. *(Built — CORS origins and allowed
+   redirect URLs were split on the comma with no trim, so
+   `"http://a, http://b"` in an environment variable produced an origin with a
+   leading space that matched nothing, and nobody said anything.)*
+7. `/exam/` is served with `Cache-Control: no-store` and
+   `Referrer-Policy: no-referrer`, because the token in the path is the candidate's
+   whole credential and the page pulls fonts from a third party. *(Built, in
+   `docker/angular/nginx.conf`.)*
+8. **Continuous integration builds and tests both halves.** *(Built —
+   `.github/workflows/ci.yml`. The `live` Playwright project is excluded, with the
+   reason written in the file rather than left unsaid: it needs a running host and
+   a seeded database.)*
+9. `Max Pool Size=300` is preserved and justified in both places it appears, having
+   been raised after a load test exhausted the pool at 150 concurrent candidates.
+   *(Built.)*
+
+**Tests** — this story is largely configuration; its assertion is that the compose
+stack comes up and `/health` answers, and that CI is green.
+
+**Known gaps, stated rather than claimed as done.** The images were never built —
+Docker is not installed on the machine this was written on. And what a real
+deployment still needs is enumerated in `deployment.md` §6 rather than implied to be
+finished: TLS termination, a real signing certificate, a managed database, shared
+storage before a second replica, and a mail relay.
+
 ---
 
 # Summary
@@ -3199,30 +3549,30 @@ by anything.*
 
 | Status | Stories |
 |---|---|
-| **BUILT** | 62 |
-| **PARTIAL** | 33 |
-| **NOT BUILT** | 30 |
-| **Total** | **125** |
+| **BUILT** | 69 |
+| **PARTIAL** | 31 |
+| **NOT BUILT** | 27 |
+| **Total** | **127** |
 
-*Seven of those BUILT statuses were PARTIAL or NOT BUILT when this revision was
-drafted and changed before it was published: `BNK-04`, `BPR-01`, `RES-05`,
-`BRD-01`, `ADM-02` and `PLT-09` were fixed in `08f0eb6`, `3923129` and `0842cc9`,
-and `ASG-08` is complete in the working tree. The audit is pinned to `0842cc9`.*
+*Pinned to `75b534d`. Five statuses moved to BUILT since the previous revision
+(`0842cc9`): `ASG-03` and `ADM-05` from PARTIAL, and `ASG-06`, `ASG-07` and
+`GRD-10` from NOT BUILT. Two stories are new, for work that shipped and had never
+been written down: `IMP-06` (import a question bank from a spreadsheet) and
+`PLT-11` (run somewhere other than the machine it was written on).*
 
-*Five stories are new in this revision, for work that shipped and was never
-written down or that this pass uncovered: `PPL-07` (a class at a level, in a
-term), `RES-12` (the roster's headline figures), `GRD-10` (grade what the browser
-actually sent), `PLT-09` (serve a stored file to the browser that renders it) and
-`PLT-10` (prove every route the client calls answers).*
+*Five stories were new in the previous revision and remain: `PPL-07` (a class at a
+level, in a term), `RES-12` (the roster's headline figures), `GRD-10` (grade what
+the browser actually sent), `PLT-09` (serve a stored file to the browser that
+renders it) and `PLT-10` (prove every route the client calls answers).*
 
 ## By status and priority
 
 | | MUST | SHOULD | COULD | Total |
 |---|---|---|---|---|
-| **BUILT** | 50 | 11 | 1 | **62** |
-| **PARTIAL** | 15 | 16 | 2 | **33** |
-| **NOT BUILT** | 10 | 10 | 10 | **30** |
-| **Total** | **75** | **37** | **13** | **125** |
+| **BUILT** | 54 | 14 | 1 | **69** |
+| **PARTIAL** | 14 | 15 | 2 | **31** |
+| **NOT BUILT** | 9 | 8 | 10 | **27** |
+| **Total** | **77** | **37** | **13** | **127** |
 
 ## By epic
 
@@ -3230,26 +3580,28 @@ actually sent), `PLT-09` (serve a stored file to the browser that renders it) an
 |---|---|---|---|---|
 | 1 · The catalogue and the tenant's vocabulary | 6 | 2 | 3 | 1 |
 | 2 · The question bank | 12 | 8 | 1 | 3 |
-| 3 · Getting existing exams in | 5 | 1 | 0 | 4 |
+| 3 · Getting existing exams in | 6 | 2 | 0 | 4 |
 | 4 · Exams, sections and publishing | 12 | 6 | 5 | 1 |
 | 5 · Blueprints and per-candidate assembly | 7 | 3 | 1 | 3 |
 | 6 · Named forms | 8 | 5 | 0 | 3 |
 | 7 · People and cohorts | 7 | 4 | 3 | 0 |
-| 8 · Assignment and links | 9 | 5 | 2 | 2 |
+| 8 · Assignment and links | 9 | 8 | 1 | 0 |
 | 9 · Sitting the exam | 16 | 9 | 3 | 4 |
-| 10 · Grading and the reviewer's queue | 10 | 4 | 2 | 4 |
+| 10 · Grading and the reviewer's queue | 10 | 5 | 2 | 3 |
 | 11 · Results, item health and export | 12 | 5 | 3 | 4 |
 | 12 · The tenant's own face | 5 | 1 | 3 | 1 |
-| 13 · Access and administration | 6 | 4 | 2 | 0 |
-| 14 · How the product behaves everywhere | 10 | 5 | 5 | 0 |
+| 13 · Access and administration | 6 | 5 | 1 | 0 |
+| 14 · How the product behaves everywhere | 11 | 6 | 5 | 0 |
 
 ## What the shape of those tables says
 
-**Fifty of the seventy-five MUST stories are now BUILT, against seventeen at the
-last revision.** The month closed the catalogue, the shared bank's route in, named
-forms end to end, people and classes, the review queue, the results roster, item
-analysis, the blueprint editor, staff accounts, tenant settings, the media path and
-the export. That is not a marginal change; it is most of a product.
+**Fifty-four of the seventy-seven MUST stories are now BUILT**, against fifty at
+the last revision and seventeen at the one before. The month closed the catalogue,
+the shared bank's route in, named forms end to end, people and classes, the review
+queue, the results roster, item analysis, the blueprint editor, staff accounts,
+tenant settings, the media path and the export. This revision adds a question-bank
+importer, a branded invitation, the three link repairs a coordinator actually
+reaches for, five real roles, and a deployable stack.
 
 **PARTIAL has changed character, and this is the finding that matters.** Last time
 it meant "the service is finished and there is no screen", and the missing layer
@@ -3275,24 +3627,251 @@ defect wearing different clothes.** Six instances now, in this codebase:
 | Origin-relative media and export URLs (`PLT-09`) | grant minting, controller | stub answered our own URL |
 | Question positions off by one (`TAK-04`) | screen counts from 1, server from 0 | stub echoed any position |
 | The blank-filling answer shape (`GRD-10`) | answer control, grader | no test pairs the two |
+| The integrity payload's field names (`TAK-13`) | client, DTO | nothing sent one and read the other |
+| A staff password read, carried, and never used (`ADM-05`) | form, validation, DTO | tests asserted the status code, which was correct |
 
-Five of the six were found by a person reading code or by the one tool that speaks
-to a running server; the sixth — the off-by-one — was found by the live suite on
-its first run, which is the correct answer to this whole class and the reason that
-suite is the most valuable thing shipped this month. **`GRD-10` and `TAK-13` are
-the two instances still open**, and the fix for each is a test that pairs the two
-sides rather than testing either.
+Most were found by a person reading code or by a tool that speaks to a running
+server; the off-by-one was found by the live suite on its first run, which is the
+correct answer to this whole class. **Both `GRD-10` and `TAK-13` are now closed at
+the specific instance and open at the general one**: no test structurally pairs an
+answer component with the grader that reads it, or a client payload with the DTO it
+binds to, so the next divergence will be found the same way these were.
+
+*The reply to this pattern is a family of tools rather than a single test:
+`smoke-routes.js` (does every route the client calls answer?),
+`probe-round-trip.js` (does an update keep what you sent it?),
+`check-localization.py` (is every text key the client asks for defined?), and
+`load-test.js` (what does one candidate experience while forty-nine others do the
+same thing?). Each was written the day after a defect that no unit test could have
+had an opinion about.*
 
 **Epic 12 has one BUILT story out of five**, which is startling for an epic that
 shipped a whole settings screen. Everything it writes is real; almost nothing reads
-it.
+it — and the invitation email, which now reads two of the nine settings, is the
+first thing outside that screen ever to read any of them.
 
-**Five application services still have no tests** — `ReviewAppService`,
-`AttemptGradingService`, `AssessmentMediaAppService`, `TenantSettingsAppService`,
-`UserAppService` — and **no `[Authorize]` attribute anywhere is exercised by any
-test**, because the test base allows everything. That is the one place the seam
-lesson has not yet been applied, and it is not theoretical: this month a settings
-service with no `[Authorize]` at all exposed an anonymous write that let anybody
-rename the organisation, and a permission that was defined and never checked let
-anybody who could edit a colleague's phone number make themselves an
-administrator. Both were found by reading, not by running.
+**No `[Authorize]` attribute anywhere is exercised by any integration test**,
+because the test base allows everything. Three static assembly checks now stand
+where the dynamic ones cannot: every application service carries a class-level
+`[Authorize]` (the candidate's path being the one exception, named individually
+with its reason); every policy named in an attribute is defined; and every defined
+permission is enforced somewhere. The third found `Administration.Access` on its
+first run — grantable, and guarding nothing — which was removed rather than
+enforced. `angular/e2e/live/roles.spec.ts` is where a refusal is actually asserted
+against a running server, and it is the first test in this project to do so.
+
+---
+
+# Traceability matrix | مصفوفة التتبّع
+
+Every story, the **screen** a person stands on to exercise it, and the **role**
+that holds it. Routes are Angular routes; roles are the five seeded per tenant
+(`business/roles.md`). "—" in the role column means the candidate, who has no
+account and no role: their link is their entire credential.
+
+كلّ قصّة، والشاشة التي تُمارَس منها، والدور الذي يملكها. و«—» تعني الممتحَن: لا
+حساب له ولا دور، ورابطه هو بطاقته.
+
+Where a story is NOT BUILT, the screen column names the screen it *would* belong
+to, marked *(none)* when no screen exists at all.
+
+## Epic 1 — The catalogue and the tenant's vocabulary
+
+| Story | Screen | Role |
+|---|---|---|
+| CAT-01 · Name the vocabulary | `/catalog` (vocabulary dialog) | `Author` · `Admin` |
+| CAT-02 · Manage categories | `/catalog` | `Author` (`Catalog.Manage`) |
+| CAT-03 · Manage levels within a category | `/catalog` | `Author` (`Catalog.Manage`) |
+| CAT-04 · Manage the competency tree | `/catalog` | `Author` (`Catalog.Manage`) |
+| CAT-05 · See a value's usage before changing it | `/catalog` | `Author` |
+| CAT-06 · Seed a new tenant with a usable catalogue | *(none)* — tenant provisioning | `Admin` |
+
+## Epic 2 — The question bank
+
+| Story | Screen | Role |
+|---|---|---|
+| BNK-01 · Write a question of any shipped type | `/questions/new` · `/exams/:examId/questions/new` | `Author` (`Questions.Create`) |
+| BNK-02 · Refuse a question that cannot be graded | the question editor | `Author` |
+| BNK-03 · Format a prompt without writing HTML | the question editor | `Author` |
+| BNK-04 · Attach a chart, a recording or a clip | the question editor · `/exam/:token/sitting` | `Author` (`Questions.Edit`) · — |
+| BNK-05 · Score an answer by how right it is | the question editor | `Author` |
+| BNK-06 · Own a question at the level, not one exam | `/questions` | `Author` |
+| BNK-07 · Draw the bank into a candidate's paper | `/exam/:token/sitting` (server-side assembly) | — |
+| BNK-08 · Bind several questions to one passage | `/exams/:examId/structure` | `Author` (`Exams.Edit`) |
+| BNK-09 · Find a question in a bank of hundreds | `/questions` | `Author` |
+| BNK-10 · Duplicate a question | `/questions` | `Author` |
+| BNK-11 · Control a question's life cycle | `/questions` | `Author` |
+| BNK-12 · Keep item statistics bound to what was asked | `/results/questions` | `Observer` |
+
+## Epic 3 — Getting existing exams in
+
+| Story | Screen | Role |
+|---|---|---|
+| IMP-01 · Paste an exam in | *(none)* | would be `Author` |
+| IMP-02 · Upload a Google Forms export | *(none)* | would be `Author` |
+| IMP-03 · Be told which questions lost their picture | *(none)* | would be `Author` |
+| IMP-04 · Map an imported exam to the catalogue | *(none)* | would be `Author` |
+| IMP-05 · Import candidates from a list | `/candidates` (paste panel) | `Coordinator` (`Candidates.Create`) |
+| IMP-06 · Import a question bank from a spreadsheet | `/questions` · `/exams/:examId/questions` (import panel) | `Author` (`Questions.Create`) |
+
+## Epic 4 — Exams, sections and publishing
+
+| Story | Screen | Role |
+|---|---|---|
+| EXM-01 · Create and edit an exam | `/exams/new` · `/exams/:id` | `Author` (`Exams.Create`, `.Edit`) |
+| EXM-02 · Find an exam | `/exams` | `Author` · `Coordinator` · `Observer` (`Exams.View`) |
+| EXM-03 · Be stopped from publishing something broken | `/exams/:id` (publish dialog) | `Author` (`Exams.Publish`) |
+| EXM-04 · Be warned about what will merely go badly | `/exams/:id` (publish dialog) | `Author` |
+| EXM-05 · Take an exam out of circulation | `/exams` · `/exams/:id` | `Author` (`Exams.Publish`, `.Delete`) |
+| EXM-06 · Divide an exam into named parts | `/exams/:examId/structure` | `Author` (`Exams.Edit`) |
+| EXM-07 · Give a section its own clock | `/exams/:examId/structure` | `Author` |
+| EXM-08 · Fail an exam on one section | `/exams/:examId/structure` | `Author` |
+| EXM-09 · Turn a candidate away in thirty seconds | `/exams/:examId/structure` · `/exam/:token/sitting` | `Author` · — |
+| EXM-10 · Choose whether everyone sits the same paper | `/exams/:id` | `Author` |
+| EXM-11 · Practise rather than be judged | `/exams/:id` (mode) | `Author` |
+| EXM-12 · Open an exam only within a window | `/exams/:id` (schedule) | `Author` |
+
+## Epic 5 — Blueprints and per-candidate assembly
+
+| Story | Screen | Role |
+|---|---|---|
+| BPR-01 · Describe the paper as a recipe | `/exams/:examId/blueprint` | `Author` (`Exams.Edit`) |
+| BPR-02 · Give every candidate a different but comparable paper | `/exam/:token/sitting` (assembly) | — |
+| BPR-03 · Keep the answer out of the paper's shape | `/exam/:token/sitting` (assembly) | — |
+| BPR-04 · Compose a paper section by section | `/exams/:examId/blueprint` | `Author` |
+| BPR-05 · Fail loudly when a rule starves | `/exams/:examId/blueprint` · assembly | `Author` · — |
+| BPR-06 · Prefer questions that have been seen least | assembly | — |
+| BPR-07 · Copy a blueprint to another exam | `/exams/:examId/blueprint` | `Author` |
+
+## Epic 6 — Named forms
+
+| Story | Screen | Role |
+|---|---|---|
+| FRM-01 · Build a named paper | `/exams/:examId/forms` | `Author` (`Exams.Edit`) |
+| FRM-02 · Freeze a form for use | `/exams/:examId/forms` | `Author` (`Exams.Publish`) |
+| FRM-03 · Retire a form without losing what was sat | `/exams/:examId/forms` | `Author` (`Exams.Publish`) |
+| FRM-04 · Sit a fixed form | `/exam/:token/sitting` | — |
+| FRM-05 · Spread a cohort across forms | `/assignments/:examId` | `Coordinator` (`Assignments.Create`) |
+| FRM-06 · Guarantee a retake differs | `/assignments/:examId` (rotate) | `Coordinator` |
+| FRM-07 · Know how worn a paper is | `/exams/:examId/forms` | `Author` |
+| FRM-08 · Print a form for review or for paper | *(none)* | would be `Author` |
+
+## Epic 7 — People and cohorts
+
+| Story | Screen | Role |
+|---|---|---|
+| PPL-01 · Add a person to be assessed | `/candidates` | `Coordinator` (`Candidates.Create`) |
+| PPL-02 · Group people into a class or a batch | `/groups` | `Coordinator` (`Groups.Create`) |
+| PPL-03 · Find a person | `/candidates` | `Coordinator` (`Candidates.View`) |
+| PPL-04 · See one person's history | *(none)* | would be `Coordinator` |
+| PPL-05 · Correct a person's details | `/candidates` | `Coordinator` (`Candidates.Edit`) |
+| PPL-06 · Remove a person | `/candidates` | `Coordinator` (`Candidates.Delete`) |
+| PPL-07 · Run a class as an intake | `/groups` | `Coordinator` (`Groups.Edit`) |
+
+## Epic 8 — Assignment and links
+
+| Story | Screen | Role |
+|---|---|---|
+| ASG-01 · Send an exam to one person | `/assignments/:examId` | `Coordinator` (`Assignments.Create`) |
+| ASG-02 · Send an exam to a whole class | `/assignments/:examId` | `Coordinator` (`Assignments.Create`) |
+| ASG-03 · Deliver the invitation | `/assignments/:examId` → the candidate's inbox | `Coordinator` (`Assignments.SendEmail`) |
+| ASG-04 · See the state of every link | `/assignments/:examId` | `Coordinator` (`Assignments.View`) |
+| ASG-05 · Kill a link that leaked | `/assignments/:examId` | `Coordinator` (`Assignments.Revoke`) |
+| ASG-06 · Resend an invitation (as reissue) | `/assignments/:examId` | `Coordinator` (`Assignments.Create`) |
+| ASG-07 · Extend an expiry | `/assignments/:examId` | `Coordinator` (`Assignments.Create`) |
+| ASG-08 · End someone's attempt | `/results/running` | `Coordinator` (`Attempts.ForceSubmit`); discarding is `Admin` (`Attempts.Delete`) |
+| ASG-09 · Choose which form a sitting uses | `/assignments/:examId` | `Coordinator` (`Assignments.Create`) |
+
+## Epic 9 — Sitting the exam
+
+**Screen for every story in this epic:** `/exam/:token` → `/exam/:token/sitting` →
+`/exam/:token/result`, outside the shell and outside authentication.
+**Role: none — the candidate has no account.**
+
+| Story | Which of the three screens |
+|---|---|
+| TAK-01 · Open a link and see what I am about to sit | `/exam/:token` |
+| TAK-02 · Be told why a link does not work | `/exam/:token` |
+| TAK-03 · Start, and resume if I am interrupted | `/exam/:token` → `/sitting` |
+| TAK-04 · Answer one question at a time | `/exam/:token/sitting` |
+| TAK-05 · Not lose work | `/exam/:token/sitting` |
+| TAK-06 · Trust the clock | `/exam/:token/sitting` |
+| TAK-07 · Never receive the answer | `/exam/:token/sitting` |
+| TAK-08 · Answer with a file or a recording | `/exam/:token/sitting` |
+| TAK-09 · Sit a sectioned paper | `/exam/:token/sitting` |
+| TAK-10 · Pass or fail a gate before the exam | `/exam/:token/sitting` |
+| TAK-11 · Submit and be told what happens next | `/exam/:token/sitting` → `/result` |
+| TAK-12 · Learn from a practice attempt | `/exam/:token/result` |
+| TAK-13 · Be observed honestly, or not at all | `/exam/:token` (the notice) · `/sitting` (the recording) |
+| TAK-14 · Sit the exam in Arabic | all three |
+| TAK-15 · Sit it without a mouse or with a screen reader | all three |
+| TAK-16 · Be given the time I am entitled to | `/exam/:token/sitting` |
+
+## Epic 10 — Grading and the reviewer's queue
+
+| Story | Screen | Role |
+|---|---|---|
+| GRD-01 · Mark what a machine can mark | server-side, at submission | — |
+| GRD-02 · Never lose an answer to a broken grader | server-side, at submission | — |
+| GRD-03 · Work through what needs a person | `/review` | `Marker` (`Review.ViewQueue`) |
+| GRD-04 · Mark against a rubric | `/review/:attemptId` | `Marker` (`Review.Grade`) |
+| GRD-05 · See what the right answer was | `/review/:attemptId` | `Marker` |
+| GRD-06 · See how the answer was produced | `/review/:attemptId` | `Marker` (`Review.ViewIntegritySignals`) |
+| GRD-07 · Reopen a mark | `/review/:attemptId` | `Marker` |
+| GRD-08 · Share out the queue | `/review` | would be `Admin` |
+| GRD-09 · Know how consistent the marking is | *(none)* | would be `Observer` |
+| GRD-10 · Grade what the browser actually sent | `/exam/:token/sitting` ↔ the grader | — |
+
+## Epic 11 — Results, item health and export
+
+| Story | Screen | Role |
+|---|---|---|
+| RES-01 · See how a class did | `/results` | `Coordinator` · `Observer` (`Results.View`) |
+| RES-02 · Read one candidate's paper | `/results/:attemptId` | `Coordinator` · `Observer` |
+| RES-03 · Read a result as a profile | `/results/:attemptId` | `Coordinator` · `Observer` |
+| RES-04 · Read a result section by section | `/results/:attemptId` | `Coordinator` · `Observer` |
+| RES-05 · Get the results out | `/results` (export) | `Coordinator` · `Observer` (`Results.Export`) |
+| RES-06 · Compute the item statistics | server-side, at grading | — |
+| RES-07 · See which questions are not measuring | `/results/questions` | `Observer` (`Results.ViewItemAnalysis`) |
+| RES-08 · Watch a paper wear out | `/exams/:id` (publish warning) | `Author` |
+| RES-09 · Compare candidates | *(none)* | would be `Observer` |
+| RES-10 · Issue a certificate | *(none)* | would be `Coordinator` |
+| RES-11 · Take my data with me | *(none)* | would be `Admin` |
+| RES-12 · See a sitting's headline numbers | `/results` (summary strip) | `Coordinator` · `Observer` |
+
+## Epic 12 — The tenant's own face
+
+| Story | Screen | Role |
+|---|---|---|
+| BRD-01 · Put our name on it | `/settings` | `Admin` (`Administration.ManageSettings`) |
+| BRD-02 · Refuse a colour that will fail silently | `/settings` | `Admin` |
+| BRD-03 · Carry the branding to where it matters | `/exam/:token` · the invitation email | — (the candidate is who sees it) |
+| BRD-04 · Speak the tenant's language everywhere | every screen | all roles |
+| BRD-05 · Preview the branding before it is live | `/settings` | `Admin` |
+
+## Epic 13 — Access and administration
+
+| Story | Screen | Role |
+|---|---|---|
+| ADM-01 · Give people only what they need | `/users` · the permission tree | `Admin` (`Users.ManageRoles`) |
+| ADM-02 · Do not offer what cannot be opened | the shell's navigation, every route | all roles |
+| ADM-03 · Keep tenants apart | every screen and every request | all roles, and the candidate |
+| ADM-04 · Keep the contexts apart | the solution's structure | — (an architecture test) |
+| ADM-05 · Manage staff accounts | `/users` | `Admin` (`Users.Create`, `.Edit`, `.Delete`) |
+| ADM-06 · Configure the tenant | `/settings` | `Admin` (`Administration.ManageSettings`) |
+
+## Epic 14 — How the product behaves everywhere
+
+| Story | Screen | Role |
+|---|---|---|
+| PLT-01 · Never make anyone learn syntax | every authoring screen and every answer control | `Author` · — |
+| PLT-02 · Read correctly in Arabic | every screen | all roles, and the candidate |
+| PLT-03 · Meet the accessibility standard the buyer names | every screen | all roles, and the candidate |
+| PLT-04 · Tell people what went wrong | every screen | all roles, and the candidate |
+| PLT-05 · Never hand over the answer | `/exam/:token/sitting` | — |
+| PLT-06 · Survive a hostile answer | `/exam/:token/sitting` → `/review/:attemptId` → the CSV | — · `Marker` · `Coordinator` |
+| PLT-07 · Cover every story from unit to end to end | the test suites | — |
+| PLT-08 · Be honest about what a score means | `/results/*` · `/exam/:token/result` | `Coordinator` · `Observer` · — |
+| PLT-09 · Serve a stored file to the browser that renders it | `/exam/:token/sitting` · `/review/:attemptId` | — · `Marker` |
+| PLT-10 · Prove every route the client calls answers | `tools/smoke-routes.js` | — |
+| PLT-11 · Run somewhere other than the machine it was written on | the compose stack and CI | — |

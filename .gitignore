@@ -252,6 +252,10 @@ paket-files/
 *.sln.iml
 
 # InternshipManagementSystem
+# Serilog writes here when the host runs from the repository root. It was
+# tracked, so every run showed up as a change to review.
+Logs/
+
 src/InternshipManagementSystem.Web/Logs/*
 src/InternshipManagementSystem.Web.Host/Logs/*
 src/InternshipManagementSystem.AuthServer/Logs/*
