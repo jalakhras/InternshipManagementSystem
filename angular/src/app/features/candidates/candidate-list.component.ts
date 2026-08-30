@@ -7,11 +7,13 @@ import {
   CandidateDto,
   CandidateGroupDto,
   CandidateStatus,
+  CreateUpdateCandidateDto,
   ImportCandidatesResult,
 } from '../../core/api/candidate.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
+import { ModalDirective } from '../../shared/ui/modal.directive';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 /**
@@ -29,7 +31,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 @Component({
   selector: 'astro-candidate-list',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent],
+  imports: [FormsModule, PageHeaderComponent, ModalDirective],
   templateUrl: './candidate-list.component.html',
   styleUrl: './candidate-list.component.scss',
 })
@@ -52,6 +54,86 @@ export class CandidateListComponent {
 
   readonly canCreate = permissionSignal(P.Candidates.Create);
   readonly canEdit = permissionSignal(P.Candidates.Edit);
+
+  /** One flag for the dialog's own save; the row spinner is busyId. */
+  readonly saving = signal(false);
+
+  // --- adding or correcting one person ---
+
+  /**
+   * The person being added or corrected.
+   * <p>
+   * Importing is the primary action and stays so — a centre's students are
+   * already in a spreadsheet. But the day after the import somebody enrols late
+   * and somebody's name was misspelled, and neither could be dealt with here:
+   * the row could only be deleted, and a person who has sat an exam cannot be
+   * deleted at all. So a wrong address was permanent.
+   * </p>
+   */
+  readonly draft = signal<CandidateDraft>(emptyDraft());
+
+  readonly canSaveDraft = computed(() => {
+    const draft = this.draft();
+
+    return draft.fullName.trim().length > 0 && draft.email.trim().length > 0;
+  });
+
+  newCandidate(): void {
+    this.draft.set({ ...emptyDraft(), open: true });
+  }
+
+  edit(candidate: CandidateDto): void {
+    this.draft.set({
+      open: true,
+      id: candidate.id,
+      fullName: candidate.fullName,
+      email: candidate.email,
+      reference: candidate.reference ?? '',
+    });
+  }
+
+  cancelEdit(): void {
+    this.draft.set(emptyDraft());
+  }
+
+  patchDraft<K extends keyof CandidateDraft>(key: K, value: CandidateDraft[K]): void {
+    this.draft.update(d => ({ ...d, [key]: value }));
+  }
+
+  saveDraft(): void {
+    const draft = this.draft();
+
+    if (!this.canSaveDraft()) {
+      return;
+    }
+
+    const body: CreateUpdateCandidateDto = {
+      fullName: draft.fullName.trim(),
+      email: draft.email.trim(),
+      reference: draft.reference.trim() || undefined,
+    };
+
+    this.saving.set(true);
+    this.actionError.set(null);
+
+    const request = draft.id
+      ? this.candidates.update(draft.id, body)
+      : this.candidates.create(body);
+
+    request.subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.draft.set(emptyDraft());
+        this.load();
+      },
+      error: err => {
+        // The server refuses a duplicate address by name, and that is the one
+        // an importer hits: the same person twice under two spellings.
+        this.actionError.set(this.reason(err));
+        this.saving.set(false);
+      },
+    });
+  }
   readonly canDelete = permissionSignal(P.Candidates.Delete);
 
   readonly pendingDelete = signal<CandidateDto | null>(null);
@@ -240,3 +322,19 @@ export class CandidateListComponent {
     return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
   }
 }
+
+interface CandidateDraft {
+  open: boolean;
+  id: string | null;
+  fullName: string;
+  email: string;
+  reference: string;
+}
+
+const emptyDraft = (): CandidateDraft => ({
+  open: false,
+  id: null,
+  fullName: '',
+  email: '',
+  reference: '',
+});

@@ -9,6 +9,16 @@
       {{ t('::Candidate:Import') }}
     </button>
   }
+
+  @if (canCreate()) {
+    <!-- Secondary, and still necessary. Pasting is what a centre does on the
+         first day; adding one person is what they do on every day after it —
+         somebody enrols late, somebody was missed. Without this a coordinator
+         had to build a spreadsheet to add a single student. -->
+    <button slot="actions" type="button" class="btn btn-outline-secondary" (click)="newCandidate()">
+      {{ t('::Candidate:Add') }}
+    </button>
+  }
 </astro-page-header>
 
 @if (actionError(); as message) {
@@ -110,8 +120,24 @@
             <td class="row-actions">
               @if (busyId() === candidate.id) {
                 <span class="muted">{{ t('::Working') }}</span>
-              } @else if (canDelete()) {
+              } @else {
                 <div class="row-actions__set">
+                  @if (canEdit()) {
+                    <!-- A misspelled name and a wrong address are the two things
+                         an import gets wrong, and until now neither could be put
+                         right: the row could only be deleted, and a person who
+                         has sat an exam cannot be deleted at all. -->
+                    <button
+                      type="button"
+                      class="row-action"
+                      [attr.title]="t('::Edit')"
+                      [attr.aria-label]="t('::Edit') + ': ' + candidate.fullName"
+                      (click)="edit(candidate)">
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </button>
+                  }
+
+                  @if (canDelete()) {
                   <button
                     type="button"
                     class="row-action row-action--danger"
@@ -120,6 +146,7 @@
                     (click)="pendingDelete.set(candidate)">
                     <i class="bi bi-trash" aria-hidden="true"></i>
                   </button>
+                  }
                 </div>
               }
             </td>
@@ -270,6 +297,68 @@
       </button>
       <button type="button" class="btn btn-danger" (click)="confirmDelete()">
         {{ t('::Delete') }}
+      </button>
+    </div>
+  </div>
+}
+
+@if (draft().open) {
+  <div class="scrim" (click)="cancelEdit()"></div>
+
+  <div
+    class="confirm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="candidateTitle"
+    astroModal
+    (dismiss)="cancelEdit()">
+    <h2 id="candidateTitle" class="confirm__title">
+      {{ draft().id ? t('::Candidate:Edit') : t('::Candidate:Add') }}
+    </h2>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Candidate:Name') }}</span>
+      <input
+        class="form-control"
+        name="candidateName"
+        autocomplete="off"
+        [ngModel]="draft().fullName"
+        (ngModelChange)="patchDraft('fullName', $event)" />
+    </label>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Candidate:Email') }}</span>
+      <input
+        type="email"
+        class="form-control astro-ltr"
+        name="candidateEmail"
+        autocomplete="off"
+        [ngModel]="draft().email"
+        (ngModelChange)="patchDraft('email', $event)" />
+      <span class="field__hint">{{ t('::Candidate:Email:Hint') }}</span>
+    </label>
+
+    <label class="field">
+      <span class="field__label">{{ t('::Candidate:Reference') }}</span>
+      <input
+        class="form-control"
+        name="candidateReference"
+        autocomplete="off"
+        [ngModel]="draft().reference"
+        (ngModelChange)="patchDraft('reference', $event)" />
+      <span class="field__hint">{{ t('::Candidate:Reference:Hint') }}</span>
+    </label>
+
+    <div class="confirm__actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+        {{ t('::Cancel') }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="!canSaveDraft() || saving()"
+        (click)="saveDraft()">
+        {{ t('::Save') }}
       </button>
     </div>
   </div>

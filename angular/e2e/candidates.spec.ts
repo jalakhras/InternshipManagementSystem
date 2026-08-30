@@ -159,6 +159,66 @@ test.describe('Candidates', () => {
     await expect(page.getByRole('button', { name: 'Paste a list' })).toHaveCount(0);
   });
 
+  test('one person can be added by hand, without a spreadsheet', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubPeople(page, []);
+
+    let sent: Record<string, unknown> | null = null;
+
+    await page.route('**/api/assessment/candidates', route => {
+      if (route.request().method() === 'POST') {
+        sent = route.request().postDataJSON();
+
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ id: 'c9', fullName: 'Layla', email: 'layla@example.test' }),
+        });
+      }
+
+      return route.fallback();
+    });
+
+    await gotoApp(page, '/candidates');
+    await page.getByRole('button', { name: 'Add a person' }).click();
+
+    // Scoped to the dialog: "Name" also matches the search field behind it, and
+    // an unscoped match would be filling the wrong box.
+    const form = page.getByRole('dialog');
+
+    await form.getByLabel('Name').fill('Layla Hassan');
+    await form.getByLabel('Email').fill('layla@example.test');
+    await form.getByRole('button', { name: 'Save' }).click();
+
+    // Importing is the first day; this is every day after it — somebody enrols
+    // late, somebody was missed. Without it a coordinator had to build a
+    // spreadsheet to add a single student.
+    await expect.poll(() => sent).not.toBeNull();
+    expect(sent!['fullName']).toBe('Layla Hassan');
+    expect(sent!['email']).toBe('layla@example.test');
+  });
+
+  test('a name and an address are both required', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubPeople(page, []);
+
+    await gotoApp(page, '/candidates');
+    await page.getByRole('button', { name: 'Add a person' }).click();
+
+    const form = page.getByRole('dialog');
+
+    await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    await form.getByLabel('Name').fill('Layla Hassan');
+
+    // The address is where the exam link goes and what tells one person from
+    // another. A candidate without one can be created and never sent anything.
+    await expect(form.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    await form.getByLabel('Email').fill('layla@example.test');
+    await expect(form.getByRole('button', { name: 'Save' })).toBeEnabled();
+  });
+
   test('does not scroll sideways on a phone in Arabic', async ({ page }) => {
     await stubAbp(page, { culture: 'ar', grantedPolicies: ALL_POLICIES });
     await stubPeople(page, [person({ groupNames: ['Evening A1'] })]);
