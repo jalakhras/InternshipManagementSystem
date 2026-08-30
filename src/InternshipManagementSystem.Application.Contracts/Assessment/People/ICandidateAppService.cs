@@ -50,6 +50,20 @@ public interface ICandidateAppService : IApplicationService
     Task DeleteGroupAsync(Guid id);
 
     /// <summary>Replaces a cohort's membership with exactly these people.</summary>
+    /// <remarks>
+    /// For a caller that genuinely holds the whole roll — a nightly sync out of a
+    /// student record system, say. A browser does not hold it and must not
+    /// pretend to; it uses <see cref="ChangeGroupMembersAsync"/> instead.
+    /// </remarks>
     Task<CandidateGroupDto> SetGroupMembersAsync(Guid id, SetGroupMembersDto input);
 
+    /// <summary>Puts these people into a cohort and takes those ones out.</summary>
+    /// <remarks>
+    /// The whole-list route above is only truthful while the caller can hold the
+    /// whole list, and the screen cannot: it read 500 people, so a centre with
+    /// more than that had candidates no coordinator could reach. Sending the
+    /// change rather than the intended result needs no such holding, and takes
+    /// the roll's size out of the protocol altogether.
+    /// </remarks>
+    Task<CandidateGroupDto> ChangeGroupMembersAsync(Guid id, ChangeGroupMembersDto input);
 }

@@ -126,4 +126,27 @@ export class CandidateService {
       body: { candidateIds, confirmEmptied },
     });
   }
+
+  /**
+   * What changed about a class's roll: these people in, those people out.
+   *
+   * The whole-list save above is only a true sentence while the caller holds the
+   * whole class, and a browser never can. The roll editor tried: it read 500
+   * candidates and filtered them in the page, so a centre with more than 500
+   * people had candidates who could not be found, could not be ticked, and so
+   * could not be put into any class — and ABP refuses a page over 1000, so there
+   * was no number that would have worked.
+   *
+   * Naming only the change settles two other things for free. A save can no
+   * longer remove people the screen never read, and two coordinators editing one
+   * class both keep their work, because adding one person and adding another
+   * commute where two whole lists do not.
+   */
+  changeGroupMembers(id: string, add: string[], remove: string[]): Observable<CandidateGroupDto> {
+    return this.rest.request<{ add: string[]; remove: string[] }, CandidateGroupDto>({
+      method: 'POST',
+      url: `${this.base}/groups/${id}/members`,
+      body: { add, remove },
+    });
+  }
 }

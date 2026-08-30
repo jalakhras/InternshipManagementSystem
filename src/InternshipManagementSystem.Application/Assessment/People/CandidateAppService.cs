@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment.Catalog;
@@ -12,7 +13,9 @@ using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Validation;
 
 namespace InternshipManagementSystem.Assessment.People;
 
@@ -408,6 +411,90 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         var present = existing.Select(m => m.CandidateId).ToHashSet();
 
         await AddToGroupAsync(id, wanted.Where(candidateId => !present.Contains(candidateId)).ToList());
+
+        return (await GetGroupsAsync()).First(g => g.Id == id);
+    }
+
+    /// <summary>
+    /// Adds these people to a class and removes those ones.
+    /// </summary>
+    /// <remarks>
+    /// The method above says "these people are the class", which is only a true
+    /// sentence while the caller holds the class. The screen never did: it read
+    /// 500 candidates and searched them in the browser, so at a centre with more
+    /// than 500 people there were candidates that could not be found, could not
+    /// be ticked, and therefore could not be put into any class at all — and
+    /// raising the number only moves the wall, since ABP refuses a page over
+    /// 1000 and a dialog of 1000 checkboxes is not a way to find one person.
+    /// <para>
+    /// Sending the change rather than the intended result takes the roll's size
+    /// out of the protocol, and three defects stop existing rather than being
+    /// guarded against. A roll longer than one page cannot be truncated by
+    /// somebody editing it. A failed read produces an empty change, which does
+    /// nothing, instead of an empty roll, which deleted classes. And two
+    /// coordinators on the same class no longer overwrite each other: adding
+    /// Fatima and adding Omar commute, so both survive, which is what worklist
+    /// 6.1 asked for without needing a version stamp to detect a lost update
+    /// that can no longer happen.
+    /// </para>
+    /// </remarks>
+    [Authorize(InternshipManagementSystemPermissions.Groups.Edit)]
+    public async Task<CandidateGroupDto> ChangeGroupMembersAsync(Guid id, ChangeGroupMembersDto input)
+    {
+        await _groups.GetAsync(id);
+
+        var add = input.Add.Distinct().ToList();
+        var remove = input.Remove.Distinct().ToHashSet();
+
+        // Both at once is not an edit with an obvious winner, it is a caller that
+        // has lost track of what it is asking for. Picking one silently would
+        // make the roll depend on which half this method happens to apply first.
+        var both = add.Where(remove.Contains).ToList();
+
+        if (both.Count > 0)
+        {
+            throw new AbpValidationException(
+                "A candidate cannot be added to and removed from the same class in one request.",
+                [new ValidationResult($"Listed in both Add and Remove: {both[0]}.", [nameof(input.Add)])]);
+        }
+
+        if (add.Count > 0)
+        {
+            // Checked here rather than left to the foreign key, because a bad id
+            // should come back as "no such candidate" and not as a database
+            // error. The tenant filter is part of the check: an id belonging to
+            // another organisation is simply not found, which is the correct
+            // answer and leaks nothing.
+            var known = await (await _candidates.GetQueryableAsync())
+                .Where(c => add.Contains(c.Id))
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            var missing = add.Except(known).ToList();
+
+            if (missing.Count > 0)
+            {
+                throw new EntityNotFoundException(typeof(Candidate), missing[0]);
+            }
+        }
+
+        if (remove.Count > 0)
+        {
+            var rows = await (await _members.GetQueryableAsync())
+                .Where(m => m.CandidateGroupId == id && remove.Contains(m.CandidateId))
+                .ToListAsync();
+
+            // Silent about the ones that were not in the class. Somebody removing
+            // a person another coordinator removed a minute ago has got what they
+            // wanted, and an error would be about the race rather than the roll.
+            if (rows.Count > 0)
+            {
+                await _members.DeleteManyAsync(rows, autoSave: false);
+            }
+        }
+
+        // Skips whoever is already in the class, for the same reason.
+        await AddToGroupAsync(id, add);
 
         return (await GetGroupsAsync()).First(g => g.Id == id);
     }

@@ -49,9 +49,22 @@ public class CandidateController : AbpControllerBase
     [HttpDelete("groups/{id}")]
     public Task DeleteGroupAsync(Guid id) => _candidates.DeleteGroupAsync(id);
 
+    /// <summary>The whole roll, replaced. For a caller that actually holds it.</summary>
     [HttpPut("groups/{id}/members")]
     public Task<CandidateGroupDto> SetGroupMembersAsync(Guid id, [FromBody] SetGroupMembersDto input) =>
         _candidates.SetGroupMembersAsync(id, input);
+
+    /// <summary>
+    /// A change to the roll: add these, take those out.
+    /// <para>
+    /// POST rather than PUT because the body is what changed, not what the roll
+    /// should end up being — and that is the point. A browser cannot hold a roll
+    /// of any size, and the screen above used to claim it could.
+    /// </para>
+    /// </summary>
+    [HttpPost("groups/{id}/members")]
+    public Task<CandidateGroupDto> ChangeGroupMembersAsync(Guid id, [FromBody] ChangeGroupMembersDto input) =>
+        _candidates.ChangeGroupMembersAsync(id, input);
 
     [HttpPost("import")]
     public Task<ImportCandidatesResultDto> ImportAsync([FromBody] ImportCandidatesDto input) =>

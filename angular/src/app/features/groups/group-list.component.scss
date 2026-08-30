@@ -151,7 +151,9 @@
 }
 
 .dialog--wide {
-  max-inline-size: 34rem;
+  // Two panes side by side on a laptop; one above the other on a phone, which
+  // the grid below decides for itself rather than at a breakpoint.
+  max-inline-size: 48rem;
   max-block-size: 80vh;
   display: flex;
   flex-direction: column;
@@ -179,6 +181,53 @@
   color: var(--text-secondary);
   font-size: var(--astro-text-sm);
   margin-inline-start: auto;
+  text-align: end;
+}
+
+.counted__change {
+  display: block;
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
+}
+
+// Two questions, not one list: who is in the class, and who to add. `auto-fit`
+// rather than a media query, so the pair folds into a column exactly when a
+// column is what fits — which on a 390px phone it always is.
+.roll__panes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--astro-space-4);
+  flex: 1;
+
+  // Without this a grid item refuses to shrink below its content and the dialog
+  // grows a horizontal scrollbar instead of wrapping.
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+.pane__title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--astro-space-2);
+  margin: 0 0 var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-semibold);
+  color: var(--text-secondary);
+}
+
+.pane__count {
+  padding-inline: var(--astro-space-2);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font-size: var(--astro-text-xs);
 }
 
 .roll {
@@ -187,15 +236,32 @@
   padding: 0;
   overflow-y: auto;
   flex: 1;
+
+  // A floor as well as a ceiling: a class of one and a search of twenty should
+  // not make the two panes different heights on every keystroke.
+  min-block-size: 8rem;
+  max-block-size: 40vh;
+}
+
+// Kept out of .roll on purpose: that list scrolls, and a message or a pager
+// placed inside it scrolls away with the last name on the page.
+.roll__empty {
+  margin-block: var(--astro-space-5);
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .person {
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  flex-wrap: wrap;
   gap: var(--astro-space-2);
   padding: var(--astro-space-2);
   border-radius: var(--astro-radius-md);
   cursor: pointer;
+
+  // The whole row is the target, and a row of text is not 44px tall by itself.
+  min-block-size: 44px;
 
   &:hover { background: var(--surface-sunken); }
 }
@@ -205,4 +271,49 @@
 .person__email {
   color: var(--text-muted);
   font-size: var(--astro-text-xs);
+
+  // An address is one unbroken run; without this it pushes the dialog wider
+  // than the phone it is on.
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+
+/**
+ * The confirm-emptying dialog.
+ *
+ * Written out here rather than borrowed: the markup was copied from the
+ * candidates screen, and component style encapsulation does not follow a copied
+ * class name. So it rendered with no styling at all — transparent, the full
+ * width of the page, and a browser-default heading — while looking, in the
+ * markup, exactly like the dialog it was copied from.
+ */
+.confirm {
+  position: fixed;
+  z-index: 41;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  // Logical properties do not cover translate, so the sign is written out.
+  transform: translate(-50%, -50%);
+  inline-size: min(30rem, calc(100vw - 2rem));
+  padding: var(--astro-space-5);
+  border-radius: var(--astro-radius-lg);
+  background: var(--surface-overlay);
+  box-shadow: var(--astro-shadow-lg);
+
+  &__title {
+    margin: 0 0 var(--astro-space-2);
+    font-size: var(--astro-text-lg);
+  }
+
+  &__body {
+    margin: 0 0 var(--astro-space-4);
+    color: var(--text-secondary);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--astro-space-2);
+  }
 }

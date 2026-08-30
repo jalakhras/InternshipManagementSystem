@@ -131,7 +131,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (group of groups(); track group.id) {
+        @for (group of visibleGroups(); track group.id) {
           <tr>
             <td>
               <span class="name">{{ group.name }}</span>
@@ -181,6 +181,13 @@
       </tbody>
     </table>
   </div>
+
+  <astro-pager
+    [page]="page()"
+    [pageSize]="pageSize"
+    [totalCount]="groups().length"
+    [label]="t('::Group:Pagination')"
+    (pageChange)="goToPage($event)" />
 }
 
 @if (pendingDelete(); as group) {
@@ -216,44 +223,121 @@
       aria-modal="true"
       [attr.aria-label]="t('::Group:Roll')">
       <h2 class="dialog__title">{{ group.name }}</h2>
-      <p class="dialog__body">{{ t('::Group:Roll:Note') }}</p>
+      <p class="dialog__body">{{ t('::Group:Roll:Lede') }}</p>
 
-      <input
-        type="search"
-        class="form-control"
-        [placeholder]="t('::Candidate:SearchPlaceholder')"
-        [attr.aria-label]="t('::Candidate:SearchPlaceholder')"
-        [ngModel]="rollFilter()"
-        (ngModelChange)="rollFilter.set($event)"
-        name="rollFilter" />
+      <div class="roll__panes">
+        <!-- Who is in the class. Usually tens of rows, and paged rather than
+             capped, because a class of six hundred is a class, not an error. -->
+        <section class="pane">
+          <h3 class="pane__title">
+            {{ t('::Group:Roll:Members') }}
+            <span class="pane__count astro-numeric">{{ memberTotal() }}</span>
+          </h3>
 
-      @if (rollLoading()) {
-        <astro-data-state [loading]="true" />
-      } @else {
-        <ul class="roll">
-          @for (person of visiblePeople(); track person.id) {
-            <li>
-              <label class="person">
-                <input
-                  type="checkbox"
-                  [checked]="isMember(person.id)"
-                  (change)="toggleMember(person.id)" />
-                <span class="person__name">{{ person.fullName }}</span>
-                <span class="person__email astro-ltr">{{ person.email }}</span>
-              </label>
-            </li>
+          @if (rollLoading()) {
+            <astro-data-state [loading]="true" />
+          } @else if (memberTotal() === 0) {
+            <p class="roll__empty">{{ t('::Group:Roll:NoMembers') }}</p>
+          } @else {
+            <ul class="roll">
+              @for (person of members(); track person.id) {
+                <li>
+                  <label class="person">
+                    <input
+                      type="checkbox"
+                      [checked]="willBeIn(person.id, true)"
+                      (change)="toggleMember(person.id, true)" />
+                    <span class="person__name">{{ person.fullName }}</span>
+                    <span class="person__email astro-ltr">{{ person.email }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+
+            <!-- Above the dialog's actions, not below them: a pager under the
+                 Save button is a pager nobody finds, and the count sentence is
+                 what tells a coordinator the list they are reading is a page. -->
+            <astro-pager
+              [page]="memberPage()"
+              [pageSize]="rollPageSize"
+              [totalCount]="memberTotal()"
+              [label]="t('::Group:Roll:Members:Pagination')"
+              (pageChange)="goToMemberPage($event)" />
           }
-        </ul>
-      }
+        </section>
+
+        <!-- Adding somebody. Asked of the server, which has always matched name,
+             address and reference — this dialog simply never sent the term, and
+             filtered the 500 people it happened to be holding instead. That is
+             why the 501st could not be put into a class at all. -->
+        <section class="pane">
+          <h3 class="pane__title">{{ t('::Group:Roll:Add') }}</h3>
+
+          <input
+            type="search"
+            class="form-control"
+            [placeholder]="t('::Candidate:SearchPlaceholder')"
+            [attr.aria-label]="t('::Group:Roll:Add')"
+            [ngModel]="rollFilter()"
+            (ngModelChange)="rollFilterChanged($event)"
+            (keyup.enter)="applyRollFilter()"
+            (search)="applyRollFilter()"
+            name="rollFilter" />
+
+          @if (searching()) {
+            <astro-data-state [loading]="true" />
+          } @else if (noMatches()) {
+            <p class="roll__empty">{{ t('::Group:Roll:NoMatches', searchedTerm()) }}</p>
+          } @else if (!searchedTerm()) {
+            <p class="roll__empty">{{ t('::Group:Roll:SearchHint') }}</p>
+          } @else {
+            <ul class="roll">
+              @for (person of matches(); track person.id) {
+                <li>
+                  <label class="person">
+                    <input
+                      type="checkbox"
+                      [checked]="willBeIn(person.id, isCurrently(person.id))"
+                      (change)="toggleMember(person.id, isCurrently(person.id))" />
+                    <span class="person__name">{{ person.fullName }}</span>
+                    <span class="person__email astro-ltr">{{ person.email }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+
+            <astro-pager
+              [page]="matchPage()"
+              [pageSize]="rollPageSize"
+              [totalCount]="matchTotal()"
+              [label]="t('::Group:Roll:Matches:Pagination')"
+              (pageChange)="goToMatchPage($event)" />
+          }
+        </section>
+      </div>
 
       <div class="dialog__actions">
-        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="saveRoll()">
+        <button
+          type="button"
+          class="btn btn-primary"
+          [disabled]="saving() || !rollDirty()"
+          (click)="saveRoll()">
           {{ t('::Save') }}
         </button>
         <button type="button" class="btn btn-outline-secondary" (click)="closeRoll()">
           {{ t('::Cancel') }}
         </button>
-        <span class="counted">{{ t('::Group:Selected', '' + chosen().size) }}</span>
+
+        <!-- What the class will be, not what is ticked on screen: with a page
+             for a window, "12 selected" would have counted the window. -->
+        <span class="counted">
+          {{ t('::Group:Roll:Count', '' + rollCount()) }}
+          @if (rollDirty()) {
+            <span class="counted__change">
+              {{ t('::Group:Roll:Pending', '' + pendingAdd().size, '' + pendingRemove().size) }}
+            </span>
+          }
+        </span>
       </div>
     </div>
   </div>

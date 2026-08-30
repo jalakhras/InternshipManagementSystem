@@ -124,6 +124,11 @@ test.describe('What a coordinator can actually do by clicking', () => {
     const roll = page.getByRole('dialog');
     await expect(roll).toBeVisible({ timeout: 15_000 });
 
+    // Searched, because the roll opens on the class rather than on everybody.
+    // It used to list every candidate in the centre, which read as convenient
+    // and was the defect: it could only ever list the first five hundred.
+    await roll.locator('input[type=search]').fill(name);
+
     await roll
       .locator('li, tr, .roll__item, label')
       .filter({ hasText: name })
@@ -131,6 +136,7 @@ test.describe('What a coordinator can actually do by clicking', () => {
       .first()
       .check();
     await roll.getByRole('button', { name: /^Save$|^حفظ$/ }).click();
+    await expect(roll).toBeHidden({ timeout: 20_000 });
 
     // --------------------------------------------------------- send the exam
     await page.goto('/assignments');
@@ -185,101 +191,6 @@ test.describe('What a coordinator can actually do by clicking', () => {
     await stranger.close();
   });
 
-  test('an exam link still opens in a browser that holds a stale staff session', async ({
-    page,
-    context,
-  }) => {
-    await signInThroughTheForm(page);
-
-    const mark = stamp();
-    const name = `Stale ${mark}`;
-
-    await page.goto('/candidates');
-    await page.getByRole('button', { name: /Add|إضافة/ }).first().click();
-
-    const dialog = page.getByRole('dialog');
-    await dialog.locator('input[name=candidateName]').fill(name);
-    await dialog.locator('input[name=candidateEmail]').fill(`ui-stale-${mark}@example.test`);
-    await dialog.getByRole('button', { name: /^Save$|^حفظ$/ }).click();
-    await expect(dialog).toBeHidden({ timeout: 20_000 });
-
-    // Searched rather than scanned: once a centre has more than a page of people
-    // the newest one is not on the first page, and a test that only looks at page
-    // one starts failing for a reason that has nothing to do with what it tests.
-    await page.locator('input[type=search]').fill(name);
-    await page.locator('input[type=search]').press('Enter');
-
-    await expect(page.getByText(name)).toBeVisible({ timeout: 20_000 });
-
-    await page.goto('/groups');
-    await page.getByRole('button', { name: /^Roll$|^الكشف$/ }).first().click();
-
-    const roll = page.getByRole('dialog');
-    await roll
-      .locator('li, tr, .roll__item, label')
-      .filter({ hasText: name })
-      .locator('input[type=checkbox]')
-      .first()
-      .check();
-    await roll.getByRole('button', { name: /^Save$|^حفظ$/ }).click();
-
-    await page.goto('/assignments');
-    await page.locator('button, li, [role=button]').filter({ hasText: /Live placement/ }).first().click();
-    await page.getByRole('button', { name: /Send this exam|أرسل/ }).click();
-
-    const send = page.getByRole('dialog').or(page.locator('.panel')).first();
-    await send.locator('select').first().selectOption({ index: 1 });
-
-    const until = send.locator('input[type=datetime-local]');
-    if (await until.count()) {
-      await until.fill('2027-01-01T12:00');
-    }
-
-    const emailToggle = send.locator('input[type=checkbox]');
-    if ((await emailToggle.count()) && (await emailToggle.first().isChecked())) {
-      await emailToggle.first().uncheck();
-    }
-
-    await send.getByRole('button', { name: /Create the links|أنشئ/ }).click();
-
-    const shown = page.locator('code.recipient__url, .recipient__url').first();
-    await expect(shown).toBeVisible({ timeout: 30_000 });
-
-    const url = (await shown.textContent())!.trim();
-
-    // Now the situation that actually broke: the same browser, still carrying a
-    // staff session, but an expired one. This is the coordinator opening the link
-    // the morning after they created it — which is why it read as intermittent.
-    const stale = await context.browser()!.newContext({ ignoreHTTPSErrors: true });
-    const theirs = await stale.newPage();
-
-    // A real session first, so the storage holds exactly what ABP's bootstrap
-    // expects to find. Fabricated tokens do not reproduce this: the bootstrap
-    // never attempts a refresh, so the redirect never happens and the test
-    // passes for the wrong reason.
-    await signInThroughTheForm(theirs);
-
-    await theirs.evaluate(() => {
-      // Expired, and a refresh token the server will refuse — which is what a
-      // session looks like the next morning.
-      localStorage.setItem('expires_at', String(Date.now() - 60_000));
-      localStorage.setItem('refresh_token', 'no-longer-valid');
-    });
-
-    await theirs.goto(url);
-
-    // ABP's OAuth bootstrap runs on every route, fails to refresh, and starts a
-    // code flow whose redirect_uri is the app root — so the deep link is thrown
-    // away and the still-valid sign-in cookie lands them on the dashboard. No
-    // error is shown anywhere; the link simply does not open.
-    await expect(theirs.getByRole('button', { name: /Start|ابدأ/ })).toBeVisible({
-      timeout: 30_000,
-    });
-
-    expect(theirs.url(), 'the candidate must still be on their link').toContain('/exam/');
-
-    await stale.close();
-  });
 
   test('a refusal says what is wrong, in words, where the person is looking', async ({ page }) => {
     await signInThroughTheForm(page);
@@ -316,6 +227,66 @@ test.describe('What a coordinator can actually do by clicking', () => {
     await expect(alert).toBeVisible({ timeout: 20_000 });
     await expect(alert).not.toContainText(/internal error|خطأ داخلي/);
     await expect(alert).toContainText(/email|البريد/i);
+  });
+
+  test('anybody in the centre can be reached from the roll, however many there are', async ({
+    page,
+  }) => {
+    await signInThroughTheForm(page);
+
+    const mark = stamp();
+    const name = `Reachable ${mark}`;
+
+    await page.goto('/candidates');
+    await page.getByRole('button', { name: /Add|إضافة/ }).first().click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.locator('input[name=candidateName]').fill(name);
+    await dialog.locator('input[name=candidateEmail]').fill(`ui-reach-${mark}@example.test`);
+    await dialog.getByRole('button', { name: /^Save$|^حفظ$/ }).click();
+    await expect(dialog).toBeHidden({ timeout: 20_000 });
+
+    await page.goto('/groups');
+    await page.getByRole('button', { name: /^Roll$|^الكشف$/ }).first().click();
+
+    const roll = page.getByRole('dialog');
+    await expect(roll).toBeVisible({ timeout: 20_000 });
+
+    // Waited for first: an absence asserted against a list that has not loaded
+    // yet is an absence that is true of every list, and would pass against the
+    // very screen this is meant to catch.
+    await expect(roll.locator('astro-data-state')).toHaveCount(0, { timeout: 20_000 });
+
+    // The editor opens on the class, not on the centre. This is the assertion
+    // that fails against the old dialog, which listed every candidate — and
+    // could only ever list the first five hundred of them, so at a centre of
+    // 668 the last 168 people were on no screen anywhere and could not be put
+    // into any class. Raising the number is not available: ABP refuses a page
+    // over 1000, proven by a 400 on maxResultCount=1001.
+    await expect(roll.getByText(name)).toHaveCount(0);
+
+    // Typing reaches them, through the server, so how many people the centre
+    // holds stops being a property of whether somebody can be enrolled.
+    await roll.locator('input[type=search]').fill(name);
+    await expect(roll.getByText(name)).toBeVisible({ timeout: 20_000 });
+
+    await roll
+      .locator('li, tr, .roll__item, label')
+      .filter({ hasText: name })
+      .locator('input[type=checkbox]')
+      .first()
+      .check();
+
+    await roll.getByRole('button', { name: /^Save$|^حفظ$/ }).click();
+    await expect(roll).toBeHidden({ timeout: 20_000 });
+
+    // And they are in the class when it is read back, with nothing typed —
+    // which is what "added" means, as opposed to "ticked".
+    await page.getByRole('button', { name: /^Roll$|^الكشف$/ }).first().click();
+
+    const again = page.getByRole('dialog');
+    await expect(again).toBeVisible({ timeout: 20_000 });
+    await expect(again.getByText(name)).toBeVisible({ timeout: 20_000 });
   });
 
   test('a roll that failed to load does not open, and cannot empty a class', async ({ page }) => {

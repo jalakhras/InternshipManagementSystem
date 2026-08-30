@@ -134,6 +134,35 @@ public class SetGroupMembersDto
     public bool ConfirmEmptied { get; set; }
 }
 
+/// <summary>
+/// A change to a class's roll, stated as the change itself.
+/// <para>
+/// The sibling of this — <see cref="SetGroupMembersDto"/> — says "these people
+/// are the class", and that sentence is only true if the caller is holding the
+/// whole class. A browser cannot: the roll editor read 500 people and filtered
+/// them in the page, so a centre with more than 500 had candidates that no
+/// coordinator could reach, and ABP's own ceiling of 1000 means raising the
+/// number is a postponement rather than a fix.
+/// </para>
+/// <para>
+/// Saying "add Fatima, remove Omar" instead needs no such holding, and three
+/// separate problems stop existing rather than being guarded: a roll longer
+/// than a page cannot be truncated by editing it, a failed read produces no
+/// change at all instead of an authoritative empty list, and two coordinators
+/// working on the same class no longer overwrite one another — their edits
+/// commute, so both survive. That last one is worklist 6.1, and this is why it
+/// needs no version stamp: there is no lost update left to detect.
+/// </para>
+/// </summary>
+public class ChangeGroupMembersDto
+{
+    /// <summary>People to put into the class. Anyone already in it is left alone.</summary>
+    public List<Guid> Add { get; set; } = new();
+
+    /// <summary>People to take out of it. Anyone not in it is left alone.</summary>
+    public List<Guid> Remove { get; set; } = new();
+}
+
 // ------------------------------------------------------------------ import
 
 /// <summary>
