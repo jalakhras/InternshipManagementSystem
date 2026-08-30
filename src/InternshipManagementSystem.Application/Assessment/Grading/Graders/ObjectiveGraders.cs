@@ -33,11 +33,19 @@ public class NumericGrader : IQuestionGrader
             return GradeResult.Wrong();
         }
 
-        var cleaned = response.Trim().Trim('"').Replace(",", string.Empty);
+        // Folded before parsing, because «١٢٣» is one hundred and twenty-three.
+        // Neither Arabic digit set folds under any Unicode normalisation form,
+        // so an invariant parse simply fails on them — and the failure used to
+        // be reported as a wrong answer, which is a mark taken off a person for
+        // owning an Arabic keyboard.
+        var cleaned = ArabicText.FoldNumber(response.Trim().Trim('"'));
 
         if (!decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out var given))
         {
-            return GradeResult.Wrong();
+            // Something was written that this grader cannot read as a number.
+            // A person should look at it rather than the product deciding, on
+            // its own, that unreadable means wrong.
+            return GradeResult.Manual("The answer could not be read as a number.");
         }
 
         var tolerance = Math.Abs(spec.Tolerance);
@@ -208,14 +216,21 @@ public class FillInTheBlankGrader : IQuestionGrader
             return GradeResult.Wrong();
         }
 
+        // With "case matters" ticked the author is asking a question *about*
+        // spelling — an exact comparison is the point of the switch, and folding
+        // alef spellings underneath it would quietly answer a different question
+        // than the one they set.
         var comparison = spec.CaseSensitive
             ? StringComparison.Ordinal
             : StringComparison.OrdinalIgnoreCase;
 
+        string Shape(string text) =>
+            spec.CaseSensitive ? text.Trim() : ArabicText.Normalise(text);
+
         var hits = spec.Blanks.Count(b =>
             given.TryGetValue(b.Id, out var typed) &&
             !string.IsNullOrWhiteSpace(typed) &&
-            b.AcceptedAnswers.Any(a => string.Equals(a.Trim(), typed.Trim(), comparison)));
+            b.AcceptedAnswers.Any(a => string.Equals(Shape(a), Shape(typed), comparison)));
 
         if (hits == spec.Blanks.Count)
         {
