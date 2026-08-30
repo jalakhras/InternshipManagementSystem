@@ -37,6 +37,29 @@ RUN dotnet restore src/InternshipManagementSystem.HttpApi.Host/InternshipManagem
 FROM restore AS build
 COPY src/ src/
 
+# ---------------------------------------------------------------------------
+# The client-side libraries the sign-in page is built from.
+#
+# ABP's account pages are MVC, and they load jQuery, Bootstrap and the theme's
+# own scripts from wwwroot/libs. That directory is installed, not committed — it
+# is in .gitignore — so a container built from a clean checkout has none of it,
+# and every one of those script tags 404s.
+#
+# The page still renders, which is what makes this worth a comment: the form
+# appears, the fields are there, and nothing in any log says a word. It is simply
+# unstyled and inert, with "jQuery is not defined" a dozen times in the browser
+# console. That is the first screen anybody sees of this product.
+#
+# `abp install-libs` reads abp.resourcemapping.js and copies the packages named
+# in package.json out of node_modules into wwwroot/libs. It needs Node, and it
+# has to run before publish so the files are picked up as content.
+# ---------------------------------------------------------------------------
+RUN apt-get update  && apt-get install -y --no-install-recommends nodejs npm  && rm -rf /var/lib/apt/lists/*  && dotnet tool install -g Volo.Abp.Studio.Cli
+
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+RUN cd src/InternshipManagementSystem.HttpApi.Host && abp install-libs
+
 RUN dotnet publish src/InternshipManagementSystem.HttpApi.Host/InternshipManagementSystem.HttpApi.Host.csproj \
     -c Release --no-restore -o /app/host
 

@@ -29,6 +29,7 @@ deployment live in `deployment.md`.
 | Node.js | لما يحتاجه إصدار Angular في `angular/package.json` |
 | SQL Server | نسخة محلّيّة، أو حاوية `docker compose up -d db` |
 | Docker | اختياريّ محلّياً، مطلوب لتشغيل الطقم كاملاً |
+| ABP CLI | `dotnet tool install -g Volo.Abp.Studio.Cli` — تحتاجه خطوة صفر أدناه |
 
 ### الأسرار التي يجب ضبطها | The one required secret
 
@@ -52,6 +53,9 @@ the empty string.
 ### الترتيب | The order
 
 ```bash
+# ٠ · مكتبات صفحة الدخول — مرّةً بعد الاستنساخ
+cd src/InternshipManagementSystem.HttpApi.Host && abp install-libs && cd ../..
+
 # ١ · قاعدة البيانات: الترحيل، وبذر الصلاحيّات والأدوار، وتسجيل عملاء OpenIddict
 dotnet run --project src/InternshipManagementSystem.DbMigrator
 
@@ -72,6 +76,23 @@ cd angular && npm ci && npm start                                   # http://loc
 `DbMigrator` آمنٌ للتشغيل مرّاراً. **أعِد تشغيله كلّما تغيّر عنوان الواجهة**،
 لأنّ ذلك العنوان مخزون على عميل OAuth، وخطؤه يُفشل تسجيل الدخول في آخر خطوة
 بـ «invalid redirect_uri» بعد أن يبدو كلّ شيء قد نجح.
+
+### لماذا خطوة صفر | Why step zero
+
+<div dir="rtl">
+
+صفحات الدخول والتسجيل من ABP صفحات MVC، تُحمّل jQuery وBootstrap وسكربتات
+السمة من `wwwroot/libs`. وذلك المجلّد **يُنصَّب ولا يُودَع** — فهو في
+`.gitignore` — فالاستنساخ النظيف لا يحمل منه شيئاً، وكلّ وسم سكربت فيه يردّ ٤٠٤.
+
+وما يجعل هذا يستحقّ فقرةً أنّ الصفحة **تظهر**: النموذج موجود والحقول موجودة،
+ولا يقول سجلّ الخادم شيئاً. هي فقط بلا أنماط وبلا سلوك، وفي console المتصفّح
+‏«jQuery is not defined» عشر مرّات. وهي أوّل شاشة يراها أيّ أحد من هذا المنتج.
+
+والحاوية تُنصّبها في مرحلة البناء (`docker/api/Dockerfile`)، فلا يلزم شيء عند
+النشر.
+
+</div>
 
 ### بيانات يمكن النظر إليها | Data worth looking at
 
