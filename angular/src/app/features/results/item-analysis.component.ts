@@ -11,6 +11,7 @@ import { ExamDto } from '../../core/api/assessment.models';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { PagerComponent } from '../../shared/ui/pager.component';
 
 /**
  * How each question has behaved across every sitting.
@@ -24,11 +25,19 @@ import { DataStateComponent } from '../../shared/ui/data-state.component';
  * alphabetical list is how they stay unfixed. Flags appear only where there is
  * enough data to mean them — flagging a question three people answered teaches
  * an author to ignore flags.
+ *
+ * The pages are cut here rather than asked for, because the endpoint answers
+ * with the whole analysis and the ranking is the analysis: discrimination is
+ * computed across every sitting of every question, so a server that returned
+ * twenty-five rows would have had to rank all of them anyway. A bank of two
+ * hundred questions was rendering two hundred rows with nothing to say how far
+ * down the reader was — and the rows this screen exists for are all at the top,
+ * which is precisely why nobody noticed the rest.
  */
 @Component({
   selector: 'astro-item-analysis',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent, DataStateComponent],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, DataStateComponent, PagerComponent],
   templateUrl: './item-analysis.component.html',
   styleUrl: './item-analysis.component.scss',
 })
@@ -54,6 +63,13 @@ export class ItemAnalysisComponent {
   readonly examId = signal('');
   readonly rows = signal<ItemAnalysisRow[]>([]);
 
+  readonly page = signal(0);
+  readonly pageSize = PAGE_SIZE;
+
+  readonly visibleRows = computed(() =>
+    this.rows().slice(this.page() * this.pageSize, (this.page() + 1) * this.pageSize),
+  );
+
   readonly hasExam = computed(() => !!this.examId());
   readonly isEmpty = computed(() => this.hasExam() && !this.loading() && this.rows().length === 0);
 
@@ -67,6 +83,7 @@ export class ItemAnalysisComponent {
   setExam(value: string): void {
     this.examId.set(value);
     this.rows.set([]);
+    this.page.set(0);
 
     if (value) {
       this.load();
@@ -86,6 +103,7 @@ export class ItemAnalysisComponent {
     this.results.getItemAnalysis(id).subscribe({
       next: rows => {
         this.rows.set(rows);
+        this.page.set(0);
         this.loading.set(false);
       },
       error: err => {
@@ -93,6 +111,14 @@ export class ItemAnalysisComponent {
         this.loading.set(false);
       },
     });
+  }
+
+  goToPage(page: number): void {
+    this.page.set(page);
+
+    // The table is long enough that turning a page otherwise leaves the reader
+    // looking at its middle, wondering what changed.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   /** Facility and discrimination are proportions; people read percentages. */
@@ -106,3 +132,6 @@ export class ItemAnalysisComponent {
     return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
   }
 }
+
+/** Matches the results list, which is the screen a reader arrives from. */
+const PAGE_SIZE = 25;

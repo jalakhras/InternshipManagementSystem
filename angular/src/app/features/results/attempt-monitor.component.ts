@@ -11,6 +11,7 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
+import { PagerComponent } from '../../shared/ui/pager.component';
 
 /**
  * Who is sitting an exam right now.
@@ -24,11 +25,18 @@ import { ModalDirective } from '../../shared/ui/modal.directive';
  * It refreshes on a timer, because the thing it shows changes without anybody
  * touching the page — and a monitoring screen that needs a manual reload is a
  * screen that shows the past.
+ *
+ * It asked for a hundred sittings and said nothing about the hundred and first,
+ * which is the shape of failure a monitoring screen can least afford: an exam
+ * day at a centre of two hundred showed half the room and looked complete. It
+ * pages now, and the page survives the timer — a list that jumped back to the
+ * first page every ten seconds would be unreadable at exactly the moment it is
+ * needed.
  */
 @Component({
   selector: 'astro-attempt-monitor',
   standalone: true,
-  imports: [FormsModule, DatePipe, PageHeaderComponent, ModalDirective],
+  imports: [FormsModule, DatePipe, PageHeaderComponent, ModalDirective, PagerComponent],
   templateUrl: './attempt-monitor.component.html',
   styleUrl: './attempt-monitor.component.scss',
 })
@@ -44,11 +52,15 @@ export class AttemptMonitorComponent {
   readonly busy = signal(false);
 
   readonly items = signal<ResultRow[]>([]);
+  readonly totalCount = signal(0);
   readonly examOptions = signal<ExamDto[]>([]);
 
   readonly examId = signal('');
   readonly filter = signal('');
   readonly includeExpired = signal(false);
+
+  readonly page = signal(0);
+  readonly pageSize = PAGE_SIZE;
 
   readonly canEnd = permissionSignal(P.Attempts.ForceSubmit);
   readonly canDelete = permissionSignal(P.Attempts.Delete);
@@ -92,12 +104,26 @@ export class AttemptMonitorComponent {
         examId: this.examId() || undefined,
         filter: this.filter() || undefined,
         includeExpired: this.includeExpired() || undefined,
-        skipCount: 0,
-        maxResultCount: 100,
+        skipCount: this.page() * this.pageSize,
+        maxResultCount: this.pageSize,
       })
       .subscribe({
         next: page => {
           this.items.set(page.items);
+          this.totalCount.set(page.totalCount);
+
+          // Sittings end while somebody is watching them, so the page they are
+          // on can stop existing between two refreshes. Stepping back is the
+          // only reading of that which does not show an empty table on a screen
+          // whose whole job is to say who is still in the room.
+          const lastPage = Math.max(0, Math.ceil(page.totalCount / this.pageSize) - 1);
+
+          if (this.page() > lastPage) {
+            this.page.set(lastPage);
+            this.load({ quietly: true });
+            return;
+          }
+
           this.loading.set(false);
         },
         error: err => {
@@ -108,12 +134,20 @@ export class AttemptMonitorComponent {
   }
 
   applyFilter(): void {
+    // A narrower list is a different list, and page four of the old one means
+    // nothing in it.
+    this.page.set(0);
+    this.load();
+  }
+
+  goToPage(page: number): void {
+    this.page.set(page);
     this.load();
   }
 
   toggleExpired(): void {
     this.includeExpired.update(v => !v);
-    this.load();
+    this.applyFilter();
   }
 
   askEnd(row: ResultRow): void {
@@ -205,3 +239,9 @@ export class AttemptMonitorComponent {
     return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
   }
 }
+
+/**
+ * Small on purpose. This is read over somebody's shoulder during an exam, and a
+ * page that fits on the screen is worth more here than one that holds everybody.
+ */
+const PAGE_SIZE = 25;

@@ -7,6 +7,7 @@ import { StructureService } from '../../core/api/structure.service';
 import {
   ExamFormDetailDto,
   ExamFormDto,
+  ExamFormQuestionDto,
   ExamFormStatus,
 } from '../../core/api/structure.models';
 import { ExamService } from '../../core/api/exam.service';
@@ -18,6 +19,7 @@ import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
+import { PagerComponent } from '../../shared/ui/pager.component';
 
 /**
  * An exam's named papers.
@@ -34,11 +36,25 @@ import { ModalDirective } from '../../shared/ui/modal.directive';
  * Generating from the blueprint is offered first, because starting from a filled
  * paper and removing two is work somebody will do; starting from an empty list
  * of four hundred questions is work they will not.
+ *
+ * The bank it draws from pages and searches on the server. It used to ask for
+ * five hundred questions and render every one of them as a checkbox in a column
+ * beside the paper, so a real bank arrived as a list nobody could read — and a
+ * bank past five hundred had questions that could not be put on any paper at
+ * all. The paper itself does not page: it is the thing being written, and its
+ * order is its meaning.
  */
 @Component({
   selector: 'astro-exam-forms',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent, DataStateComponent, ModalDirective],
+  imports: [
+    FormsModule,
+    RouterLink,
+    PageHeaderComponent,
+    DataStateComponent,
+    ModalDirective,
+    PagerComponent,
+  ],
   templateUrl: './exam-forms.component.html',
   styleUrl: './exam-forms.component.scss',
 })
@@ -74,6 +90,27 @@ export class ExamFormsComponent {
   readonly pool = signal<QuestionDto[]>([]);
   readonly chosen = signal<string[]>([]);
   readonly poolLoading = signal(false);
+
+  readonly poolFilter = signal('');
+  readonly poolPage = signal(0);
+  readonly poolPageSize = POOL_PAGE_SIZE;
+  readonly poolTotal = signal(0);
+
+  /** Nothing matched the search, as distinct from a bank with nothing in it. */
+  readonly poolEmpty = computed(
+    () => !this.poolLoading() && this.poolTotal() === 0 && !!this.poolFilter().trim(),
+  );
+
+  /**
+   * Every question this screen has seen, by id.
+   *
+   * The paper is held as ids and rendered by resolving them, and once the bank
+   * pages they stop being resolvable from what is on screen: a question ticked
+   * on page one would vanish from the paper on page two, and then from the
+   * save. So the prompts accumulate — seeded from the form itself, which
+   * carries them, and added to as pages arrive.
+   */
+  private readonly known = signal<Map<string, QuestionDto>>(new Map());
 
   readonly ExamFormStatus = ExamFormStatus;
 
@@ -161,34 +198,85 @@ export class ExamFormsComponent {
 
   open(form: ExamFormDto): void {
     this.actionError.set(null);
-    this.poolLoading.set(true);
+    this.poolFilter.set('');
+    this.poolPage.set(0);
 
     this.structure.getForm(form.id).subscribe({
       next: detail => {
         this.opened.set(detail);
         this.chosen.set(detail.questions.map(q => q.questionId));
+
+        // The paper's prompts arrive with the paper, so it reads correctly before
+        // the first page of the bank does — and stays readable however far into
+        // the bank somebody pages afterwards.
+        this.remember(detail.questions.map(asPoolQuestion));
       },
       error: err => this.actionError.set(this.reason(err)),
     });
 
-    // Everything this exam can draw: its own questions and the bank questions
-    // its domain and level make available. Listing only the owned ones would
-    // tell an author their bank is empty when it is not.
-    this.questions.getList({ examId: form.examId, skipCount: 0, maxResultCount: 500 }).subscribe({
-      next: page => {
-        this.pool.set(page.items);
-        this.poolLoading.set(false);
-      },
-      error: err => {
-        this.actionError.set(this.reason(err));
-        this.poolLoading.set(false);
-      },
-    });
+    this.loadPool(form.examId);
+  }
+
+  /**
+   * One page of everything this exam can draw: its own questions and the bank
+   * questions its domain and level make available. Listing only the owned ones
+   * would tell an author their bank is empty when it is not.
+   */
+  loadPool(examId?: string): void {
+    const id = examId ?? this.opened()?.examId ?? this.examId();
+
+    this.poolLoading.set(true);
+
+    this.questions
+      .getList({
+        examId: id,
+        filter: this.poolFilter().trim() || undefined,
+        skipCount: this.poolPage() * this.poolPageSize,
+        maxResultCount: this.poolPageSize,
+      })
+      .subscribe({
+        next: page => {
+          this.pool.set(page.items);
+          this.poolTotal.set(page.totalCount);
+          this.remember(page.items);
+          this.poolLoading.set(false);
+        },
+        error: err => {
+          this.actionError.set(this.reason(err));
+          this.poolLoading.set(false);
+        },
+      });
+  }
+
+  /** Searched on the server, so a bank of any size stays reachable. */
+  applyPoolFilter(): void {
+    this.poolPage.set(0);
+    this.loadPool();
+  }
+
+  goToPoolPage(page: number): void {
+    this.poolPage.set(page);
+    this.loadPool();
+  }
+
+  /** The pool's copy wins: it is the whole question, where the paper's is four fields. */
+  private remember(questions: QuestionDto[]): void {
+    const next = new Map(this.known());
+
+    for (const question of questions) {
+      next.set(question.id, { ...next.get(question.id), ...question });
+    }
+
+    this.known.set(next);
   }
 
   close(): void {
     this.opened.set(null);
     this.chosen.set([]);
+    this.pool.set([]);
+    this.poolTotal.set(0);
+    this.poolFilter.set('');
+    this.poolPage.set(0);
   }
 
   isChosen(questionId: string): boolean {
@@ -229,7 +317,7 @@ export class ExamFormsComponent {
 
   /** The chosen questions in their paper order, resolved back to prompts. */
   readonly chosenQuestions = computed(() => {
-    const byId = new Map(this.pool().map(q => [q.id, q]));
+    const byId = this.known();
 
     return this.chosen()
       .map(id => byId.get(id))
@@ -250,6 +338,11 @@ export class ExamFormsComponent {
       next: detail => {
         this.opened.set(detail);
         this.chosen.set(detail.questions.map(q => q.questionId));
+
+        // The blueprint draws from the whole bank, not from the page on screen,
+        // so most of what it has just chosen has never been seen here.
+        this.remember(detail.questions.map(asPoolQuestion));
+
         this.saving.set(false);
       },
       error: err => {
@@ -385,4 +478,26 @@ export class ExamFormsComponent {
 interface PendingAction {
   readonly kind: 'publish' | 'retire' | 'delete';
   readonly form: ExamFormDto;
+}
+
+/**
+ * Small, because each row is a whole question prompt in a pane half the width of
+ * the screen.
+ */
+const POOL_PAGE_SIZE = 15;
+
+/**
+ * A paper's question as the pool renders one.
+ *
+ * The form carries the four fields the paper needs to be read; the rest of a
+ * QuestionDto belongs to the bank and is filled in if and when that page of it
+ * is fetched.
+ */
+function asPoolQuestion(question: ExamFormQuestionDto): QuestionDto {
+  return {
+    id: question.questionId,
+    text: question.text,
+    type: question.type,
+    difficulty: question.difficulty,
+  } as QuestionDto;
 }

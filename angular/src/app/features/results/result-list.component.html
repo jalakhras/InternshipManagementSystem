@@ -181,23 +181,9 @@
     </table>
   </div>
 
-  @if (totalPages() > 1) {
-    <nav class="pager" [attr.aria-label]="t('::Nav:Results')">
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        [disabled]="page() === 0"
-        (click)="goToPage(page() - 1)">
-        {{ t('::Previous') }}
-      </button>
-      <span class="pager__position astro-numeric">{{ page() + 1 }} / {{ totalPages() }}</span>
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm"
-        [disabled]="page() + 1 >= totalPages()"
-        (click)="goToPage(page() + 1)">
-        {{ t('::Next') }}
-      </button>
-    </nav>
-  }
+  <astro-pager
+    [page]="page()"
+    [pageSize]="pageSize"
+    [totalCount]="totalCount()"
+    (pageChange)="goToPage($event)" />
 }

@@ -198,17 +198,4 @@
   font-size: var(--astro-text-xs);
 }
 
-// ── Pager ────────────────────────────────────────────────────────────────────
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--astro-space-3);
-  margin-block-start: var(--astro-space-4);
-}
-
-.pager__position {
-  color: var(--text-secondary);
-  font-size: var(--astro-text-sm);
-  font-variant-numeric: tabular-nums;
-}
+// The pager lives in astro-pager now, stylesheet and all.

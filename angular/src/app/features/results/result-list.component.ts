@@ -14,6 +14,7 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { PagerComponent } from '../../shared/ui/pager.component';
 
 /**
  * Who sat the exam, and how it went.
@@ -32,7 +33,14 @@ import { DataStateComponent } from '../../shared/ui/data-state.component';
 @Component({
   selector: 'astro-result-list',
   standalone: true,
-  imports: [FormsModule, RouterLink, DatePipe, PageHeaderComponent, DataStateComponent],
+  imports: [
+    FormsModule,
+    RouterLink,
+    DatePipe,
+    PageHeaderComponent,
+    DataStateComponent,
+    PagerComponent,
+  ],
   templateUrl: './result-list.component.html',
   styleUrl: './result-list.component.scss',
 })

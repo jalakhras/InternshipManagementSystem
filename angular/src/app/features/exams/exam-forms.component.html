@@ -194,8 +194,24 @@
                 <section class="pane">
                   <h3 class="pane__title">{{ t('::Form:Available') }}</h3>
 
+                  <!-- Searched on the server. The bank is the whole point of this
+                       pane and it used to arrive five hundred rows at a time with
+                       no way through them but the scrollbar. -->
+                  <input
+                    type="search"
+                    class="form-control form-control-sm pool__search"
+                    [placeholder]="t('::Form:Pool:Search')"
+                    [attr.aria-label]="t('::Form:Pool:Search')"
+                    name="poolFilter"
+                    [ngModel]="poolFilter()"
+                    (ngModelChange)="poolFilter.set($event)"
+                    (keyup.enter)="applyPoolFilter()"
+                    (search)="applyPoolFilter()" />
+
                   @if (poolLoading()) {
                     <astro-data-state [loading]="true" />
+                  } @else if (poolEmpty()) {
+                    <p class="pane__empty">{{ t('::Form:Pool:None') }}</p>
                   } @else {
                     <ul class="pool">
                       @for (question of pool(); track question.id) {
@@ -213,6 +229,13 @@
                         </li>
                       }
                     </ul>
+
+                    <astro-pager
+                      [page]="poolPage()"
+                      [pageSize]="poolPageSize"
+                      [totalCount]="poolTotal()"
+                      [label]="t('::Form:Pool:Pagination')"
+                      (pageChange)="goToPoolPage($event)" />
                   }
                 </section>
               </div>

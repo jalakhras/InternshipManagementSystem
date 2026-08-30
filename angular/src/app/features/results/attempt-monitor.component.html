@@ -103,6 +103,12 @@
       </tbody>
     </table>
   </div>
+
+  <astro-pager
+    [page]="page()"
+    [pageSize]="pageSize"
+    [totalCount]="totalCount()"
+    (pageChange)="goToPage($event)" />
 }
 
 @if (ending(); as row) {
