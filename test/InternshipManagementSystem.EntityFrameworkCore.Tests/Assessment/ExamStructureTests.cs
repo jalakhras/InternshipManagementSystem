@@ -173,9 +173,20 @@ public class ExamStructureTests : InternshipManagementSystemEntityFrameworkCoreT
     {
         await AsTenantAsync(async () =>
         {
-            var exam = await CreateExamAsync();
+            // Twenty in the bank, six on a form. The draw has to actually choose
+            // for a seed to mean anything: with six questions and no stated size
+            // every form was the whole bank in the same order, so this passed
+            // with the seed set to zero — it proved the paper was stable, not
+            // that the seed was what stabilised it.
+            var exam = await _exams.CreateAsync(new CreateUpdateExamDto
+            {
+                Title = "English A2",
+                TimeLimitInMinutes = 45,
+                PassingPercentage = 60m,
+                QuestionsPerForm = 6,
+            });
 
-            for (var i = 0; i < 6; i++)
+            for (var i = 0; i < 20; i++)
             {
                 await AddQuestionAsync(exam.Id, $"Question {i}");
             }
@@ -196,6 +207,19 @@ public class ExamStructureTests : InternshipManagementSystemEntityFrameworkCoreT
             // What lets a form be regenerated after an edit without becoming an
             // entirely different exam.
             a.Questions.Select(q => q.QuestionId).ShouldBe(b.Questions.Select(q => q.QuestionId));
+
+            var third = await _structure.CreateFormAsync(new CreateUpdateExamFormDto
+            {
+                ExamId = exam.Id, Name = "Form 3", Code = "F3",
+            });
+
+            var c = await _structure.GenerateFormAsync(third.Id, new GenerateExamFormDto { Seed = 8 });
+
+            // And the half without which the first is empty: a different seed
+            // draws a different paper. A product that ignored the seed entirely
+            // would satisfy "the same seed gives the same paper" perfectly.
+            c.Questions.Select(q => q.QuestionId)
+                .ShouldNotBe(a.Questions.Select(q => q.QuestionId));
         });
     }
 

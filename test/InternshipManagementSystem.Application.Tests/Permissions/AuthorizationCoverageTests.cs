@@ -138,7 +138,6 @@ public class AuthorizationCoverageTests
 
         // Checked in code as well as in attributes: some permissions are enforced
         // by an explicit call, because the decision depends on what changed.
-        var source = System.IO.File.ReadAllText(SourceOf("InternshipManagementSystemPermissions.cs"));
 
         var unenforced = defined
             .Where(permission => !used.Contains(permission))
@@ -207,9 +206,69 @@ public class AuthorizationCoverageTests
     /// </summary>
     private static bool EnforcedInCode(string permission)
     {
-        var leaf = permission.Split('.').Last();
+        // The constant's own path — `Attempts.View`, not `View`.
+        //
+        // This used to search for the leaf alone, which meant a single
+        // `.View)` anywhere in the application satisfied every permission
+        // ending in View — nine of them. Twenty-five of thirty-six were
+        // undetectable, and the file's own comment names four defects it was
+        // written to catch and did not: deleting the guards on Attempts.View
+        // and Attempts.Delete left all one hundred and ninety-three tests green.
+        //
+        // Resolved through the constants class rather than by string surgery, so
+        // a permission renamed in one place and not the other stops being found
+        // rather than silently matching something else.
+        var path = ConstantPath(permission);
 
-        return ApplicationSources.Value.Any(source => source.Contains($".{leaf});") || source.Contains($".{leaf})"));
+        if (path is null)
+        {
+            // Defined by the provider but not named by any constant, so there is
+            // nothing for code to reference. Treated as unenforced: that is what
+            // it is.
+            return false;
+        }
+
+        return ApplicationSources.Value.Any(source => source.Contains(path));
+    }
+
+    /// <summary>
+    /// How a permission is written in C#, e.g. <c>Attempts.View</c>.
+    /// <para>
+    /// Read off the constants class by value, so the answer is what the code
+    /// actually says rather than what the permission string looks like.
+    /// </para>
+    /// </summary>
+    private static string? ConstantPath(string permission) =>
+        ConstantPath(typeof(InternshipManagementSystemPermissions), permission, prefix: null);
+
+    private static string? ConstantPath(Type type, string permission, string? prefix)
+    {
+        foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Static))
+        {
+            if (field.IsLiteral && (string?)field.GetRawConstantValue() == permission)
+            {
+                return prefix is null ? field.Name : $"{prefix}.{field.Name}";
+            }
+        }
+
+        // Down every level, not one. The classes nest as deeply as the product
+        // needs — `IdentityManagement.Users.ManageRoles` is three — and a search
+        // that stopped at the first level reported a permission enforced in
+        // plain sight as enforcing nothing.
+        foreach (var nested in type.GetNestedTypes())
+        {
+            var found = ConstantPath(
+                nested,
+                permission,
+                prefix is null ? nested.Name : $"{prefix}.{nested.Name}");
+
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private static readonly Lazy<List<string>> ApplicationSources = new(() =>

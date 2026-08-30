@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment;
 using InternshipManagementSystem.Assessment.Catalog;
+using Volo.Abp.Domain.Repositories;
 using InternshipManagementSystem.Assessment.Catalog.Dtos;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.Exams.Dtos;
@@ -143,6 +144,15 @@ public class CatalogTests : InternshipManagementSystemEntityFrameworkCoreTestBas
 
             // The levels described that domain and mean nothing without it.
             (await _catalog.GetCategoriesAsync()).ShouldNotContain(c => c.Id == category.Id);
+
+            // The levels themselves, which is what the test is named for and
+            // never checked: only the domain's own disappearance was asserted,
+            // so deleting the domain and orphaning every level under it passed.
+            // Read from the table, because there is no service call that lists
+            // the levels of a domain that no longer exists — which is the point.
+            var levels = GetRequiredService<IRepository<Level, Guid>>();
+
+            (await levels.CountAsync(l => l.CategoryId == category.Id)).ShouldBe(0);
         });
     }
 

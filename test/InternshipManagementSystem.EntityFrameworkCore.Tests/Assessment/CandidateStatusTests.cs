@@ -187,6 +187,20 @@ public class CandidateStatusTests : InternshipManagementSystemEntityFrameworkCor
             var preview = await _taking.OpenLinkAsync(token);
             var state = await _taking.StartAsync(preview.SessionToken!);
 
+            // Answered, and answered correctly, because the whole assertion is
+            // that a real mark is withheld. This used to submit an untouched
+            // paper: the score was zero because nothing had been answered, so
+            // `Score.ShouldBe(0)` and the empty breakdown were both true whether
+            // the setting worked or not. Deleting the withholding left all three
+            // assertions green.
+            var question = await _taking.GetQuestionAsync(state.SessionToken!, 0);
+
+            await _taking.SaveAnswerAsync(state.SessionToken!, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = "a",
+            });
+
             await _taking.SubmitAsync(state.SessionToken!);
 
             var result = await _taking.GetResultAsync(state.SessionToken!);
@@ -201,6 +215,15 @@ public class CandidateStatusTests : InternshipManagementSystemEntityFrameworkCor
 
             await settings.SetForCurrentTenantAsync(
                 InternshipManagementSystemSettings.ShowResultToCandidate, "true");
+
+            // And the half that makes the other half mean something: with the
+            // setting back on, the same sitting shows the mark it actually
+            // earned. A test that only proves a number is hidden is also passed
+            // by a product that never shows any number at all.
+            var shown = await _taking.GetResultAsync(state.SessionToken!);
+
+            shown.ScoreWithheld.ShouldBeFalse();
+            shown.Score.ShouldBe(1m);
         });
     }
 
