@@ -601,4 +601,47 @@ test.describe('Taking an exam', () => {
     ).toHaveCount(1);
     await expect(page.getByText('Time is short')).toBeVisible();
   });
+
+  test('a candidate bounced to the root lands back on their own link', async ({ page }) => {
+    await stubTake(page);
+
+    await page.goto(`/exam/${TOKEN}`);
+    await expect(page.getByRole('button', { name: 'Start the exam' })).toBeVisible();
+
+    // Exactly the bounce this repairs: ABP's OAuth bootstrap meets a staff
+    // session it cannot refresh, starts a code flow whose redirect_uri is the
+    // app root, and the still-valid sign-in cookie completes the round trip in
+    // silence. The candidate arrives at the dashboard having done nothing wrong,
+    // with no error anywhere and no way back.
+    await page.goto('/');
+
+    await expect(page).toHaveURL(new RegExp(`/exam/${TOKEN}`), { timeout: 20_000 });
+    await expect(page.getByRole('button', { name: 'Start the exam' })).toBeVisible();
+  });
+
+  test('somebody who leaves an exam link on purpose is left alone', async ({ page }) => {
+    await stubTake(page);
+
+    await page.goto(`/exam/${TOKEN}`);
+    await expect(page.getByRole('button', { name: 'Start the exam' })).toBeVisible();
+
+    // The half that keeps the repair from becoming a trap. It only ever mends a
+    // redirect that has just happened; a coordinator who checks a link and then
+    // deliberately goes to the dashboard must not be dragged back to it.
+    await page.evaluate(() => {
+      const kept = sessionStorage.getItem('astro.takerReturn');
+
+      if (kept) {
+        const parsed = JSON.parse(kept) as { at: number; url: string };
+        sessionStorage.setItem(
+          'astro.takerReturn',
+          JSON.stringify({ ...parsed, at: parsed.at - 120_000 }),
+        );
+      }
+    });
+
+    await page.goto('/');
+
+    await expect(page).not.toHaveURL(new RegExp(`/exam/${TOKEN}`));
+  });
 });

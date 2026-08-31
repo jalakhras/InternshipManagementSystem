@@ -49,39 +49,10 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
 
-    // Everywhere except the candidate's tree.
-    //
-    // ABP's OAuth bootstrap runs on every route. On the taker's it finds a
-    // staff session it cannot refresh, calls `navigateToLogin()` with no
-    // argument, and starts a code flow whose `redirect_uri` is the app root —
-    // so the candidate's deep link is thrown away and the still-valid sign-in
-    // cookie lands them on the staff dashboard, with no error anywhere.
-    //
-    // The taker needs none of it: `TakeService` carries its own `X-Exam-Session`
-    // header on a plain `HttpClient` and never asks ABP for a token. So the flow
-    // is simply not registered there.
-    //
-    // An earlier attempt cleared the stored tokens on these routes instead. It
-    // worked, and it was wrong: ABP keeps `expires_at` in memory rather than in
-    // storage, so the "only if the session has already expired" guard never
-    // fired once — and every visit to an exam link deleted a signed-in
-    // coordinator's refresh token. Checking a link logged you out of your own
-    // product, and the test written to prove the fix passed anyway, because
-    // deleting the token does stop the redirect.
-    ...(isTakerRoute() ? [] : [provideAbpOAuth()]),
+    provideAbpOAuth(),
   ],
 };
 
-/**
- * Whether this page load is a candidate opening their link.
- * <p>
- * Read from the address rather than the router, because the decision has to be
- * made while the providers are being built — before any route has resolved.
- * </p>
- */
-function isTakerRoute(): boolean {
-  return typeof location !== 'undefined' && location.pathname.startsWith('/exam/');
-}
 
 /**
  * Loads Angular's locale data on demand.
