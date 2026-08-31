@@ -54,6 +54,15 @@ export interface TakeStubOptions {
 
   /** Serve file-upload questions, whose answer is a file rather than text. */
   fileUpload?: boolean;
+
+  /**
+   * Serve code questions, with whatever the author wrote on them.
+   *
+   * `expectsOutput` is the server's word for "this one is marked by comparing
+   * text with what the program should print", which is a different question
+   * from "write the program" and has to be said to the candidate.
+   */
+  code?: { language?: string; starterTemplate?: string; expectsOutput?: boolean };
 }
 
 export interface TakeStub {
@@ -220,13 +229,15 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       position,
       totalQuestions: total,
       text: `Question ${number}: which level is support?`,
-      type: options.fileUpload
-        ? 'file-upload'
-        : options.hotspot
-          ? 'hotspot'
-          : options.freeText
-            ? 'text'
-            : 'single-choice',
+      type: options.code
+        ? 'code'
+        : options.fileUpload
+          ? 'file-upload'
+          : options.hotspot
+            ? 'hotspot'
+            : options.freeText
+              ? 'text'
+              : 'single-choice',
       score: 1,
       section: sectionAt(position),
       options: options.freeText
@@ -238,9 +249,15 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       // A 400x300 chart, inline, so the test needs no network and the frame has
       // a real area to point within — a one-pixel image gives the click nothing
       // to be a percentage of.
-      display: options.hotspot
-        ? { imageUrl: options.hotspotImageUrl ?? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjxsaW5lIHgxPSIwIiB5MT0iMjIwIiB4Mj0iNDAwIiB5Mj0iMjIwIiBzdHJva2U9IiMzNTYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==' }
-        : {},
+      display: options.code
+        ? {
+            language: options.code.language,
+            starterTemplate: options.code.starterTemplate,
+            expectsOutput: options.code.expectsOutput === true,
+          }
+        : options.hotspot
+          ? { imageUrl: options.hotspotImageUrl ?? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjxsaW5lIHgxPSIwIiB5MT0iMjIwIiB4Mj0iNDAwIiB5Mj0iMjIwIiBzdHJva2U9IiMzNTYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==' }
+          : {},
       savedResponse: undefined,
     };
   }

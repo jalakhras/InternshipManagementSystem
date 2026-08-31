@@ -198,7 +198,19 @@ public class TakerQuestionProjector : ITransientDependency
                 {
                     dto.Display["language"] = spec.Language;
                     dto.Display["starterTemplate"] = spec.StarterTemplate;
-                    // ExpectedOutput is the answer and stays behind.
+
+                    // Whether the answer is the program or what the program
+                    // prints — a boolean, never the expected output itself.
+                    //
+                    // The grader compares the candidate's text with that
+                    // output, so a candidate who submits the program scores
+                    // nothing: not for being wrong, but for reading the box the
+                    // other way. The author is told which of the two questions
+                    // they have written, on the form, while they write it. The
+                    // candidate was told nothing.
+                    dto.Display["expectsOutput"] = !string.IsNullOrWhiteSpace(spec.ExpectedOutput);
+
+                    // ExpectedOutput itself is the answer and stays behind.
                 }
 
                 break;

@@ -60,7 +60,7 @@ export const ANSWER_INPUTS: Record<string, AnswerInputLoader> = {
   ordering: () => import('./ordering-answer.component').then(m => m.OrderingAnswerComponent),
   matching: () => import('./matching-answer.component').then(m => m.MatchingAnswerComponent),
   text: () => import('./text-answer.component').then(m => m.TextAnswerComponent),
-  code: () => import('./text-answer.component').then(m => m.TextAnswerComponent),
+  code: () => import('./code-answer.component').then(m => m.CodeAnswerComponent),
   'fill-in-the-blank': () => import('./blanks-answer.component').then(m => m.BlanksAnswerComponent),
   hotspot: () => import('./hotspot-answer.component').then(m => m.HotspotAnswerComponent),
   'file-upload': () => import('./upload-answer.component').then(m => m.UploadAnswerComponent),

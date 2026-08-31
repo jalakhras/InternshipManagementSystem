@@ -81,6 +81,35 @@ public class TakerQuestionProjectorTests
         wire.ShouldContain("write here");
         wire.ShouldNotContain("forty-two-and-nothing-else");
         wire.ShouldNotContain("expectedOutput");
+
+        // And that this question is marked by comparing the program's output —
+        // said as a flag, never as the output. Note how close the two names
+        // read: `expectsOutput` is the flag and goes; `expectedOutput` is the
+        // answer and stays. Both are asserted here so neither can be quietly
+        // turned into the other.
+        dto.Display["expectsOutput"].ShouldBe(true);
+    }
+
+    [Fact]
+    public void A_code_question_with_no_expected_output_says_so()
+    {
+        var payload = PayloadJson.Write(new CodePayload
+        {
+            Language = "python",
+            StarterTemplate = "# describe your approach",
+        });
+
+        var question = Question(QuestionTypes.Code, payload);
+        question.Payload = payload;
+
+        var dto = _projector.Project(question, Slot(question.Id), null, 1, b => "/media/" + b);
+
+        // A question asking for an approach rather than a program has no single
+        // output and goes to a person. The candidate is asked for code, and must
+        // not be told to write what it prints — the whole point of sending this
+        // is that "write the program" and "write what it prints" are different
+        // instructions, and answering the wrong one scores nothing.
+        dto.Display["expectsOutput"].ShouldBe(false);
     }
 
     [Fact]

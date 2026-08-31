@@ -416,6 +416,116 @@ test.describe('Taking an exam', () => {
     // seen: the answer that reaches the grader.
   });
 
+  test('a code question hands the candidate the template its author wrote', async ({ page }) => {
+    const stub = await stubTake(page, {
+      code: {
+        language: 'Python',
+        starterTemplate: 'def total(prices):\n    # your work here\n    return 0',
+      },
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    const box = page.locator('textarea');
+
+    // The author wrote a skeleton, the server put it in the projection and sent
+    // it, and the client dropped it: the box came up empty. Work a person did,
+    // delivered to the browser, and thrown away one step short of the person it
+    // was for.
+    await expect(box).toHaveValue(/def total\(prices\)/);
+    await expect(page.getByText('started you off with the template')).toBeVisible();
+
+    // And which language, which was sent and never shown. "Write it in Python"
+    // is not decoration when the answer is marked as text.
+    await expect(page.getByText('In Python')).toBeVisible();
+  });
+
+  test('a code box is a code box, and stays one in Arabic', async ({ page }) => {
+    await stubTake(page, {
+      culture: 'ar',
+      code: { language: 'JavaScript', starterTemplate: 'if (x > 0) {\n}' },
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'ابدأ الامتحان' }).click();
+
+    const box = page.locator('textarea');
+
+    await expect(box).toBeVisible();
+
+    const style = await box.evaluate(el => {
+      const s = getComputedStyle(el);
+      return { direction: s.direction, family: s.fontFamily, spellcheck: el.getAttribute('spellcheck') };
+    });
+
+    // Code is left to right whatever the page around it does. In an Arabic page
+    // a plain box reorders it while the candidate types — `if (x > 0) {` comes
+    // out with its brackets swapped — and the authoring form already knew this:
+    // the author's two code boxes carry the same class. The candidate's was the
+    // only box in the product that did not.
+    expect(style.direction).toBe('ltr');
+
+    // Monospace, because columns are meaning in code. And no spellchecker
+    // underlining every identifier in a language it does not know.
+    expect(style.family.toLowerCase()).toContain('mono');
+    expect(style.spellcheck).toBe('false');
+  });
+
+  test('a code question says whether to write the program or what it prints', async ({ page }) => {
+    await stubTake(page, { code: { expectsOutput: true, language: 'C#' } });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    // The one with a score attached. This question is marked by comparing the
+    // candidate's text with what the author said the program should print — so
+    // a candidate who writes the program scores nothing, for reading the box
+    // the other way rather than for being wrong. The author is told which of
+    // the two questions they wrote, on the form, while writing it.
+    await expect(page.getByText('Write what the program prints')).toBeVisible();
+    await expect(page.getByText('Write your code in the box below')).toHaveCount(0);
+  });
+
+  test('a code question that goes to a person asks for the code itself', async ({ page }) => {
+    await stubTake(page, { code: { expectsOutput: false, language: 'C#' } });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    // The other half. A question asking for an approach has no single output
+    // and goes to a marker, and telling that candidate to write what it prints
+    // would be the same defect pointing the other way.
+    await expect(page.getByText('Write your code in the box below')).toBeVisible();
+    await expect(page.getByText('Write what the program prints')).toHaveCount(0);
+  });
+
+  test('a template shown is not an answer given', async ({ page }) => {
+    const stub = await stubTake(page, {
+      code: { starterTemplate: 'def total(prices):\n    return 0' },
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.locator('textarea')).toHaveValue(/def total/);
+
+    // Filling the box for somebody is not the same as answering for them. If
+    // the template were saved on sight, a question nobody had touched would be
+    // ticked on the map and counted in the tally — and a candidate deciding
+    // what to go back to would be reading a list that is not true.
+    await page.waitForTimeout(1500);
+
+    expect(stub.saved.length).toBe(0);
+
+    // And once they do type, what is saved is the whole box: their work with
+    // the author's skeleton around it, which is what the marker has to read.
+    await page.locator('textarea').fill('def total(prices):\n    return sum(prices)');
+
+    await expect.poll(() => stub.saved.length, { timeout: 10_000 }).toBeGreaterThan(0);
+    expect(stub.saved.at(-1)!.response).toContain('sum(prices)');
+  });
+
   test('a file is the answer, and the answer carries it', async ({ page }) => {
     const stub = await stubTake(page, { fileUpload: true });
 
