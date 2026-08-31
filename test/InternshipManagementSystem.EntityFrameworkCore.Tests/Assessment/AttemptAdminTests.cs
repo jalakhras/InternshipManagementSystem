@@ -12,6 +12,8 @@ using InternshipManagementSystem.Assessment.People;
 using InternshipManagementSystem.Assessment.People.Dtos;
 using InternshipManagementSystem.Assessment.Results;
 using InternshipManagementSystem.Assessment.Results.Dtos;
+using System.Text;
+using Volo.Abp.BlobStoring;
 using Shouldly;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
@@ -197,6 +199,96 @@ public class AttemptAdminTests : InternshipManagementSystemEntityFrameworkCoreTe
             // The paper goes with it. Rows pointing at an attempt that no longer
             // exists are the kind of debris that makes a later count wrong.
             (await slots.GetQueryableAsync()).Any(q => q.AttemptId == attemptId).ShouldBeFalse();
+        });
+    }
+
+    [Fact]
+    public async Task Discarding_an_attempt_takes_what_was_observed_about_the_candidate()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await ExamAsync("monitor-h");
+            var session = await StartAsync(exam, "watched@example.test");
+
+            await _taking.ReportSignalAsync(session, new ReportIntegritySignalDto
+            {
+                Type = IntegritySignalType.WindowBlur,
+                Magnitude = 12,
+            });
+
+            var attemptId = AttemptIdFor("watched@example.test");
+
+            await _admin.DeleteAsync(attemptId);
+
+            var signals = GetRequiredService<IRepository<IntegritySignal, Guid>>();
+
+            // The dialog says everything it recorded is removed, and these are
+            // literally the recordings: what the candidate pasted, when they left
+            // the window, how long they took. They are observations about a person
+            // made while nobody was looking, and they outlived the sitting they
+            // describe — pointing at an attempt that no longer exists, so nothing
+            // could ever explain them again.
+            (await signals.GetQueryableAsync()).Any(x => x.AttemptId == attemptId).ShouldBeFalse();
+        });
+    }
+
+    [Fact]
+    public async Task Discarding_an_attempt_takes_the_answers_that_were_written()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await ExamAsync("monitor-i");
+            var session = await StartAsync(exam, "wrote@example.test");
+
+            var question = await _taking.GetQuestionAsync(session, 0);
+
+            await _taking.SaveAnswerAsync(session, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = "something written before it was discarded",
+            });
+
+            var attemptId = AttemptIdFor("wrote@example.test");
+
+            await _admin.DeleteAsync(attemptId);
+
+            var answers = GetRequiredService<IRepository<Answer, Guid>>();
+
+            (await answers.GetQueryableAsync()).Any(a => a.AttemptId == attemptId).ShouldBeFalse();
+        });
+    }
+
+    [Fact]
+    public async Task Discarding_an_attempt_takes_the_file_the_candidate_uploaded()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var blobs = GetRequiredService<IBlobContainer<AssessmentBlobContainer>>();
+
+            var exam = await ExamAsync("monitor-j");
+            var session = await StartAsync(exam, "recorded@example.test");
+
+            var question = await _taking.GetQuestionAsync(session, 0);
+            var attemptId = AttemptIdFor("recorded@example.test");
+
+            var name = Tenant + "/answers/" + attemptId + "/spoken.webm";
+
+            await blobs.SaveAsync(name, Encoding.UTF8.GetBytes("a minute of somebody speaking"));
+
+            await _taking.SaveAnswerAsync(session, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                AnswerBlobName = name,
+                AnswerFileName = "spoken.webm",
+            });
+
+            await _admin.DeleteAsync(attemptId);
+
+            // The row is not the recording. Deleting the row that names a file and
+            // leaving the file is worse than not deleting at all: the recording of
+            // somebody's voice stays on disk, and nothing is left that could find
+            // it again to finish the job.
+            (await blobs.ExistsAsync(name)).ShouldBeFalse();
         });
     }
 

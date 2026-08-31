@@ -1,4 +1,5 @@
 using System;
+using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment.Grading;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BlobStoring;
 using Volo.Abp.Domain.Repositories;
 
 namespace InternshipManagementSystem.Assessment.Delivery;
@@ -29,7 +31,9 @@ public class AttemptAdminAppService : ApplicationService, IAttemptAdminAppServic
     private readonly IRepository<Attempt, Guid> _attempts;
     private readonly IRepository<AttemptQuestion, Guid> _attemptQuestions;
     private readonly IRepository<Answer, Guid> _answers;
+    private readonly IRepository<IntegritySignal, Guid> _signals;
     private readonly IRepository<Candidate, Guid> _candidates;
+    private readonly IBlobContainer<AssessmentBlobContainer> _blobs;
     private readonly IResultAppService _results;
     private readonly AttemptGradingService _grading;
 
@@ -37,14 +41,18 @@ public class AttemptAdminAppService : ApplicationService, IAttemptAdminAppServic
         IRepository<Attempt, Guid> attempts,
         IRepository<AttemptQuestion, Guid> attemptQuestions,
         IRepository<Answer, Guid> answers,
+        IRepository<IntegritySignal, Guid> signals,
         IRepository<Candidate, Guid> candidates,
+        IBlobContainer<AssessmentBlobContainer> blobs,
         IResultAppService results,
         AttemptGradingService grading)
     {
         _attempts = attempts;
         _attemptQuestions = attemptQuestions;
         _answers = answers;
+        _signals = signals;
         _candidates = candidates;
+        _blobs = blobs;
         _results = results;
         _grading = grading;
     }
@@ -171,8 +179,64 @@ public class AttemptAdminAppService : ApplicationService, IAttemptAdminAppServic
             .Where(q => q.AttemptId == attemptId)
             .ToListAsync();
 
+        // What was observed about the person while they sat: what they pasted,
+        // when they left the window, how long they took.
+        //
+        // These are the recordings the dialog means when it says everything the
+        // attempt recorded is removed, and they were the one thing never deleted
+        // anywhere in the product. They outlived the sitting they describe,
+        // pointing at an attempt that no longer existed — observations about
+        // somebody that nothing left could explain.
+        var observations = await (await _signals.GetQueryableAsync())
+            .Where(signal => signal.AttemptId == attemptId)
+            .ToListAsync();
+
+        // Read before the rows go, because a file's address lives on the row
+        // that refers to it and a container cannot be listed by prefix.
+        var files = answers
+            .Select(answer => answer.AnswerBlobName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .ToList();
+
+        await _signals.DeleteManyAsync(observations, autoSave: true);
         await _answers.DeleteManyAsync(answers, autoSave: true);
         await _attemptQuestions.DeleteManyAsync(slots, autoSave: true);
         await _attempts.DeleteAsync(attempt, autoSave: true);
+
+        await RemoveFilesAsync(files!, attemptId);
+    }
+
+    /// <summary>
+    /// The recordings and uploads this attempt left in storage.
+    /// <para>
+    /// A candidate's spoken answer is the most personal thing this product
+    /// holds. Deleting the row that names the file and leaving the file is worse
+    /// than not deleting at all: the recording stays on disk and nothing is left
+    /// that could find it again to finish the job.
+    /// </para>
+    /// <para>
+    /// One failure does not stop the rest, and whatever will not go is named in
+    /// the log so a person can remove it by hand.
+    /// </para>
+    /// </summary>
+    private async Task RemoveFilesAsync(System.Collections.Generic.List<string> names, Guid attemptId)
+    {
+        foreach (var name in names)
+        {
+            try
+            {
+                await _blobs.DeleteAsync(name);
+            }
+            catch (Exception failure)
+            {
+                Logger.LogWarning(
+                    failure,
+                    "Could not remove {Blob} from discarded attempt {AttemptId}. "
+                    + "It must be removed by hand: the row that named it has gone.",
+                    name,
+                    attemptId);
+            }
+        }
     }
 }
