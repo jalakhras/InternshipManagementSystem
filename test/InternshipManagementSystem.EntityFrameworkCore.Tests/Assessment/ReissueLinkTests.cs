@@ -184,6 +184,90 @@ public class ReissueLinkTests : InternshipManagementSystemEntityFrameworkCoreTes
 
     private sealed record Sent(Guid ExamId, string CandidateName, string Token);
 
+    [Fact]
+    public async Task The_characters_support_staff_go_by_follow_the_new_link()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sent = await SendAsync("prefix-a");
+            var linkId = await LinkIdAsync(sent.ExamId);
+
+            var reissued = await _assignments.ReissueLinkAsync(linkId);
+            var token = reissued.Url.Split('/').Last();
+
+            var links = await _assignments.GetLinksAsync(
+                sent.ExamId, new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto());
+
+            // The field exists for one job, written on the entity itself: "first
+            // characters of the token, for support staff to identify a link
+            // without holding it". Reissuing mints a new token and the prefix
+            // was left describing the old one — so it stopped doing that job at
+            // exactly the moment it is needed, which is after something went
+            // wrong and the link had to be replaced.
+            //
+            // A candidate rings and reads out the first characters of the
+            // address they were sent. The coordinator finds nothing, or worse
+            // finds a different candidate's link that happens to match.
+            links.Items.Single().TokenPrefix.ShouldBe(token[..8]);
+        });
+    }
+
+    [Fact]
+    public async Task A_finished_exam_cannot_be_sat_again_on_the_same_link()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sent = await SendAsync("spent-a");
+
+            var preview = await _taking.OpenLinkAsync(sent.Token);
+            var state = await _taking.StartAsync(preview.SessionToken!);
+
+            await _taking.SubmitAsync(state.SessionToken!);
+
+            // The third rule on the list every candidate reads before starting:
+            // "Once you finish, the exam is submitted and cannot be reopened."
+            //
+            // It is enforced, and nothing held it. The only test that mentioned
+            // exhausted attempts was a browser test that stubs the refusal and
+            // checks the wording — so it proves the sentence is readable, not
+            // that it is true. A rule with no test under it is one refactor from
+            // gone, and this one going means a candidate sits twice and the
+            // second sitting overwrites the first.
+            var again = await _taking.OpenLinkAsync(sent.Token);
+
+            again.IsAccessible.ShouldBeFalse();
+            again.BlockReason.ShouldBe(
+                InternshipManagementSystemDomainErrorCodes.ExamLinkAttemptsExhausted);
+        });
+    }
+
+    [Fact]
+    public async Task A_reissued_link_does_not_hand_back_a_spent_attempt()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sent = await SendAsync("spent-b");
+
+            var preview = await _taking.OpenLinkAsync(sent.Token);
+            var state = await _taking.StartAsync(preview.SessionToken!);
+
+            await _taking.SubmitAsync(state.SessionToken!);
+
+            var linkId = await LinkIdAsync(sent.ExamId);
+            var reissued = await _assignments.ReissueLinkAsync(linkId);
+
+            // The half that keeps reissuing honest. Reissuing exists so somebody
+            // who lost an address can be given it again — not so a candidate who
+            // has already sat can sit a second time. The attempt count is the
+            // record of what was used, and a new address does not undo it.
+            var opened = await _taking.OpenLinkAsync(reissued.Url.Split('/').Last());
+
+            opened.IsAccessible.ShouldBeFalse();
+            opened.BlockReason.ShouldBe(
+                InternshipManagementSystemDomainErrorCodes.ExamLinkAttemptsExhausted);
+        });
+    }
+
     private async Task<Sent> SendAsync(string code)
     {
         var categories = GetRequiredService<IRepository<Category, Guid>>();

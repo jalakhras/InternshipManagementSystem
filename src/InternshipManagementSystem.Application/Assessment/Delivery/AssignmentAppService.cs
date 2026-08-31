@@ -252,6 +252,17 @@ public class AssignmentAppService : ApplicationService, IAssignmentAppService
 
         link.TokenHash = ExamSessionTokenService.HashLinkToken(token);
 
+        // And the characters support staff go by. The field exists for one job,
+        // written on the entity: the first characters of the token, so a link
+        // can be identified by somebody who does not hold it. Left describing
+        // the old token it stopped doing that job at the one moment it is
+        // needed — after something went wrong and the link had to be replaced.
+        //
+        // A candidate reads out the start of the address they were sent; the
+        // coordinator finds nothing, or finds a different candidate's link that
+        // happens to match.
+        link.TokenPrefix = token[..8];
+
         // Revoked links stay revoked unless somebody deliberately reissues one;
         // reissuing is that deliberate act, so it also brings the link back.
         link.IsRevoked = false;
