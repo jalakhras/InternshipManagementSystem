@@ -2,7 +2,6 @@ using InternshipManagementSystem.Assessment.Catalog;
 using InternshipManagementSystem.Assessment.Delivery;
 using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.People;
-using InternshipManagementSystem.Assessment.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -179,25 +178,6 @@ public partial class InternshipManagementSystemDbContext
             b.ConfigureByConvention();
             b.Property(x => x.QuestionType).HasMaxLength(64);
             b.HasIndex(x => x.ExamId);
-        });
-
-        builder.Entity<TenantBranding>(b =>
-        {
-            b.ToTable(prefix + "TenantBranding", schema);
-            b.ConfigureByConvention();
-            b.Property(x => x.DisplayName).IsRequired().HasMaxLength(128);
-            b.Property(x => x.DisplayNameAlternate).HasMaxLength(128);
-            b.Property(x => x.LogoBlobName).HasMaxLength(256);
-            b.Property(x => x.IconBlobName).HasMaxLength(256);
-
-            // #rrggbb and nothing else. See TenantBranding.IsUsableColor.
-            b.Property(x => x.PrimaryColor).HasMaxLength(7);
-            b.Property(x => x.CertificateFooter).HasMaxLength(512);
-            b.Property(x => x.SupportEmail).HasMaxLength(256);
-
-            // One identity per tenant. Without this a second row is silently created
-            // and which of the two the shell reads becomes a matter of ordering.
-            b.HasIndex(x => x.TenantId).IsUnique();
         });
 
         // ---------- People and cohorts ----------

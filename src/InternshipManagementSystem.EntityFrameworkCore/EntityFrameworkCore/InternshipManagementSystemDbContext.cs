@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -38,7 +38,6 @@ public partial class InternshipManagementSystemDbContext :
     public DbSet<Assessment.Exams.Exam> Exams { get; set; }
     public DbSet<Assessment.Exams.QuestionGroup> QuestionGroups { get; set; }
     public DbSet<Assessment.Exams.Question> Questions { get; set; }
-    public DbSet<Assessment.Tenancy.TenantBranding> TenantBranding { get; set; }
     public DbSet<Assessment.Exams.ExamSection> ExamSections { get; set; }
     public DbSet<Assessment.Exams.ExamForm> ExamForms { get; set; }
     public DbSet<Assessment.Exams.ExamFormQuestion> ExamFormQuestions { get; set; }
