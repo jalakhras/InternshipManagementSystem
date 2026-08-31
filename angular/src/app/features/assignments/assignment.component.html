@@ -29,7 +29,13 @@
   <div class="state">
     <i class="bi bi-send" aria-hidden="true"></i>
     <p class="state__title">{{ t('::Assignment:NoneYet') }}</p>
-    <p class="state__text">{{ t('::Assignment:NoneYetNote') }}</p>
+    <!-- A new key rather than an edit to Assignment:NoneYetNote. That sentence
+         is still true of a class and is still translated; it simply stopped
+         being the whole story once one person could be sent to on their own,
+         and a translated string whose meaning changes needs a new key so no
+         cached or in-flight translation of the old one can answer the new
+         question. -->
+    <p class="state__text">{{ t('::Assignment:NoneYetNote:GroupOrPerson') }}</p>
     @if (canSend()) {
       <button type="button" class="btn btn-primary" (click)="openSend()">
         {{ t('::Assignment:Send') }}
@@ -269,11 +275,20 @@
              the button rather than after it. -->
         @if (groupId()) {
           <div class="field">
-            <span class="form-label">
-              {{ t('::Assignment:WillReceive', recipients().length.toString()) }}
-            </span>
+            <!-- The count is of names this account was allowed to read, so
+                 without Candidates.View it is zero and would read "Will receive
+                 it (0)" over a class with thirty people in it. The class picker
+                 already carries the real member count, which comes from the
+                 groups endpoint and needs no permission this account lacks. -->
+            @if (canSeeCandidates()) {
+              <span class="form-label">
+                {{ t('::Assignment:WillReceive', recipients().length.toString()) }}
+              </span>
+            }
 
-            @if (loadingRecipients()) {
+            @if (!canSeeCandidates()) {
+              <p class="hint hint--warn">{{ t('::Assignment:Group:NeedsCandidates') }}</p>
+            } @else if (loadingRecipients()) {
               <p class="hint">{{ t('::Loading') }}</p>
             } @else if (recipients().length === 0) {
               <p class="hint hint--warn">{{ t('::Assignment:GroupEmpty') }}</p>
@@ -304,6 +319,15 @@
                 {{ t('::Assignment:Person:Change') }}
               </button>
             </div>
+          } @else if (!canSeeCandidates()) {
+            <span class="form-label">{{ t('::Assignment:Person') }}</span>
+
+            <!-- No search box at all, because there is no search. Offering one
+                 that cannot run and then reporting a failure is what made this a
+                 defect: it read as a broken server rather than as a permission
+                 this account does not hold, so nobody knew what to ask for. The
+                 class side still works, and the message says so. -->
+            <p class="hint hint--warn">{{ t('::Assignment:Person:NeedsCandidates') }}</p>
           } @else {
             <label class="form-label" for="sendPerson">{{ t('::Assignment:Person') }}</label>
 

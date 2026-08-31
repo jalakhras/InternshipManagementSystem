@@ -354,6 +354,80 @@ test.describe('Assignments', () => {
     expect(overflows).toBe(false);
   });
 
+  test('the empty state offers both a class and one person', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubAssignments(page, []);
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+
+    // The line read "Choose a group and each person gets their own link", which
+    // was the whole story until one person could be sent to on their own and half
+    // of it afterwards — on the one screen whose only job is to say what to do
+    // next. A new key rather than an edit to the old one, so a stale translation
+    // of the old sentence cannot answer this question.
+    await expect(page.getByText('or to one named person')).toBeVisible();
+    await expect(page.getByText('Choose a group and each person gets')).toHaveCount(0);
+  });
+
+  test('says which permission the person search needs, rather than that it failed', async ({ page }) => {
+    // A coordinator on a custom role: they may send an exam and see what was
+    // sent, and they may not read the candidate roll.
+    await stubAbp(page, {
+      culture: 'en',
+      grantedPolicies: [
+        'Assessment.Assignments',
+        'Assessment.Assignments.View',
+        'Assessment.Assignments.Create',
+        'Assessment.Groups',
+        'Assessment.Groups.View',
+      ],
+    });
+    await stubAssignments(page, []);
+
+    // Answers the way the server does for this role, so a search that ran would
+    // land on the localised "the search could not run" this test is here to
+    // replace.
+    let searched = 0;
+
+    await page.route(
+      url => url.pathname === '/api/assessment/candidates',
+      route => {
+        searched += 1;
+
+        return route.fulfill({
+          status: 403,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: { message: 'Forbidden' } }),
+        });
+      },
+    );
+
+    await gotoApp(page, `/assignments/${EXAM_ID}`);
+    await page.getByRole('button', { name: 'Send this exam' }).first().click();
+    await page.getByRole('button', { name: 'One person' }).click();
+
+    // Named, so somebody knows what to ask an administrator for.
+    await expect(page.getByText('Candidates — View')).toBeVisible();
+    await expect(page.getByText('The search could not run')).toHaveCount(0);
+
+    // And no dead box to type into. Offering a search that cannot run and then
+    // reporting a failure is what made this read as a broken server.
+    await expect(page.getByLabel('Which person')).toHaveCount(0);
+
+    // The class side is untouched, which is what the message tells them to use.
+    await page.getByRole('button', { name: 'A class' }).click();
+    await page.getByLabel('Who gets it').selectOption('g1');
+    await expect(page.getByRole('button', { name: 'Create the links' })).toBeEnabled();
+
+    // "This class has nobody in it yet" was a lie told by the same missing
+    // permission — the roll could not be read, so it looked empty.
+    await expect(page.getByText('This class has nobody in it yet')).toHaveCount(0);
+    await expect(page.getByText('The names in this class cannot be shown')).toBeVisible();
+
+    // Nothing was ever asked of an endpoint this account cannot use.
+    expect(searched).toBe(0);
+  });
+
   test('hides revoking and sending from someone who may only read', async ({ page }) => {
     await stubAbp(page, {
       culture: 'en',

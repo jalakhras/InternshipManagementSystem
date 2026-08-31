@@ -216,6 +216,15 @@
       <div>
         <h2 class="block__title">{{ t('::Stimulus:Title') }}</h2>
         <p class="block__lede">{{ t('::Stimulus:Lede') }}</p>
+
+        <!-- Said here because the passage editor has no section picker and never
+             will. A passage carried its own ExamSectionId once, written by
+             nothing and read by nothing, and an author looking at a Reading
+             section and a reading passage on the same screen has every reason to
+             assume the two know about each other. They do not: the questions
+             carry the section, and the builder draws a passage's questions
+             together once they all name the same one. -->
+        <p class="block__lede">{{ t('::Stimulus:Section:Note') }}</p>
       </div>
       @if (canManage()) {
         <button type="button" class="btn btn-outline-secondary btn-sm" (click)="newGroup()">

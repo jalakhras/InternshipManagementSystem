@@ -133,22 +133,51 @@ public class MigrationTests
     }
 
     [SqlServerFact]
-    public async Task The_column_the_newest_migration_adds_is_present_and_of_the_type_it_names()
+    public async Task The_column_that_carries_a_section_onto_a_delivered_paper_is_present_and_of_the_type_it_names()
     {
         await WithThrowawayDatabaseAsync(async context =>
         {
             await context.Database.MigrateAsync();
 
-            // Section_On_The_Delivered_Paper, the most recent migration: a nullable
-            // uniqueidentifier on AppAttemptQuestions. Named rather than derived, so
-            // this fails if the migration is reverted or never runs — which is the
-            // specific accident that leaves a host starting against a schema
-            // missing a column.
+            // Section_On_The_Delivered_Paper: a nullable uniqueidentifier on
+            // AppAttemptQuestions. Named rather than derived, so this fails if the
+            // migration is reverted or never runs — which is the specific accident
+            // that leaves a host starting against a schema missing a column.
             var column = await ColumnAsync(context, "AppAttemptQuestions", "ExamSectionId");
 
-            column.ShouldNotBeNull("the newest migration did not run, or its column was lost.");
+            column.ShouldNotBeNull("the migration did not run, or its column was lost.");
             column!.Value.Type.ShouldBe("uniqueidentifier");
             column.Value.IsNullable.ShouldBeTrue();
+        });
+    }
+
+    /// <summary>
+    /// The other direction, which nothing here checked before: a column a migration
+    /// takes away is actually gone.
+    /// <para>
+    /// <c>HasPendingModelChanges</c> above would not catch its survival. The
+    /// property was removed from <c>QuestionGroup</c> while <c>ExamSection.Groups</c>
+    /// still pointed at it, and EF quietly kept the column as a shadow property —
+    /// model and migrations agreed, every test stayed green, and the column the code
+    /// no longer knows about was still there for something to write to.
+    /// </para>
+    /// </summary>
+    [SqlServerFact]
+    public async Task The_section_a_passage_used_to_carry_is_gone_from_the_database()
+    {
+        await WithThrowawayDatabaseAsync(async context =>
+        {
+            await context.Database.MigrateAsync();
+
+            // The table is still here — otherwise this would pass by asking about a
+            // column of a table that does not exist.
+            (await TableNamesAsync(context)).ShouldContain("AppQuestionGroups");
+
+            var column = await ColumnAsync(context, "AppQuestionGroups", "ExamSectionId");
+
+            column.ShouldBeNull(
+                "Drop_Section_From_Passage did not run, or the column came back as a "
+                + "shadow property behind a navigation that still names it.");
         });
     }
 

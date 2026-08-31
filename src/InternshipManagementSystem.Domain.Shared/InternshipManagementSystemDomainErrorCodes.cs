@@ -155,6 +155,19 @@ public static class InternshipManagementSystemDomainErrorCodes
     /// </summary>
     public const string QuestionNeedsMarks = "IMS:Question:NeedsMarks";
 
+    /// <summary>
+    /// A question was filed into a section that belongs to a different exam.
+    /// <para>
+    /// The authoring screen cannot produce this — its picker only ever offers the
+    /// sections of the exam being edited — but the API took whatever section id it
+    /// was handed and wrote it. A section id is a guess away from another exam's,
+    /// and in a shared installation another organisation's; the paper that section
+    /// draws would then quietly contain a question nobody filed there, and a
+    /// result would break down by a part of an exam it was never on.
+    /// </para>
+    /// </summary>
+    public const string QuestionSectionNotInExam = "IMS:Question:SectionNotInExam";
+
     // ---- Staff accounts ----
 
     /// <summary>

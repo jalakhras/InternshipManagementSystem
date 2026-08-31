@@ -89,7 +89,16 @@ public class ExamSection : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public int DisplayOrder { get; set; }
 
-    public ICollection<QuestionGroup> Groups { get; set; } = new List<QuestionGroup>();
+    // No Groups collection here, and no ExamSectionId on QuestionGroup. The pair
+    // existed and was dead on both sides: nothing wrote either, no DTO carried
+    // one, and ExamFormBuilder pools a section on the question's own section, so
+    // a passage filed here contributed nothing to the paper. Removing only the
+    // property on QuestionGroup would have kept the column alive as a shadow
+    // property behind this navigation, which is a worse state than either — the
+    // code says the idea is gone and the database says it is not.
+    //
+    // What a passage belongs to is decided by its questions: file them all into
+    // one section and Draw takes whole blocks, so the passage is served whole.
 
     protected ExamSection() { }
 

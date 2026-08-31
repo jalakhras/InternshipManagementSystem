@@ -83,6 +83,31 @@ test.describe('Exam structure', () => {
     await expect(page.getByText('8 questions · not enforced')).toHaveCount(0);
   });
 
+  test('says a passage carries no section of its own, and offers no picker for one', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubExamDetail(page);
+    await stubStructure(page);
+
+    await gotoApp(page, `/exams/${EXAM}/structure`);
+
+    // Sections and passages sit on one screen, so an author has every reason to
+    // assume a passage can be put in a part. QuestionGroup.ExamSectionId once
+    // said it could — a column no DTO carried, no screen wrote and the form
+    // builder never read, so a passage filed into Reading contributed nothing.
+    // The column is gone, and the screen has to say what replaces it rather than
+    // leaving the question unanswered on the screen that raises it.
+    await expect(page.getByText('A passage belongs to no part of the exam by itself')).toBeVisible();
+    await expect(page.getByText('File each of its questions into the same section')).toBeVisible();
+
+    // And the passage editor agrees: no section control, so the sentence above
+    // is not contradicted by the form directly beneath it.
+    await page.getByRole('button', { name: 'Add passage' }).click();
+
+    await expect(page.getByLabel('Instructions')).toBeVisible();
+    await expect(page.getByLabel('Section')).toHaveCount(0);
+    await expect(page.getByLabel('Part')).toHaveCount(0);
+  });
+
   test('warns again on the three fields themselves while they are being filled in', async ({ page }) => {
     await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
     await stubExamDetail(page);

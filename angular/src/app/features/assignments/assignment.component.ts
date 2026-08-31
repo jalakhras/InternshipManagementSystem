@@ -163,6 +163,23 @@ export class AssignmentComponent {
 
   readonly canSend = permissionSignal(P.Assignments.Create);
   readonly canCreate = permissionSignal(P.Assignments.Create);
+
+  /**
+   * Whether this account may read the candidate roll.
+   *
+   * Not the permission that sends an exam, and deliberately not widened into
+   * one. Searching by name, address or reference over every candidate in the
+   * organisation is reading the roll — that is what the endpoint behind it is,
+   * `Candidates.View` is what guards it, and the shipped Coordinator role holds
+   * both this and `Assignments.Create` precisely because sending needs both.
+   *
+   * What was wrong was never the guard. It was that a coordinator on a custom
+   * role without it typed a name, waited, and read "the search could not run" —
+   * a sentence describing a network fault, for a permission decision that will
+   * not change however many times they try. So the panel asks first and says
+   * which permission is missing, and the search is not run at all.
+   */
+  readonly canSeeCandidates = permissionSignal(P.Candidates.View);
   readonly canRevoke = permissionSignal(P.Assignments.Revoke);
   readonly canSendEmail = permissionSignal(P.Assignments.SendEmail);
 
@@ -182,6 +199,12 @@ export class AssignmentComponent {
 
   /** Announced to a screen reader; the list itself is only visible. */
   readonly searchStatus = computed(() => {
+    // Announced whatever has been typed, because there is no search to wait for
+    // and a reader who hears nothing back assumes the box swallowed the name.
+    if (!this.canSeeCandidates()) {
+      return this.t('::Assignment:Person:NeedsCandidates');
+    }
+
     if (this.searching() || this.personQuery().trim().length < MIN_SEARCH) {
       return '';
     }
@@ -359,7 +382,11 @@ export class AssignmentComponent {
     this.groupId.set(groupId);
     this.recipients.set([]);
 
-    if (!groupId) {
+    // Same permission, same silence: without Candidates.View this request is
+    // refused, the names stay empty, and the panel used to read "this class has
+    // nobody in it yet" — which is a different and alarming claim, and the one
+    // thing that would stop somebody sending.
+    if (!groupId || !this.canSeeCandidates()) {
       return;
     }
 
@@ -388,6 +415,17 @@ export class AssignmentComponent {
   searchPeople(term: string): void {
     this.personQuery.set(term);
     this.searchFailed.set(false);
+
+    // A 403 on every keystroke is a spinner that resolves into a failure the
+    // panel has already explained, and a line in somebody's log for each letter
+    // typed. The answer is known before the request.
+    if (!this.canSeeCandidates()) {
+      this.searching.set(false);
+      this.personResults.set([]);
+
+      return;
+    }
+
     this.searching.set(term.trim().length >= MIN_SEARCH);
 
     if (term.trim().length < MIN_SEARCH) {

@@ -6,6 +6,7 @@ using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.Exams.Dtos;
 using InternshipManagementSystem.Assessment.Grading;
 using Shouldly;
+using Volo.Abp;
 using Volo.Abp.MultiTenancy;
 using Xunit;
 
@@ -141,6 +142,116 @@ public class QuestionSectionFilingTests : InternshipManagementSystemEntityFramew
             // the section quietly owning the whole exam.
             var everything = await _questions.GetListAsync(new QuestionListRequestDto { ExamId = exam.Id });
             everything.TotalCount.ShouldBe(3);
+        });
+    }
+
+    /// <summary>
+    /// A section of one exam cannot hold a question of another.
+    /// <para>
+    /// No screen can produce this: the picker in the question form is fed from
+    /// <c>getSections(examId)</c> and offers this exam's parts only. The API could,
+    /// and did — it read <c>ExamSectionId</c> off the body and assigned it, so any
+    /// caller holding <c>Questions.Create</c> could file a question into a
+    /// neighbouring exam's part by pasting one id, and in an installation serving
+    /// several organisations, into another organisation's.
+    /// </para>
+    /// <para>
+    /// The damage is silent in both directions. <c>DrawBySection</c> pools on
+    /// <c>q.ExamSectionId == section.Id</c> over the owning exam's bank, so the
+    /// question is drawn by neither exam and simply leaves both papers, while the
+    /// other exam's structure screen counts it and reports a part that can fill
+    /// itself when it cannot.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task A_question_cannot_be_filed_into_a_section_of_a_different_exam()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var mine = await CreateExamAsync();
+            var theirs = await CreateExamAsync();
+
+            var theirListening = await CreateSectionAsync(theirs.Id, "Their listening");
+
+            var refused = await Should.ThrowAsync<BusinessException>(async () =>
+                await _questions.CreateAsync(
+                    FiledQuestion(mine.Id, theirListening.Id, "Filed across the fence")));
+
+            refused.Code.ShouldBe(
+                InternshipManagementSystemDomainErrorCodes.QuestionSectionNotInExam);
+
+            // And nothing was written on the way to being refused. The other exam's
+            // part still reports the count its own author would recognise.
+            var theirSections = await _structure.GetSectionsAsync(theirs.Id);
+            theirSections.Single().QuestionCount.ShouldBe(0);
+        });
+    }
+
+    /// <summary>
+    /// The same on the way through an edit, which is the easier half to forget.
+    /// <para>
+    /// Checked against the exam the question already belongs to rather than the one
+    /// the body names, because <c>Apply</c> never moves a question between exams:
+    /// the body's <c>ExamId</c> is a claim the update path does not act on, so
+    /// trusting it here would let a caller name the section's exam in the body and
+    /// pass a check that decided nothing.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task An_edit_cannot_move_a_question_into_another_exams_section()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var mine = await CreateExamAsync();
+            var theirs = await CreateExamAsync();
+
+            var myReading = await CreateSectionAsync(mine.Id, "My reading");
+            var theirReading = await CreateSectionAsync(theirs.Id, "Their reading");
+
+            var created = await _questions.CreateAsync(
+                FiledQuestion(mine.Id, myReading.Id, "Properly filed to begin with"));
+
+            var edit = AsTheFormResends(await _questions.GetAsync(created.Id));
+            edit.ExamSectionId = theirReading.Id;
+
+            // Naming the other exam in the body as well, which is the shape that
+            // would slip past a check reading input.ExamId.
+            edit.ExamId = theirs.Id;
+
+            var refused = await Should.ThrowAsync<BusinessException>(async () =>
+                await _questions.UpdateAsync(created.Id, edit));
+
+            refused.Code.ShouldBe(
+                InternshipManagementSystemDomainErrorCodes.QuestionSectionNotInExam);
+
+            // Refused rather than partly applied: the question is still where its
+            // author put it.
+            (await _questions.GetAsync(created.Id)).ExamSectionId.ShouldBe(myReading.Id);
+        });
+    }
+
+    /// <summary>
+    /// A section id that names nothing is refused by the same code.
+    /// <para>
+    /// Deliberately not a separate "no such section". Under the tenant filter another
+    /// organisation's section is simply not found, and two different answers would
+    /// tell a caller which of the two it was — which is an answer about somebody
+    /// else's data, given to someone who asked by guessing.
+    /// </para>
+    /// </summary>
+    [Fact]
+    public async Task A_section_that_does_not_exist_is_refused_the_same_way()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+
+            var refused = await Should.ThrowAsync<BusinessException>(async () =>
+                await _questions.CreateAsync(
+                    FiledQuestion(exam.Id, Guid.NewGuid(), "Filed into thin air")));
+
+            refused.Code.ShouldBe(
+                InternshipManagementSystemDomainErrorCodes.QuestionSectionNotInExam);
         });
     }
 
