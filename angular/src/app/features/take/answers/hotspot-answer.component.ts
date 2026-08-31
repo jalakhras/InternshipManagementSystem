@@ -60,10 +60,23 @@ interface Point {
               photograph of any colour. aria-hidden because the position is
               announced as text below, where a screen reader can actually use it.
             -->
+            <!--
+              Physical left and top, not the logical pair, and this is the one
+              place in the product where that is right.
+
+              The percentages are measured from the left and top of the image
+              itself, and an image does not mirror when the page direction does —
+              a diagram of a heart has the aorta where it has it, in Arabic and
+              in English alike. The logical property measures from the right in
+              an RTL page, so the marker landed mirrored across the picture: a
+              candidate pointing at the correct place watched the ring appear
+              somewhere else, while their answer was recorded where they had
+              actually pointed.
+            -->
             <svg
               class="hotspot__mark"
-              [style.inset-inline-start.%]="p.x"
-              [style.inset-block-start.%]="p.y"
+              [style.left.%]="p.x"
+              [style.top.%]="p.y"
               viewBox="0 0 32 32"
               aria-hidden="true"
               focusable="false">
@@ -228,6 +241,9 @@ export class HotspotAnswerComponent {
     }
 
     this.emit({
+      // Measured from the left edge of the picture, and it has to be, because
+      // the picture is a picture: a chart, a diagram, a photograph. It does not
+      // mirror when the page does, so neither can a point on it.
       x: round(((event.clientX - box.left) / box.width) * 100),
       y: round(((event.clientY - box.top) / box.height) * 100),
     });

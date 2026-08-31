@@ -725,4 +725,31 @@ test.describe('Taking an exam', () => {
 
     expect(display).not.toBe('flex');
   });
+
+  test('in Arabic the mark lands where the candidate pointed', async ({ page }) => {
+    await stubTake(page, { hotspot: true, culture: 'ar' });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: /ابدأ|Start/ }).click();
+
+    const frame = page.locator('.hotspot__frame');
+    const box = (await frame.boundingBox())!;
+
+    // A quarter of the way in from the left of the picture.
+    const at = { x: box.x + box.width * 0.25, y: box.y + box.height * 0.5 };
+    await page.mouse.click(at.x, at.y);
+
+    const mark = (await page.locator('.hotspot__mark').boundingBox())!;
+    const centre = mark.x + mark.width / 2;
+
+    // Measured, not read. The point is a percentage from the left of the image,
+    // and the marker was placed with a logical property — which measures from
+    // the right in Arabic. So the ring appeared mirrored across the picture: a
+    // candidate pointing at the correct place saw it land somewhere else, while
+    // their answer was recorded where they had actually pointed.
+    //
+    // An image does not mirror when the page does. A diagram of a heart has the
+    // aorta where it has it, in both languages.
+    expect(Math.abs(centre - at.x)).toBeLessThan(12);
+  });
 });
