@@ -1,4 +1,4 @@
-﻿using InternshipManagementSystem.Permissions;
+using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Identity;
 using Volo.Abp.SettingManagement;
 using System;
@@ -186,24 +186,61 @@ namespace InternshipManagementSystem
             // permission at all, and every screen returned 403. That is the exact
             // failure this method was written to fix, reintroduced one level down.
             var alreadyOffered = (await _settings.GetOrNullForCurrentTenantAsync(
-                    Settings.InternshipManagementSystemSettings.SeededPermissions) ?? string.Empty)
+                    Settings.InternshipManagementSystemSettings.SeededPermissions,
+                    fallback: false) ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet();
 
-            var newlyDefined = ours.Where(name => !alreadyOffered.Contains(name)).ToList();
+            // What the role actually holds, asked of the store rather than assumed
+            // from the marker.
+            //
+            // Creating an organisation from the screen goes through ABP's tenant
+            // management, which seeds the new organisation's administrator with
+            // every permission on the deployment — ours included — before this
+            // contributor runs. Granting them a second time inserts a row that
+            // already exists, and the unique index on
+            // (TenantId, Name, ProviderName, ProviderKey) refuses it: the whole
+            // creation was rolled back with a SQL error, so **no organisation
+            // could be created from the host screen at all**. The marker could
+            // not see that, because a marker records what this code has done and
+            // the duplicate came from somebody else's code.
+            // Flushed first, or the reading below cannot see the writing above it.
+            // ABP's own seeding runs in this same unit of work and its grants are
+            // still in the change tracker; a LINQ query goes to the database and
+            // returns rows that do not include them, so "already granted" reads
+            // as false for every one of them.
+            if (_unitOfWorkManager.Current is { } current)
+            {
+                await current.SaveChangesAsync();
+            }
+
+            var alreadyHeld = (await _permissionManager.GetAllForRoleAsync(adminRole.Name))
+                .Where(permission => permission.IsGranted)
+                .Select(permission => permission.Name)
+                .ToHashSet();
+
+            var newlyDefined = ours
+                .Where(name => !alreadyOffered.Contains(name) && !alreadyHeld.Contains(name))
+                .ToList();
 
             foreach (var name in newlyDefined)
             {
                 await _permissionManager.SetForRoleAsync(adminRole.Name, name, true);
             }
 
-            if (newlyDefined.Count > 0)
+            // Everything considered on this pass is marked, not only what was
+            // written. A permission the organisation already held has been
+            // offered; recording it is what stops the next deployment from
+            // offering it again and overruling a deliberate revocation.
+            var considered = ours.Where(name => !alreadyOffered.Contains(name)).ToList();
+
+            if (considered.Count > 0)
             {
                 // Written after granting, so a failure half way means the rest are
                 // offered again on the next run rather than lost.
                 await _settings.SetForCurrentTenantAsync(
                     Settings.InternshipManagementSystemSettings.SeededPermissions,
-                    string.Join(',', alreadyOffered.Concat(newlyDefined).Distinct().OrderBy(n => n)));
+                    string.Join(',', alreadyOffered.Concat(considered).Distinct().OrderBy(n => n)));
             }
         }
 
@@ -356,8 +393,15 @@ namespace InternshipManagementSystem
             // per tenant and the grants it writes are tenant-scoped, so a marker
             // held globally would let the first organisation's pass be read as
             // "already done" by every organisation after it.
+            // `fallback: false`, so an organisation reads its own marker. With the
+            // fallback ABP applies by default, every organisation read the host's
+            // — which is filled — and concluded that all its grants had already
+            // been offered, so it was seeded with roles holding nothing. That is
+            // the failure the comment above warns about, arriving through the
+            // default value of an argument rather than through the key.
             var alreadyOffered = (await _settings.GetOrNullForCurrentTenantAsync(
-                    Settings.InternshipManagementSystemSettings.SeededRolePermissions) ?? string.Empty)
+                    Settings.InternshipManagementSystemSettings.SeededRolePermissions,
+                    fallback: false) ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .ToHashSet();
 
@@ -374,6 +418,20 @@ namespace InternshipManagementSystem
                     continue;
                 }
 
+                // What this role already holds, for the reason recorded on the
+                // administrator's grants: a permission granted by somebody else's
+                // seeding cannot be granted again, and the unique index turns the
+                // attempt into a failed creation rather than a warning.
+                if (_unitOfWorkManager.Current is { } pending)
+                {
+                    await pending.SaveChangesAsync();
+                }
+
+                var alreadyHeld = (await _permissionManager.GetAllForRoleAsync(role.Name))
+                    .Where(permission => permission.IsGranted)
+                    .Select(permission => permission.Name)
+                    .ToHashSet();
+
                 foreach (var permission in await WithAncestorsAsync(leaves))
                 {
                     // Role and permission together, because two roles legitimately
@@ -386,7 +444,11 @@ namespace InternshipManagementSystem
                         continue;
                     }
 
-                    await _permissionManager.SetForRoleAsync(role.Name, permission, true);
+                    if (!alreadyHeld.Contains(permission))
+                    {
+                        await _permissionManager.SetForRoleAsync(role.Name, permission, true);
+                    }
+
                     newlyOffered.Add(record);
                 }
             }
