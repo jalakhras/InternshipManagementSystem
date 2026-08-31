@@ -60,11 +60,13 @@ public class ExamFormBuilder : ITransientDependency
         var ordered = exam.Sections.Count > 0
             ? DrawBySection(exam, bank, random)
             : OrderBlocks(
-                exam,
-                exam.Blueprint.Count > 0
-                    ? DrawByBlueprint(exam, bank, random)
-                    : DrawFlat(exam, bank, random),
-                random);
+                    exam,
+                    exam.Blueprint.Count > 0
+                        ? DrawByBlueprint(exam, bank, random)
+                        : DrawFlat(exam, bank, random),
+                    random)
+                .Select(q => new PaperSlot(q, q.Score))
+                .ToList();
 
         if (ordered.Count == 0)
         {
@@ -73,7 +75,7 @@ public class ExamFormBuilder : ITransientDependency
 
         return Project(
             exam,
-            ordered.Select(q => new PaperSlot(q, q.Score)).ToList(),
+            ordered,
             attemptId,
             tenantId,
             random);
@@ -109,7 +111,7 @@ public class ExamFormBuilder : ITransientDependency
         Random random)
     {
         return slots
-            .Select((slot, index) => new { slot.Question, slot.Score, Index = index })
+            .Select((slot, index) => new { slot.Question, slot.Score, slot.SectionId, Index = index })
             .Select(row => new AttemptQuestion(
                 _guidGenerator.Create(), tenantId, attemptId, row.Question.Id, row.Index, row.Score)
             {
@@ -119,7 +121,9 @@ public class ExamFormBuilder : ITransientDependency
                 // part they are in from this, and the result is broken down by it
                 // — months later, when the question may have been re-filed or the
                 // section deleted.
-                ExamSectionId = row.Question.ExamSectionId,
+                // From the section that drew it, falling back to what the
+                // question says only for a paper assembled some other way.
+                ExamSectionId = row.SectionId ?? row.Question.ExamSectionId,
 
                 // Always ordered for matching and ordering, whatever the exam says.
                 //
@@ -160,14 +164,50 @@ public class ExamFormBuilder : ITransientDependency
     /// five and never be told which rule took the other three.
     /// </para>
     /// </summary>
-    private static List<Question> DrawBySection(Exam exam, IReadOnlyList<Question> bank, Random random)
+    private static List<PaperSlot> DrawBySection(Exam exam, IReadOnlyList<Question> bank, Random random)
     {
         var taken = new HashSet<Guid>();
-        var paper = new List<Question>();
+        var paper = new List<PaperSlot>();
+
+        // Topics a section has claimed from the bank. What it did not draw is
+        // not left over — it was simply not chosen.
+        var spokenFor = new HashSet<Guid>();
 
         foreach (var section in exam.Sections.OrderBy(s => s.DisplayOrder))
         {
             var pool = bank.Where(q => q.IsActive && q.ExamSectionId == section.Id).ToList();
+
+            // Nothing filed here, but the section says what it measures — so it
+            // draws from the bank on that.
+            //
+            // A question in the shared bank belongs to every exam at its level,
+            // so it cannot be filed into one exam's section: filing it there
+            // would be a claim about a paper it has never seen. Ten comparable
+            // products were read before this line was written, and all ten put
+            // "which part of the paper" on the structure rather than on the item
+            // — as a reference the section holds, or a rule the section owns
+            // that selects on what the item already says about itself.
+            //
+            // This is the smallest form of that. The section's own topic is the
+            // rule, and the topic is a fact about the question that is true in
+            // every exam. So a language centre can finally say what it has been
+            // asking for: draw ten Listening from the bank, and ten Reading.
+            if (pool.Count == 0 && section.TopicId is { } topicId)
+            {
+                pool = bank
+                    .Where(q => q.IsActive
+                                && q.ExamSectionId == null
+                                && q.TopicId == topicId
+                                && !taken.Contains(q.Id))
+                    .ToList();
+
+                // The section speaks for that topic on this paper, whether it
+                // draws two of the twenty or all twenty. Without this the
+                // eighteen it did not choose fell through to the unfiled tail
+                // and arrived anyway — so a section that said "two Listening"
+                // delivered twenty, which is not a section at all.
+                spokenFor.Add(topicId);
+            }
 
             if (pool.Count == 0)
             {
@@ -188,13 +228,19 @@ public class ExamFormBuilder : ITransientDependency
                 taken.Add(question.Id);
             }
 
-            paper.AddRange(OrderBlocks(exam, picked, random));
+            paper.AddRange(OrderBlocks(exam, picked, random)
+                .Select(q => new PaperSlot(q, q.Score, section.Id)));
         }
 
         // Questions the author never filed under a section still belong on the
         // paper. Dropping them would delete authored content the moment somebody
         // added their first section, which is not a thing a heading should do.
-        var unfiled = bank.Where(q => q.IsActive && q.ExamSectionId is null && !taken.Contains(q.Id)).ToList();
+        var unfiled = bank
+            .Where(q => q.IsActive
+                        && q.ExamSectionId is null
+                        && !taken.Contains(q.Id)
+                        && !(q.TopicId is { } t && spokenFor.Contains(t)))
+            .ToList();
 
         var loose = exam.Blueprint.Where(r => r.ExamSectionId is null).ToList();
 
@@ -228,7 +274,8 @@ public class ExamFormBuilder : ITransientDependency
             tail = unfiled;
         }
 
-        paper.AddRange(OrderBlocks(exam, tail, random));
+        // The unfiled tail belongs to no section, and says so.
+        paper.AddRange(OrderBlocks(exam, tail, random).Select(q => new PaperSlot(q, q.Score)));
 
         return paper;
     }
@@ -417,4 +464,15 @@ public class ExamFormBuilder : ITransientDependency
 /// form when somebody edited it.
 /// </para>
 /// </summary>
-public sealed record PaperSlot(Question Question, decimal Score);
+/// <summary>
+/// One place on the paper: the question, what it is worth here, and which
+/// section drew it.
+/// <para>
+/// The section is on the slot and not read off the question, because a question
+/// in the shared bank is drawable by every exam at its level and cannot belong
+/// to any one paper's part. Which part it landed in is a fact about this paper,
+/// not about the question — every comparable product that was read before this
+/// was written keeps it on the structure for the same reason.
+/// </para>
+/// </summary>
+public sealed record PaperSlot(Question Question, decimal Score, Guid? SectionId = null);

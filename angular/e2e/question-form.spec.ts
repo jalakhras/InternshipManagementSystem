@@ -415,4 +415,21 @@ test.describe('Question builder', () => {
     await expect.poll(() => sent.length).toBe(1);
     expect(sent[0]).toMatchObject({ examSectionId: GRAMMAR });
   });
+
+  test('a bank author is told why there is no part to choose', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+
+    await gotoApp(page, '/questions/new');
+
+    // A bank question is filed into no one part, and until now the author saw
+    // no field and no reason for its absence — which looks exactly like a
+    // question somebody forgot to file. The sentence is also the honest
+    // description of what the paper actually does: a section fills itself from
+    // what it measures, so the topic is the thing to set.
+    // The type is chosen first; the form only exists once it is.
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    await expect(page.getByText(/serves every exam at its level/)).toBeVisible();
+  });
 });

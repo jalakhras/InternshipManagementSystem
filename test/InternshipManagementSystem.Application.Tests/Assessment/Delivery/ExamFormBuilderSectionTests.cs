@@ -296,6 +296,82 @@ public class ExamFormBuilderSectionTests
         paper.Count.ShouldBe(7);
     }
 
+    [Fact]
+    public void A_section_with_nothing_filed_draws_from_the_bank_on_what_it_measures()
+    {
+        var topic = Guid.NewGuid();
+        var section = Section(Listening, "Listening", 0, questionsPerForm: 2);
+        section.TopicId = topic;
+
+        var exam = Exam(section);
+
+        // Nothing filed into the section, and a bank that measures the same
+        // thing. A question in the shared bank belongs to every exam at its
+        // level, so it cannot be filed into one exam's part — but the topic is
+        // a fact about the question that is true in every exam, and that is what
+        // the section draws on.
+        var bank = Questions(null, 5);
+
+        foreach (var question in bank)
+        {
+            question.TopicId = topic;
+        }
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 5);
+
+        paper.Count.ShouldBe(2);
+        paper.ShouldAllBe(slot => slot.ExamSectionId == Listening);
+    }
+
+    [Fact]
+    public void A_bank_question_that_measures_something_else_is_left_where_it_was()
+    {
+        var section = Section(Listening, "Listening", 0, questionsPerForm: 2);
+        section.TopicId = Guid.NewGuid();
+
+        var exam = Exam(section);
+        exam.QuestionsPerForm = 3;
+
+        var bank = Questions(null, 3);
+
+        foreach (var question in bank)
+        {
+            question.TopicId = Guid.NewGuid();
+        }
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 5);
+
+        // The half that keeps the draw honest. A section that measures listening
+        // must not fill itself with whatever the bank happens to hold, or the
+        // heading on the paper becomes a lie and the per-section score with it.
+        paper.ShouldAllBe(slot => slot.ExamSectionId == null);
+    }
+
+    [Fact]
+    public void The_paper_records_the_section_that_drew_the_question()
+    {
+        var topic = Guid.NewGuid();
+        var section = Section(Listening, "Listening", 0, questionsPerForm: 2);
+        section.TopicId = topic;
+
+        var exam = Exam(section);
+        var bank = Questions(null, 4);
+
+        foreach (var question in bank)
+        {
+            question.TopicId = topic;
+        }
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 5);
+
+        // Read off the slot, not off the question — the question still says it
+        // belongs to no section, and it is right. Which part it landed in is a
+        // fact about this paper.
+        paper.Count.ShouldBe(2);
+        paper.ShouldAllBe(slot => slot.ExamSectionId == Listening);
+        bank.ShouldAllBe(question => question.ExamSectionId == null);
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /// <summary>The sections a paper visits, in order, collapsing each run into one entry.</summary>

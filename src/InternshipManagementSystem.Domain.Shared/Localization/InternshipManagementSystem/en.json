@@ -1035,6 +1035,7 @@
     "Review:Award:Again": "Replace this mark",
     "Review:Queue:Finished:Lede": "Sittings a person has marked, newest first. Open one to correct a mark.",
     "Review:Queue:Finished:Empty": "Nothing has been marked yet",
-    "Review:Queue:Finished:EmptyNote": "Once somebody marks a sitting it appears here, so the mark can be put right afterwards."
+    "Review:Queue:Finished:EmptyNote": "Once somebody marks a sitting it appears here, so the mark can be put right afterwards.",
+    "Question:Section:BankNote": "A bank question is filed into no one part: it serves every exam at its level and belongs to no single paper. A section that names what it measures draws from the bank on that — so set the question's topic, and it will reach the right part."
   }
 }

@@ -143,6 +143,16 @@
           </select>
           <p class="hint">{{ t('::Question:Section:Hint') }}</p>
         </div>
+      } @else if (!examId()) {
+        <!-- Said, because until now a bank author saw no field and no reason for
+             its absence — and a question that cannot be filed anywhere looks
+             exactly like one somebody forgot to file.
+
+             It is also the honest description of what the paper does with it:
+             a section fills itself from what it measures, so a bank question
+             reaches a section by its topic, not by being told which part of a
+             paper it has never seen it belongs to. -->
+        <p class="hint hint--note">{{ t('::Question:Section:BankNote') }}</p>
       }
 
       <!-- ── Filing ──────────────────────────────────────────────────────
