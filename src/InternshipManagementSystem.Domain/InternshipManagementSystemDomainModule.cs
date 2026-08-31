@@ -1,5 +1,6 @@
-﻿using InternshipManagementSystem.MultiTenancy;
+using InternshipManagementSystem.MultiTenancy;
 using InternshipManagementSystem.Settings;
+using MailKit.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -108,6 +109,27 @@ public class InternshipManagementSystemDomainModule : AbpModule
         {
             context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());
         }
+
+        ConfigureTransportSecurity(context, configuration);
+    }
+
+    /// <summary>
+    /// How the connection to the relay is secured. The rule itself lives in
+    /// <see cref="Assessment.Delivery.MailTransport"/>, where a test can hold it:
+    /// this one was found by sending a real message and reading a server log,
+    /// which is not a way to find it twice.
+    /// </summary>
+    private void ConfigureTransportSecurity(
+        ServiceConfigurationContext context,
+        IConfiguration configuration)
+    {
+        var port = configuration.GetValue<int?>("Settings:Abp.Mailing.Smtp.Port") ?? 25;
+        var ssl = configuration.GetValue<bool?>("Settings:Abp.Mailing.Smtp.EnableSsl") ?? false;
+
+        Configure<AbpMailKitOptions>(options =>
+        {
+            options.SecureSocketOption = Assessment.Delivery.MailTransport.SecurityFor(port, ssl);
+        });
     }
 
     /// <summary>
