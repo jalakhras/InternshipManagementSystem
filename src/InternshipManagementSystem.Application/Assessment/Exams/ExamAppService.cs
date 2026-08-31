@@ -53,7 +53,14 @@ public class ExamAppService : ApplicationService, IExamAppService
 
         if (!string.IsNullOrWhiteSpace(input.Filter))
         {
-            query = query.Where(e => e.Title.Contains(input.Filter));
+            // The description too. An author who wrote "for the January intake"
+            // there and searches for it is not being unreasonable — the box says
+            // search, not search titles, and it costs nothing to mean it.
+            var term = input.Filter.Trim();
+
+            query = query.Where(e =>
+                e.Title.Contains(term) ||
+                (e.Description != null && e.Description.Contains(term)));
         }
 
         if (input.CategoryId is { } categoryId)

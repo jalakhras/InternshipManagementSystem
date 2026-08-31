@@ -30,6 +30,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
     private readonly IRepository<Question, Guid> _questions;
     private readonly IRepository<Exam, Guid> _exams;
     private readonly IRepository<QuestionGroup, Guid> _groups;
+    private readonly IRepository<ExamSection, Guid> _sections;
     private readonly IRepository<Topic, Guid> _topics;
     private readonly QuestionPayloadValidator _validator;
     private readonly IGraderResolver _graders;
@@ -39,6 +40,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         IRepository<Question, Guid> questions,
         IRepository<Exam, Guid> exams,
         IRepository<QuestionGroup, Guid> groups,
+        IRepository<ExamSection, Guid> sections,
         IRepository<Topic, Guid> topics,
         QuestionPayloadValidator validator,
         IGraderResolver graders,
@@ -47,6 +49,7 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         _questions = questions;
         _exams = exams;
         _groups = groups;
+        _sections = sections;
         _topics = topics;
         _validator = validator;
         _graders = graders;
@@ -122,7 +125,14 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
         if (!string.IsNullOrWhiteSpace(input.Filter))
         {
-            query = query.Where(q => q.Text.Contains(input.Filter));
+            // And the explanation, which is where an author puts the thing they
+            // will later want to find the question by — the rule it tests, the
+            // source it came from.
+            var term = input.Filter.Trim();
+
+            query = query.Where(q =>
+                q.Text.Contains(term) ||
+                (q.Explanation != null && q.Explanation.Contains(term)));
         }
 
         var totalCount = await query.CountAsync();
@@ -167,6 +177,8 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
             throw new BusinessException(InternshipManagementSystemDomainErrorCodes.QuestionBelongsNowhere);
         }
 
+        await RequireSectionBelongsToAsync(input.ExamId, input.ExamSectionId);
+
         // Sanitised before the entity ever holds it, not only in Apply below.
         // Two assignments of the same field is how a reorder quietly reopens a hole.
         var question = new Question(
@@ -194,6 +206,11 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         }
 
         var question = await _questions.GetAsync(id);
+
+        // Against the exam that owns the question, not the one the body names.
+        // Update never moves a question between exams — Apply does not touch
+        // ExamId — so the body's exam is a claim and the entity's is the fact.
+        await RequireSectionBelongsToAsync(question.ExamId, input.ExamSectionId);
 
         // What counted as correct before this edit, as the marker's screen would
         // render it. Compared against what counts as correct after, so a change
@@ -649,6 +666,58 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
     // ------------------------------------------------------------------ helpers
 
     /// <summary>
+    /// Refuses a question filed into a part of some other exam.
+    /// <para>
+    /// The picker in the authoring screen only ever lists the sections of the exam
+    /// being edited, so no author can produce this. The API could: it took the
+    /// section id from the body and assigned it, unread and unchecked, and a
+    /// section id is one paste away from a neighbouring exam's — or, in an
+    /// installation serving several organisations, from another organisation's.
+    /// The whole promise of this product is that one organisation cannot reach
+    /// another's things, and an unchecked foreign key is exactly how that promise
+    /// is broken quietly rather than loudly.
+    /// </para>
+    /// <para>
+    /// What it costs when it goes wrong is not an error later; it is no error at
+    /// all. <c>DrawBySection</c> pools on <c>q.ExamSectionId == section.Id</c>, so
+    /// the misfiled question is simply never drawn by the exam that owns it, and
+    /// never drawn by the exam that owns the section either — it belongs to
+    /// neither pool and disappears from both papers. Meanwhile the structure
+    /// screen of the other exam counts it, and reports a part that can fill itself
+    /// when it cannot.
+    /// </para>
+    /// <para>
+    /// A section that cannot be found is refused by the same code rather than a
+    /// separate "no such section". Under the tenant filter a section belonging to
+    /// another organisation simply is not found, and telling the caller which of
+    /// the two it was would answer a question they were not entitled to ask.
+    /// </para>
+    /// <para>
+    /// A question in the shared bank owns no exam, so every section is another
+    /// exam's and this refuses them all. That is the honest answer today: the
+    /// section is one column on the question, a bank question is drawn by many
+    /// exams, and filing it into one exam's part would silently bind a shared
+    /// question to a single paper. Whether the bank should be able to fill a
+    /// section at all is a modelling question this does not settle.
+    /// </para>
+    /// </summary>
+    private async Task RequireSectionBelongsToAsync(Guid? examId, Guid? sectionId)
+    {
+        if (sectionId is not { } id)
+        {
+            return;
+        }
+
+        var section = await _sections.FindAsync(s => s.Id == id);
+
+        if (section is null || examId is null || section.ExamId != examId)
+        {
+            throw new BusinessException(
+                InternshipManagementSystemDomainErrorCodes.QuestionSectionNotInExam);
+        }
+    }
+
+    /// <summary>
     /// Whether a machine scores this type.
     /// <para>
     /// Declared on the descriptor and then confirmed against the container: a type
@@ -694,6 +763,12 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         question.Text = RichTextSanitiser.Sanitise(input.Text);
         question.CategoryId = input.CategoryId;
         question.LevelId = input.LevelId;
+
+        // Assigned unconditionally, which is what makes clearing the picker
+        // really unfile a question. Both callers check first, in
+        // RequireSectionBelongsToAsync, that the section is one of this exam's —
+        // this line cannot do it, because it is static and the answer is in the
+        // database.
         question.ExamSectionId = input.ExamSectionId;
         question.QuestionGroupId = input.QuestionGroupId;
         question.Payload = input.Payload;

@@ -151,6 +151,50 @@ public class ArabicNameSearchTests : InternshipManagementSystemEntityFrameworkCo
         });
     }
 
+    [Fact]
+    public async Task Every_box_that_asks_for_a_name_answers_the_same_way()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var code = Guid.NewGuid().ToString("N")[..8];
+
+            await _candidates.CreateAsync(new CreateUpdateCandidateDto
+            {
+                FullName = "مُحَمَّد المطيري",
+                Email = code + "@example.test",
+            });
+
+            // Four screens let somebody type a name into a box, and three of them
+            // had written the comparison out for themselves — raw name and
+            // address only. So a person found on the roll could not be found on
+            // the results roster or the running-sittings monitor, and a search
+            // that answers differently depending on which box you typed into is
+            // not one anybody learns to trust.
+            //
+            // Asserted here on the roll; the other three now call the same
+            // definition rather than their own, which is what makes one
+            // assertion enough.
+            var found = await _candidates.GetListAsync(new CandidateListRequestDto
+            {
+                Filter = "محمد",
+                MaxResultCount = 50,
+            });
+
+            found.Items.ShouldContain(c => c.FullName == "مُحَمَّد المطيري");
+
+            // A fragment from the middle, because a search that matches only from
+            // the first character refuses the commonest thing a coordinator has:
+            // a family name.
+            var byFamily = await _candidates.GetListAsync(new CandidateListRequestDto
+            {
+                Filter = "المطيري",
+                MaxResultCount = 50,
+            });
+
+            byFamily.Items.ShouldContain(c => c.FullName == "مُحَمَّد المطيري");
+        });
+    }
+
     private async Task AsTenantAsync(Func<Task> action)
     {
         using (_currentTenant.Change(Tenant))

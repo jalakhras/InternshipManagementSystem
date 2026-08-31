@@ -89,8 +89,11 @@ public class AttemptAdminAppService : ApplicationService, IAttemptAdminAppServic
         {
             var term = input.Filter.Trim();
 
+            // The one definition, so this box and the roll's box answer the
+            // same question. These three searched the raw name only, which meant
+            // a person found on one screen could not be found on the next.
             var candidateIds = (await _candidates.GetQueryableAsync())
-                .Where(c => c.FullName.Contains(term) || c.Email.Contains(term))
+                .Where(CandidateSearch.Matching(term))
                 .Select(c => c.Id);
 
             query = query.Where(a => candidateIds.Contains(a.CandidateId));
