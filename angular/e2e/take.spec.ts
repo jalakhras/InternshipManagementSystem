@@ -526,6 +526,62 @@ test.describe('Taking an exam', () => {
     expect(stub.saved.at(-1)!.response).toContain('sum(prices)');
   });
 
+  test('a candidate is told what their written answer is marked on', async ({ page }) => {
+    await stubTake(page, {
+      freeText: true,
+      rubric: [
+        { name: 'Structure', maxScore: 4 },
+        { name: 'Evidence', maxScore: 4 },
+        { name: 'Language', maxScore: 2 },
+      ],
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // The server has sent these for as long as the question type has existed,
+    // and its own comment says the names and weights "help the taker aim". No
+    // component read them — so on exactly the questions where aiming matters
+    // most, the ones a person marks by hand, the candidate was guessing.
+    await expect(page.getByText('Your answer is marked on')).toBeVisible();
+
+    await expect(page.getByText('Structure')).toBeVisible();
+    await expect(page.getByText('4 marks').first()).toBeVisible();
+    await expect(page.getByText('Language')).toBeVisible();
+    await expect(page.getByText('2 marks')).toBeVisible();
+  });
+
+  test('a question with no rubric shows no empty heading', async ({ page }) => {
+    await stubTake(page, { freeText: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // Most questions are not marked against a rubric, and a heading with
+    // nothing under it reads as a fault — the candidate looks for the list that
+    // is missing rather than getting on with the answer.
+    await expect(page.getByText('Your answer is marked on')).toHaveCount(0);
+  });
+
+  test('the rubric is above the box, where it can still be aimed at', async ({ page }) => {
+    await stubTake(page, {
+      freeText: true,
+      rubric: [{ name: 'Structure', maxScore: 4 }],
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+
+    const rubric = (await page.locator('.rubric').boundingBox())!;
+    const box = (await page.locator('textarea').boundingBox())!;
+
+    // A candidate reads down to the place they write. A rubric under the box is
+    // read after the answer is written, which is too late to have aimed at it.
+    expect(rubric.y).toBeLessThan(box.y);
+  });
+
   test('a file is the answer, and the answer carries it', async ({ page }) => {
     const stub = await stubTake(page, { fileUpload: true });
 

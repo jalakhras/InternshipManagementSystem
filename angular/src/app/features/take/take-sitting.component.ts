@@ -96,6 +96,34 @@ export class TakeSittingComponent {
 
   readonly answerHost = viewChild('answerHost', { read: ViewContainerRef });
 
+  /**
+   * What this answer is marked on, when the author wrote it down.
+   *
+   * Read off the question rather than held in a signal, because it changes only
+   * when the question does and there is exactly one question on screen.
+   *
+   * Returns null rather than an empty list when there is nothing to show: a
+   * heading with no rows under it reads as a fault, and most questions are not
+   * marked against a rubric at all.
+   */
+  rubric(question: TakerQuestion): { name: string; marks: string }[] | null {
+    const raw = question.display?.['criteria'];
+
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return null;
+    }
+
+    const rows = raw
+      .map(entry => entry as { name?: unknown; maxScore?: unknown })
+      .filter(entry => typeof entry.name === 'string' && entry.name.trim().length > 0)
+      .map(entry => ({
+        name: entry.name as string,
+        marks: String(entry.maxScore ?? ''),
+      }));
+
+    return rows.length > 0 ? rows : null;
+  }
+
   readonly clock = computed(() => {
     const total = Math.max(this.secondsRemaining(), 0);
     const hours = Math.floor(total / 3600);

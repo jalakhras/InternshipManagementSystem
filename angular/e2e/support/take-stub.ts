@@ -63,6 +63,15 @@ export interface TakeStubOptions {
    * from "write the program" and has to be said to the candidate.
    */
   code?: { language?: string; starterTemplate?: string; expectsOutput?: boolean };
+
+  /**
+   * What a human marker will score the answer on.
+   *
+   * Sent by the server for every free-text, upload and audio question that has
+   * one, alongside the question — names and weights only, never the guidance
+   * written for the marker.
+   */
+  rubric?: { name: string; maxScore: number }[];
 }
 
 export interface TakeStub {
@@ -249,7 +258,9 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       // A 400x300 chart, inline, so the test needs no network and the frame has
       // a real area to point within — a one-pixel image gives the click nothing
       // to be a percentage of.
-      display: options.code
+      display: options.rubric
+        ? { criteria: options.rubric }
+        : options.code
         ? {
             language: options.code.language,
             starterTemplate: options.code.starterTemplate,

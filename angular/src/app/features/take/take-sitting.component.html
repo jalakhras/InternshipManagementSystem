@@ -142,6 +142,29 @@
           }
         }
 
+        <!-- What this answer is marked on, when the author wrote it down.
+             The server has been sending these for as long as the type has
+             existed — its own comment says the criterion names and weights
+             "help the taker aim" — and nothing rendered them, so the aiming
+             was left to guesswork on exactly the questions where guessing
+             costs most: the ones a person marks by hand.
+
+             Names and weights only. The guidance written for the marker stays
+             on the server, where it belongs. -->
+        @if (rubric(q); as marks) {
+          <section class="rubric">
+            <h2 class="rubric__heading">{{ t('::Take:Rubric:Heading') }}</h2>
+            <ul class="rubric__list">
+              @for (mark of marks; track mark.name) {
+                <li class="rubric__item">
+                  <span class="rubric__name">{{ mark.name }}</span>
+                  <span class="rubric__marks">{{ t('::Take:Rubric:Marks', mark.marks) }}</span>
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
         <!-- One slot, thirteen possible occupants. Everything around it stays
              identical, so the paper does not feel like thirteen screens. -->
         <ng-container #answerHost />

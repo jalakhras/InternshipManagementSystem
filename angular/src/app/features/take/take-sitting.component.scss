@@ -409,3 +409,45 @@ textarea,
 .clock--urgent { font-weight: var(--astro-weight-bold); }
 
 .clock__word { font-size: var(--astro-text-sm); }
+
+// --- What the answer is marked on -------------------------------------------
+// Above the box rather than below it: a candidate reads down to the place they
+// write, and a rubric under the box is read after the answer is written, which
+// is too late to have aimed at it.
+.rubric {
+  margin-block: var(--astro-space-3) var(--astro-space-4);
+  padding: var(--astro-space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+}
+
+.rubric__heading {
+  margin: 0 0 var(--astro-space-2);
+  font-size: var(--astro-text-sm);
+  font-weight: var(--astro-weight-medium);
+  color: var(--text-secondary);
+}
+
+.rubric__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--astro-space-1);
+}
+
+.rubric__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--astro-space-3);
+  font-size: var(--astro-text-sm);
+}
+
+.rubric__name { color: var(--text-primary); }
+
+.rubric__marks {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

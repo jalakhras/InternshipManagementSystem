@@ -902,6 +902,8 @@
     "Take:Code:WriteCode": "Write your code in the box below.",
     "Take:Code:WriteOutput": "Write what the program prints, not the program itself. Your answer is compared with the expected output as text.",
     "Take:Code:StartedFromTemplate": "We have started you off with the template the author wrote. Change it as you like.",
+    "Take:Rubric:Heading": "Your answer is marked on",
+    "Take:Rubric:Marks": "{0} marks",
     "Take:Audio:Again": "Record again",
     "Take:Audio:Hint": "Press to start recording. You can listen back and redo it before moving on.",
     "Take:Audio:NoPermission": "The microphone could not be used. Allow the browser to use it, then try again.",
