@@ -18,7 +18,12 @@
       <div class="card card--blocked" role="alert">
         <i class="bi bi-lock" aria-hidden="true"></i>
         <h1>{{ exam.examTitle }}</h1>
-        <p class="reason">{{ exam.blockReason || t('::Take:NotAvailable') }}</p>
+        <!-- Read, not printed. The server sends the reason as a code, and this
+             rendered it verbatim — so a candidate turned away from an exam was
+             shown "IMS:ExamLink:Expired" and left to make of it what they could.
+             The sentences exist in both languages and always did; nothing was
+             ever asking for them. -->
+        <p class="reason">{{ whyBlocked(exam.blockReason) }}</p>
         <p class="help">{{ t('::Take:CannotOpen:Help') }}</p>
       </div>
     } @else {

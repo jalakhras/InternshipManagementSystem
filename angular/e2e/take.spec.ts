@@ -28,13 +28,32 @@ test.describe('Taking an exam', () => {
   });
 
   test('says specifically why a link does not work', async ({ page }) => {
-    await stubTake(page, { accessible: false, blockReason: 'This link has already been used twice.' });
+    // The code the server actually sends, not a ready-made sentence. Feeding
+    // this stub a sentence is what hid the defect: the screen printed whatever
+    // it was given, so a test handing it English prose reported that a
+    // candidate was told something useful — while the product was showing them
+    // "IMS:ExamLink:AttemptsExhausted" and leaving them to make of it what they
+    // could.
+    await stubTake(page, { accessible: false, blockReason: 'IMS:ExamLink:AttemptsExhausted' });
     await page.goto(`/exam/${TOKEN}`);
 
     // "Invalid link" leaves a candidate with nowhere to go. Expired, spent and
     // not yet open are three problems with three different answers.
-    await expect(page.getByText('This link has already been used twice.')).toBeVisible();
+    await expect(page.getByText(/no attempts left|used/i)).toBeVisible();
+    await expect(page.getByText('IMS:ExamLink')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Start the exam' })).toHaveCount(0);
+  });
+
+  test('a reason it cannot read is not printed at the candidate', async ({ page }) => {
+    await stubTake(page, { accessible: false, blockReason: 'IMS:Something:NobodyTranslated' });
+    await page.goto(`/exam/${TOKEN}`);
+
+    // The half that decides how the fallback should behave. A candidate shown a
+    // fragment of our internals is worse off than one told plainly that the
+    // exam is not available — so an unreadable code becomes the general
+    // sentence, never the code itself.
+    await expect(page.getByText('IMS:Something')).toHaveCount(0);
+    await expect(page.locator('.reason')).not.toBeEmpty();
   });
 
   test('offers to continue when an attempt is running, and says the clock kept going', async ({ page }) => {

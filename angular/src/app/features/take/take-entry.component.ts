@@ -44,6 +44,30 @@ export class TakeEntryComponent {
   }
 
 
+  /**
+   * Why this link will not open, in words the candidate can act on.
+   * <p>
+   * Five reasons can arrive — the link is not real, it has expired, it was
+   * revoked, its attempts are spent, or the exam is outside its window — and
+   * they need five different answers from whoever sent it. Each already has a
+   * sentence in both languages; the screen was printing the key beside them.
+   * </p>
+   * <p>
+   * Falls back to the general sentence rather than to the key, because a
+   * candidate shown a fragment of our internals is worse off than one told
+   * plainly that it is not available.
+   * </p>
+   */
+  whyBlocked(code: string | null | undefined): string {
+    if (!code) {
+      return this.t('::Take:NotAvailable');
+    }
+
+    const said = this.t('::' + code);
+
+    return said === code ? this.t('::Take:NotAvailable') : said;
+  }
+
   private readonly media = inject(MediaService);
   private readonly brand = inject(BrandService);
 
