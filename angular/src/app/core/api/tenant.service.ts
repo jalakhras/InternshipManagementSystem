@@ -20,6 +20,13 @@ export interface UpdateTenantDto {
   name: string;
 }
 
+export interface TenantListRequest {
+  /** Matched as a contains, which is how somebody looks an organisation up. */
+  filter?: string;
+  skipCount?: number;
+  maxResultCount?: number;
+}
+
 /**
  * The organisations sharing this deployment.
  *
@@ -34,11 +41,25 @@ export interface UpdateTenantDto {
 export class TenantService {
   private readonly rest = inject(RestService);
 
-  getList(): Observable<{ items: TenantDto[]; totalCount: number }> {
+  /**
+   * One page of organisations, searched on the server.
+   *
+   * It used to ask for a hundred and no more, with no term and no page — the
+   * same wall the class roll had: a deployment with a hundred and one customers
+   * had one nobody could rename, suspend or reach, and nothing said so. A host
+   * administrator is the one person who cannot work around it, because there is
+   * no other screen that lists organisations.
+   */
+  getList(request: TenantListRequest = {}): Observable<{ items: TenantDto[]; totalCount: number }> {
     return this.rest.request<void, { items: TenantDto[]; totalCount: number }>({
       method: 'GET',
       url: '/api/multi-tenancy/tenants',
-      params: { maxResultCount: 100 },
+      params: {
+        filter: request.filter || undefined,
+        skipCount: request.skipCount ?? 0,
+        maxResultCount: request.maxResultCount ?? 25,
+        sorting: 'name',
+      },
     });
   }
 

@@ -10,11 +10,27 @@
   <div class="alert alert-danger" role="alert">{{ message }}</div>
 }
 
+<!-- Asked of the server, not of the hundred rows this screen happens to hold.
+     There is no other screen that lists organisations, so a host administrator
+     who cannot find one here cannot find it anywhere. -->
+<div class="search">
+  <input
+    type="search"
+    class="form-control"
+    name="tenantFilter"
+    [placeholder]="t('::Tenant:SearchPlaceholder')"
+    [attr.aria-label]="t('::Tenant:Search')"
+    [ngModel]="filter()"
+    (ngModelChange)="filterChanged($event)"
+    (keyup.enter)="applyFilter()"
+    (search)="applyFilter()" />
+</div>
+
 <astro-data-state
   [loading]="loading()"
   [error]="error()"
   [empty]="isEmpty()"
-  [emptyTitle]="t('::Tenant:None')"
+  [emptyTitle]="noMatches() ? t('::Tenant:NoMatches', searchedFor()) : t('::Tenant:None')"
   (retry)="load()" />
 
 @if (!loading() && !error() && items().length > 0) {
@@ -62,6 +78,14 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Under the table, where the list ends and somebody looks for more of it. -->
+  <astro-pager
+    [page]="page()"
+    [pageSize]="pageSize"
+    [totalCount]="totalCount()"
+    [label]="t('::Tenant:Pagination')"
+    (pageChange)="goToPage($event)" />
 }
 
 @if (draft().open) {

@@ -68,3 +68,9 @@
 
 // --- the permission tree -----------------------------------------------------
 
+
+// Above the table, where somebody looks before they start scrolling.
+.search {
+  margin-block-end: var(--astro-space-3);
+  max-inline-size: 24rem;
+}

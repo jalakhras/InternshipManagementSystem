@@ -29,6 +29,100 @@ test.describe('Organisations', () => {
     );
   };
 
+  test('an organisation is looked for on the server, not among the rows on screen', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: MAY_MANAGE });
+
+    let asked = '';
+
+    await page.route('**/api/multi-tenancy/tenants**', route => {
+      const url = new URL(route.request().url());
+
+      asked = url.searchParams.get('filter') ?? '';
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: asked ? [{ id: 't2', name: 'language-centre' }] : [{ id: 't1', name: 'trading-academy' }],
+          totalCount: asked ? 1 : 140,
+        }),
+      });
+    });
+
+    await gotoApp(page, '/organisations');
+
+    await expect(page.getByText('trading-academy')).toBeVisible();
+
+    await page.getByLabel('Search organisations').fill('language');
+    await page.getByLabel('Search organisations').press('Enter');
+
+    // The term reaches the server. It used to ask for a hundred rows and no
+    // term at all, so a deployment with a hundred and one customers had one
+    // nobody could rename or reach — and there is no other screen in the
+    // product that lists organisations.
+    await expect.poll(() => asked).toBe('language');
+    await expect(page.getByText('language-centre')).toBeVisible();
+  });
+
+  test('a search that matches nothing does not read as an empty deployment', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: MAY_MANAGE });
+
+    await page.route('**/api/multi-tenancy/tenants**', route => {
+      const url = new URL(route.request().url());
+      const filter = url.searchParams.get('filter') ?? '';
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: filter ? [] : [{ id: 't1', name: 'trading-academy' }],
+          totalCount: filter ? 0 : 1,
+        }),
+      });
+    });
+
+    await gotoApp(page, '/organisations');
+
+    await page.getByLabel('Search organisations').fill('nobody');
+    await page.getByLabel('Search organisations').press('Enter');
+
+    // "No organisations yet" after a search says the deployment is empty, which
+    // is a different and alarming sentence for the person who runs it.
+    await expect(page.getByText('No organisation matches "nobody"')).toBeVisible();
+  });
+
+  test('a long list of organisations is paged, and the page is asked for', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: MAY_MANAGE });
+
+    let skipped = '';
+
+    await page.route('**/api/multi-tenancy/tenants**', route => {
+      const url = new URL(route.request().url());
+
+      skipped = url.searchParams.get('skipCount') ?? '';
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [{ id: 't1', name: 'page-' + skipped }],
+          totalCount: 140,
+        }),
+      });
+    });
+
+    await gotoApp(page, '/organisations');
+
+    await expect(page.getByText('page-0')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    // Asked of the server rather than sliced from what the browser holds: the
+    // hundred-and-first organisation has to be reachable, and it is the one a
+    // fixed cap makes invisible.
+    await expect.poll(() => skipped).toBe('25');
+  });
+
   test('a new organisation cannot be created without a way in', async ({ page }) => {
     await stubAbp(page, { culture: 'en', grantedPolicies: MAY_MANAGE });
     await stubTenants(page);
