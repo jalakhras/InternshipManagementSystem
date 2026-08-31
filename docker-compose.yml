@@ -105,9 +105,27 @@ services:
       BlobStoring__FileSystem__BasePath: /app/App_Data/blobs
       DataProtection__KeysPath: /app/keys
 
-      # No mail relay in this stack. Without this, sending an invitation spends a
-      # connect timeout failing to reach a host that is not there.
-      Mailing__UseNullSender: "true"
+      # Mail.
+      #
+      # There is no SMTP relay in this stack, so with nothing configured the
+      # sender is silenced: otherwise every invitation spends a connect timeout
+      # reaching for a host that is not there, and a send to a class of forty
+      # stalls for minutes before reporting what it already knew.
+      #
+      # A silenced sender is fine for a demo and useless for a deployment — the
+      # link in that message is the candidate's only way into their exam. Set a
+      # Resend key in .env and both lines below take effect: mail leaves over
+      # HTTPS on 443 and no relay is needed.
+      #
+      # HTTPS rather than SMTP is not a preference. Outbound SMTP is blocked on
+      # a great many consumer and corporate connections — on the network this
+      # was developed on, ports 587 and 465 accept a connection and then never
+      # answer, and 25 is refused outright. A customer whose network does that
+      # cannot send a single invitation over SMTP, and would have no way to know
+      # why.
+      Mailing__UseNullSender: ${MAILING_USE_NULL_SENDER:-true}
+      Mailing__Resend__ApiKey: ${RESEND_API_KEY:-}
+      Mailing__Resend__From: ${RESEND_FROM:-}
 
       # Set both when you put a TLS terminator in front of this. Empty known
       # networks means "trust the immediate caller", which is only safe because
