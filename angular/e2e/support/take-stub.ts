@@ -75,6 +75,17 @@ export interface TakeStubOptions {
 
   /** The centre whose exam this is, as the candidate's first screen shows it. */
   organization?: { name?: string; logoUrl?: string; supportEmail?: string };
+
+  /**
+   * Serve one named question type, with a display payload shaped the way the
+   * server shapes it.
+   *
+   * Written so every type this product claims to support can be put in front of
+   * a real browser at a real width. Until now four of the thirteen had ever
+   * been rendered by a test, which is how a code question came to be answered
+   * in an essay box for as long as the type existed.
+   */
+  ofType?: string;
 }
 
 export interface TakeStub {
@@ -245,7 +256,9 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       position,
       totalQuestions: total,
       text: `Question ${number}: which level is support?`,
-      type: options.code
+      type: options.ofType
+        ? options.ofType
+        : options.code
         ? 'code'
         : options.fileUpload
           ? 'file-upload'
@@ -256,7 +269,14 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
               : 'single-choice',
       score: 1,
       section: sectionAt(position),
-      options: options.freeText
+      options: options.ofType
+        ? (['single-choice', 'multi-select', 'true-false'].includes(options.ofType)
+            ? [
+                { id: 'a', text: 'الخيار الأوّل، وهو نصٌّ عربيٌّ طويلٌ بما يكفي ليلتفّ على شاشة هاتف' },
+                { id: 'b', text: 'الخيار الثاني' },
+              ]
+            : [])
+        : options.freeText
         ? []
         : [
             { id: 'a', text: 'The level price failed to fall below' },
@@ -265,7 +285,9 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       // A 400x300 chart, inline, so the test needs no network and the frame has
       // a real area to point within — a one-pixel image gives the click nothing
       // to be a percentage of.
-      display: options.rubric
+      display: options.ofType
+        ? displayFor(options.ofType)
+        : options.rubric
         ? { criteria: options.rubric }
         : options.code
         ? {
@@ -430,4 +452,57 @@ function readTexts(culture: string): Record<string, string> {
   );
 
   return JSON.parse(readFileSync(path, 'utf8')).texts as Record<string, string>;
+}
+
+/**
+ * The display payload the server sends for one type, in the same shape.
+ *
+ * Arabic text on purpose: this product is Arabic first, and a control that
+ * only ever meets Latin text in a test has never been checked in the direction
+ * nearly every candidate reads.
+ */
+function displayFor(type: string): Record<string, unknown> {
+  switch (type) {
+    case 'ordering':
+      return {
+        items: [
+          { id: 'i1', text: 'افتح الرسالة' },
+          { id: 'i2', text: 'تحقّق من المرسِل' },
+          { id: 'i3', text: 'اضغط الرابط' },
+        ],
+      };
+
+    case 'matching':
+      return {
+        left: [
+          { id: 'l1', text: 'الرياض' },
+          { id: 'l2', text: 'القاهرة' },
+        ],
+        right: [
+          { id: 'r1', text: 'مصر' },
+          { id: 'r2', text: 'السعوديّة' },
+        ],
+      };
+
+    case 'scale':
+      return { min: 1, max: 5, minLabel: 'لا أوافق إطلاقاً', maxLabel: 'أوافق تماماً' };
+
+    case 'numeric':
+      return { unit: 'ريال' };
+
+    case 'fill-in-the-blank':
+      return { blankIds: ['b1', 'b2'] };
+
+    case 'code':
+      return { language: 'Python', starterTemplate: 'def total(prices):\n    return 0', expectsOutput: false };
+
+    case 'hotspot':
+      return {
+        imageUrl:
+          'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjwvc3ZnPg==',
+      };
+
+    default:
+      return {};
+  }
 }
