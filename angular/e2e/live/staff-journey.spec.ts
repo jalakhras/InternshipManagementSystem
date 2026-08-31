@@ -1,5 +1,5 @@
-﻿import { expect, test } from '@playwright/test';
-import { signInThroughTheForm } from './api';
+import { expect, test } from '@playwright/test';
+import { APP_URL_PATTERN, signInThroughTheForm } from './api';
 
 /**
  * The staff half of the product, done by clicking.
@@ -34,7 +34,7 @@ test.describe('What a coordinator can actually do by clicking', () => {
 
     // The plainest possible assertion, and it had none: no test in the repo has
     // ever signed in through this form.
-    await expect(page).toHaveURL(/localhost:4200/);
+    await expect(page).toHaveURL(APP_URL_PATTERN);
     await expect(page.locator('astro-shell, .shell, nav').first()).toBeVisible({
       timeout: 30_000,
     });

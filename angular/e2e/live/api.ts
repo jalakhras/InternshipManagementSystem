@@ -11,7 +11,33 @@ import { APIRequestContext, request } from '@playwright/test';
  * that clicks through twelve authoring screens to reach the one behaviour it is
  * checking fails for twelve reasons, and eleven of them are somebody else's.
  */
-export const API = 'https://localhost:44373';
+/**
+ * Where the API is, and where the app is.
+ *
+ * Defaulted to the addresses a developer runs on, and overridable because the
+ * same deployment is reachable at different addresses depending on how it was
+ * started. The container stack publishes the API on 8081 and the app on 8080,
+ * over plain HTTP — and the whole point of running this suite against it is to
+ * exercise the parts that only the containers get wrong: the redirect URI the
+ * sign-in comes back to, the origin CORS is checked against, and the address
+ * written into the exam links that reach candidates.
+ *
+ * With these hard-coded, that run was not possible at all. Nothing in the suite
+ * could be pointed anywhere but at a developer's own machine, so the only
+ * configuration the live tests ever proved was the one nobody deploys.
+ *
+ *     ASTRO_API_URL=http://localhost:8081 ASTRO_APP_URL=http://localhost:8080 \
+ *       npx playwright test --project=live
+ */
+export const API = process.env['ASTRO_API_URL'] ?? 'https://localhost:44373';
+
+/** The address the browser is served from — where sign-in returns to. */
+export const APP = process.env['ASTRO_APP_URL'] ?? 'http://localhost:4200';
+
+/** The app's address as a pattern, for asserting on where a redirect landed. */
+export const APP_URL_PATTERN = new RegExp(
+  APP.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+);
 
 export interface Coordinator {
   ctx: APIRequestContext;
@@ -99,5 +125,5 @@ export async function signInThroughTheForm(
   await page.locator('#LoginInput_Password').fill(password);
   await page.getByRole('button', { name: /Login|دخول/ }).click();
 
-  await page.waitForURL(/localhost:4200/, { timeout: 30_000 });
+  await page.waitForURL(APP_URL_PATTERN, { timeout: 30_000 });
 }

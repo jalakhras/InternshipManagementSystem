@@ -13,6 +13,15 @@ import { defineConfig, devices } from '@playwright/test';
  * end-to-end runs against the real API are a separate concern, and are only worth
  * their setup cost for the exam-taking journey.
  */
+/**
+ * Where the application under test is served from.
+ *
+ * `ASTRO_APP_URL` points the whole suite somewhere else — at the container
+ * stack, at a staging deployment — without editing anything.
+ */
+const POINTED_ELSEWHERE = !!process.env['ASTRO_APP_URL'];
+const APP_URL = process.env['ASTRO_APP_URL'] ?? 'http://localhost:4200';
+
 export default defineConfig({
   testDir: './e2e',
 
@@ -33,7 +42,11 @@ export default defineConfig({
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never' }]] : [['list']],
 
   use: {
-    baseURL: 'http://localhost:4200',
+    // Overridable, because the same application answers on a different address
+    // depending on how it was started: the dev server on 4200, the container
+    // stack on 8080. Hard-coded, the live suite could only ever be run against
+    // a developer's own machine — which is the one configuration nobody ships.
+    baseURL: APP_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     // Arabic first, because that is what a first visitor gets and what most of
@@ -72,10 +85,16 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm start -- --no-open --port 4200',
-    url: 'http://localhost:4200',
-    reuseExistingServer: !process.env['CI'],
-    timeout: 180_000,
-  },
+  // Started only when the tests are pointed at the dev server. Aimed at a
+  // container stack there is already something serving that address, and
+  // starting a second one would either fail on the port or, worse, quietly
+  // answer instead of the thing under test.
+  webServer: POINTED_ELSEWHERE
+    ? undefined
+    : {
+        command: 'npm start -- --no-open --port 4200',
+        url: 'http://localhost:4200',
+        reuseExistingServer: !process.env['CI'],
+        timeout: 180_000,
+      },
 });
