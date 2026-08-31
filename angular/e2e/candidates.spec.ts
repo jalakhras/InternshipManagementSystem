@@ -274,4 +274,27 @@ test.describe('Candidates', () => {
 
     expect(overflows).toBe(false);
   });
+
+  test('a coordinator whose session ended is told so, not shown a stack of jargon', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+
+    // A bare refusal with nothing readable in it — the ordinary end of a
+    // working session. Somebody who has been marking for an hour comes back
+    // from lunch and every screen refuses them.
+    await page.route('**/api/assessment/candidates?**', route =>
+      route.fulfill({ status: 401, contentType: 'text/plain', body: '' }),
+    );
+
+    await gotoApp(page, '/candidates');
+
+    // What they must not see. Nineteen screens each carried their own copy of
+    // this decision and every one of them ended by showing Angular's message
+    // for a failed request — an internal address and a status code, written for
+    // a developer reading a console, put in front of somebody trying to work.
+    await expect(page.getByText('Http failure response')).toHaveCount(0);
+    await expect(page.getByText('localhost:44373')).toHaveCount(0);
+
+    // And what they must see: what happened, and what to do about it.
+    await expect(page.getByText('Your session has ended')).toBeVisible();
+  });
 });

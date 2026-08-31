@@ -4,6 +4,7 @@ import { DatePipe } from '@angular/common';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { AttemptResult } from './take.models';
+import { takerFailure } from './taker-failure';
 
 /**
  * What a candidate is told afterwards.
@@ -46,7 +47,7 @@ export class TakeResultComponent {
       error: err => {
         const problem = err as { error?: { error?: { message?: string } }; message?: string };
 
-        this.error.set(problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError'));
+        this.error.set(takerFailure(err, this.t));
         this.loading.set(false);
       },
     });

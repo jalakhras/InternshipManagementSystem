@@ -26,6 +26,16 @@ export interface TakeStubOptions {
   feedback?: string[];
 
   /**
+   * Refuse the result with this status and no readable body.
+   *
+   * What a server actually does when a candidate comes back to a result page
+   * after their session has ended: a bare 401, with nothing in it a person
+   * could read. The screen has to supply the sentence, because nobody else
+   * will.
+   */
+  resultFailsWith?: number;
+
+  /**
    * Lay the paper out in parts, the way a placement test is.
    *
    * Each entry is a section name and how many of the paper's questions sit in
@@ -200,6 +210,14 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
     }
 
     if (method === 'GET' && path === '/result') {
+      if (options.resultFailsWith) {
+        return route.fulfill({
+          status: options.resultFailsWith,
+          contentType: 'text/plain',
+          body: '',
+        });
+      }
+
       return json(result());
     }
 
@@ -250,9 +268,10 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
    */
   function question(position: number) {
     const number = position + 1;
+    const id = `q${number}`;
 
     return {
-      id: `q${number}`,
+      id,
       position,
       totalQuestions: total,
       text: `Question ${number}: which level is support?`,
@@ -298,7 +317,15 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
         : options.hotspot
           ? { imageUrl: options.hotspotImageUrl ?? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2RmZTZlYyIvPjxsaW5lIHgxPSIwIiB5MT0iMjIwIiB4Mj0iNDAwIiB5Mj0iMjIwIiBzdHJva2U9IiMzNTYiIHN0cm9rZS13aWR0aD0iMyIvPjwvc3ZnPg==' }
           : {},
-      savedResponse: undefined,
+      // What this candidate has already written here.
+      //
+      // It used to be hard-coded empty, which meant no test in the suite could
+      // check that an answer survives being navigated away from — the stub had
+      // no way to say "you already answered this". The real server has always
+      // returned it; the stub simply could not represent it, so a whole
+      // behaviour was untestable and therefore untested.
+      savedResponse: saved.filter(a => a.questionId === id).at(-1)?.response,
+      savedFileName: saved.filter(a => a.questionId === id).at(-1)?.answerFileName,
     };
   }
 

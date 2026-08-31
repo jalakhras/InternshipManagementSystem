@@ -19,6 +19,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
 import { PagerComponent } from '../../shared/ui/pager.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * Classes: one group of people moving through a level together.
@@ -584,9 +585,7 @@ export class GroupListComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 

@@ -25,6 +25,7 @@ import {
   AnswerInput,
   FALLBACK_ANSWER_INPUT,
 } from './answers/answer-input';
+import { takerFailure } from './taker-failure';
 
 /**
  * Sitting the exam.
@@ -711,6 +712,6 @@ export class TakeSittingComponent {
   private reason(err: unknown): string {
     const problem = err as { error?: { error?: { message?: string } }; message?: string };
 
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return takerFailure(err, this.t);
   }
 }

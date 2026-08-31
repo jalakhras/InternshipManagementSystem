@@ -646,6 +646,77 @@ test.describe('Taking an exam', () => {
     await expect(page.getByText('Trouble with this exam')).toHaveCount(0);
   });
 
+  test('a written answer is still there after leaving the question and coming back', async ({ page }) => {
+    await stubTake(page, { freeText: true });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    const written = 'اخترتُ هذا لأنّه الأنسب، ويستند إلى شاهدٍ في السطر الثالث.';
+
+    await page.locator('textarea').fill(written);
+
+    // Autosave is on a timer, so the move must wait for it — which is also what
+    // a candidate does: they type, they think, they move on.
+    await expect(page.getByText('Saved')).toBeVisible({ timeout: 10_000 });
+
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Question 2 of 3')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // Exactly what they wrote, to the character. An exam that returns a
+    // candidate's own words altered is worse than one that loses them: they
+    // cannot tell, and they are marked on it.
+    await expect(page.locator('textarea')).toHaveValue(written);
+  });
+
+  test('a choice is still there after leaving the question and coming back', async ({ page }) => {
+    await stubTake(page);
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    await page.getByRole('radio').first().check();
+    await expect(page.getByText('Saved')).toBeVisible({ timeout: 10_000 });
+
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Question 2 of 3')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back' }).click();
+
+    // The other half, and the cheaper one to get right — which is why it is
+    // worth asserting separately. A suite that only covered choices would have
+    // reported this whole area as green.
+    await expect(page.getByRole('radio').first()).toBeChecked();
+  });
+
+  test('a candidate whose session ended is told so, not shown a stack of jargon', async ({ page }) => {
+    // A bare refusal with nothing readable in it — which is what a server sends
+    // when the credential is gone. Somebody who submitted, closed the tab, and
+    // came back to the result page later gets exactly this.
+    await stubTake(page, { culture: 'ar', resultFailsWith: 401 });
+
+    await page.goto(`/exam/${TOKEN}/result`);
+
+    // What they must not see. Angular's own message for a failed request names
+    // the internal address and the status code, and the screen was falling back
+    // to it whenever the server said nothing readable.
+    //
+    // A candidate has no account, no support desk and nobody to ask. A URL and
+    // a number tell them nothing about whether their exam counted — which is
+    // the only thing they want to know.
+    await expect(page.getByText('Http failure response')).toHaveCount(0);
+    await expect(page.getByText('localhost:44373')).toHaveCount(0);
+    await expect(page.getByText('401')).toHaveCount(0);
+
+    // And what they must see: a sentence, and the way out.
+    await expect(page.getByText('انتهت جلستك')).toBeVisible();
+  });
+
   test('a file is the answer, and the answer carries it', async ({ page }) => {
     const stub = await stubTake(page, { fileUpload: true });
 

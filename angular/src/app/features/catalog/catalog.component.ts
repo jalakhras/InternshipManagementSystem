@@ -18,6 +18,7 @@ import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
+import { failureReason } from '../../core/failure';
 
 /**
  * The catalogue everything else is filed against.
@@ -406,9 +407,7 @@ export class CatalogComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 

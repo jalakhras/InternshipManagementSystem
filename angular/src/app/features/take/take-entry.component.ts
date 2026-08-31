@@ -8,6 +8,7 @@ import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { ExamPreview } from './take.models';
 import { AstroMarkComponent } from '../../shared/ui/astro-mark.component';
+import { takerFailure } from './taker-failure';
 
 /**
  * What a candidate sees when they follow their link.
@@ -158,6 +159,6 @@ export class TakeEntryComponent {
   private reason(err: unknown): string {
     const problem = err as { error?: { error?: { message?: string } }; message?: string };
 
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return takerFailure(err, this.t);
   }
 }

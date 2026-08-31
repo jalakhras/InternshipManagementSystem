@@ -296,3 +296,8 @@ src/InternshipManagementSystem.HttpApi.Host/App_Data/blobs/
 
 # A signing certificate is a secret whatever it is named.
 *.pfx
+
+# TestSprite's working directory: a tunnel log that reaches megabytes in
+# minutes, a lock file, and a copy of whatever document was handed to it. The
+# plan and the report beside it are worth keeping; none of this is.
+testsprite_tests/tmp/

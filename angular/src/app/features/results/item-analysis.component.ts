@@ -12,6 +12,7 @@ import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { PagerComponent } from '../../shared/ui/pager.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * How each question has behaved across every sitting.
@@ -127,9 +128,7 @@ export class ItemAnalysisComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 

@@ -5,6 +5,7 @@ import { DatePipe } from '@angular/common';
 import { ReviewService, ReviewQueueItem } from '../../core/api/review.service';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * Attempts waiting on a person.
@@ -85,7 +86,7 @@ export class ReviewQueueComponent {
         error: err => {
           const problem = err as { error?: { error?: { message?: string } }; message?: string };
 
-          this.error.set(problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError'));
+          this.error.set(failureReason(err, this.t));
           this.loading.set(false);
         },
       });

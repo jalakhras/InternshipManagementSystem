@@ -11,6 +11,7 @@ import { TranslateService } from '../../../core/translate.service';
 import { TakeService } from '../take.service';
 import { TakerQuestion } from '../take.models';
 import { AnswerAttachment } from './answer-input';
+import { takerFailure } from '../taker-failure';
 
 /**
  * The answer is spoken.
@@ -245,6 +246,6 @@ export class AudioAnswerComponent {
   private reason(err: unknown): string {
     const problem = err as { error?: { error?: { message?: string } }; message?: string };
 
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return takerFailure(err, this.t);
   }
 }

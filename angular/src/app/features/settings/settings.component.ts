@@ -8,6 +8,7 @@ import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * What this organisation changes about the platform for itself.
@@ -103,9 +104,7 @@ export class SettingsComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 

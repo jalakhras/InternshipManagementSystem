@@ -5,6 +5,7 @@ import { ExamService } from '../../core/api/exam.service';
 import { ExamDto, ExamStatus } from '../../core/api/assessment.models';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * Which exam do you want to send?
@@ -58,8 +59,6 @@ export class AssignmentPickerComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }

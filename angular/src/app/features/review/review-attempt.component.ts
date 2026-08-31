@@ -7,6 +7,7 @@ import { ReviewService, ReviewAnswer, IntegrityReport } from '../../core/api/rev
 import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * Marking one attempt.
@@ -285,8 +286,6 @@ export class ReviewAttemptComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }

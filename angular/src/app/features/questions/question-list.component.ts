@@ -19,6 +19,7 @@ import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { QuestionSectionsService } from './question-sections.service';
+import { failureReason } from '../../core/failure';
 
 /** Stands in for "the bank" in the loaded-once check, which is otherwise keyed by exam id. */
 const BANK = '__bank__';
@@ -534,8 +535,6 @@ export class QuestionListComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }

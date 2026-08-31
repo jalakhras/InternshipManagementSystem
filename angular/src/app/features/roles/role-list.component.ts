@@ -13,6 +13,7 @@ import { TranslateService } from '../../core/translate.service';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * Roles, and what each one may do.
@@ -311,9 +312,7 @@ export class RoleListComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 

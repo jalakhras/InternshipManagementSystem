@@ -20,6 +20,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
+import { failureReason } from '../../core/failure';
 
 /**
  * How an exam is laid out: its parts, and the passages inside it.
@@ -302,9 +303,7 @@ export class ExamStructureComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 

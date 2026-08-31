@@ -20,6 +20,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { DataStateComponent } from '../../shared/ui/data-state.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
 import { PagerComponent } from '../../shared/ui/pager.component';
+import { failureReason } from '../../core/failure';
 
 /**
  * An exam's named papers.
@@ -469,9 +470,7 @@ export class ExamFormsComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
-    return problem?.error?.error?.message ?? problem?.message ?? this.t('::UnknownError');
+    return failureReason(err, this.t);
   }
 }
 
