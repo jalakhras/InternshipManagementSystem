@@ -22,6 +22,9 @@ export interface TakeStubOptions {
   isFinal?: boolean;
   isPassed?: boolean;
 
+  /** Sentences a marker wrote for this candidate to read. */
+  feedback?: string[];
+
   /**
    * Lay the paper out in parts, the way a placement test is.
    *
@@ -287,6 +290,11 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       scorePercentage: 80,
       isPassed: options.isPassed !== false,
       submittedAt: '2026-08-29T10:00:00Z',
+      // What the marker wrote. Empty unless a test asks for it, because a
+      // candidate nobody wrote to must not see an empty heading where feedback
+      // would be.
+      feedback: options.feedback ?? [],
+
       topicBreakdown: [
         { topicId: 't1', topicName: 'Reading', score: 4, maxScore: 5, percentage: 80 },
         { topicId: 't2', topicName: 'Listening', score: 4, maxScore: 5, percentage: 80 },

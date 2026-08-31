@@ -295,6 +295,24 @@ public class AttemptResultDto
     public List<TopicScoreDto> TopicBreakdown { get; set; } = new();
 
     /// <summary>
+    /// What the marker wrote for this candidate to read.
+    /// <para>
+    /// The marking screen labels the box "Feedback for the candidate" and its
+    /// hint says, in both languages, that it is shown to them with their result
+    /// — "so it is feedback rather than a note to yourself". It was stored on
+    /// the answer and carried nowhere: the candidate's result had no field for
+    /// it at all. So a marker wrote to somebody who would never read it, and
+    /// went on writing, because the screen kept saying they would.
+    /// </para>
+    /// <para>
+    /// Withheld with the score. An organisation that releases results itself is
+    /// not releasing half of one, and feedback that arrives before the centre
+    /// has seen the mark is the same problem the score setting exists to avoid.
+    /// </para>
+    /// </summary>
+    public List<string> Feedback { get; set; } = new();
+
+    /// <summary>
     /// The same marks read the other way: by the parts the exam was laid out in.
     /// <para>
     /// Alongside the topic breakdown rather than instead of it, because they are

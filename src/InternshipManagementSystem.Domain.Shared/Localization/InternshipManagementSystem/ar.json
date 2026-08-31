@@ -1006,6 +1006,7 @@
     "Account:Menu": "حسابك",
     "Take:Hurry": "اقترب الوقت",
     "Take:Warn:FiveMinutes": "بقيت خمس دقائق.",
-    "Take:Warn:OneMinute": "بقيت دقيقة واحدة."
+    "Take:Warn:OneMinute": "بقيت دقيقة واحدة.",
+    "Take:Result:Feedback": "ملاحظات المصحّح"
   }
 }

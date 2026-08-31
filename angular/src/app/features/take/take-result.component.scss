@@ -134,3 +134,31 @@
 @media (prefers-reduced-motion: reduce) {
   .spinner { animation-duration: 2s; }
 }
+
+/**
+ * What the marker wrote.
+ *
+ * Given its own block above the numbers because a person wrote it for this
+ * person, and because a sentence set among percentages reads as another
+ * statistic.
+ */
+.feedback {
+  margin-block: var(--astro-space-5);
+  padding: var(--astro-space-4);
+  border-inline-start: 3px solid var(--accent);
+  border-radius: var(--astro-radius-md);
+  background: var(--surface-sunken);
+
+  &__title {
+    margin: 0 0 var(--astro-space-2);
+    font-size: var(--astro-text-base);
+  }
+
+  &__note {
+    margin: 0 0 var(--astro-space-2);
+    color: var(--text-primary);
+    white-space: pre-wrap;
+
+    &:last-child { margin-block-end: 0; }
+  }
+}

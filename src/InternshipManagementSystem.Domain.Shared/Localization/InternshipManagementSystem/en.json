@@ -1006,6 +1006,7 @@
     "Account:Menu": "Your account",
     "Take:Hurry": "Time is short",
     "Take:Warn:FiveMinutes": "Five minutes left.",
-    "Take:Warn:OneMinute": "One minute left."
+    "Take:Warn:OneMinute": "One minute left.",
+    "Take:Result:Feedback": "What your marker wrote"
   }
 }

@@ -927,6 +927,25 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
         // of the placement-test story the competency profile could not tell.
         result.SectionBreakdown = await BuildSectionBreakdownAsync(form, answers);
 
+        // What the marker wrote, in the order the questions were sat.
+        //
+        // The marking screen calls this box "Feedback for the candidate" and
+        // says underneath that it is shown to them with their result. It was
+        // stored and carried nowhere — the result had no field for it — so
+        // every marker who took the trouble to write something wrote it to
+        // nobody, and the screen kept telling them otherwise.
+        //
+        // Only reached when the score itself is being shown: the withheld and
+        // not-yet-final branches above return before this line, and feedback
+        // arriving ahead of the mark is the same problem the withholding setting
+        // exists to prevent.
+        result.Feedback = form
+            .OrderBy(f => f.Position)
+            .Select(f => answers.FirstOrDefault(a => a.QuestionId == f.QuestionId)?.ReviewComment)
+            .Where(comment => !string.IsNullOrWhiteSpace(comment))
+            .Select(comment => comment!)
+            .ToList();
+
         // Keys and explanations are released only in Practice mode, and only now that
         // the attempt is over. In Assessment mode this would compromise the bank.
         if (exam.Mode == ExamMode.Practice)

@@ -227,6 +227,9 @@ export interface AttemptResult {
    */
   sectionBreakdown: SectionScore[];
 
+  /** What the marker wrote for this person to read. */
+  feedback: string[];
+
   /** Practice mode only, and only after submitting. */
   review: PracticeReviewItem[];
 }

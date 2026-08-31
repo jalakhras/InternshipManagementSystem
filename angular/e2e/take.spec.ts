@@ -644,4 +644,36 @@ test.describe('Taking an exam', () => {
 
     await expect(page).not.toHaveURL(new RegExp(`/exam/${TOKEN}`));
   });
+
+  test('the candidate reads what their marker wrote', async ({ page }) => {
+    await stubTake(page, {
+      totalQuestions: 1,
+      feedback: ['Link the idea to the evidence in the third line.'],
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Submit' }).click();
+
+    // The marking screen has always said this box is shown to the candidate
+    // with their result. It was stored and carried nowhere, so every marker who
+    // took the trouble to write something wrote it to nobody.
+    await expect(page.getByText('Link the idea to the evidence in the third line.')).toBeVisible();
+  });
+
+  test('a candidate nobody wrote to sees no empty heading', async ({ page }) => {
+    await stubTake(page, { totalQuestions: 1 });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await page.getByRole('button', { name: 'Finish' }).click();
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Submit' }).click();
+
+    await expect(page.locator('.score__value')).toBeVisible();
+
+    // A block with nothing in it reads as a fault, and most sittings carry no
+    // written feedback at all.
+    await expect(page.locator('.feedback')).toHaveCount(0);
+  });
 });
