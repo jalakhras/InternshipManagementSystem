@@ -274,7 +274,16 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
         {
             // Counted and reported, nothing written. Somebody pasting forty rows
             // sees the three that are wrong before committing.
-            result.AddedToGroup = input.GroupId is null ? 0 : forGroup.Count;
+            //
+            // Asked through the same helper the commit uses, because counting
+            // forGroup counted everybody the paste named — including the ones
+            // already on that cohort's roll, and the ones the paste named twice.
+            // Re-importing a class of forty already in the group promised forty
+            // additions and then made none, and the commit button lit up for an
+            // import that would write nothing.
+            result.AddedToGroup = input.GroupId is { } previewGroupId
+                ? (await NotYetInGroupAsync(previewGroupId, forGroup)).Count
+                : 0;
 
             return result;
         }
@@ -515,11 +524,20 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
             .ToDictionaryAsync(l => l.Id, l => l.Name);
     }
 
-    private async Task<int> AddToGroupAsync(Guid groupId, IReadOnlyCollection<Guid> candidateIds)
+    /// <summary>
+    /// Which of these people the group does not already hold, each of them once.
+    /// </summary>
+    /// <remarks>
+    /// Its own method so the preview and the commit cannot answer differently:
+    /// the preview used to count the whole list and the commit this filter, and
+    /// the number a coordinator was shown before pressing the button was
+    /// therefore never the number of rows the button wrote.
+    /// </remarks>
+    private async Task<List<Guid>> NotYetInGroupAsync(Guid groupId, IReadOnlyCollection<Guid> candidateIds)
     {
         if (candidateIds.Count == 0)
         {
-            return 0;
+            return [];
         }
 
         var already = await (await _members.GetQueryableAsync())
@@ -527,9 +545,15 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
             .Select(m => m.CandidateId)
             .ToListAsync();
 
-        var toAdd = candidateIds
+        return candidateIds
             .Distinct()
             .Where(candidateId => !already.Contains(candidateId))
+            .ToList();
+    }
+
+    private async Task<int> AddToGroupAsync(Guid groupId, IReadOnlyCollection<Guid> candidateIds)
+    {
+        var toAdd = (await NotYetInGroupAsync(groupId, candidateIds))
             .Select(candidateId => new CandidateGroupMember(
                 GuidGenerator.Create(), CurrentTenant.Id, groupId, candidateId))
             .ToList();

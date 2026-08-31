@@ -1,0 +1,378 @@
+/* =============================================================================
+   Astrolabe — the sign-in page, brought back into the product.
+
+   /Account/Login is ABP's LeptonX Lite page, served from the API origin, and it
+   is the first screen every user of this product ever sees. Measured before this
+   file existed: the primary button was rgb(13,110,253) — Bootstrap's default
+   blue, the exact blue _tokens.scss says the brand deliberately avoids — the
+   type was Inter over a system stack, the inputs were 6px and 38px tall against
+   a 4/8/12 scale and a 44px floor, the password-reveal icon came from Font
+   Awesome while the whole application uses Bootstrap Icons, and the page ignored
+   the viewer's colour scheme entirely: a #161616 ground under a white card in
+   both light and dark. You signed in through one product and landed in another.
+
+   This file is the *whole* of what can be done without forking the module. The
+   host module already declares it as a contributor to the LeptonX global style
+   bundle (InternshipManagementSystemHttpApiHostModule.ConfigureBundles) — the
+   file simply never existed, and was 404ing. So nothing here changes any C#.
+
+   What it deliberately does NOT fix, because CSS cannot: the page has no <h1>,
+   no <main> landmark, an empty <h2>, and an unnamed reveal button. Those are
+   four of the six axe rules this page returns against two on every application
+   screen, and every one of them is markup. Reaching them means overriding
+   ABP's Pages/Account/Login.cshtml in this project — which is a copy of ABP's
+   page that has to be re-reconciled on every upgrade — and that is a fork, not
+   a restyle.
+
+   Written with logical properties, like the rest of the product: the page is
+   right-to-left whenever the culture is Arabic, which is the default.
+   ============================================================================= */
+
+/* The same two families the application loads in angular/src/index.html, from
+   the same place, and pulled the same way the LeptonX font bundle pulls Inter.
+   IBM Plex Sans Arabic is Arabic-first rather than a Latin face with Arabic
+   bolted on, which is the whole reason the product uses it. */
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap");
+
+/* ---------------------------------------------------------------------------
+   Tokens.
+
+   Values, not references: this page is served by the API host and cannot reach
+   angular/src/styles/_tokens.scss. They are copied rather than re-invented, and
+   they are the semantic layer only — no component here asks for a hue. If the
+   token file moves a value, this one has to follow, which is the cost of the
+   two origins and is cheaper than the two products.
+
+   Three states, exactly as _tokens.scss has them: bare :root carries the whole
+   light palette so the un-themed document is complete; the media query is
+   guarded so an explicit light choice still beats a dark OS; and LeptonX's own
+   theme classes get the last word, because the theme switch on this page sets
+   those rather than data-theme.
+   --------------------------------------------------------------------------- */
+:root {
+  --astro-brand-200: #ade6fa;
+  --astro-brand-300: #75d4f5;
+  --astro-brand-800: #0d5c70;
+  --astro-brand-900: #114558;
+  --astro-brand-950: #0a2c3b;
+
+  --astro-surface-page: #f5f7f9;
+  --astro-surface-raised: #ffffff;
+  --astro-surface-sunken: #eceff3;
+
+  --astro-text-primary: #171f27;
+  --astro-text-secondary: #4e5c6b;
+  --astro-text-muted: #5a6876;
+  --astro-text-on-accent: #ffffff;
+
+  --astro-border-subtle: #dde2e9;
+  --astro-border-strong: #c3ccd6;
+
+  --astro-accent: var(--astro-brand-800);
+  --astro-accent-hover: var(--astro-brand-900);
+  --astro-accent-active: var(--astro-brand-950);
+
+  --astro-fail-text: #8e2822;
+
+  --astro-radius-md: 8px;
+  --astro-radius-lg: 12px;
+  --astro-touch-min: 44px;
+
+  --astro-font-sans: "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.lpx-theme-light) {
+    --astro-surface-page: #0d1319;
+    --astro-surface-raised: #171f27;
+    --astro-surface-sunken: #10181f;
+
+    --astro-text-primary: #f5f7f9;
+    --astro-text-secondary: #c3ccd6;
+    --astro-text-muted: #94a1b0;
+    --astro-text-on-accent: #0d1319;
+
+    --astro-border-subtle: #24303a;
+    --astro-border-strong: #35434f;
+
+    --astro-accent: var(--astro-brand-300);
+    --astro-accent-hover: var(--astro-brand-200);
+    --astro-accent-active: #d3f2fd;
+
+    --astro-fail-text: #f19289;
+  }
+}
+
+/* LeptonX's own switch. "dim" is its default, and it means dark here. */
+:root.lpx-theme-dark,
+:root.lpx-theme-dim {
+  --astro-surface-page: #0d1319;
+  --astro-surface-raised: #171f27;
+  --astro-surface-sunken: #10181f;
+
+  --astro-text-primary: #f5f7f9;
+  --astro-text-secondary: #c3ccd6;
+  --astro-text-muted: #94a1b0;
+  --astro-text-on-accent: #0d1319;
+
+  --astro-border-subtle: #24303a;
+  --astro-border-strong: #35434f;
+
+  --astro-accent: var(--astro-brand-300);
+  --astro-accent-hover: var(--astro-brand-200);
+  --astro-accent-active: #d3f2fd;
+
+  --astro-fail-text: #f19289;
+}
+
+/* ---------------------------------------------------------------------------
+   Bootstrap, mapped rather than restyled — the same approach _base.scss takes
+   in the application, and for the same reason: Bootstrap builds every button,
+   focus ring and disabled state out of these few custom properties, so setting
+   them keeps its behaviour and gives it our colours.
+   --------------------------------------------------------------------------- */
+.abp-account-layout {
+  --bs-primary: var(--astro-accent);
+  --bs-link-color: var(--astro-accent);
+  --bs-link-hover-color: var(--astro-accent-hover);
+  --bs-border-color: var(--astro-border-subtle);
+  --bs-body-color: var(--astro-text-primary);
+  --bs-body-bg: var(--astro-surface-page);
+  --bs-secondary-color: var(--astro-text-secondary);
+
+  /* Bootstrap's own 0.375rem is 6px, which is not a step on the 4/8/12 scale
+     the rest of the product is drawn to. Measured on the password field before
+     this: 6px, beside a 12px card. */
+  --bs-border-radius: var(--astro-radius-md);
+
+  --bs-body-font-family: var(--astro-font-sans);
+
+  background-color: var(--astro-surface-page);
+  color: var(--astro-text-primary);
+  font-family: var(--astro-font-sans);
+}
+
+/* The layout paints its own ground over the body's, in every theme. */
+.abp-account-layout .lpx-content-container,
+.abp-account-layout .lpx-scroll-container {
+  background-color: var(--astro-surface-page);
+}
+
+.abp-account-layout .card {
+  background-color: var(--astro-surface-raised);
+  border: 1px solid var(--astro-border-subtle);
+  border-radius: var(--astro-radius-lg);
+  color: var(--astro-text-primary);
+}
+
+.abp-account-layout h1,
+.abp-account-layout h2,
+.abp-account-layout h3,
+.abp-account-layout h4,
+.abp-account-layout h5,
+.abp-account-layout h6,
+.abp-account-layout .form-label,
+.abp-account-layout .form-check-label {
+  color: var(--astro-text-primary);
+}
+
+.abp-account-layout hr {
+  border-color: var(--astro-border-subtle);
+  opacity: 1;
+}
+
+/* text-muted is Bootstrap's #6c757d, which measured under 4.5:1 on the raised
+   surface in light and is unreadable on it in dark. The product's own muted
+   step clears AA on both. */
+.abp-account-layout .text-muted {
+  color: var(--astro-text-muted) !important;
+}
+
+.abp-account-layout .text-danger {
+  color: var(--astro-fail-text) !important;
+}
+
+/* --- The brand ------------------------------------------------------------
+   .lpx-brand-logo is an empty div the theme fills from --lpx-logo, and the
+   variable ships empty — so the screen that most needs the mark showed a plain
+   text wordmark and nothing else. /favicon.svg was the obvious candidate and is
+   the wrong one: it is still ABP's stock mark, and a foreign logo is worse than
+   none.
+
+   This is the astrolabe dial the application shell draws inline at
+   shell.component.html:35 — the same ring, graduations, alidade and centre pin.
+   The shell can use currentColor; a background image cannot, so the mark is
+   stamped twice, once per theme, out of the same accent the buttons use. */
+.abp-account-layout {
+  --lpx-logo: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2213%22%20fill%3D%22none%22%20stroke%3D%22%230d5c70%22%20stroke-width%3D%221.6%22%20opacity%3D%22.35%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%229%22%20fill%3D%22none%22%20stroke%3D%22%230d5c70%22%20stroke-width%3D%221.6%22%2F%3E%3Cg%20stroke%3D%22%230d5c70%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.8%22%3E%3Cline%20x1%3D%2216%22%20y1%3D%223%22%20x2%3D%2216%22%20y2%3D%226%22%2F%3E%3Cline%20x1%3D%2229%22%20y1%3D%2216%22%20x2%3D%2226%22%20y2%3D%2216%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2229%22%20x2%3D%2216%22%20y2%3D%2226%22%2F%3E%3Cline%20x1%3D%223%22%20y1%3D%2216%22%20x2%3D%226%22%20y2%3D%2216%22%2F%3E%3C%2Fg%3E%3Cline%20x1%3D%227.5%22%20y1%3D%2224.5%22%20x2%3D%2224.5%22%20y2%3D%227.5%22%20stroke%3D%22%230d5c70%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%222%22%20fill%3D%22%230d5c70%22%2F%3E%3C%2Fsvg%3E");
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.lpx-theme-light) .abp-account-layout {
+    --lpx-logo: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2213%22%20fill%3D%22none%22%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.6%22%20opacity%3D%22.35%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%229%22%20fill%3D%22none%22%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.6%22%2F%3E%3Cg%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.8%22%3E%3Cline%20x1%3D%2216%22%20y1%3D%223%22%20x2%3D%2216%22%20y2%3D%226%22%2F%3E%3Cline%20x1%3D%2229%22%20y1%3D%2216%22%20x2%3D%2226%22%20y2%3D%2216%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2229%22%20x2%3D%2216%22%20y2%3D%2226%22%2F%3E%3Cline%20x1%3D%223%22%20y1%3D%2216%22%20x2%3D%226%22%20y2%3D%2216%22%2F%3E%3C%2Fg%3E%3Cline%20x1%3D%227.5%22%20y1%3D%2224.5%22%20x2%3D%2224.5%22%20y2%3D%227.5%22%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%222%22%20fill%3D%22%2375d4f5%22%2F%3E%3C%2Fsvg%3E");
+  }
+}
+
+:root.lpx-theme-dark .abp-account-layout,
+:root.lpx-theme-dim .abp-account-layout {
+  --lpx-logo: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%2213%22%20fill%3D%22none%22%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.6%22%20opacity%3D%22.35%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%229%22%20fill%3D%22none%22%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.6%22%2F%3E%3Cg%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%20opacity%3D%22.8%22%3E%3Cline%20x1%3D%2216%22%20y1%3D%223%22%20x2%3D%2216%22%20y2%3D%226%22%2F%3E%3Cline%20x1%3D%2229%22%20y1%3D%2216%22%20x2%3D%2226%22%20y2%3D%2216%22%2F%3E%3Cline%20x1%3D%2216%22%20y1%3D%2229%22%20x2%3D%2216%22%20y2%3D%2226%22%2F%3E%3Cline%20x1%3D%223%22%20y1%3D%2216%22%20x2%3D%226%22%20y2%3D%2216%22%2F%3E%3C%2Fg%3E%3Cline%20x1%3D%227.5%22%20y1%3D%2224.5%22%20x2%3D%2224.5%22%20y2%3D%227.5%22%20stroke%3D%22%2375d4f5%22%20stroke-width%3D%221.8%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%2216%22%20cy%3D%2216%22%20r%3D%222%22%20fill%3D%22%2375d4f5%22%2F%3E%3C%2Fsvg%3E");
+}
+
+.abp-account-layout .lpx-brand-name {
+  color: var(--astro-text-primary);
+  font-family: var(--astro-font-sans);
+  font-weight: 600;
+}
+
+/* --- Fields ---------------------------------------------------------------- */
+.abp-account-layout .form-control,
+.abp-account-layout .form-select {
+  min-block-size: var(--astro-touch-min);
+  background-color: var(--astro-surface-raised);
+  border-color: var(--astro-border-strong);
+  color: var(--astro-text-primary);
+  font-family: var(--astro-font-sans);
+}
+
+.abp-account-layout .form-control::placeholder {
+  color: var(--astro-text-muted);
+}
+
+.abp-account-layout .form-control:focus,
+.abp-account-layout .form-select:focus {
+  border-color: var(--astro-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--astro-accent) 28%, transparent);
+}
+
+.abp-account-layout .form-check-input:checked {
+  background-color: var(--astro-accent);
+  border-color: var(--astro-accent);
+}
+
+/* --- Buttons --------------------------------------------------------------- */
+.abp-account-layout .btn {
+  font-family: var(--astro-font-sans);
+}
+
+.abp-account-layout .btn-primary {
+  --bs-btn-bg: var(--astro-accent);
+  --bs-btn-border-color: var(--astro-accent);
+  --bs-btn-color: var(--astro-text-on-accent);
+  --bs-btn-hover-bg: var(--astro-accent-hover);
+  --bs-btn-hover-border-color: var(--astro-accent-hover);
+  --bs-btn-hover-color: var(--astro-text-on-accent);
+  --bs-btn-active-bg: var(--astro-accent-active);
+  --bs-btn-active-border-color: var(--astro-accent-active);
+  --bs-btn-active-color: var(--astro-text-on-accent);
+}
+
+.abp-account-layout .btn-outline-primary {
+  --bs-btn-color: var(--astro-accent);
+  --bs-btn-border-color: var(--astro-accent);
+  --bs-btn-hover-bg: var(--astro-accent);
+  --bs-btn-hover-border-color: var(--astro-accent);
+  --bs-btn-hover-color: var(--astro-text-on-accent);
+}
+
+.abp-account-layout .btn-light,
+.abp-account-layout .dropdown-menu {
+  background-color: var(--astro-surface-raised);
+  border-color: var(--astro-border-subtle);
+  color: var(--astro-text-primary);
+}
+
+.abp-account-layout .dropdown-item {
+  color: var(--astro-text-primary);
+}
+
+.abp-account-layout .dropdown-item:hover,
+.abp-account-layout .dropdown-item:focus {
+  background-color: var(--astro-surface-sunken);
+  color: var(--astro-text-primary);
+}
+
+/* Every button on this page clears the product's own 44px floor in both axes,
+   the way _base.scss does for the application. The language toggle, the tenant
+   switch and the reveal button all measured 38px tall, and the reveal button
+   42px wide. */
+.abp-account-layout .btn,
+.abp-account-layout .btn-sm {
+  min-block-size: var(--astro-touch-min);
+  min-inline-size: var(--astro-touch-min);
+}
+
+/* Bootstrap 5.3 paints anchors from --bs-link-color-rgb, not --bs-link-color,
+   so mapping the named variable alone left "forgot password" at Bootstrap's
+   #0d6efd — 4.5:1 in light and 3.7:1 against the dark card, which is a fail.
+   Painted directly instead, and excluding the anchors that are really buttons
+   or menu rows so their own colours still win. */
+.abp-account-layout a:not(.btn):not(.dropdown-item) {
+  color: var(--astro-accent);
+  text-underline-offset: 0.2em;
+}
+
+.abp-account-layout a:not(.btn):not(.dropdown-item):hover {
+  color: var(--astro-accent-hover);
+}
+
+/* --- The password-reveal button -------------------------------------------
+   The glyph came from Font Awesome, which this page loads for that one icon
+   and which nothing else in the product uses. Bootstrap Icons is already on
+   the page (LeptonX loads it for the language toggle's bi-translate), so the
+   two Font Awesome classes are re-pointed at it rather than the font being
+   added to or removed from the bundle. Login.js toggles fa-eye-slash and
+   fa-eye, so both need a glyph.
+
+   Its accessible name is still missing and cannot be given here: an aria-label
+   is markup. See the header of this file. */
+.abp-account-layout #PasswordVisibilityButton .fa {
+  font-family: "bootstrap-icons" !important;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+}
+
+.abp-account-layout #PasswordVisibilityButton .fa-eye-slash::before {
+  content: "\f340";
+}
+
+.abp-account-layout #PasswordVisibilityButton .fa-eye::before {
+  content: "\f341";
+}
+
+.abp-account-layout #PasswordVisibilityButton {
+  --bs-btn-bg: var(--astro-surface-sunken);
+  --bs-btn-border-color: var(--astro-border-strong);
+  --bs-btn-color: var(--astro-text-secondary);
+  --bs-btn-hover-bg: var(--astro-border-subtle);
+  --bs-btn-hover-border-color: var(--astro-border-strong);
+  --bs-btn-hover-color: var(--astro-text-primary);
+}
+
+/* --- Focus ----------------------------------------------------------------
+   The application has exactly one focus rule applied everywhere; this page had
+   Bootstrap's, which is a shadow rather than an outline and disappears against
+   a coloured button. */
+.abp-account-layout :focus-visible {
+  outline: 2px solid var(--astro-accent);
+  outline-offset: 2px;
+}
+
+/* --- 390px ----------------------------------------------------------------
+   "نسيت كلمة السر؟" broke mid-phrase across two lines on a phone, because the
+   remember-me checkbox and the link share a two-column row that keeps its
+   columns at every width. Below 30rem they stack, which is what the row would
+   have done had it been authored for a phone. */
+@media (max-width: 30rem) {
+  .abp-account-layout form > .row > .col,
+  .abp-account-layout form > .row > .col-auto,
+  .abp-account-layout form > .row > .text-end {
+    flex: 0 0 100%;
+    max-inline-size: 100%;
+    text-align: start !important;
+  }
+
+  .abp-account-layout form > .row > .text-end {
+    margin-block-start: var(--astro-radius-md);
+  }
+}

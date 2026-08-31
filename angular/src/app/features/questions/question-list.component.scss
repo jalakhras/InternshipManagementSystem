@@ -78,9 +78,8 @@
   --bs-table-border-color: var(--border-subtle);
 
   margin: 0;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--astro-radius-lg);
-  overflow: hidden;
+  // No frame here: the wrapper carries the border and the radius, because
+  // `border-collapse: collapse` makes `border-radius` a no-op on a <table>.
   font-size: var(--astro-text-sm);
 
   th, td {
@@ -262,7 +261,14 @@
 }
 
 // --- Question list ----------------------------------------------------------
-.type-filter { inline-size: auto; min-inline-size: 12rem; }
+// The floor the token names, not the 38px Bootstrap gives a .form-select. Two
+// controls carry this class — the type filter and the section filter beside it
+// — and the question map ten metres away already honours --astro-touch-min.
+.type-filter {
+  inline-size: auto;
+  min-inline-size: 12rem;
+  min-block-size: var(--astro-touch-min);
+}
 
 .prompt {
   display: inline;
@@ -494,10 +500,15 @@
 }
 
 // An unfiled question on a sectioned paper is a question no section can draw,
-// so the cell is coloured as a pending state rather than greyed like a blank.
-// Quiet, though: it is a thing to notice while scanning, not an error.
+// so it is said rather than left blank. It used to borrow --status-pending-*,
+// which means "awaiting a marker" everywhere else in this product; the same
+// amber saying two things is how a colour stops meaning anything. It carries a
+// shape instead, which is the rule astro-status-chip already sets for itself,
+// and sits at the 14px the cells beside it use rather than 13px.
 .unfiled {
-  color: var(--status-pending-text);
-  font-size: .8125rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--astro-space-1);
+  color: var(--text-secondary);
   white-space: nowrap;
 }

@@ -78,9 +78,8 @@
   --bs-table-border-color: var(--border-subtle);
 
   margin: 0;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--astro-radius-lg);
-  overflow: hidden;
+  // No frame here: the wrapper carries the border and the radius, because
+  // `border-collapse: collapse` makes `border-radius` a no-op on a <table>.
   font-size: var(--astro-text-sm);
 
   th, td {

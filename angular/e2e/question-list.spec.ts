@@ -1,5 +1,6 @@
 import { Page, expect, test } from '@playwright/test';
 import { ALL_POLICIES, gotoApp, stubAbp } from './support/abp-stub';
+import { contrastRatio } from './support/contrast';
 
 const EXAM_ID = '11111111-1111-1111-1111-111111111111';
 const LISTENING = '33333333-3333-3333-3333-333333333333';
@@ -211,6 +212,72 @@ test.describe('Question list', () => {
     // Narrowed on the server, not in the browser: filtering a page of twenty
     // rows would show whichever of them happened to be drawn first.
     await expect.poll(() => asked.some(url => url.includes(`examSectionId=${GRAMMAR}`))).toBe(true);
+  });
+
+  test('offers the section and type filters at the size the token names', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubList(page, [question({ examSectionId: LISTENING })]);
+    await stubSections(page, [section(LISTENING, 'Listening', 0), section(GRAMMAR, 'Grammar', 1)]);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions`);
+
+    // Both measured 38px: a .form-select keeps Bootstrap's own height, and the
+    // section filter shipped to the height of the type filter beside it rather
+    // than to --astro-touch-min — which the question map ten metres away honours.
+    const floor = await page.evaluate(() =>
+      parseInt(getComputedStyle(document.documentElement).getPropertyValue('--astro-touch-min'), 10),
+    );
+
+    expect(floor).toBe(44);
+
+    for (const label of ['Filter by section', 'Filter by type']) {
+      const box = await page.getByLabel(label).boundingBox();
+      expect(box, label).not.toBeNull();
+      expect(box!.height, label).toBeGreaterThanOrEqual(floor);
+    }
+  });
+
+  test('marks an unfiled question with a shape, not with the pending amber', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubList(page, [question({ id: 'loose', text: 'Never filed anywhere', examSectionId: null })]);
+    await stubSections(page, [section(LISTENING, 'Listening', 0)]);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions`);
+
+    const unfiled = page.locator('.unfiled');
+    await expect(unfiled).toBeVisible();
+
+    // --status-pending-* means "awaiting a marker" everywhere else in the
+    // product. The same amber saying two things is how a colour stops meaning
+    // anything, so this state carries a glyph instead — the rule
+    // astro-status-chip already sets for itself.
+    const pending = await page.evaluate(() => {
+      const probe = document.createElement('div');
+      probe.style.color = 'var(--status-pending-text)';
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    });
+
+    await expect(unfiled).not.toHaveCSS('color', pending);
+    await expect(unfiled.locator('i.bi-folder-x')).toHaveCount(1);
+
+    // 13px beside 14px siblings read as a second, quieter kind of cell.
+    const [own, sibling] = await page.evaluate(() => {
+      const cell = document.querySelector('.unfiled')!;
+      const row = cell.closest('tr')!;
+      return [getComputedStyle(cell).fontSize, getComputedStyle(row.querySelector('td')!).fontSize];
+    });
+
+    expect(own).toBe(sibling);
+
+    // Both themes, because the colour it left behind was semantic and the one it
+    // moved to has to be too.
+    expect(await contrastRatio(unfiled)).toBeGreaterThanOrEqual(4.5);
+
+    await page.emulateMedia({ colorScheme: 'dark' });
+    expect(await contrastRatio(unfiled)).toBeGreaterThanOrEqual(4.5);
   });
 
   test('does not scroll sideways on a phone in Arabic', async ({ page }) => {

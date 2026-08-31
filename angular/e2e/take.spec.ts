@@ -111,8 +111,14 @@ test.describe('Taking an exam', () => {
 
     // The count, not a vague warning. Somebody who left two blank on purpose
     // should not be talked out of finishing.
+    //
+    // Matched on the whole sentence rather than on "2 question": the number no
+    // longer inflects a noun. It read "2 question(s)" in English and
+    // "٢ سؤالًا" in Arabic, and the Arabic was wrong — that accusative
+    // singular goes with 11-99, where 3-10 takes the plural of paucity. Neither
+    // language counts a noun here now, so the sentence is right at every number.
     const dialog = page.getByRole('alertdialog');
-    await expect(dialog).toContainText('2 question');
+    await expect(dialog).toContainText('Questions with no answer: 2');
     expect(stub.submitted()).toBe(false);
 
     await dialog.getByRole('button', { name: 'Submit' }).click();
