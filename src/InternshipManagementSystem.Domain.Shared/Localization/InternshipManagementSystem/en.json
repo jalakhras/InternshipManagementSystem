@@ -350,6 +350,7 @@
     "IMS:ExamForm:NotEditable": "A published form cannot be changed. Two candidates who sat it must have answered the same paper — retire it and build another.",
     "IMS:ExamForm:QuestionNotAvailable": "One of those questions is not one this exam can draw. It belongs to another domain or level.",
     "IMS:ExamLink:AttemptsExhausted": "You have used all the attempts allowed.",
+    "IMS:Attempt:AlreadyStarting": "Your sitting has already started. Try again to carry on from where you are.",
     "IMS:ExamLink:Expired": "This link has expired.",
     "IMS:ExamLink:ExpiryInPast": "A link cannot be extended to a time that has passed.",
     "IMS:ExamLink:ExpiryMovedBack": "A deadline cannot be moved backwards. To close an exam early, revoke the link — that tells whoever holds it.",

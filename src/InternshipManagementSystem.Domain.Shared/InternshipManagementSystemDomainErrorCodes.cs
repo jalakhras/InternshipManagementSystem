@@ -87,6 +87,16 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string ExamLinkRevoked = "IMS:ExamLink:Revoked";
     public const string ExamLinkAttemptsExhausted = "IMS:ExamLink:AttemptsExhausted";
 
+    /// <summary>
+    /// Two starts arrived together and the database kept the first.
+    /// <para>
+    /// A retry from a poor connection, or a second tab. The sitting exists and
+    /// is the other request's; this one has nothing to add and must not be shown
+    /// a failure page at the moment somebody begins an exam.
+    /// </para>
+    /// </summary>
+    public const string AttemptAlreadyStarting = "IMS:Attempt:AlreadyStarting";
+
     // ---- Attempts ----
     public const string AttemptAlreadySubmitted = "IMS:Attempt:AlreadySubmitted";
     public const string AttemptExpired = "IMS:Attempt:Expired";

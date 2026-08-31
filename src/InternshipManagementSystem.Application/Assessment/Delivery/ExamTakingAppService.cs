@@ -309,7 +309,31 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             ExamFormId = formId,
         };
 
-        await _attempts.InsertAsync(attempt, autoSave: true);
+        try
+        {
+            await _attempts.InsertAsync(attempt, autoSave: true);
+        }
+        catch (DbUpdateException)
+        {
+            // Two starts arrived together.
+            //
+            // The check above looks for a running attempt and resumes it, which
+            // handles a second tap that arrives after the first has finished.
+            // It cannot handle two that arrive before either has written: both
+            // pass the look, both reach the insert, and the unique index over
+            // unsubmitted attempts per link keeps whichever gets there first.
+            //
+            // That index is doing its job and the data is right — there is one
+            // sitting, and the attempt is spent once because the counter moves
+            // below this line rather than above it. What was wrong is what the
+            // loser was shown: a server error, on the screen where somebody
+            // begins an exam, with no way to tell whether it started.
+            //
+            // Reported as something the screen can say instead. The candidate
+            // presses again and the check above finds the sitting that won.
+            throw new BusinessException(
+                InternshipManagementSystemDomainErrorCodes.AttemptAlreadyStarting);
+        }
 
         await LoadBlueprintAsync(exam);
         await LoadSectionsAsync(exam);
