@@ -128,13 +128,13 @@
       <tbody>
         @for (user of items(); track user.id) {
           <tr>
-            <td>{{ user.fullName || '—' }}</td>
-            <td><span class="astro-ltr">{{ user.userName }}</span></td>
+            <td [attr.data-label]="t('::User:FullName')">{{ user.fullName || '—' }}</td>
+            <td [attr.data-label]="t('::User:UserName')"><span class="astro-ltr">{{ user.userName }}</span></td>
             <!-- Latin inside an Arabic table: isolated, or the dot and the @
                  drift to the wrong end. candidate-list renders the same data
                  the same way. -->
-            <td class="muted"><span class="astro-ltr">{{ user.email }}</span></td>
-            <td>
+            <td class="muted" [attr.data-label]="t('::User:Email')"><span class="astro-ltr">{{ user.email }}</span></td>
+            <td [attr.data-label]="t('::User:Roles')">
               @if (user.roles.length === 0) {
                 <!-- Worth showing rather than leaving blank: this account can sign
                      in and do nothing, which reads to its owner as a broken login. -->
@@ -145,7 +145,7 @@
                 }
               }
             </td>
-            <td class="actions">
+            <td class="actions" [attr.data-label]="null">
               <span class="actions__set">
                 @if (canEdit()) {
                   <button type="button" class="link" (click)="edit(user)">{{ t('::Edit') }}</button>

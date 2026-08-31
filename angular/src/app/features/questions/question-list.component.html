@@ -169,7 +169,7 @@
       <tbody>
         @for (question of items(); track question.id) {
           <tr>
-            <td>
+            <td [attr.data-label]="t('::Question:Text')">
               <!-- Author HTML, sanitised on the way in and escaped again here by
                    Angular. A prompt with a subscript in it should read as one. -->
               <span class="prompt" [innerHTML]="question.text"></span>
@@ -185,7 +185,7 @@
             </td>
 
             @if (sections().length > 0) {
-              <td>
+              <td [attr.data-label]="t('::Question:Section')">
                 @if (sectionName(question); as name) {
                   <span class="muted">{{ name }}</span>
                 } @else {
@@ -197,11 +197,11 @@
               </td>
             }
 
-            <td class="muted">{{ typeName(question) }}</td>
-            <td class="muted">{{ t(difficultyKey(question)) }}</td>
-            <td class="num"><span class="astro-numeric">{{ question.score }}</span></td>
+            <td class="muted" [attr.data-label]="t('::Question:Types')">{{ typeName(question) }}</td>
+            <td class="muted" [attr.data-label]="t('::Question:Difficulty')">{{ t(difficultyKey(question)) }}</td>
+            <td class="num" [attr.data-label]="t('::Question:Score')"><span class="astro-numeric">{{ question.score }}</span></td>
 
-            <td>
+            <td [attr.data-label]="t('::Question:Health')">
               @switch (itemHealth(question)) {
                 @case ('unmeasured') {
                   <span class="health health--quiet">{{ t('::Question:Health:Unmeasured') }}</span>
@@ -223,7 +223,7 @@
               }
             </td>
 
-            <td class="row-actions">
+            <td class="row-actions" [attr.data-label]="null">
               @if (busyId() === question.id) {
                 <span class="muted">{{ t('::Working') }}</span>
               } @else {

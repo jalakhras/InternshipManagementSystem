@@ -91,7 +91,7 @@
       <tbody>
         @for (exam of items(); track exam.id) {
           <tr>
-            <td>
+            <td [attr.data-label]="t('::Exam:Title')">
               <a class="title" [routerLink]="['/exams', exam.id]">{{ exam.title }}</a>
               @if (exam.mode === 1) {
                 <!-- Practice mode changes what the taker sees afterwards, so it is
@@ -100,21 +100,21 @@
               }
             </td>
 
-            <td class="muted">
+            <td class="muted" [attr.data-label]="t('::Exam:Category')">
               {{ exam.categoryName || '—' }}
               @if (exam.levelName) {
                 <span class="level">{{ exam.levelName }}</span>
               }
             </td>
 
-            <td>
+            <td [attr.data-label]="t('::Exam:Status')">
               <astro-status-chip
                 [label]="statusLabel(exam.status)"
                 [tone]="statusTone(exam.status)"
                 [iconOverride]="statusIcon(exam.status)" />
             </td>
 
-            <td class="num">
+            <td class="num" [attr.data-label]="t('::Exam:Questions')">
               <span class="astro-numeric">{{ formSummary(exam) }}</span>
               @if (drawsFromPool(exam)) {
                 <!-- Two candidates sit different papers. That is the whole
@@ -126,11 +126,11 @@
               }
             </td>
 
-            <td class="num"><span class="astro-numeric">{{ exam.timeLimitInMinutes }}</span></td>
-            <td class="num"><span class="astro-numeric">{{ exam.passingPercentage }}%</span></td>
-            <td class="muted">{{ exam.creationTime | date: 'y/MM/dd' }}</td>
+            <td class="num" [attr.data-label]="t('::Exam:Duration')"><span class="astro-numeric">{{ exam.timeLimitInMinutes }}</span></td>
+            <td class="num" [attr.data-label]="t('::Exam:PassMark')"><span class="astro-numeric">{{ exam.passingPercentage }}%</span></td>
+            <td class="muted" [attr.data-label]="t('::Exam:Created')">{{ exam.creationTime | date: 'y/MM/dd' }}</td>
 
-            <td class="row-actions">
+            <td class="row-actions" [attr.data-label]="null">
               @if (busyId() === exam.id) {
                 <span class="muted">{{ t('::Working') }}</span>
               } @else {

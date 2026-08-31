@@ -30,9 +30,9 @@
       <tbody>
         @for (tenant of items(); track tenant.id) {
           <tr>
-            <td class="tenantname">{{ tenant.name }}</td>
+            <td class="tenantname" [attr.data-label]="t('::Tenant:Name')">{{ tenant.name }}</td>
 
-            <td class="tenant-actions">
+            <td class="tenant-actions" [attr.data-label]="null">
               <div class="tenant-actions__set">
                 @if (canEdit()) {
                   <button

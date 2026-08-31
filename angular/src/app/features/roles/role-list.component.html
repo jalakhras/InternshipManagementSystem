@@ -31,9 +31,9 @@
       <tbody>
         @for (role of items(); track role.id) {
           <tr>
-            <td class="rolename">{{ role.name }}</td>
+            <td class="rolename" [attr.data-label]="t('::Role:Name')">{{ role.name }}</td>
 
-            <td class="muted">
+            <td class="muted" [attr.data-label]="t('::Role:Kind')">
               <!-- Said in words, not by a coloured dot: a seeded role is one
                    whose name other code depends on, and that is the difference
                    between "you may rename this" and "you may not". -->
@@ -48,7 +48,7 @@
               }
             </td>
 
-            <td class="role-actions">
+            <td class="role-actions" [attr.data-label]="null">
               <div class="role-actions__set">
                 @if (canManagePermissions()) {
                   <button

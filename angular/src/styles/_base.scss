@@ -209,6 +209,72 @@ input[type="button"] {
   contain: paint;
 }
 
+// --- Tables on a phone ------------------------------------------------------
+// Below this width a table cannot show its action column, and a horizontal
+// scroll inside a box nobody can see is not a way to reach a Delete button.
+// Measured at 390px before this rule: the action cell was 0% visible on eight
+// of the twelve list tables in both languages — exams overflowed its own box by
+// 582px in Arabic and 658px in English — so Edit, Publish, Assign and Delete
+// did not exist as far as a coordinator on a phone was concerned.
+//
+// Each row becomes a card and each cell states its own column, because the
+// numbers here — questions, duration, pass mark — mean nothing unlabelled. The
+// project's usual idiom is "stack, don't label", as `.recipient` does at this
+// same breakpoint; it does not survive here, because a stacked exams row reads
+// 30 / 45 / 60 and says nothing at all. 40rem is the number the rest of the
+// content layer already uses.
+@media (max-width: 40rem) {
+  .astro-scroll-x, .table-wrap { overflow-x: visible; }
+
+  .table { display: block; border: 0; }
+
+  // Written out rather than @extend-ed: .astro-visually-hidden lives in the
+  // global layer and component stylesheets import nothing, so @extend cannot
+  // resolve it and Angular's emulated encapsulation would scope it if it could.
+  .table thead {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .table tbody { display: block; }
+
+  .table tbody tr {
+    display: block;
+    margin-block-end: var(--astro-space-3);
+    padding: var(--astro-space-1) var(--astro-space-2);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--astro-radius-md);
+    background: var(--surface-raised);
+  }
+
+  // The !important is not decoration. Component stylesheets emit
+  // `.table td[_ngcontent-x]`, which outranks a bare global selector, and the
+  // action cells specifically set inline-size: 1% and white-space: nowrap to
+  // stay out of the table's column sizing — both of which overflow a card.
+  .table tbody td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--astro-space-2);
+    inline-size: auto !important;
+    white-space: normal !important;
+    text-align: start !important;
+    border: 0;
+    padding: var(--astro-space-2) var(--astro-space-1) !important;
+  }
+
+  .table tbody td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    font-size: var(--astro-text-2xs);
+  }
+}
+
 img,
 video {
   max-inline-size: 100%;

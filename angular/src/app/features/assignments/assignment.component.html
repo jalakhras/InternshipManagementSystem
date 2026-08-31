@@ -54,24 +54,24 @@
       <tbody>
         @for (link of links(); track link.id) {
           <tr>
-            <td>{{ link.candidateName }}</td>
+            <td [attr.data-label]="t('::Link:Candidate')">{{ link.candidateName }}</td>
 
-            <td>
+            <td [attr.data-label]="t('::Link:State')">
               <span class="state-chip state-chip--{{ linkState(link) }}">
                 {{ t(stateKey(link)) }}
               </span>
             </td>
 
-            <td class="num"><span class="astro-numeric">{{ link.attemptsUsed }} / {{ link.maxAttempts }}</span></td>
-            <td class="muted">{{ link.expiresAt | date: 'y/MM/dd HH:mm' }}</td>
+            <td class="num" [attr.data-label]="t('::Link:Attempts')"><span class="astro-numeric">{{ link.attemptsUsed }} / {{ link.maxAttempts }}</span></td>
+            <td class="muted" [attr.data-label]="t('::Link:Expires')">{{ link.expiresAt | date: 'y/MM/dd HH:mm' }}</td>
 
-            <td class="muted">
+            <td class="muted" [attr.data-label]="t('::Link:Token')">
               <!-- The prefix only. The link is stored hashed and cannot be
                    recovered — enough here to tell two apart, not enough to use. -->
               <span class="astro-ltr">{{ link.tokenPrefix }}…</span>
             </td>
 
-            <td class="row-actions">
+            <td class="row-actions" [attr.data-label]="null">
               @if (busyId() === link.id) {
                 <span class="muted">{{ t('::Working') }}</span>
               } @else {

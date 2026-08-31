@@ -133,21 +133,21 @@
       <tbody>
         @for (group of visibleGroups(); track group.id) {
           <tr>
-            <td>
+            <td [attr.data-label]="t('::Group:Name')">
               <span class="name">{{ group.name }}</span>
               @if (group.description) {
                 <span class="description">{{ group.description }}</span>
               }
             </td>
-            <td class="muted">{{ group.categoryName || '—' }}</td>
-            <td>
+            <td class="muted" [attr.data-label]="t('::Exam:Category')">{{ group.categoryName || '—' }}</td>
+            <td [attr.data-label]="t('::Exam:Level')">
               @if (group.levelName) {
                 {{ group.levelName }}
               } @else {
                 <span class="unset">{{ t('::Group:NoLevel') }}</span>
               }
             </td>
-            <td class="muted">
+            <td class="muted" [attr.data-label]="t('::Group:Runs')">
               @if (group.startsOn) {
                 <!-- Two dates and a dash: a neutral run between numbers takes the
                      paragraph's direction, so in Arabic the range reads end-first
@@ -162,8 +162,8 @@
                 —
               }
             </td>
-            <td class="numeric"><span class="astro-numeric">{{ group.memberCount }}</span></td>
-            <td class="actions">
+            <td class="numeric" [attr.data-label]="t('::Group:Members')"><span class="astro-numeric">{{ group.memberCount }}</span></td>
+            <td class="actions" [attr.data-label]="null">
               <span class="actions__set">
                 @if (canManage()) {
                   <button type="button" class="link" (click)="openRoll(group)">{{ t('::Group:Roll') }}</button>

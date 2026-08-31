@@ -143,23 +143,23 @@
       <tbody>
         @for (row of items(); track row.attemptId) {
           <tr>
-            <td>
+            <td [attr.data-label]="t('::Results:Candidate')">
               <a class="candidate" [routerLink]="['/results', row.attemptId]">
                 <span class="candidate__name">{{ row.candidateName }}</span>
                 <span class="candidate__email">{{ row.candidateEmail }}</span>
               </a>
             </td>
-            <td>{{ row.examTitle }}</td>
-            <td>{{ row.formName || '—' }}</td>
-            <td><span class="astro-numeric">{{ row.startedAt | date: 'y/MM/dd HH:mm' }}</span></td>
-            <td class="numeric"><span class="astro-numeric">{{ row.durationInMinutes }}</span></td>
-            <td class="numeric">
+            <td [attr.data-label]="t('::Results:Exam')">{{ row.examTitle }}</td>
+            <td [attr.data-label]="t('::Results:Form')">{{ row.formName || '—' }}</td>
+            <td [attr.data-label]="t('::Results:Started')"><span class="astro-numeric">{{ row.startedAt | date: 'y/MM/dd HH:mm' }}</span></td>
+            <td class="numeric" [attr.data-label]="t('::Results:Duration')"><span class="astro-numeric">{{ row.durationInMinutes }}</span></td>
+            <td class="numeric" [attr.data-label]="t('::Results:Score')">
               <span class="score astro-numeric">{{ row.scorePercentage }}%</span>
               <!-- Two numbers with a slash between them: the slash is neutral, so in an
                    Arabic row it takes the paragraph direction and 12 / 20 reads 20 / 12. -->
               <span class="score__raw astro-numeric">{{ row.score }} / {{ row.maxScore }}</span>
             </td>
-            <td>
+            <td [attr.data-label]="t('::Results:Outcome')">
               <span
                 class="outcome"
                 [class.outcome--pass]="row.isGraded && row.isPassed"
@@ -168,7 +168,7 @@
                 {{ t(outcomeKey(row)) }}
               </span>
             </td>
-            <td class="numeric">
+            <td class="numeric" [attr.data-label]="t('::Results:Flags')">
               @if (row.integrityFlagCount > 0) {
                 <span class="flags astro-numeric">{{ row.integrityFlagCount }}</span>
               } @else {

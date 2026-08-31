@@ -95,7 +95,7 @@
       <tbody>
         @for (candidate of items(); track candidate.id) {
           <tr>
-            <td>
+            <td [attr.data-label]="t('::Candidate:Name')">
               <span class="name">{{ candidate.fullName }}</span>
               @if (candidate.reference) {
                 <!-- The organisation's own identifier. A coordinator searching for
@@ -104,9 +104,9 @@
               }
             </td>
 
-            <td class="muted"><span class="astro-ltr">{{ candidate.email }}</span></td>
+            <td class="muted" [attr.data-label]="t('::Candidate:Email')"><span class="astro-ltr">{{ candidate.email }}</span></td>
 
-            <td class="muted">
+            <td class="muted" [attr.data-label]="t('::Candidate:Groups')">
               @if (candidate.groupNames.length > 0) {
                 {{ candidate.groupNames.join('، ') }}
               } @else {
@@ -114,10 +114,10 @@
               }
             </td>
 
-            <td class="muted">{{ t(statusKey(candidate)) }}</td>
-            <td class="num"><span class="astro-numeric">{{ candidate.attemptCount }}</span></td>
+            <td class="muted" [attr.data-label]="t('::Candidate:Status')">{{ t(statusKey(candidate)) }}</td>
+            <td class="num" [attr.data-label]="t('::Candidate:Attempts')"><span class="astro-numeric">{{ candidate.attemptCount }}</span></td>
 
-            <td class="row-actions">
+            <td class="row-actions" [attr.data-label]="null">
               @if (busyId() === candidate.id) {
                 <span class="muted">{{ t('::Working') }}</span>
               } @else {

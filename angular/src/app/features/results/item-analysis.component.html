@@ -51,7 +51,7 @@
       <tbody>
         @for (row of visibleRows(); track row.questionId) {
           <tr [class.flagged]="!!row.flagKey">
-            <td>
+            <td [attr.data-label]="t('::Results:Detail:Question')">
               <!-- The row goes to the question. "These six are not measuring
                    anything" is the most credible sentence this product can say to
                    somebody who writes exams for a living, and until now it could
@@ -71,10 +71,10 @@
                 <span class="flag">{{ t(row.flagKey) }}</span>
               }
             </td>
-            <td class="muted">{{ row.topicName || '—' }}</td>
-            <td class="numeric"><span class="astro-numeric">{{ row.timesAnswered }}</span></td>
-            <td class="numeric"><span class="astro-numeric">{{ percent(row.facility) }}</span></td>
-            <td class="numeric" [class.negative]="(row.discrimination ?? 0) < 0">
+            <td class="muted" [attr.data-label]="t('::Question:Topic')">{{ row.topicName || '—' }}</td>
+            <td class="numeric" [attr.data-label]="t('::Results:ItemAnalysis:Answered')"><span class="astro-numeric">{{ row.timesAnswered }}</span></td>
+            <td class="numeric" [attr.data-label]="t('::Results:ItemAnalysis:Facility')"><span class="astro-numeric">{{ percent(row.facility) }}</span></td>
+            <td class="numeric" [class.negative]="(row.discrimination ?? 0) < 0" [attr.data-label]="t('::Results:ItemAnalysis:Discrimination')">
               @if (row.discrimination === null) {
                 <span class="unknown">{{ t('::Results:ItemAnalysis:NotMeasurable') }}</span>
               } @else {

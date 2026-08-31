@@ -63,10 +63,10 @@
       <tbody>
         @for (item of items(); track item.attemptId) {
           <tr>
-            <td>{{ item.candidateName }}</td>
-            <td class="muted">{{ item.examTitle }}</td>
+            <td [attr.data-label]="t('::Review:Candidate')">{{ item.candidateName }}</td>
+            <td class="muted" [attr.data-label]="t('::Review:Exam')">{{ item.examTitle }}</td>
 
-            <td>
+            <td [attr.data-label]="t('::Review:Waiting')">
               <!-- A queue without this hides its own backlog: twelve rows look the
                    same whether the oldest arrived this morning or three weeks ago. -->
               <span class="waiting" [class.waiting--stale]="isStale(item)">
@@ -75,13 +75,13 @@
               <span class="submitted">{{ item.submittedAt | date: 'y/MM/dd' }}</span>
             </td>
 
-            <td class="num"><span class="astro-numeric">{{ item.pendingCount }}</span></td>
+            <td class="num" [attr.data-label]="t('::Review:Pending')"><span class="astro-numeric">{{ item.pendingCount }}</span></td>
 
-            <td class="num muted">
+            <td class="num muted" [attr.data-label]="t('::Review:SoFar')">
               <span class="astro-numeric">{{ item.provisionalScore }} / {{ item.maxScore }}</span>
             </td>
 
-            <td>
+            <td [attr.data-label]="t('::Review:Signals')">
               @if (item.integrityFlagCount > 0) {
                 <!-- Observations for a person to weigh, never a verdict. Leaving a
                      tab is not cheating; a phone rings. -->
@@ -94,7 +94,7 @@
               }
             </td>
 
-            <td class="row-actions">
+            <td class="row-actions" [attr.data-label]="null">
               <div class="row-actions__set">
                 <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/review', item.attemptId]">
                   {{ t('::Review:Open') }}

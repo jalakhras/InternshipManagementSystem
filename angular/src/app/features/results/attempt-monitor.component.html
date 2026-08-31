@@ -75,20 +75,20 @@
       <tbody>
         @for (row of items(); track row.attemptId) {
           <tr>
-            <td>
+            <td [attr.data-label]="t('::Results:Candidate')">
               <span class="candidate__name">{{ row.candidateName }}</span>
               <span class="candidate__email">{{ row.candidateEmail }}</span>
             </td>
-            <td>{{ row.examTitle }}</td>
-            <td class="muted">{{ row.startedAt | date: 'HH:mm' }}</td>
-            <td class="numeric">
+            <td [attr.data-label]="t('::Results:Exam')">{{ row.examTitle }}</td>
+            <td class="muted" [attr.data-label]="t('::Results:Started')">{{ row.startedAt | date: 'HH:mm' }}</td>
+            <td class="numeric" [attr.data-label]="t('::Monitor:Remaining')">
               @if (isExpired(row)) {
                 <span class="expired">{{ t('::Monitor:Expired') }}</span>
               } @else {
                 {{ t('::Section:Minutes', minutesLeft(row).toString()) }}
               }
             </td>
-            <td class="actions">
+            <td class="actions" [attr.data-label]="null">
               @if (canEnd()) {
                 <button type="button" class="link" (click)="askEnd(row)">{{ t('::Monitor:End') }}</button>
               }
