@@ -66,15 +66,24 @@ public class ReviewAppService : ApplicationService, IReviewAppService
         var attempts = await _attempts.GetQueryableAsync();
         var candidates = await _candidates.GetQueryableAsync();
         var exams = await _exams.GetQueryableAsync();
+        var allAnswers = await _answers.GetQueryableAsync();
 
         // Waiting: oldest first, because somebody has been waiting longest for it.
         // Already marked: newest first, because a mark being revisited is nearly
         // always one just made.
+        //
+        // "Already marked" means a person marked it — not merely "nothing is
+        // pending". The predicate used to be the latter, so the tab listed every
+        // multiple-choice sitting the machine scored in milliseconds, none of
+        // which carries a judgement anybody could revisit. The tab exists to
+        // reach a mark a person made, so it lists sittings that hold one.
         var query = input.Finished
             ? from attempt in attempts
               join candidate in candidates on attempt.CandidateId equals candidate.Id
               join exam in exams on attempt.ExamId equals exam.Id
-              where attempt.IsSubmitted && !attempt.NeedsManualReview
+              where attempt.IsSubmitted
+                    && !attempt.NeedsManualReview
+                    && allAnswers.Any(a => a.AttemptId == attempt.Id && a.ReviewedAt != null)
               orderby attempt.SubmittedAt descending
               select new { attempt, candidate.FullName, exam.Title }
             : from attempt in attempts
@@ -89,8 +98,17 @@ public class ReviewAppService : ApplicationService, IReviewAppService
 
         var attemptIds = page.Select(p => p.attempt.Id).ToList();
 
-        var pendingCounts = await (await _answers.GetQueryableAsync())
+        var pendingCounts = await allAnswers
             .Where(a => attemptIds.Contains(a.AttemptId) && a.NeedsManualReview)
+            .GroupBy(a => a.AttemptId)
+            .Select(g => new { AttemptId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.AttemptId, x => x.Count);
+
+        // How much of this sitting a person actually marked. On the waiting tab
+        // that is progress; on the already-marked tab it is the whole reason the
+        // row is there, and "pending: 0" on every row of it says nothing at all.
+        var markedCounts = await allAnswers
+            .Where(a => attemptIds.Contains(a.AttemptId) && a.ReviewedAt != null)
             .GroupBy(a => a.AttemptId)
             .Select(g => new { AttemptId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.AttemptId, x => x.Count);
@@ -112,6 +130,7 @@ public class ReviewAppService : ApplicationService, IReviewAppService
             ExamTitle = p.Title,
             SubmittedAt = p.attempt.SubmittedAt ?? p.attempt.DeadlineAt,
             PendingCount = pendingCounts.TryGetValue(p.attempt.Id, out var c) ? c : 0,
+            MarkedCount = markedCounts.TryGetValue(p.attempt.Id, out var m) ? m : 0,
             ProvisionalScore = p.attempt.Score,
             MaxScore = p.attempt.MaxScore,
             IntegrityFlagCount = showIntegrity ? p.attempt.IntegrityFlagCount : 0
@@ -121,14 +140,29 @@ public class ReviewAppService : ApplicationService, IReviewAppService
     }
 
     /// <summary>
-    /// The answers on one attempt that need a human, with the rubric, the key and
-    /// the behavioural context the reviewer needs to judge them.
+    /// The answers on one attempt that belong to a human, with the rubric, the key
+    /// and the behavioural context the reviewer needs to judge them.
+    /// <para>
+    /// Waiting on a mark <b>or already carrying one</b>. The filter was
+    /// <c>NeedsManualReview</c> alone, and <see cref="GradeAnswerAsync"/> clears
+    /// that flag the moment a mark is saved — so the instant a sitting was
+    /// finished this returned nothing for it, and the "already marked" tab, whose
+    /// entire purpose is reaching a sitting to correct a mark, opened on an empty
+    /// screen for every row it listed. The correction the tab exists to allow
+    /// worked only inside the page session that made the first mark, through a
+    /// local patch of the in-memory list; a reload lost it.
+    /// </para>
+    /// <para>
+    /// Machine-scored answers stay out either way. A marker cannot revise what no
+    /// person decided, and putting forty multiple-choice rows in front of them to
+    /// reach the one essay would bury it.
+    /// </para>
     /// </summary>
     [Authorize(InternshipManagementSystemPermissions.Review.ViewQueue)]
     public async Task<List<ReviewAnswerDto>> GetAnswersAsync(Guid attemptId)
     {
         var pending = await (await _answers.GetQueryableAsync())
-            .Where(a => a.AttemptId == attemptId && a.NeedsManualReview)
+            .Where(a => a.AttemptId == attemptId && (a.NeedsManualReview || a.ReviewedAt != null))
             .ToListAsync();
 
         if (pending.Count == 0)
@@ -142,12 +176,16 @@ public class ReviewAppService : ApplicationService, IReviewAppService
             .Where(q => questionIds.Contains(q.Id))
             .ToDictionaryAsync(q => q.Id);
 
+        // Position as well as marks: a marker reads a paper in the order the
+        // candidate sat it, and the answer rows come back in whatever order the
+        // database volunteers.
         var slots = await (await _attemptQuestions.GetQueryableAsync())
             .Where(f => f.AttemptId == attemptId && questionIds.Contains(f.QuestionId))
-            .ToDictionaryAsync(f => f.QuestionId, f => f.Score);
+            .ToDictionaryAsync(f => f.QuestionId, f => new { f.Score, f.Position });
 
         return pending
             .Where(a => questions.ContainsKey(a.QuestionId))
+            .OrderBy(a => slots.TryGetValue(a.QuestionId, out var slot) ? slot.Position : int.MaxValue)
             .Select(a =>
             {
                 var question = questions[a.QuestionId];
@@ -159,7 +197,7 @@ public class ReviewAppService : ApplicationService, IReviewAppService
                     QuestionId = question.Id,
                     QuestionText = question.Text,
                     QuestionType = question.Type,
-                    MaxScore = slots.TryGetValue(question.Id, out var score) ? score : question.Score,
+                    MaxScore = slots.TryGetValue(question.Id, out var slot) ? slot.Score : question.Score,
                     Response = a.Response,
                     AnswerFileName = a.AnswerFileName,
                     AnswerFileUrl = a.AnswerBlobName is null ? null : $"/api/assessment/media/{a.AnswerBlobName}",
@@ -175,6 +213,11 @@ public class ReviewAppService : ApplicationService, IReviewAppService
                     Explanation = question.Explanation,
                     AwardedScore = a.AwardedScore,
                     ReviewComment = a.ReviewComment,
+                    // The per-criterion marks that produced the total, so a rubric
+                    // being revisited comes back filled in. Without them the screen
+                    // reopens every criterion at zero and the first save silently
+                    // replaces a considered mark with nothing.
+                    RubricScores = PayloadJson.Read<Dictionary<string, decimal>>(a.RubricScores),
                     ReviewedAt = a.ReviewedAt,
                     WasPasted = a.WasPasted,
                     TimeSpentSeconds = a.TimeSpentSeconds,

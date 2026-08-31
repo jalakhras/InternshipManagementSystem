@@ -54,6 +54,17 @@
         <span class="answer__max astro-numeric">{{ t('::Review:OutOf', answer.maxScore.toString()) }}</span>
       </header>
 
+      <!-- Said, not merely striped. Reached from the already-marked tab this card
+           looks identical to an unmarked one except for a green edge, and a
+           marker who cannot tell which they are looking at cannot tell whether
+           the number in the box is their earlier judgement or a default. -->
+      @if (answer.reviewedAt; as marked) {
+        <p class="answer__already">
+          <i class="bi bi-check2-circle" aria-hidden="true"></i>
+          {{ t('::Review:MarkedOn', (marked | date: 'y/MM/dd') ?? '') }}
+        </p>
+      }
+
       <!-- What they wrote. Kept plain: a reviewer reads it, and formatting it to
            look like the question would blur which is which. -->
       <div class="answer__given">
@@ -195,7 +206,13 @@
           class="btn btn-primary"
           [disabled]="savingId() === answer.answerId"
           (click)="save(answer)">
-          {{ savingId() === answer.answerId ? t('::Working') : t('::Review:Award') }}
+          {{
+            savingId() === answer.answerId
+              ? t('::Working')
+              : answer.reviewedAt
+                ? t('::Review:Award:Again')
+                : t('::Review:Award')
+          }}
         </button>
       </div>
     </article>

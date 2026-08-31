@@ -95,6 +95,75 @@ export class ExamFormComponent {
     isScheduled: false,
   });
 
+  // ------------------------------------------------------- the scheduled window
+
+  /**
+   * The organisation's time zone, for the sentence under the two date boxes.
+   *
+   * The window is wall-clock, not an instant: a coordinator typing 09:00 means
+   * nine in the morning where they are, and the server converts into this zone
+   * before it decides whether an exam is open. So the zone has to be on the
+   * screen where the hour is typed — otherwise the only place it is stated is a
+   * settings page the author may never have opened, and the failure it causes
+   * (a cohort sitting in a room while the exam refuses to open) shows up hours
+   * later with nothing on screen to explain it.
+   */
+  readonly timeZone = computed(() => this.settings.current()?.timeZone || null);
+
+  /**
+   * What a `datetime-local` input wants, from what the server sent.
+   *
+   * The server's value has no zone by design — it is a wall clock — so it
+   * arrives as `2026-09-01T09:00:00`. The input takes exactly the first sixteen
+   * characters of that, and slicing rather than parsing is deliberate: `new
+   * Date()` would read the string as local time, shift it, and hand the author
+   * back a different hour from the one they typed.
+   */
+  private toInput(value: string | undefined): string {
+    return value ? value.slice(0, 16) : '';
+  }
+
+  readonly scheduledStart = computed(() => this.toInput(this.form().scheduledStartTime));
+  readonly scheduledEnd = computed(() => this.toInput(this.form().scheduledEndTime));
+
+  /**
+   * The half-set or back-to-front window, said before Save rather than after.
+   * <p>
+   * The server refuses both, and its refusal is the same sentence — but an
+   * author finds out on the way back from a request instead of while they are
+   * still looking at the two boxes.
+   * </p>
+   */
+  readonly scheduleProblem = computed<string | null>(() => {
+    const form = this.form();
+
+    if (!form.isScheduled) {
+      return null;
+    }
+
+    if (!form.scheduledStartTime || !form.scheduledEndTime) {
+      return 'IMS:Exam:ScheduleNeedsBothDates';
+    }
+
+    // String comparison, not Date: both are the same fixed-width wall-clock
+    // shape, so they sort correctly and neither is dragged through a zone.
+    return form.scheduledStartTime >= form.scheduledEndTime
+      ? 'IMS:Exam:ScheduleEndsBeforeItStarts'
+      : null;
+  });
+
+  setScheduled(on: boolean): void {
+    this.form.update(f => ({ ...f, isScheduled: on }));
+  }
+
+  setScheduleStart(value: string): void {
+    this.patch('scheduledStartTime', value || undefined);
+  }
+
+  setScheduleEnd(value: string): void {
+    this.patch('scheduledEndTime', value || undefined);
+  }
+
   readonly isNew = computed(() => !this.id());
   // Signals, not one-shot booleans. Read in a field initialiser the answer is
   // whatever the configuration happened to hold during construction, and a

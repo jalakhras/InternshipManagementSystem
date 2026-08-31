@@ -1,6 +1,6 @@
 <astro-page-header
   [title]="t('::Nav:ReviewQueue')"
-  [description]="t('::Review:Queue:Lede')" />
+  [description]="finished() ? t('::Review:Queue:Finished:Lede') : t('::Review:Queue:Lede')" />
 
 <!-- Two views of the same list, not a filter buried in a menu: putting a mark
      right is a thing markers do, and it should be one click from the queue
@@ -39,10 +39,18 @@
     <button type="button" class="btn btn-outline-secondary" (click)="load()">{{ t('::Retry') }}</button>
   </div>
 } @else if (isEmpty()) {
+  <!-- Two lists, two empty states. "Every submitted attempt has been marked" is
+       true of an empty waiting queue and the opposite of the truth on the tab
+       that lists marked sittings. -->
   <div class="state">
     <i class="bi bi-check2-circle" aria-hidden="true"></i>
-    <p class="state__title">{{ t('::Review:Queue:Empty') }}</p>
-    <p class="state__text">{{ t('::Review:Queue:EmptyNote') }}</p>
+    @if (finished()) {
+      <p class="state__title">{{ t('::Review:Queue:Finished:Empty') }}</p>
+      <p class="state__text">{{ t('::Review:Queue:Finished:EmptyNote') }}</p>
+    } @else {
+      <p class="state__title">{{ t('::Review:Queue:Empty') }}</p>
+      <p class="state__text">{{ t('::Review:Queue:EmptyNote') }}</p>
+    }
   </div>
 }
 
@@ -53,8 +61,11 @@
         <tr>
           <th scope="col">{{ t('::Review:Candidate') }}</th>
           <th scope="col">{{ t('::Review:Exam') }}</th>
-          <th scope="col">{{ t('::Review:Waiting') }}</th>
-          <th scope="col" class="num">{{ t('::Review:Pending') }}</th>
+          <th scope="col">{{ finished() ? t('::Review:Submitted') : t('::Review:Waiting') }}</th>
+          <!-- On the marked tab every row's pending count is zero by definition,
+               so the column that means something there is how much of the sitting
+               a person judged. -->
+          <th scope="col" class="num">{{ finished() ? t('::Review:Marked') : t('::Review:Pending') }}</th>
           <th scope="col" class="num">{{ t('::Review:SoFar') }}</th>
           <th scope="col">{{ t('::Review:Signals') }}</th>
           <th scope="col"><span class="astro-visually-hidden">{{ t('::Actions') }}</span></th>
@@ -66,16 +77,22 @@
             <td [attr.data-label]="t('::Review:Candidate')">{{ item.candidateName }}</td>
             <td class="muted" [attr.data-label]="t('::Review:Exam')">{{ item.examTitle }}</td>
 
-            <td [attr.data-label]="t('::Review:Waiting')">
+            <td [attr.data-label]="finished() ? t('::Review:Submitted') : t('::Review:Waiting')">
               <!-- A queue without this hides its own backlog: twelve rows look the
-                   same whether the oldest arrived this morning or three weeks ago. -->
-              <span class="waiting" [class.waiting--stale]="isStale(item)">
-                {{ t('::Review:Days', waitingDays(item).toString()) }}
-              </span>
+                   same whether the oldest arrived this morning or three weeks ago.
+                   On the marked tab nothing is waiting, so the age is noise and
+                   the date is the fact. -->
+              @if (!finished()) {
+                <span class="waiting" [class.waiting--stale]="isStale(item)">
+                  {{ t('::Review:Days', waitingDays(item).toString()) }}
+                </span>
+              }
               <span class="submitted">{{ item.submittedAt | date: 'y/MM/dd' }}</span>
             </td>
 
-            <td class="num" [attr.data-label]="t('::Review:Pending')"><span class="astro-numeric">{{ item.pendingCount }}</span></td>
+            <td class="num" [attr.data-label]="finished() ? t('::Review:Marked') : t('::Review:Pending')">
+              <span class="astro-numeric">{{ finished() ? item.markedCount : item.pendingCount }}</span>
+            </td>
 
             <td class="num muted" [attr.data-label]="t('::Review:SoFar')">
               <span class="astro-numeric">{{ item.provisionalScore }} / {{ item.maxScore }}</span>
@@ -97,7 +114,7 @@
             <td class="row-actions" [attr.data-label]="null">
               <div class="row-actions__set">
                 <a class="btn btn-sm btn-outline-secondary" [routerLink]="['/review', item.attemptId]">
-                  {{ t('::Review:Open') }}
+                  {{ finished() ? t('::Review:Reopen') : t('::Review:Open') }}
                 </a>
               </div>
             </td>

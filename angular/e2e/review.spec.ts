@@ -31,14 +31,21 @@ test.describe('Review', () => {
     queue: unknown[] = [],
     observations: string[] = [],
     onGrade?: (body: unknown) => void,
+    finishedQueue?: unknown[],
   ) => {
-    await page.route('**/api/assessment/review/queue**', route =>
-      route.fulfill({
+    // The stub honours ?Finished= rather than answering both tabs with the same
+    // rows. A stub that ignored it would report the two tabs as working whichever
+    // way the screen behaved, which is the defect this file now covers.
+    await page.route('**/api/assessment/review/queue**', route => {
+      const wants = new URL(route.request().url()).searchParams.get('finished') === 'true';
+      const rows = wants ? (finishedQueue ?? []) : queue;
+
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ totalCount: queue.length, items: queue }),
-      }),
-    );
+        body: JSON.stringify({ totalCount: rows.length, items: rows }),
+      });
+    });
 
     await page.route('**/api/assessment/review/grade', route => {
       onGrade?.(route.request().postDataJSON());
@@ -199,6 +206,119 @@ test.describe('Review', () => {
     // after it reads as one that failed to load.
     await expect(page.getByText('Model answer:')).toHaveCount(0);
     await expect(page.getByText('Explanation:')).toHaveCount(0);
+  });
+
+  // ----------------------------------------------------------- the marked tab
+  //
+  // `1c2a5fd` gave the queue a second tab so a marker who typed 7 meaning 17 had
+  // a route back to that sitting, and the screen behind every row of it was
+  // blank: GetAnswersAsync filtered on NeedsManualReview, which grading clears.
+  // The server half is covered by RemarkTests; these are the screen's half.
+
+  const marked = (over: Record<string, unknown> = {}) =>
+    answer({
+      awardedScore: 7,
+      reviewComment: 'Meant seventeen.',
+      reviewedAt: '2026-08-30T10:15:00',
+      ...over,
+    });
+
+  test('a sitting already marked says so, and offers to replace the mark', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubReview(page, [marked()]);
+
+    await gotoApp(page, `/review/${ATTEMPT}`);
+
+    // Reached from the marked tab, an already-judged card looked identical to an
+    // unmarked one but for a green edge — so a marker could not tell whether the
+    // number in the box was their earlier judgement or a default.
+    await expect(page.getByText('Marked on', { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Replace this mark' })).toBeVisible();
+    await expect(page.getByText('Every answer on this attempt has been marked.')).toBeVisible();
+  });
+
+  test('a marked rubric reopens with the marks that produced the total', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubReview(page, [
+      marked({
+        maxScore: 10,
+        awardedScore: 8,
+        rubric: [
+          { id: 'r1', name: 'Identifies the cause', maxScore: 6 },
+          { id: 'r2', name: 'Explains the consequence', maxScore: 4 },
+        ],
+        rubricScores: { r1: 5, r2: 3 },
+      }),
+    ]);
+
+    await gotoApp(page, `/review/${ATTEMPT}`);
+
+    // Seeded from what was awarded. Left at zero, the screen showed a considered
+    // eight as an empty rubric and the next save would have replaced it with
+    // nothing — the one journey this tab exists for, quietly destroying the mark
+    // it was opened to correct.
+    await expect(page.getByLabel('Identifies the cause')).toHaveValue('5');
+    await expect(page.getByLabel('Explains the consequence')).toHaveValue('3');
+    await expect(page.locator('.rubric__total')).toContainText('8');
+  });
+
+  test('the marked tab asks the server for marked sittings and counts them', async ({ page }) => {
+    const asked: string[] = [];
+
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubReview(
+      page,
+      [],
+      [],
+      [],
+      undefined,
+      [
+        {
+          attemptId: ATTEMPT,
+          candidateName: 'Layla Hassan',
+          examTitle: 'Spanish B1',
+          submittedAt: '2026-08-30T09:00:00Z',
+          pendingCount: 0,
+          markedCount: 3,
+          provisionalScore: 18,
+          maxScore: 20,
+          integrityFlagCount: 0,
+        },
+      ],
+    );
+
+    page.on('request', request => {
+      if (request.url().includes('/review/queue')) {
+        asked.push(request.url());
+      }
+    });
+
+    await gotoApp(page, '/review');
+    await page.getByRole('button', { name: 'Already marked' }).click();
+
+    await expect.poll(() => asked.some(url => url.includes('finished=true'))).toBe(true);
+
+    // "To mark" is zero on every row of this tab by definition, so the column
+    // that means anything here is how much of the sitting a person judged.
+    await expect(page.getByRole('columnheader', { name: 'Marked' })).toBeVisible();
+
+    // By data-label rather than by cell role: at phone width the table restacks
+    // into labelled rows and the accessible name of the cell picks up the label.
+    await expect(page.locator('td[data-label="Marked"]')).toContainText('3');
+    await expect(page.getByRole('link', { name: 'Review the mark' })).toBeVisible();
+  });
+
+  test('an empty marked tab does not claim everything has been marked', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubReview(page, [], [], [], undefined, []);
+
+    await gotoApp(page, '/review');
+    await page.getByRole('button', { name: 'Already marked' }).click();
+
+    // "Every submitted attempt has been marked" is true of an empty waiting
+    // queue and the opposite of the truth on this one.
+    await expect(page.getByText('Nothing has been marked yet')).toBeVisible();
+    await expect(page.getByText('Every submitted attempt has been marked.')).toHaveCount(0);
   });
 
   test('does not scroll sideways on a phone in Arabic', async ({ page }) => {

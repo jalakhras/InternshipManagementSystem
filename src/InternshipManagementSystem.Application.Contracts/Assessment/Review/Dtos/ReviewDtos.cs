@@ -16,6 +16,17 @@ public class ReviewQueueItemDto
     /// <summary>How many answers still need a mark, so a reviewer can plan.</summary>
     public int PendingCount { get; set; }
 
+    /// <summary>
+    /// How many answers a person has already marked.
+    /// <para>
+    /// On the already-marked tab this is the only count that says anything:
+    /// <see cref="PendingCount"/> is zero on every row there by definition, so a
+    /// column of zeros was all a marker got where they needed to see how much of
+    /// the sitting was their own judgement.
+    /// </para>
+    /// </summary>
+    public int MarkedCount { get; set; }
+
     /// <summary>Marks already awarded automatically.</summary>
     public decimal ProvisionalScore { get; set; }
     public decimal MaxScore { get; set; }
@@ -60,6 +71,19 @@ public class ReviewAnswerDto
     // Already-recorded review, when this answer has been marked before.
     public decimal? AwardedScore { get; set; }
     public string? ReviewComment { get; set; }
+
+    /// <summary>
+    /// The per-criterion marks behind <see cref="AwardedScore"/>, keyed by
+    /// criterion id, when a rubric was used.
+    /// <para>
+    /// Sent back so a mark being revisited opens with the reasoning that produced
+    /// it. The total alone is not enough: a screen that reopens every criterion at
+    /// zero shows a marker a considered eight as an empty rubric, and their next
+    /// save would replace it with nothing.
+    /// </para>
+    /// </summary>
+    public Dictionary<string, decimal>? RubricScores { get; set; }
+
     public DateTime? ReviewedAt { get; set; }
 
     // Behavioural context for this specific answer.

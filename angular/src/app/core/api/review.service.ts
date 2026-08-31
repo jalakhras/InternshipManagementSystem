@@ -13,6 +13,9 @@ export interface ReviewQueueItem {
   /** How many answers on this attempt still need a person. */
   pendingCount: number;
 
+  /** How many a person has already marked. The only count that says anything on the marked tab. */
+  markedCount: number;
+
   /** What the automatic marking has already awarded. Not the final score. */
   provisionalScore: number;
   maxScore: number;
@@ -48,6 +51,10 @@ export interface ReviewAnswer {
 
   awardedScore?: number;
   reviewComment?: string;
+
+  /** The per-criterion marks behind the total, so a rubric reopens filled in. */
+  rubricScores?: Record<string, number>;
+
   reviewedAt?: string;
 
   // How the answer arrived. Observations, not accusations.

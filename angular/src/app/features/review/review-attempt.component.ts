@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 
@@ -31,7 +32,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
   selector: 'astro-review-attempt',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, RouterLink, PageHeaderComponent],
+  imports: [DatePipe, FormsModule, RouterLink, PageHeaderComponent],
   templateUrl: './review-attempt.component.html',
   styleUrl: './review-attempt.component.scss',
 })
@@ -140,10 +141,19 @@ export class ReviewAttemptComponent {
     });
   }
 
-  /** Brings back whatever was already awarded, so a reopened attempt shows its marks. */
+  /**
+   * Brings back whatever was already awarded, so a reopened attempt shows its marks.
+   *
+   * The rubric included. A marker returning to correct a mistyped mark was shown
+   * every criterion at zero while the header claimed the answer had been marked,
+   * and the total the screen would have saved was zero — so the one journey the
+   * marked tab exists for turned a considered eight into nothing on its first
+   * save.
+   */
   private seed(answers: ReviewAnswer[]): void {
     const direct: Record<string, number> = {};
     const comments: Record<string, string> = {};
+    const rubric: Record<string, Record<string, number>> = {};
 
     for (const answer of answers) {
       if (answer.awardedScore != null) {
@@ -153,10 +163,15 @@ export class ReviewAttemptComponent {
       if (answer.reviewComment) {
         comments[answer.answerId] = answer.reviewComment;
       }
+
+      if (answer.rubricScores) {
+        rubric[answer.answerId] = { ...answer.rubricScores };
+      }
     }
 
     this.directMarks.set(direct);
     this.comments.set(comments);
+    this.rubricMarks.set(rubric);
   }
 
   // ------------------------------------------------------------------ marking

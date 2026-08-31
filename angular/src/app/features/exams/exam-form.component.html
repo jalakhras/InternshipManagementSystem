@@ -226,6 +226,77 @@
       </span>
     </label>
   </section>
+
+  <!-- ── When it can be sat ─────────────────────────────────────────────────
+       The server has enforced this window since d5cf42a, converting into the
+       organisation's own zone to do it, and no screen could set either end. So
+       an exam that should open at nine on Tuesday could only be opened by
+       publishing it and hoping, and the time-zone setting's own warning —
+       "getting it wrong opens exams at the wrong hour" — guarded a feature
+       nobody could turn on. -->
+  <section class="group">
+    <h2 class="group__title">{{ t('::Exam:Group:Schedule') }}</h2>
+    <p class="group__lede">{{ t('::Exam:Group:Schedule:Lede') }}</p>
+
+    <label class="toggle">
+      <input
+        id="isScheduled"
+        type="checkbox"
+        name="isScheduled"
+        [checked]="form().isScheduled"
+        (change)="setScheduled(!form().isScheduled)" />
+      <span>
+        <strong>{{ t('::Exam:Scheduled') }}</strong>
+        <small>{{ t('::Exam:Scheduled:Hint') }}</small>
+      </span>
+    </label>
+
+    @if (form().isScheduled) {
+      <div class="row-2">
+        <div class="field">
+          <label class="form-label" for="scheduledStart">{{ t('::Exam:ScheduledStart') }}</label>
+          <input
+            id="scheduledStart"
+            type="datetime-local"
+            class="form-control"
+            name="scheduledStart"
+            [ngModel]="scheduledStart()"
+            (ngModelChange)="setScheduleStart($event)" />
+        </div>
+
+        <div class="field">
+          <label class="form-label" for="scheduledEnd">{{ t('::Exam:ScheduledEnd') }}</label>
+          <input
+            id="scheduledEnd"
+            type="datetime-local"
+            class="form-control"
+            name="scheduledEnd"
+            [min]="scheduledStart()"
+            [ngModel]="scheduledEnd()"
+            (ngModelChange)="setScheduleEnd($event)" />
+        </div>
+      </div>
+
+      <!-- Named on the screen where the hour is typed. The window is a wall
+           clock read in the organisation's zone, and an author who assumes it is
+           theirs opens an exam hours early or hours late for a room full of
+           people. -->
+      <p class="hint">
+        {{
+          timeZone()
+            ? t('::Exam:Schedule:Zone', timeZone()!)
+            : t('::Exam:Schedule:ZoneUnset')
+        }}
+      </p>
+
+      @if (scheduleProblem(); as problem) {
+        <p class="schedule-problem" role="alert">
+          <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+          {{ t('::' + problem) }}
+        </p>
+      }
+    }
+  </section>
 </form>
 
 <!-- ── Publish check ───────────────────────────────────────────────────── -->

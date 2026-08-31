@@ -481,6 +481,17 @@
     word-break: break-word;
   }
 
+  // Reached from the already-marked tab, this is the line that tells a marker
+  // the number below is a judgement somebody already made.
+  &__already {
+    display: flex;
+    align-items: center;
+    gap: var(--astro-space-2);
+    margin: 0 0 var(--astro-space-3);
+    color: var(--status-pass-text);
+    font-size: .875rem;
+  }
+
   &__blank { margin: 0; color: var(--text-muted); font-style: italic; }
   &__file { display: inline-flex; align-items: center; gap: var(--astro-space-2); }
 

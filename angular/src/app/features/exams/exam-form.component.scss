@@ -40,6 +40,7 @@
 .field + .field,
 .row-2 + .field,
 .field + .toggle,
+.toggle + .row-2,
 .toggle + .toggle {
   margin-block-start: var(--astro-space-4);
 }
@@ -80,6 +81,20 @@ textarea.form-control { min-block-size: 5rem; }
   color: var(--text-muted);
   font-size: var(--astro-text-xs);
   max-inline-size: 60ch;
+}
+
+// A half-set or back-to-front window, said beside the two boxes rather than
+// after a refused save. Not `.alert`: Bootstrap owns that class name.
+.schedule-problem {
+  display: flex;
+  align-items: center;
+  gap: var(--astro-space-2);
+  margin: var(--astro-space-3) 0 0;
+  padding: var(--astro-space-2) var(--astro-space-3);
+  border-radius: var(--astro-radius-md);
+  background: var(--status-fail-bg);
+  color: var(--status-fail-text);
+  font-size: var(--astro-text-sm);
 }
 
 // ── Choices and toggles ──────────────────────────────────────────────────────

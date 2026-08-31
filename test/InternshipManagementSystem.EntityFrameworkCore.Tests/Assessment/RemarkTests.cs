@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment;
@@ -123,9 +124,137 @@ public class RemarkTests : InternshipManagementSystemEntityFrameworkCoreTestBase
         });
     }
 
+    [Fact]
+    public async Task The_marked_sitting_opens_with_the_answers_that_were_marked()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var attemptId = await SatAndSubmittedAsync("remark-c");
+
+            var answer = (await _review.GetAnswersAsync(attemptId)).Single();
+
+            await _review.GradeAnswerAsync(new GradeAnswerDto
+            {
+                AnswerId = answer.AnswerId,
+                AwardedScore = 7m,
+                Comment = "Meant seventeen.",
+            });
+
+            // The whole point of the tab, and the thing it did not do. Marking
+            // clears NeedsManualReview, and that flag was the only thing the
+            // marking screen's own query filtered on — so the moment a sitting
+            // was finished the screen behind every row of the marked tab had
+            // nothing to draw. The tab opened, and it opened blank.
+            var reopened = await _review.GetAnswersAsync(attemptId);
+
+            reopened.Count.ShouldBe(1);
+
+            var again = reopened.Single();
+
+            again.AnswerId.ShouldBe(answer.AnswerId);
+            again.AwardedScore.ShouldBe(7m);
+            again.ReviewComment.ShouldBe("Meant seventeen.");
+            again.ReviewedAt.ShouldNotBeNull();
+        });
+    }
+
+    [Fact]
+    public async Task A_rubric_comes_back_with_the_marks_that_produced_the_total()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var attemptId = await SatAndSubmittedAsync("remark-d", Rubric);
+
+            var answer = (await _review.GetAnswersAsync(attemptId)).Single();
+
+            answer.Rubric.Count.ShouldBe(2);
+
+            await _review.GradeAnswerAsync(new GradeAnswerDto
+            {
+                AnswerId = answer.AnswerId,
+                AwardedScore = 8m,
+                RubricScores = new Dictionary<string, decimal> { ["cause"] = 5m, ["effect"] = 3m },
+            });
+
+            // Without the criterion marks, a reopened rubric shows every line at
+            // zero while the card says the answer is marked — and the total the
+            // screen would save next is zero. The mark is not merely unreadable;
+            // it is one click from being replaced by nothing.
+            var again = (await _review.GetAnswersAsync(attemptId)).Single();
+
+            again.RubricScores.ShouldNotBeNull();
+            again.RubricScores["cause"].ShouldBe(5m);
+            again.RubricScores["effect"].ShouldBe(3m);
+        });
+    }
+
+    [Fact]
+    public async Task The_marked_tab_lists_only_sittings_a_person_marked()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var machineMarked = await SatAndSubmittedAsync(
+                "remark-e", questionType: QuestionTypes.SingleChoice);
+
+            // Marked by nobody: a multiple-choice paper the grader scored in
+            // milliseconds. There is no judgement on it, so there is nothing on
+            // it to revisit.
+            (await _review.GetAnswersAsync(machineMarked)).ShouldBeEmpty();
+
+            var done = await _review.GetQueueAsync(
+                new ReviewQueueRequestDto { Finished = true, MaxResultCount = 200 });
+
+            // The predicate was "submitted and nothing pending", which is true of
+            // every auto-graded sitting ever taken. So the tab a marker opens to
+            // find their own work listed the tenant's whole history, and every
+            // one of those rows opened blank.
+            done.Items.ShouldNotContain(item => item.AttemptId == machineMarked);
+        });
+    }
+
+    [Fact]
+    public async Task The_marked_tab_counts_what_a_person_marked_rather_than_what_is_pending()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var attemptId = await SatAndSubmittedAsync("remark-f");
+
+            var answer = (await _review.GetAnswersAsync(attemptId)).Single();
+
+            await _review.GradeAnswerAsync(new GradeAnswerDto
+            {
+                AnswerId = answer.AnswerId,
+                AwardedScore = 12m,
+            });
+
+            var done = await _review.GetQueueAsync(
+                new ReviewQueueRequestDto { Finished = true, MaxResultCount = 200 });
+
+            var row = done.Items.Single(item => item.AttemptId == attemptId);
+
+            // Pending is zero on every row of this tab by definition, so a column
+            // of it says nothing at all about the sitting it labels.
+            row.PendingCount.ShouldBe(0);
+            row.MarkedCount.ShouldBe(1);
+        });
+    }
+
     // ------------------------------------------------------------------ helpers
 
-    private async Task<Guid> SatAndSubmittedAsync(string code)
+    /// <summary>Two named criteria, so a rubric has something to come back with.</summary>
+    private static readonly RubricPayload Rubric = new()
+    {
+        Criteria =
+        [
+            new RubricCriterion { Id = "cause", Name = "Identifies the cause", MaxScore = 12m },
+            new RubricCriterion { Id = "effect", Name = "Explains the consequence", MaxScore = 8m },
+        ],
+    };
+
+    private async Task<Guid> SatAndSubmittedAsync(
+        string code,
+        RubricPayload? rubric = null,
+        string questionType = QuestionTypes.Text)
     {
         var categories = GetRequiredService<IRepository<Category, Guid>>();
 
@@ -140,14 +269,28 @@ public class RemarkTests : InternshipManagementSystemEntityFrameworkCoreTestBase
             CategoryId = category.Id,
         });
 
-        // Free text, so it waits for a person and there is a mark to get wrong.
+        // Free text by default, so it waits for a person and there is a mark to
+        // get wrong. A single-choice question instead produces an attempt no
+        // human ever touches, which is the other half of what the marked tab has
+        // to get right.
+        var isText = questionType == QuestionTypes.Text;
+
         await _questions.CreateAsync(new CreateUpdateQuestionDto
         {
             ExamId = exam.Id,
-            Type = QuestionTypes.Text,
+            Type = questionType,
             Text = code + " — explain your reasoning",
             Score = 20m,
-            Payload = PayloadJson.Write(new RubricPayload()),
+            Payload = isText
+                ? PayloadJson.Write(rubric ?? new RubricPayload())
+                : PayloadJson.Write(new ChoicePayload
+                {
+                    Options =
+                    [
+                        new OptionPayload { Id = "a", Text = "Right", IsCorrect = true },
+                        new OptionPayload { Id = "b", Text = "Wrong", IsCorrect = false },
+                    ],
+                }),
         });
 
         await _exams.PublishAsync(exam.Id);
@@ -175,7 +318,7 @@ public class RemarkTests : InternshipManagementSystemEntityFrameworkCoreTestBase
         await _taking.SaveAnswerAsync(state.SessionToken!, new SaveAnswerDto
         {
             QuestionId = question.Id,
-            Response = "Because the volume dried up at the high.",
+            Response = isText ? "Because the volume dried up at the high." : "a",
             TimeSpentSeconds = 200,
             KeystrokeCount = 60,
             BackspaceCount = 5,
