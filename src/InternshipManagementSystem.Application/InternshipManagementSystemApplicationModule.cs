@@ -4,9 +4,11 @@ using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment.Delivery;
 using InternshipManagementSystem.Assessment.Grading;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Volo.Abp;
 using Volo.Abp.Account;
 using Volo.Abp.BackgroundWorkers;
+using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -32,6 +34,48 @@ public class InternshipManagementSystemApplicationModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         RegisterQuestionGraders(context.Services);
+        ConfigureEmailTransport(context);
+    }
+
+    /// <summary>
+    /// Which road an invitation travels.
+    /// <para>
+    /// SMTP unless an HTTP key is configured, and then HTTP. The choice is made
+    /// by which credential exists rather than by a switch, because a deployment
+    /// that has put an API key in its secrets has already said what it wants and
+    /// should not have to say it twice.
+    /// </para>
+    /// <para>
+    /// This exists because SMTP is not always reachable. On the network this was
+    /// first configured for, a connection to smtp.gmail.com on 587 and on 465 is
+    /// accepted and then never answered, and 25 is refused; 443 works. Blocking
+    /// outbound SMTP is ordinary practice for consumer and corporate networks in
+    /// the region this product is for — and a customer who cannot send
+    /// invitations cannot use it at all, because the link inside that message is
+    /// the candidate's entire credential.
+    /// </para>
+    /// <para>
+    /// Registered here rather than in the domain module, which has no business
+    /// making HTTP calls, and after it, so this replaces what it chose.
+    /// </para>
+    /// </summary>
+    private void ConfigureEmailTransport(ServiceConfigurationContext context)
+    {
+        var configuration = context.Services.GetConfiguration();
+
+        Configure<ResendOptions>(configuration.GetSection("Mailing:Resend"));
+
+        var apiKey = configuration["Mailing:Resend:ApiKey"];
+
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return;
+        }
+
+        context.Services.AddHttpClient(nameof(ResendEmailSender));
+
+        context.Services.Replace(
+            ServiceDescriptor.Transient<IEmailSender, ResendEmailSender>());
     }
 
     /// <summary>

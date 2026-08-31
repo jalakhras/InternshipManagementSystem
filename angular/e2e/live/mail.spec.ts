@@ -63,17 +63,27 @@ test.describe('The invitation, actually sent', () => {
 
     await send(ctx, 'post', `/api/assessment/exams/${exam.id}/publish`);
 
-    // Plus-addressed, so every run is a new person and every message still
-    // lands in the same inbox. Re-sending to the same address would be refused
-    // as a duplicate on the second run, and the failure would look like a mail
-    // failure rather than what it is.
-    const at = to!.indexOf('@');
-    const inbox = to!.slice(0, at) + '+' + unique('astro') + to!.slice(at);
+    // The exact address, and the same person on every run.
+    //
+    // Plus-addressing would keep each run's row unique, and a relay sending on a
+    // test key refuses it: until a domain is verified the only recipient allowed
+    // is the account holder's address, character for character. So the person is
+    // looked up first and only created once — which is also closer to life,
+    // where a centre sends to somebody who is already on the roll.
+    const inbox = to!;
 
-    const candidate = await send<{ id: string }>(ctx, 'post', '/api/assessment/candidates', {
-      fullName: 'المستقبِل',
-      email: inbox,
-    });
+    const existing = await send<{ items: { id: string }[] }>(
+      ctx,
+      'get',
+      `/api/assessment/candidates?filter=${encodeURIComponent(inbox)}&maxResultCount=1`,
+    );
+
+    const candidate = existing.items.length > 0
+      ? existing.items[0]
+      : await send<{ id: string }>(ctx, 'post', '/api/assessment/candidates', {
+          fullName: 'المستقبِل',
+          email: inbox,
+        });
 
     const assignment = await send<{ recipients: { url: string; emailSent: boolean }[] }>(
       ctx,
