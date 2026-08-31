@@ -144,6 +144,11 @@ export interface PublishCheckDto {
 
 export interface BlueprintRuleDto {
   id: string;
+
+  /** The part of the paper this rule fills. Null fills the paper as a whole. */
+  examSectionId?: string;
+  examSectionName?: string;
+
   topicId?: string;
   topicName?: string;
   difficulty?: QuestionDifficulty;
@@ -164,6 +169,17 @@ export interface BlueprintRuleDto {
  * however the individual questions differ.
  */
 export interface CreateUpdateBlueprintRuleDto {
+  /**
+   * The part of the paper this rule fills, or null for the paper as a whole.
+   *
+   * A part that owns a rule draws from the shared bank on what the rule asks
+   * for, which is how "ten listening and ten reading, drawn fresh each sitting"
+   * is written down. Without it a part could only serve questions filed into it
+   * by hand — and a shared-bank question cannot be filed into one exam's part,
+   * because it belongs to every exam at its level.
+   */
+  examSectionId?: string | null;
+
   /** Null means "any topic", which is the right answer for a single-subject exam. */
   topicId?: string | null;
 

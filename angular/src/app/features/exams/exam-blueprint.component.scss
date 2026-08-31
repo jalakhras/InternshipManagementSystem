@@ -78,6 +78,16 @@
 
 .icon--danger { color: var(--status-fail-text); }
 
+// Said once under the list rather than beside every row: a part with a rule
+// draws from the shared bank, and that is the only way a part is filled from
+// the bank at all.
+.note {
+  margin: var(--astro-space-3) 0 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+  max-inline-size: 76ch;
+}
+
 .summary {
   display: flex;
   gap: var(--astro-space-4);

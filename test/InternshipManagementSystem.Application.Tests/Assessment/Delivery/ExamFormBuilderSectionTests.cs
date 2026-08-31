@@ -372,6 +372,188 @@ public class ExamFormBuilderSectionTests
         bank.ShouldAllBe(question => question.ExamSectionId == null);
     }
 
+    [Fact]
+    public void A_rule_on_a_section_draws_from_the_shared_bank_when_nothing_is_filed()
+    {
+        var section = Section(Listening, "Listening", 0);
+        var exam = Exam(section);
+
+        var topic = Guid.NewGuid();
+
+        exam.Blueprint.Add(new ExamBlueprintRule(Guid.NewGuid(), null, exam.Id, questionCount: 2)
+        {
+            ExamSectionId = Listening,
+            TopicId = topic,
+            Difficulty = QuestionDifficulty.Hard,
+        });
+
+        // Nothing filed under the section, because a shared-bank question cannot
+        // be filed into one exam's part — it belongs to every exam at its level.
+        // The rule is the section speaking about the bank in the bank's own
+        // terms: this topic, this difficulty, this many.
+        var bank = Questions(null, 6);
+
+        foreach (var question in bank)
+        {
+            question.TopicId = topic;
+            question.Difficulty = QuestionDifficulty.Hard;
+        }
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 21);
+
+        paper.Count.ShouldBe(2);
+        paper.ShouldAllBe(slot => slot.ExamSectionId == Listening);
+    }
+
+    [Fact]
+    public void A_rule_on_a_section_draws_at_the_difficulty_it_names()
+    {
+        var section = Section(Listening, "Listening", 0);
+        var exam = Exam(section);
+
+        var topic = Guid.NewGuid();
+
+        exam.Blueprint.Add(new ExamBlueprintRule(Guid.NewGuid(), null, exam.Id, questionCount: 2)
+        {
+            ExamSectionId = Listening,
+            TopicId = topic,
+            Difficulty = QuestionDifficulty.Hard,
+        });
+
+        var hard = Questions(null, 2);
+        var easy = Questions(null, 4);
+
+        foreach (var question in hard)
+        {
+            question.TopicId = topic;
+            question.Difficulty = QuestionDifficulty.Hard;
+        }
+
+        foreach (var question in easy)
+        {
+            question.TopicId = topic;
+            question.Difficulty = QuestionDifficulty.Easy;
+        }
+
+        var bank = hard.Concat(easy).ToList();
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 22);
+
+        // What a rule is for, and what a section topic on its own cannot say.
+        // "Ten listening questions" and "ten hard listening questions" are
+        // different papers, and only one of them measures what was intended.
+        var hardIds = hard.Select(q => q.Id).ToHashSet();
+
+        var underTheHeading = paper.Where(slot => slot.ExamSectionId == Listening).ToList();
+
+        underTheHeading.Count.ShouldBe(2);
+        underTheHeading.ShouldAllBe(slot => hardIds.Contains(slot.QuestionId));
+
+        // The four easy ones are not deleted — they were never what this rule
+        // was looking at, so they reach the paper unfiled, as authored content
+        // that no heading claimed.
+        paper.Count(slot => slot.ExamSectionId == null).ShouldBe(4);
+    }
+
+    [Fact]
+    public void A_rule_that_took_two_of_six_does_not_let_the_other_four_arrive_anyway()
+    {
+        var section = Section(Listening, "Listening", 0);
+        var exam = Exam(section);
+
+        var topic = Guid.NewGuid();
+
+        exam.Blueprint.Add(new ExamBlueprintRule(Guid.NewGuid(), null, exam.Id, questionCount: 2)
+        {
+            ExamSectionId = Listening,
+            TopicId = topic,
+        });
+
+        var bank = Questions(null, 6);
+
+        foreach (var question in bank)
+        {
+            question.TopicId = topic;
+        }
+
+        var paper = _builder.Build(exam, bank, Guid.NewGuid(), null, seed: 23);
+
+        // The section speaks for everything it could have drawn, not only for
+        // what it took. Without that the four it passed over fall through to the
+        // unfiled tail and reach the candidate regardless — so a rule that says
+        // "two" hands over six, which is not a rule at all.
+        paper.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void What_no_rule_asked_for_still_reaches_the_paper()
+    {
+        var section = Section(Listening, "Listening", 0);
+        var exam = Exam(section);
+
+        var listening = Guid.NewGuid();
+
+        exam.Blueprint.Add(new ExamBlueprintRule(Guid.NewGuid(), null, exam.Id, questionCount: 1)
+        {
+            ExamSectionId = Listening,
+            TopicId = listening,
+        });
+
+        var claimed = Questions(null, 2);
+        var untouched = Questions(null, 3);
+
+        foreach (var question in claimed)
+        {
+            question.TopicId = listening;
+        }
+
+        foreach (var question in untouched)
+        {
+            question.TopicId = Guid.NewGuid();
+        }
+
+        var paper = _builder.Build(exam, untouched.Concat(claimed).ToList(), Guid.NewGuid(), null, seed: 24);
+
+        // The other half. A section claims what it selects on and nothing wider:
+        // questions no rule was ever going to look at are authored content, and
+        // adding one heading to an exam must not delete them.
+        paper.Count(slot => slot.ExamSectionId == Listening).ShouldBe(1);
+        paper.Count(slot => slot.ExamSectionId == null).ShouldBe(3);
+    }
+
+    [Fact]
+    public void Questions_filed_into_a_section_still_win_over_the_bank()
+    {
+        var section = Section(Listening, "Listening", 0);
+        var exam = Exam(section);
+
+        var topic = Guid.NewGuid();
+
+        exam.Blueprint.Add(new ExamBlueprintRule(Guid.NewGuid(), null, exam.Id, questionCount: 5)
+        {
+            ExamSectionId = Listening,
+            TopicId = topic,
+        });
+
+        var filed = Questions(Listening, 2);
+        var shared = Questions(null, 5);
+
+        foreach (var question in filed.Concat(shared))
+        {
+            question.TopicId = topic;
+        }
+
+        var paper = _builder.Build(exam, filed.Concat(shared).ToList(), Guid.NewGuid(), null, seed: 25);
+
+        // Somebody put those two questions in this part of this exam on purpose,
+        // and drawing from the bank instead would quietly overrule them. The
+        // bank is what a part falls back to, never what it prefers.
+        var filedIds = filed.Select(q => q.Id).ToHashSet();
+
+        paper.Where(slot => slot.ExamSectionId == Listening)
+             .ShouldAllBe(slot => filedIds.Contains(slot.QuestionId));
+    }
+
     // ------------------------------------------------------------------ helpers
 
     /// <summary>The sections a paper visits, in order, collapsing each run into one entry.</summary>

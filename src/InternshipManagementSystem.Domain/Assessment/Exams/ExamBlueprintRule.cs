@@ -42,6 +42,22 @@ public class ExamBlueprintRule : AuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Order in which rules are applied, and the order their questions appear.</summary>
     public int DisplayOrder { get; set; }
 
+    /// <summary>
+    /// Whether this rule would accept that question.
+    /// <para>
+    /// One definition, because the builder, the publish check and the count shown
+    /// beside the rule all ask it. Written out three times they drift, and the
+    /// drift that matters is a publish check that approves a paper the builder
+    /// then cannot fill.
+    /// </para>
+    /// </summary>
+    public bool Matches(Question question) =>
+        question.IsActive
+        && (TopicId is null || question.TopicId == TopicId)
+        && (Difficulty is null || question.Difficulty == Difficulty)
+        && (QuestionType is null
+            || string.Equals(question.Type, QuestionType, StringComparison.OrdinalIgnoreCase));
+
     protected ExamBlueprintRule() { }
 
     public ExamBlueprintRule(Guid id, Guid? tenantId, Guid examId, int questionCount) : base(id)

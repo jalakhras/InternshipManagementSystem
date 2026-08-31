@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { ExamService } from '../../core/api/exam.service';
 import { QuestionService } from '../../core/api/question.service';
 import { CatalogService } from '../../core/api/catalog.service';
+import { StructureService } from '../../core/api/structure.service';
 import {
   BlueprintRuleDto,
   CreateUpdateBlueprintRuleDto,
@@ -12,6 +13,7 @@ import {
   QuestionTypeDescriptor,
 } from '../../core/api/assessment.models';
 import { TopicDto } from '../../core/api/catalog.models';
+import { ExamSectionDto } from '../../core/api/structure.models';
 import { InternshipManagementSystemPermissions as P } from '../../core/permissions';
 import { permissionSignal } from '../../core/permission.signal';
 import { TranslateService } from '../../core/translate.service';
@@ -46,6 +48,7 @@ export class ExamBlueprintComponent {
   private readonly exams = inject(ExamService);
   private readonly questions = inject(QuestionService);
   private readonly catalog = inject(CatalogService);
+  private readonly structure = inject(StructureService);
 
   readonly t = inject(TranslateService).t;
 
@@ -59,6 +62,14 @@ export class ExamBlueprintComponent {
   readonly examTitle = signal('');
   readonly rules = signal<Rule[]>([]);
   readonly topics = signal<TopicDto[]>([]);
+
+  /**
+   * The parts of this exam, if it has any.
+   *
+   * Most exams are one undivided paper and never see this field: offering a
+   * "which part" box on an exam with no parts is a question with one answer.
+   */
+  readonly sections = signal<ExamSectionDto[]>([]);
   readonly types = signal<QuestionTypeDescriptor[]>([]);
 
   /** What the bank offers this exam in total, for the "is this even possible" line. */
@@ -126,6 +137,11 @@ export class ExamBlueprintComponent {
       error: () => this.examTitle.set(''),
     });
 
+    this.structure.getSections(id).subscribe({
+      next: sections => this.sections.set(sections),
+      error: () => this.sections.set([]),
+    });
+
     this.exams.getBlueprint(id).subscribe({
       next: rules => {
         this.rules.set(rules.map(toRule));
@@ -142,6 +158,7 @@ export class ExamBlueprintComponent {
     this.rules.update(rules => [
       ...rules,
       {
+        examSectionId: '',
         topicId: '',
         difficulty: null,
         questionType: '',
@@ -179,6 +196,7 @@ export class ExamBlueprintComponent {
     }
 
     const body: CreateUpdateBlueprintRuleDto[] = this.rules().map((rule, index) => ({
+      examSectionId: rule.examSectionId || null,
       topicId: rule.topicId || null,
       difficulty: rule.difficulty,
       questionType: rule.questionType || null,
@@ -216,6 +234,7 @@ export class ExamBlueprintComponent {
 }
 
 interface Rule {
+  examSectionId: string;
   topicId: string;
   difficulty: QuestionDifficulty | null;
   questionType: string;
@@ -225,6 +244,7 @@ interface Rule {
 }
 
 const toRule = (dto: BlueprintRuleDto): Rule => ({
+  examSectionId: dto.examSectionId ?? '',
   topicId: dto.topicId ?? '',
   difficulty: dto.difficulty ?? null,
   questionType: dto.questionType ?? '',

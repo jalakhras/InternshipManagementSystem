@@ -53,6 +53,28 @@
               (ngModelChange)="patch($index, 'questionCount', +$event)" />
           </label>
 
+          @if (sections().length > 0) {
+            <!-- Only where there is something to choose. A part that owns a rule
+                 draws from the shared bank on what the rule asks for, which is
+                 the only way a part can be filled from the bank at all: a shared
+                 question belongs to every exam at its level and cannot be filed
+                 into one exam's part. -->
+            <label class="field">
+              <span class="field__label">{{ t('::Blueprint:Section') }}</span>
+              <select
+                class="form-select"
+                [disabled]="!canEdit()"
+                [ngModel]="rule.examSectionId"
+                [name]="'section' + $index"
+                (ngModelChange)="patch($index, 'examSectionId', $event)">
+                <option value="">{{ t('::Blueprint:WholePaper') }}</option>
+                @for (section of sections(); track section.id) {
+                  <option [value]="section.id">{{ section.name }}</option>
+                }
+              </select>
+            </label>
+          }
+
           <label class="field">
             <span class="field__label">{{ t('::Question:Topic') }}</span>
             <select
@@ -123,6 +145,10 @@
         </li>
       }
     </ul>
+
+    @if (sections().length > 0) {
+      <p class="note">{{ t('::Blueprint:SectionNote') }}</p>
+    }
 
     <div class="summary">
       <span class="summary__total">{{ t('::Blueprint:Total', total().toString()) }}</span>

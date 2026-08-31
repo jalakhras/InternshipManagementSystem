@@ -169,52 +169,34 @@ public class ExamFormBuilder : ITransientDependency
         var taken = new HashSet<Guid>();
         var paper = new List<PaperSlot>();
 
-        // Topics a section has claimed from the bank. What it did not draw is
-        // not left over — it was simply not chosen.
-        var spokenFor = new HashSet<Guid>();
+        // Shared-bank questions a section has claimed. What it could have drawn
+        // and did not was not left over — it was simply not chosen.
+        var claimed = new HashSet<Guid>();
 
         foreach (var section in exam.Sections.OrderBy(s => s.DisplayOrder))
         {
-            var pool = bank.Where(q => q.IsActive && q.ExamSectionId == section.Id).ToList();
+            var rules = exam.Blueprint.Where(r => r.ExamSectionId == section.Id).ToList();
 
-            // Nothing filed here, but the section says what it measures — so it
-            // draws from the bank on that.
-            //
-            // A question in the shared bank belongs to every exam at its level,
-            // so it cannot be filed into one exam's section: filing it there
-            // would be a claim about a paper it has never seen. Ten comparable
-            // products were read before this line was written, and all ten put
-            // "which part of the paper" on the structure rather than on the item
-            // — as a reference the section holds, or a rule the section owns
-            // that selects on what the item already says about itself.
-            //
-            // This is the smallest form of that. The section's own topic is the
-            // rule, and the topic is a fact about the question that is true in
-            // every exam. So a language centre can finally say what it has been
-            // asking for: draw ten Listening from the bank, and ten Reading.
-            if (pool.Count == 0 && section.TopicId is { } topicId)
+            // Filed questions if it has any, otherwise the shared bank on
+            // whatever the section says about itself. One definition, shared
+            // with the publish check and with the count the author sees while
+            // writing the rule.
+            var pool = SectionPool.For(section, rules, bank, taken);
+
+            // The section speaks for everything it could have drawn from the
+            // shared bank, whether it takes two of the twenty or all twenty.
+            // Without this the eighteen it did not choose fell through to the
+            // unfiled tail and arrived anyway — so a section that said "two
+            // Listening" delivered twenty, which is not a section at all.
+            foreach (var question in pool.Where(q => q.ExamSectionId is null))
             {
-                pool = bank
-                    .Where(q => q.IsActive
-                                && q.ExamSectionId == null
-                                && q.TopicId == topicId
-                                && !taken.Contains(q.Id))
-                    .ToList();
-
-                // The section speaks for that topic on this paper, whether it
-                // draws two of the twenty or all twenty. Without this the
-                // eighteen it did not choose fell through to the unfiled tail
-                // and arrived anyway — so a section that said "two Listening"
-                // delivered twenty, which is not a section at all.
-                spokenFor.Add(topicId);
+                claimed.Add(question.Id);
             }
 
             if (pool.Count == 0)
             {
                 continue;
             }
-
-            var rules = exam.Blueprint.Where(r => r.ExamSectionId == section.Id).ToList();
 
             // A blueprint rule aimed at this section is more specific than the
             // section's own count and wins: it says which topics and difficulties,
@@ -239,7 +221,7 @@ public class ExamFormBuilder : ITransientDependency
             .Where(q => q.IsActive
                         && q.ExamSectionId is null
                         && !taken.Contains(q.Id)
-                        && !(q.TopicId is { } t && spokenFor.Contains(t)))
+                        && !claimed.Contains(q.Id))
             .ToList();
 
         var loose = exam.Blueprint.Where(r => r.ExamSectionId is null).ToList();
@@ -346,12 +328,8 @@ public class ExamFormBuilder : ITransientDependency
 
         foreach (var rule in rules.OrderBy(r => r.DisplayOrder))
         {
-            var eligible = pool.Where(q =>
-                    q.IsActive &&
-                    !taken.Contains(q.Id) &&
-                    (rule.TopicId is null || q.TopicId == rule.TopicId) &&
-                    (rule.Difficulty is null || q.Difficulty == rule.Difficulty) &&
-                    (rule.QuestionType is null || string.Equals(q.Type, rule.QuestionType, StringComparison.OrdinalIgnoreCase)))
+            var eligible = pool
+                .Where(q => !taken.Contains(q.Id) && rule.Matches(q))
                 .ToList();
 
             foreach (var question in Shuffle(eligible, random).Take(rule.QuestionCount))
@@ -456,17 +434,14 @@ public class ExamFormBuilder : ITransientDependency
 }
 
 /// <summary>
-/// One place on a paper: the question, and what it is worth there.
+/// One place on the paper: the question, what it is worth here, and which
+/// section drew it.
 /// <para>
 /// The marks are separate from the question because a named form freezes its own —
 /// the same question can be worth two marks on the placement paper and five on the
 /// final, and reading them off the question would silently rescore a published
 /// form when somebody edited it.
 /// </para>
-/// </summary>
-/// <summary>
-/// One place on the paper: the question, what it is worth here, and which
-/// section drew it.
 /// <para>
 /// The section is on the slot and not read off the question, because a question
 /// in the shared bank is drawable by every exam at its level and cannot belong

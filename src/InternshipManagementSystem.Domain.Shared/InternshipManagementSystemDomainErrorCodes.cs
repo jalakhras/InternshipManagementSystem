@@ -74,6 +74,13 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string ExamOutsideSchedule = "IMS:Exam:OutsideSchedule";
     public const string ExamBlueprintUnsatisfiable = "IMS:Exam:BlueprintUnsatisfiable";
 
+    /// <summary>
+    /// A blueprint rule aimed at a part of some other exam. Left unchecked it
+    /// draws nothing and says nothing: the author sees a rule that asks for
+    /// eight questions and a paper that arrives without them.
+    /// </summary>
+    public const string ExamBlueprintSectionNotInExam = "IMS:Exam:BlueprintSectionNotInExam";
+
     // ---- Exam links ----
     public const string ExamLinkInvalid = "IMS:ExamLink:Invalid";
     public const string ExamLinkExpired = "IMS:ExamLink:Expired";

@@ -21,6 +21,7 @@ public class ExamAppService : ApplicationService, IExamAppService
     private readonly IRepository<Exam, Guid> _exams;
     private readonly IRepository<Question, Guid> _questions;
     private readonly IRepository<ExamBlueprintRule, Guid> _blueprint;
+    private readonly IRepository<ExamSection, Guid> _sections;
     private readonly IRepository<Category, Guid> _categories;
     private readonly IRepository<Level, Guid> _levels;
     private readonly IRepository<Topic, Guid> _topics;
@@ -29,6 +30,7 @@ public class ExamAppService : ApplicationService, IExamAppService
         IRepository<Exam, Guid> exams,
         IRepository<Question, Guid> questions,
         IRepository<ExamBlueprintRule, Guid> blueprint,
+        IRepository<ExamSection, Guid> sections,
         IRepository<Category, Guid> categories,
         IRepository<Level, Guid> levels,
         IRepository<Topic, Guid> topics)
@@ -36,6 +38,7 @@ public class ExamAppService : ApplicationService, IExamAppService
         _exams = exams;
         _questions = questions;
         _blueprint = blueprint;
+        _sections = sections;
         _categories = categories;
         _levels = levels;
         _topics = topics;
@@ -212,12 +215,11 @@ public class ExamAppService : ApplicationService, IExamAppService
         {
             result.FormLength = rules.Sum(r => r.QuestionCount);
 
+            var sections = await SectionsOfAsync(id);
+
             foreach (var rule in rules)
             {
-                var available = bank.Count(q =>
-                    (rule.TopicId is null || q.TopicId == rule.TopicId) &&
-                    (rule.Difficulty is null || q.Difficulty == rule.Difficulty) &&
-                    (rule.QuestionType is null || q.Type == rule.QuestionType));
+                var available = AvailableFor(rule, rules, sections, bank);
 
                 if (available < rule.QuestionCount)
                 {
@@ -339,8 +341,9 @@ public class ExamAppService : ApplicationService, IExamAppService
 
         var bank = await (await _questions.GetQueryableAsync())
             .Where(Question.DrawableBy(examId, exam.CategoryId, exam.LevelId))
-            .Select(q => new { q.TopicId, q.Difficulty, q.Type })
             .ToListAsync();
+
+        var sections = await SectionsOfAsync(examId);
 
         var topicIds = rules.Where(r => r.TopicId.HasValue).Select(r => r.TopicId!.Value).ToList();
         var topicNames = await (await _topics.GetQueryableAsync())
@@ -350,6 +353,10 @@ public class ExamAppService : ApplicationService, IExamAppService
         return rules.Select(rule => new BlueprintRuleDto
         {
             Id = rule.Id,
+            ExamSectionId = rule.ExamSectionId,
+            ExamSectionName = rule.ExamSectionId is { } sid
+                ? sections.FirstOrDefault(s => s.Id == sid)?.Name
+                : null,
             TopicId = rule.TopicId,
             TopicName = rule.TopicId is { } tid && topicNames.TryGetValue(tid, out var name) ? name : null,
             Difficulty = rule.Difficulty,
@@ -358,16 +365,68 @@ public class ExamAppService : ApplicationService, IExamAppService
             DisplayOrder = rule.DisplayOrder,
             // Shown next to the requested count so "draw 8 from a pool of 5" is
             // visible to the author, not to a candidate.
-            AvailableCount = bank.Count(q =>
-                (rule.TopicId is null || q.TopicId == rule.TopicId) &&
-                (rule.Difficulty is null || q.Difficulty == rule.Difficulty) &&
-                (rule.QuestionType is null || q.Type == rule.QuestionType)),
+            AvailableCount = AvailableFor(rule, rules, sections, bank),
         }).ToList();
+    }
+
+    private async Task<List<ExamSection>> SectionsOfAsync(Guid examId) =>
+        await (await _sections.GetQueryableAsync())
+            .Where(s => s.ExamId == examId)
+            .OrderBy(s => s.DisplayOrder)
+            .ToListAsync();
+
+    /// <summary>
+    /// How many questions this rule can actually draw.
+    /// <para>
+    /// Counted through the same pool the builder draws from, because the number
+    /// beside a rule is a promise about what a candidate will be handed. It used
+    /// to be counted across the whole bank whichever part of the paper the rule
+    /// filled — so a rule reading from a part with eight questions filed under it
+    /// could report ninety, and the publish check would approve a paper it then
+    /// could not fill.
+    /// </para>
+    /// </summary>
+    private static int AvailableFor(
+        ExamBlueprintRule rule,
+        List<ExamBlueprintRule> allRules,
+        List<ExamSection> sections,
+        List<Question> bank)
+    {
+        if (rule.ExamSectionId is not { } sectionId)
+        {
+            return bank.Count(rule.Matches);
+        }
+
+        var section = sections.FirstOrDefault(s => s.Id == sectionId);
+
+        // A rule aimed at a part that is not there draws nothing, and saying so
+        // is the point: the author is told before publishing rather than after
+        // somebody sat a short paper.
+        if (section is null)
+        {
+            return 0;
+        }
+
+        var siblings = allRules.Where(r => r.ExamSectionId == sectionId).ToList();
+
+        return SectionPool.For(section, siblings, bank).Count(rule.Matches);
     }
 
     [Authorize(InternshipManagementSystemPermissions.Exams.Edit)]
     public async Task<List<BlueprintRuleDto>> SetBlueprintAsync(Guid examId, List<CreateUpdateBlueprintRuleDto> rules)
     {
+        // A rule may only fill a part of the exam it belongs to. Pointed anywhere
+        // else it draws nothing and says nothing, which is the failure this
+        // product keeps finding: a screen that accepted an instruction and a
+        // paper that never carried it out.
+        var sectionIds = (await SectionsOfAsync(examId)).Select(s => s.Id).ToHashSet();
+
+        if (rules.Any(r => r.ExamSectionId is { } sid && !sectionIds.Contains(sid)))
+        {
+            throw new BusinessException(
+                InternshipManagementSystemDomainErrorCodes.ExamBlueprintSectionNotInExam);
+        }
+
         var existing = await (await _blueprint.GetQueryableAsync())
             .Where(r => r.ExamId == examId)
             .ToListAsync();
@@ -379,6 +438,7 @@ public class ExamAppService : ApplicationService, IExamAppService
         var created = rules.Select((rule, index) =>
             new ExamBlueprintRule(GuidGenerator.Create(), CurrentTenant.Id, examId, rule.QuestionCount)
             {
+                ExamSectionId = rule.ExamSectionId,
                 TopicId = rule.TopicId,
                 Difficulty = rule.Difficulty,
                 QuestionType = rule.QuestionType,

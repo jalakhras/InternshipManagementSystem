@@ -91,6 +91,15 @@ public class ExamListRequestDto : PagedAndSortedResultRequestDto
 /// <summary>One line of the blueprint: how many questions to draw, and from where.</summary>
 public class BlueprintRuleDto : EntityDto<Guid>
 {
+    /// <summary>
+    /// The part of the paper this rule fills, or null to fill the paper as a
+    /// whole. A part that owns a rule draws from the shared bank on what the
+    /// rule asks for, which is how "ten Listening and ten Reading, drawn fresh
+    /// each sitting" is written down.
+    /// </summary>
+    public Guid? ExamSectionId { get; set; }
+    public string? ExamSectionName { get; set; }
+
     public Guid? TopicId { get; set; }
     public string? TopicName { get; set; }
 
@@ -109,6 +118,8 @@ public class BlueprintRuleDto : EntityDto<Guid>
 
 public class CreateUpdateBlueprintRuleDto
 {
+    public Guid? ExamSectionId { get; set; }
+
     public Guid? TopicId { get; set; }
     public QuestionDifficulty? Difficulty { get; set; }
 
