@@ -41,6 +41,13 @@ public class InternshipManagementSystemTestBaseModule : AbpModule
             options.IsJobExecutionEnabled = false;
         });
 
+        // Copied aside first: AddAlwaysAllowAuthorization does not add alongside the
+        // real authorisation services, it replaces them outright, and a test module
+        // that wants [Authorize] actually executed has no way back to them once they
+        // are gone. See RealAuthorizationServices, and PermissionEnforcedTestModule
+        // which uses it. Nothing about this line changes how any existing test runs.
+        Security.RealAuthorizationServices.Capture(context);
+
         context.Services.AddAlwaysAllowAuthorization();
     }
 
