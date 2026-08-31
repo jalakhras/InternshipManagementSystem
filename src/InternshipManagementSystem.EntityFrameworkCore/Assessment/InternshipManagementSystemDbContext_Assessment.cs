@@ -207,6 +207,11 @@ public partial class InternshipManagementSystemDbContext
             b.ToTable(prefix + "Candidates", schema);
             b.ConfigureByConvention();
             b.Property(x => x.FullName).IsRequired().HasMaxLength(256);
+
+            // Same length as the name it is folded from: the folding only ever
+            // removes characters, never adds them.
+            b.Property(x => x.NormalisedName).IsRequired().HasMaxLength(256);
+
             b.Property(x => x.Email).IsRequired().HasMaxLength(256);
             b.Property(x => x.PhoneNumber).HasMaxLength(32);
             b.Property(x => x.Reference).HasMaxLength(256);
@@ -214,6 +219,10 @@ public partial class InternshipManagementSystemDbContext
             // One person per email within a tenant; the same email may exist in another tenant.
             b.HasIndex(x => new { x.TenantId, x.Email }).IsUnique();
             b.HasIndex(x => new { x.TenantId, x.CategoryId });
+
+            // Searched on every keystroke of the roll's person picker, in a
+            // centre that may hold thousands.
+            b.HasIndex(x => new { x.TenantId, x.NormalisedName });
         });
 
         builder.Entity<CandidateGroup>(b =>

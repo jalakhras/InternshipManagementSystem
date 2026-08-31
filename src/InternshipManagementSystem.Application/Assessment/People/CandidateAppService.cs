@@ -75,8 +75,20 @@ public class CandidateAppService : ApplicationService, ICandidateAppService
             // up has whichever of the three they were given.
             var term = input.Filter.Trim();
 
+            // The typed term folded the same way the stored name was, so the two
+            // meet. Searching «محمد» finds «مُحَمَّد» and «محمّد» and «مُحمد»,
+            // which are one person written three ways — and which no collation
+            // can bring together, because vowel marks are characters sitting
+            // between the letters rather than variants of them.
+            //
+            // The raw comparison stays alongside it: a name in Latin script, or
+            // one holding a character the folding does not touch, must keep
+            // working exactly as it did.
+            var folded = ArabicText.Normalise(term).ToLowerInvariant();
+
             query = query.Where(c =>
                 c.FullName.Contains(term) ||
+                (folded != string.Empty && c.NormalisedName.Contains(folded)) ||
                 c.Email.Contains(term) ||
                 (c.Reference != null && c.Reference.Contains(term)));
         }

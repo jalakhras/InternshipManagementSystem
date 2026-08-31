@@ -75,7 +75,7 @@ public class ArabicSearchOnSqliteTests : InternshipManagementSystemEntityFramewo
     }
 
     [Fact]
-    public async Task A_name_typed_in_lower_case_does_not_find_the_person_registered_with_capitals()
+    public async Task A_name_typed_in_lower_case_finds_the_person_registered_with_capitals()
     {
         await AsTenantAsync(async () =>
         {
@@ -83,11 +83,14 @@ public class ArabicSearchOnSqliteTests : InternshipManagementSystemEntityFramewo
 
             var found = await SearchAsync(_candidates, "ahmed saleh");
 
-            // Nothing. EF Core compiles Contains to instr() here, which compares
-            // code units. Production finds them — see the SQL Server class — so a
-            // test asserting a name search on SQLite is asserting the opposite of
-            // what a user experiences.
-            found.ShouldBeEmpty();
+            // Found — and it was not, when this test was written.
+            //
+            // EF Core compiles Contains to instr() here, which compares code
+            // units, so the raw comparison still misses. What answers now is the
+            // folded copy of the name, stored lower-cased: the two providers
+            // agreed on nothing here and now agree, which is the point of
+            // folding rather than leaning on a collation.
+            found.ShouldNotBeEmpty();
 
             // The control: the exact spelling is found, so the fixture is real and
             // the emptiness above is about case and nothing else.
@@ -96,13 +99,17 @@ public class ArabicSearchOnSqliteTests : InternshipManagementSystemEntityFramewo
     }
 
     [Fact]
-    public async Task A_name_written_with_tashkeel_is_not_found_by_its_plain_spelling()
+    public async Task A_name_written_with_tashkeel_is_found_by_its_plain_spelling()
     {
         await AsTenantAsync(async () =>
         {
             await SeedAsync(_candidates, ArabicSearchFixture.NameWithTashkeel, "tashkeel@example.test");
 
-            (await SearchAsync(_candidates, ArabicSearchFixture.NameWithoutTashkeel)).ShouldBeEmpty();
+            // Found on both providers now. It was found on neither, and no
+            // collation could have changed that: LIKE matches positionally, and
+            // the tashkeel are characters sitting between the letters. It needed
+            // a folded column, and it has one.
+            (await SearchAsync(_candidates, ArabicSearchFixture.NameWithoutTashkeel)).ShouldNotBeEmpty();
 
             (await SearchAsync(_candidates, ArabicSearchFixture.NameWithTashkeel)).ShouldHaveSingleItem();
         });
@@ -199,7 +206,7 @@ public class ArabicSearchOnSqlServerTests : InternshipManagementSystemTestBase<S
     }
 
     [SqlServerFact]
-    public async Task A_name_written_with_tashkeel_is_not_found_by_its_plain_spelling_here_either()
+    public async Task A_name_written_with_tashkeel_is_found_by_its_plain_spelling_here_too()
     {
         await AsTenantAsync(async () =>
         {
@@ -213,7 +220,7 @@ public class ArabicSearchOnSqlServerTests : InternshipManagementSystemTestBase<S
             // letters, so even Arabic_CI_AI answers no. It needs a normalised
             // search column, not a collation change.
             (await ArabicSearchOnSqliteTests.SearchAsync(
-                _candidates, ArabicSearchFixture.NameWithoutTashkeel)).ShouldBeEmpty();
+                _candidates, ArabicSearchFixture.NameWithoutTashkeel)).ShouldNotBeEmpty();
 
             (await ArabicSearchOnSqliteTests.SearchAsync(
                 _candidates, ArabicSearchFixture.NameWithTashkeel)).ShouldHaveSingleItem();
