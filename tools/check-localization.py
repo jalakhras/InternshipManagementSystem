@@ -45,6 +45,39 @@ COMPOSED = re.compile(r"""t\(\s*['"]::([^'"]+)['"]\s*\+""")
 # those as defined-and-unused, which is exactly backwards.
 LITERAL = re.compile(r"""['"]::([^'"]+)['"]""")
 
+# `::Link:State:${state}` — the same idea as COMPOSED, written the other way.
+# Six link states were reported as text nobody shows, and every one of them is
+# on the screen a coordinator reads to see whether a link was sent, opened,
+# spent or revoked.
+TEMPLATE = re.compile(r"""`::([^`$]*)\$\{""")
+
+# The server localises too, and reads its keys the same two ways: L["Some:Key"]
+# and L[$"Prefix:{value}"]. Twenty keys behind the question-import template were
+# reported as unused because this half was never looked at — the file that reads
+# them is C#, and the checker only walked the client.
+SERVER_KEY = re.compile(r"""L\[\s*\$?"([^"{]+)(\{)?""")
+
+# And keys the server holds as constants rather than reading inline:
+#
+#   public const string TypeColumnKey = "QuestionImport:Column:Type";
+#
+# Written that way on purpose — the template a person downloads and the parser
+# that reads it back name their columns from one place, so the two cannot drift.
+# A checker that only sees keys at the moment they are looked up calls all eight
+# of them dead.
+SERVER_CONST = re.compile(
+    '"((?:[A-Za-z][A-Za-z0-9]*:)+[A-Za-z0-9:_-]+)"')
+
+# And keys the server *builds* for the client to look up:
+#
+#   NameKey = $"::QuestionType:{d.Type}"
+#
+# The client renders `t(descriptor.nameKey)` and never names the key at all, so
+# neither side of this shows a literal — thirteen question-type names were
+# reported dead while every one of them is on the authoring screen.
+SERVER_BUILT = re.compile(
+    r'\$"::([^"{]*)\{')
+
 
 def used():
     found = {}
@@ -64,6 +97,8 @@ def used():
                 text = handle.read()
 
             partial = set(COMPOSED.findall(text))
+            partial |= set(TEMPLATE.findall(text))
+
             prefixes |= partial
             literals |= set(LITERAL.findall(text))
 
@@ -71,6 +106,42 @@ def used():
                 if key in partial:
                     continue
                 found.setdefault(key, set()).add(os.path.relpath(path, ROOT))
+
+    # The server's own keys. It renders the import template's column headings and
+    # its sample rows, and those are as much "shown to somebody" as anything in
+    # a component.
+    server = os.path.join(ROOT, 'src')
+
+    for base, dirs, files in os.walk(server):
+        dirs[:] = [d for d in dirs if d not in ('bin', 'obj', 'Migrations')]
+
+        for name in files:
+            if not name.endswith('.cs'):
+                continue
+
+            path = os.path.join(base, name)
+            with io.open(path, encoding='utf-8-sig') as handle:
+                text = handle.read()
+
+            for key, interpolated in SERVER_KEY.findall(text):
+                # Only keys shaped like ours. ABP's own resources are looked up
+                # through the same `L[...]` and are named in bare PascalCase —
+                # `InvalidRedirectUri` — so requiring a colon keeps four of
+                # somebody else's strings out of our missing list.
+                if ':' not in key:
+                    continue
+
+                if interpolated:
+                    # L[$"QuestionImport:Sample:{n}:Type"] — a prefix, not a key.
+                    prefixes.add(key)
+                else:
+                    found.setdefault(key, set()).add(os.path.relpath(path, ROOT))
+
+            for key in SERVER_CONST.findall(text):
+                literals.add(key)
+
+            for prefix in SERVER_BUILT.findall(text):
+                prefixes.add(prefix)
 
     return found, prefixes, literals
 
