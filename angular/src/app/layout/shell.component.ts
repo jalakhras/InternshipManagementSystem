@@ -10,6 +10,7 @@ import {
 } from '@abp/ng.core';
 import { DirectionService, ThemePreference } from '../core/direction.service';
 import { TranslateService } from '../core/translate.service';
+import { AstroMarkComponent } from '../shared/ui/astro-mark.component';
 import { permissionSignal } from '../core/permission.signal';
 import { NAVIGATION, NavItem, NavSection } from '../core/navigation';
 import { SettingsService } from '../core/api/settings.service';
@@ -29,7 +30,7 @@ import { MediaService } from '../core/media.service';
 @Component({
   selector: 'astro-shell',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, AstroMarkComponent],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })

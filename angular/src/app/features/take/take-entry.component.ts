@@ -7,6 +7,7 @@ import { MediaService } from '../../core/media.service';
 import { TranslateService } from '../../core/translate.service';
 import { TakeService } from './take.service';
 import { ExamPreview } from './take.models';
+import { AstroMarkComponent } from '../../shared/ui/astro-mark.component';
 
 /**
  * What a candidate sees when they follow their link.
@@ -24,7 +25,7 @@ import { ExamPreview } from './take.models';
   selector: 'astro-take-entry',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe],
+  imports: [DatePipe, AstroMarkComponent],
   templateUrl: './take-entry.component.html',
   styleUrl: './take-entry.component.scss',
 })

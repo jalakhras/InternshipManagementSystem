@@ -72,6 +72,9 @@ export interface TakeStubOptions {
    * written for the marker.
    */
   rubric?: { name: string; maxScore: number }[];
+
+  /** The centre whose exam this is, as the candidate's first screen shows it. */
+  organization?: { name?: string; logoUrl?: string };
 }
 
 export interface TakeStub {
@@ -196,6 +199,8 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       examTitle: 'Spanish B1 Placement',
       description: 'Reading, listening and grammar.',
       candidateName: 'Layla',
+      organizationName: options.organization?.name,
+      organizationLogoUrl: options.organization?.logoUrl,
       timeLimitInMinutes: 30,
       questionCount: total,
       attemptsAllowed: 2,

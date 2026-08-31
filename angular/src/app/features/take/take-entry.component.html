@@ -31,16 +31,22 @@
         <!-- Whose exam this is, before anything else. The candidate recognises the
              centre that told them to expect the email; they have never heard of
              us and have no reason to trust a name they have not. -->
-        @if (exam.organizationLogoUrl || exam.organizationName) {
-          <div class="org">
-            @if (exam.organizationLogoUrl; as logo) {
-              <img class="org__logo" [src]="src(logo)" alt="" />
-            }
-            @if (exam.organizationName; as name) {
-              <span class="org__name">{{ name }}</span>
-            }
-          </div>
-        }
+        <div class="org">
+          @if (exam.organizationLogoUrl; as logo) {
+            <img class="org__logo" [src]="src(logo)" alt="" />
+          } @else {
+            <!-- Ours, when the centre has uploaded none. This screen is the first
+                 thing a candidate sees after clicking a link in an email, and a
+                 hole where a mark should be is what a page they were told not to
+                 trust looks like. Drawn and monochrome, so it reads as a device
+                 rather than a second brand arguing with the centre's name. -->
+            <astro-mark class="org__mark" [size]="32" />
+          }
+
+          @if (exam.organizationName; as name) {
+            <span class="org__name">{{ name }}</span>
+          }
+        </div>
 
         <p class="greeting">{{ t('::Take:Greeting', exam.candidateName) }}</p>
         <h1 class="title">{{ exam.examTitle }}</h1>

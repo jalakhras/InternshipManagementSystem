@@ -126,6 +126,13 @@
   border-block-end: 1px solid var(--border-subtle);
 }
 
+// Ours, when the centre has uploaded none. Sized to sit where an uploaded mark
+// would, so the block does not change height with the tenant.
+.org__mark {
+  flex: none;
+  color: var(--text-secondary);
+}
+
 .org__logo {
   block-size: 2rem;
   inline-size: auto;

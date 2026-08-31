@@ -582,6 +582,36 @@ test.describe('Taking an exam', () => {
     expect(rubric.y).toBeLessThan(box.y);
   });
 
+  test('a centre with no logo of its own still gets a mark, not a hole', async ({ page }) => {
+    await stubTake(page, { organization: { name: 'Riyadh Language Centre' } });
+
+    await page.goto(`/exam/${TOKEN}`);
+
+    // The first screen a candidate ever sees, reached by clicking a link in an
+    // email. A hole where a mark should be is exactly what a page people are
+    // taught not to trust looks like — and most centres never upload one.
+    await expect(page.locator('astro-mark svg')).toBeVisible();
+    await expect(page.getByText('Riyadh Language Centre')).toBeVisible();
+  });
+
+  test('a centre that has uploaded a logo shows theirs and not ours', async ({ page }) => {
+    await stubTake(page, {
+      organization: {
+        name: 'Riyadh Language Centre',
+        logoUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4MCIgaGVpZ2h0PSIzMiI+PHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjMyIiBmaWxsPSIjMGY2YzhjIi8+PC9zdmc+',
+      },
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+
+    await expect(page.locator('.org__logo')).toBeVisible();
+
+    // Ours stands in; it does not stand beside. Two marks in one corner reads as
+    // a co-branding the centre never agreed to, on the screen where the whole
+    // point is that the candidate recognises them and not us.
+    await expect(page.locator('astro-mark')).toHaveCount(0);
+  });
+
   test('a file is the answer, and the answer carries it', async ({ page }) => {
     const stub = await stubTake(page, { fileUpload: true });
 
