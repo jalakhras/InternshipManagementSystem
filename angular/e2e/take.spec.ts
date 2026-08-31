@@ -377,6 +377,45 @@ test.describe('Taking an exam', () => {
     await expect(page.getByText('You chose 52% across')).toBeVisible();
   });
 
+  test('a hotspot sent from an Arabic page carries the place that was pointed at', async ({ page }) => {
+    // The warning this closes was raised and never checked: that a hotspot is
+    // drawn mirrored in RTL. The product is Arabic first, so the untested
+    // direction was the one nearly every candidate sits in.
+    const stub = await stubTake(page, { hotspot: true, culture: 'ar' });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'ابدأ الامتحان' }).click();
+
+    const frame = page.locator('.hotspot__frame');
+
+    await expect(frame).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+
+    const box = (await frame.boundingBox())!;
+
+    // A quarter of the way in from the image's own left edge, three quarters
+    // down — the same click as the English test, in the same screen position.
+    await page.mouse.click(box.x + box.width * 0.25, box.y + box.height * 0.75);
+
+    await expect.poll(() => stub.saved.length, { timeout: 10_000 }).toBeGreaterThan(0);
+
+    // And the same answer. An image does not mirror when the text around it
+    // does: the author drew the regions on this picture, and 25% across is the
+    // same part of the picture in both languages. Read the other way it would
+    // arrive as 75% — a different place entirely, and marked wrong for a
+    // candidate who pointed at the right one.
+    const sent = JSON.parse(stub.saved.at(-1)!.response!);
+
+    expect(sent.x).toBeGreaterThan(15);
+    expect(sent.x).toBeLessThan(35);
+    expect(sent.y).toBeGreaterThan(65);
+    expect(sent.y).toBeLessThan(85);
+
+    // Where the ring is *drawn* in Arabic is checked separately, further down —
+    // that half was the visible defect. This half is the one nobody would have
+    // seen: the answer that reaches the grader.
+  });
+
   test('a file is the answer, and the answer carries it', async ({ page }) => {
     const stub = await stubTake(page, { fileUpload: true });
 
