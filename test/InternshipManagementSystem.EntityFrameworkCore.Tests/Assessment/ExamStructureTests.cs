@@ -46,7 +46,25 @@ public class ExamStructureTests : InternshipManagementSystemEntityFrameworkCoreT
         {
             var exam = await CreateExamAsync();
 
-            foreach (var (name, order) in new[] { ("Listening", 0), ("Reading", 1), ("Grammar", 2), ("Writing", 3) })
+            // Typed in none of the orders the database might hand back by
+            // accident: this sequence differs from insertion order, from reverse
+            // insertion order, and from alphabetical by name in both directions.
+            // It is also what authoring looks like — sections are typed as they
+            // are written and sat in an order somebody sets afterwards.
+            //
+            // Read this before trusting the tick. Deleting
+            // `.OrderBy(s => s.DisplayOrder)` from GetSectionsAsync still passes,
+            // and no fixture can change that: ExamSection carries a
+            // `(ExamId, DisplayOrder)` index, so SQLite answers
+            // `WHERE ExamId = @p` by walking that index and returns the rows in
+            // DisplayOrder for free. Deleting the index as well makes this fail
+            // with ["Grammar", "Listening", "Writing", "Reading"] — the order they
+            // were typed in — which is how the coincidence was pinned down. What
+            // this test does guard: four sections come back, all of them, named
+            // and ordered as authored. What it cannot guard on SQLite is the
+            // OrderBy itself, which stays necessary because SQL Server is free to
+            // pick a plan that does not supply that order.
+            foreach (var (name, order) in new[] { ("Grammar", 2), ("Listening", 0), ("Writing", 3), ("Reading", 1) })
             {
                 await _structure.CreateSectionAsync(new CreateUpdateExamSectionDto
                 {
@@ -59,6 +77,7 @@ public class ExamStructureTests : InternshipManagementSystemEntityFrameworkCoreT
             var sections = await _structure.GetSectionsAsync(exam.Id);
 
             // Returned in the order they are sat, not in the order they were typed.
+            sections.Count.ShouldBe(4);
             sections.Select(s => s.Name).ShouldBe(["Listening", "Reading", "Grammar", "Writing"]);
         });
     }

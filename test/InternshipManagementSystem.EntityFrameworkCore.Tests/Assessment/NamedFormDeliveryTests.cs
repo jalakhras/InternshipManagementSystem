@@ -172,36 +172,70 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
         {
             var exam = await ExamWithBankAsync("delivery-key", 2);
 
+            // Eight pairs rather than four. The order recorded here is a shuffle
+            // against the attempt's own seed, which is drawn afresh at every start
+            // and cannot be pinned from a test, so "it came out shuffled" is only
+            // ever probabilistic: with four pairs an honest shuffle lands back on
+            // the authored order once in twenty-four sittings. Eight pairs across
+            // three sittings puts a false failure at one in 6.6e13.
+            var authored = new[] { "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8" };
+            var words = new[] { "قطة", "كلب", "طائر", "سمكة", "حصان", "بقرة", "أسد", "نمر" };
+
             var matching = await _questions.CreateAsync(new CreateUpdateQuestionDto
             {
                 ExamId = exam.Id,
                 Type = QuestionTypes.Matching,
                 Text = "Match each word to its meaning",
-                Score = 4m,
+                Score = 8m,
                 Payload = PayloadJson.Write(new MatchingPayload
                 {
-                    Pairs =
-                    [
-                        new MatchingPair { LeftId = "l1", LeftText = "cat", RightId = "r1", RightText = "قطة" },
-                        new MatchingPair { LeftId = "l2", LeftText = "dog", RightId = "r2", RightText = "كلب" },
-                        new MatchingPair { LeftId = "l3", LeftText = "bird", RightId = "r3", RightText = "طائر" },
-                        new MatchingPair { LeftId = "l4", LeftText = "fish", RightId = "r4", RightText = "سمكة" },
-                    ],
+                    Pairs = authored
+                        .Select((rightId, i) => new MatchingPair
+                        {
+                            LeftId = "l" + (i + 1),
+                            LeftText = "word " + (i + 1),
+                            RightId = rightId,
+                            RightText = words[i],
+                        })
+                        .ToList(),
                 }),
             });
 
             var form = await PublishedFormAsync(exam.Id, "Form 1", "F1", [matching.Id]);
-            var state = await StartAsync(await SendAsync(exam.Id, "key@example.test", form.Id));
-
             var rows = GetRequiredService<IRepository<AttemptQuestion, Guid>>();
-            var served = (await rows.GetQueryableAsync()).Single(q => q.AttemptId == state.AttemptId);
 
-            // The right column has to carry a recorded order or the projector emits
-            // it as authored, and left[i] then pairs with right[i] in the JSON the
-            // candidate is handed. That is the answer key. The drawn path always got
-            // this right; the named-form path was written separately and did not,
-            // which is why the check is here rather than on the projector.
-            served.OptionOrder.ShouldNotBeNull();
+            var recorded = new List<List<string>>();
+
+            for (var sitting = 0; sitting < 3; sitting++)
+            {
+                var state = await StartAsync(
+                    await SendAsync(exam.Id, $"key{sitting}@example.test", form.Id));
+
+                var served = (await rows.GetQueryableAsync()).Single(q => q.AttemptId == state.AttemptId);
+
+                // The presence half. A recorded order that has lost, gained or
+                // renamed a right-hand id is a paper the projector will quietly
+                // reassemble wrong: ApplyOrder appends whatever the order does not
+                // mention, so a truncated order puts the tail back in authored
+                // position. ShouldNotBeNull accepted "" and "[]", both of which
+                // leave the projector with nothing to apply.
+                var order = PayloadJson.Read<List<string>>(served.OptionOrder);
+
+                order.ShouldNotBeNull();
+                order.Order().ShouldBe(authored.Order());
+
+                recorded.Add(order);
+            }
+
+            // The absence half, and the one the test is named for. The right column
+            // has to carry an order that is not the authored one, or the projector
+            // emits it as authored and left[i] pairs with right[i] in the JSON the
+            // candidate is handed. That is the answer key. ShouldNotBeNull accepted
+            // the authored order written out verbatim — the exact defect. The drawn
+            // path always got this right; the named-form path was written
+            // separately and did not, which is why the check is here rather than on
+            // the projector.
+            recorded.ShouldContain(order => !order.SequenceEqual(authored));
         });
     }
 
@@ -212,11 +246,11 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
         {
             var exam = await ExamWithBankAsync("delivery-rotate", 6);
 
-            var first = await PublishedFormAsync(
-                exam.Id, "Form 1", "R-F1", exam.Bank.Take(3).Select(q => q.Id).ToList());
+            var formOnePaper = exam.Bank.Take(3).Select(q => q.Id).ToList();
+            var formTwoPaper = exam.Bank.Skip(3).Take(3).Select(q => q.Id).ToList();
 
-            var second = await PublishedFormAsync(
-                exam.Id, "Form 2", "R-F2", exam.Bank.Skip(3).Take(3).Select(q => q.Id).ToList());
+            var first = await PublishedFormAsync(exam.Id, "Form 1", "R-F1", formOnePaper);
+            var second = await PublishedFormAsync(exam.Id, "Form 2", "R-F2", formTwoPaper);
 
             var candidate = await _candidates.CreateAsync(new CreateUpdateCandidateDto
             {
@@ -226,11 +260,11 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
 
             // Two sittings for one person, both set to rotate rather than naming a
             // paper. This is what a resit looks like.
-            var firstPaper = await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
-            var secondPaper = await PaperAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+            var firstSitting = await SittingAsync(await SendRotatingAsync(exam.Id, candidate.Id));
+            var secondSitting = await SittingAsync(await SendRotatingAsync(exam.Id, candidate.Id));
 
-            var firstIds = firstPaper.Select(q => q.Id).ToList();
-            var secondIds = secondPaper.Select(q => q.Id).ToList();
+            var firstIds = firstSitting.Paper.Select(q => q.Id).ToList();
+            var secondIds = secondSitting.Paper.Select(q => q.Id).ToList();
 
             // The whole reason named forms exist, made automatic. A retake on the
             // same paper measures what somebody remembers of the first attempt, and
@@ -239,8 +273,24 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
             firstIds.ShouldNotBe(secondIds);
             firstIds.Intersect(secondIds).ShouldBeEmpty();
 
-            var forms = new[] { first.Id, second.Id };
-            forms.ShouldContain(f => f == first.Id);
+            // And which paper each sitting actually got, which is what "rotating"
+            // means and what nothing here checked: the two assertions above are
+            // equally satisfied by two disjoint random draws from a six-question
+            // bank, and what stood in this place instead was
+            // `new[] { first.Id, second.Id }.ShouldContain(f => f == first.Id)` —
+            // an array asserted to contain its own first element, true with the
+            // product deleted.
+            var attempts = GetRequiredService<IRepository<Attempt, Guid>>();
+
+            var firstServed = (await attempts.GetAsync(firstSitting.State.AttemptId)).ExamFormId;
+            var secondServed = (await attempts.GetAsync(secondSitting.State.AttemptId)).ExamFormId;
+
+            new[] { firstServed, secondServed }.ShouldBe([first.Id, second.Id], ignoreOrder: true);
+
+            // The recorded form and the served questions have to agree, or the
+            // sitting is stamped with a paper it was not given.
+            firstIds.ShouldBe(firstServed == first.Id ? formOnePaper : formTwoPaper);
+            secondIds.ShouldBe(secondServed == first.Id ? formOnePaper : formTwoPaper);
         });
     }
 
@@ -439,16 +489,19 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
     }
 
     /// <summary>The paper as the candidate sees it, in the order they see it.</summary>
-    private async Task<List<TakerQuestionDto>> PaperAsync(string linkToken)
+    private async Task<List<TakerQuestionDto>> PaperAsync(string linkToken) =>
+        (await SittingAsync(linkToken)).Paper;
+
+    /// <summary>
+    /// The attempt and its paper together, for the tests that have to say which
+    /// paper was served rather than only what was on it.
+    /// </summary>
+    private async Task<(AttemptStateDto State, List<TakerQuestionDto> Paper)> SittingAsync(string linkToken)
     {
-        var preview = await _taking.OpenLinkAsync(linkToken);
-
-        preview.IsAccessible.ShouldBeTrue(preview.BlockReason);
-
         // The start hands back a new credential, because the one from the preview
         // names no attempt. Using the old one is what the client did, and every
         // question after the start came back "no such attempt".
-        var state = await _taking.StartAsync(preview.SessionToken!);
+        var state = await StartAsync(linkToken);
         var session = state.SessionToken!;
 
         var paper = new List<TakerQuestionDto>();
@@ -458,7 +511,7 @@ public class NamedFormDeliveryTests : InternshipManagementSystemEntityFrameworkC
             paper.Add(await _taking.GetQuestionAsync(session, position));
         }
 
-        return paper;
+        return (state, paper);
     }
 
     private async Task AsTenantAsync(Func<Task> action)

@@ -49,14 +49,26 @@ public class CatalogTests : InternshipManagementSystemEntityFrameworkCoreTestBas
         {
             var english = await _catalog.CreateCategoryAsync(Category("cat-english", "English"));
 
-            await _catalog.CreateLevelAsync(Level("cat-a1", "A1", english.Id, order: 1));
-            await _catalog.CreateLevelAsync(Level("cat-a2", "A2", english.Id, order: 2));
+            // A ladder whose rungs are named rather than numbered, typed in the
+            // order an author thought of them. This was two levels called A1 and
+            // A2, created in that order — under which insertion order, reverse
+            // insertion order, alphabetical by code, alphabetical by name and
+            // DisplayOrder all agree, and the assertion below held with
+            // OrderBy(DisplayOrder) deleted. Every one of those five orderings now
+            // gives a different answer, so only the ladder order passes.
+            await _catalog.CreateLevelAsync(Level("cat-intermediate", "Intermediate", english.Id, order: 3));
+            await _catalog.CreateLevelAsync(Level("cat-beginner", "Beginner", english.Id, order: 1));
+            await _catalog.CreateLevelAsync(Level("cat-advanced", "Advanced", english.Id, order: 4));
+            await _catalog.CreateLevelAsync(Level("cat-elementary", "Elementary", english.Id, order: 2));
 
             var reloaded = (await _catalog.GetCategoriesAsync()).Single(c => c.Id == english.Id);
 
-            // In ladder order, not alphabetical order. A1 before A2 is the whole
-            // point of a level and the reason DisplayOrder exists.
-            reloaded.Levels.Select(l => l.Code).ShouldBe(["cat-a1", "cat-a2"]);
+            // In ladder order, not alphabetical order. Beginner before Advanced is
+            // the whole point of a level and the reason DisplayOrder exists —
+            // alphabetically Advanced comes first, which is the ladder upside down.
+            reloaded.Levels.Count.ShouldBe(4);
+            reloaded.Levels.Select(l => l.Name)
+                .ShouldBe(["Beginner", "Elementary", "Intermediate", "Advanced"]);
         });
     }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -189,6 +189,12 @@ public class SectionDeliveryTests : InternshipManagementSystemEntityFrameworkCor
 
             var paper = await PaperAsync(await SendAsync(exam.Id, "empty@example.test"));
 
+            // The count first, and it is not ceremony: Shouldly's ShouldAllBe is
+            // true of an empty list, so serving nothing at all — the obvious way
+            // to over-apply "drop the empty section" — satisfied the line below
+            // exactly as well as serving the right paper did.
+            paper.Count.ShouldBe(3);
+
             // No heading for a part the candidate is asked nothing about, and no
             // instructions telling them to write 200 words with nowhere to write.
             paper.ShouldAllBe(q => q.Section!.Name == "Listening");
@@ -331,6 +337,13 @@ public class SectionDeliveryTests : InternshipManagementSystemEntityFrameworkCor
             var served = (await rows.GetQueryableAsync())
                 .Where(q => q.AttemptId == attemptId)
                 .ToList();
+
+            // The rows are still there, and there are as many as were served. An
+            // empty list satisfies ShouldAllBe, so making DeleteSectionAsync
+            // cascade into AttemptQuestion — the exact catastrophe this test is
+            // named for, a term of results deleted by an authoring tidy-up —
+            // passed it.
+            served.Count.ShouldBe(2);
 
             // The paper still knows which part each question was served under. Read
             // back off the question instead, this attempt would now claim it had no

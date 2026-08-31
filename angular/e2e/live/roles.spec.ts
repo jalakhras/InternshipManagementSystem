@@ -1,4 +1,4 @@
-import { APIRequestContext, expect, request, test } from '@playwright/test';
+﻿import { APIRequestContext, expect, request, test } from '@playwright/test';
 import { API } from './api';
 
 /**
@@ -114,6 +114,23 @@ test.describe('What each role can do, and what it is refused', () => {
       res.status(),
       `${role} was refused ${method.toUpperCase()} ${url}: ${await res.text()}`,
     ).toBeLessThan(400);
+
+    // And that it is the API answering, not the sign-in page.
+    //
+    // An unauthenticated request here does not fail: it is redirected to
+    // /Account/Login, which answers 200 with HTML. So a token that quietly
+    // stopped arriving would leave every allowed() in this file asserting that
+    // a login page exists — seventeen tests, all green, all guarding nothing.
+    // The one that reads a body caught it; the rest could not.
+    //
+    // A 204 carries no body and so no type, and that is a real answer from the
+    // API: a delete that worked. The login page is never a 204.
+    if (res.status() !== 204) {
+      expect(
+        res.headers()['content-type'] ?? '',
+        `${role} was answered by something other than the API for ${url}`,
+      ).toContain('json');
+    }
 
     return res;
   }
@@ -401,14 +418,36 @@ test.describe('What each role can do, and what it is refused', () => {
     // Granted, and this is the one judgement call in the role table. The marker
     // is the only person who reads a free-text answer and decides whether it is
     // the candidate's own work; a paste event on a long written answer is the
-    // single most relevant fact to that decision. Not 403 rather than exactly
-    // 200, because an attempt with no signals recorded is a legitimate 404 and
-    // says nothing about the permission.
-    const report = await as
-      .get('marker')!
-      .get(`/api/assessment/review/attempts/${attemptId}/integrity`);
+    // single most relevant fact to that decision.
+    //
+    // `allowed()` — which is `< 400` — and not the `not.toBe(403)` that stood
+    // here. That reading passed on 401, where the token never arrived and the run
+    // proved nothing about permissions at all, and on the 500 ASP.NET answers
+    // when an `[Authorize]` names a policy nobody defined: the defect this file's
+    // own `refused()` docstring says it exists to tell apart, and one that has
+    // shipped here before. The reason given for the loose form was that an
+    // attempt with no signals legitimately 404s. It does not —
+    // `ReviewAppService.GetIntegrityReportAsync` builds its report from a query
+    // that returns an empty list, so a clean sitting is a 200 with no signals in
+    // it. There was never a 404 to accommodate.
+    const report = await allowed(
+      'marker',
+      'get',
+      `/api/assessment/review/attempts/${attemptId}/integrity`,
+    );
 
-    expect(report.status(), 'the marker was refused the integrity report').not.toBe(403);
+    // And it is the report for the attempt that was asked about — which is the
+    // assertion that actually discriminates here, more than the status does.
+    // Send this request without a usable token and the host answers 302 to
+    // /Account/Login, which the client follows to a 200 carrying an HTML sign-in
+    // page. Measured against that response: `not.toBe(403)` passes, and so does
+    // `allowed()`, because 200 really is under 400. Only reading the body fails.
+    // A token that quietly stopped arriving would otherwise leave this test, and
+    // every `allowed()` in the file, asserting that a login page exists.
+    expect(
+      (await report.json()).attemptId,
+      'the marker was served something other than the integrity report for this attempt',
+    ).toBe(attemptId);
 
     // The coordinator watches sittings happen and never reads an answer, so a
     // flag is a number they cannot interpret and a behavioural record they have

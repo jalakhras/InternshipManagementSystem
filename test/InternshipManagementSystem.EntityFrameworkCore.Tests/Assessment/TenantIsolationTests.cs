@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment;
@@ -29,6 +29,25 @@ namespace InternshipManagementSystem.EntityFrameworkCore.Assessment;
 /// end-to-end through the real repositories and the real DbContext, because the
 /// property under test is "the filter is actually attached", which a unit test
 /// against the entities could not tell you.
+/// </para>
+/// <para>
+/// Every one of them reads back as the owning tenant too, and that half is not
+/// decoration. Six of these seven used to assert absence and nothing else, and an
+/// absence is equally the state of a row nobody can reach: stamp the eight
+/// entities these tests insert — Question, Candidate, Attempt, ExamLink, Category,
+/// Topic, CandidateGroup, Answer — with any tenant other than the one writing, and
+/// TenantB still sees nothing, so all six stayed green while every organisation
+/// had silently lost its own bank, roster and results. Under-filtering and a
+/// misdirected write are opposite defects that produce the same empty list, and
+/// only the pair of assertions tells them apart.
+/// </para>
+/// <para>
+/// Worth knowing before writing another test here: the <c>TenantId = tenantId;</c>
+/// in those constructors is belt-and-braces, not the mechanism. ABP's DbContext
+/// stamps any <c>IMultiTenant</c> entity from <c>ICurrentTenant</c> as it is
+/// inserted, but only where the property is still null — so deleting the
+/// constructor line changes nothing and cannot be used to test this, while a wrong
+/// value written there survives all the way to the row.
 /// </para>
 /// </summary>
 public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCoreTestBase
@@ -64,6 +83,7 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
             var visible = await repo.GetListAsync();
             visible.Count.ShouldBe(1);
             visible[0].Title.ShouldBe("Spanish B1 Placement");
+            visible[0].TenantId.ShouldBe(TenantA);
         });
     }
 
@@ -92,6 +112,17 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
         {
             (await repo.GetListAsync()).ShouldBeEmpty();
         });
+
+        await AsTenantAsync(TenantA, async () =>
+        {
+            // And still there for the tenant that wrote it. A bank nobody can read
+            // is not isolation, it is data loss wearing isolation's clothes.
+            var mine = await repo.GetListAsync();
+
+            mine.Count.ShouldBe(1);
+            mine[0].Text.ShouldBe("Which is a support level?");
+            mine[0].TenantId.ShouldBe(TenantA);
+        });
     }
 
     [Fact]
@@ -107,6 +138,15 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
         await AsTenantAsync(TenantB, async () =>
         {
             (await repo.GetListAsync()).ShouldBeEmpty();
+        });
+
+        await AsTenantAsync(TenantA, async () =>
+        {
+            var mine = await repo.GetListAsync();
+
+            mine.Count.ShouldBe(1);
+            mine[0].FullName.ShouldBe("Layla Hassan");
+            mine[0].TenantId.ShouldBe(TenantA);
         });
     }
 
@@ -128,6 +168,17 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
         {
             (await repo.GetListAsync()).ShouldBeEmpty();
         });
+
+        await AsTenantAsync(TenantA, async () =>
+        {
+            // The mark as well as the sitting: a result the organisation that
+            // marked it cannot retrieve is the same loss as one it never recorded.
+            var mine = await repo.GetListAsync();
+
+            mine.Count.ShouldBe(1);
+            mine[0].Score.ShouldBe(42m);
+            mine[0].TenantId.ShouldBe(TenantA);
+        });
     }
 
     [Fact]
@@ -147,6 +198,17 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
         await AsTenantAsync(TenantB, async () =>
         {
             (await repo.GetListAsync()).ShouldBeEmpty();
+        });
+
+        await AsTenantAsync(TenantA, async () =>
+        {
+            // The link has to keep working for the organisation that sent it, or
+            // every candidate it invited is locked out of their own exam.
+            var mine = await repo.GetListAsync();
+
+            mine.Count.ShouldBe(1);
+            mine[0].TokenHash.ShouldBe("hash-a");
+            mine[0].TenantId.ShouldBe(TenantA);
         });
     }
 
@@ -168,6 +230,20 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
         {
             (await categories.GetListAsync()).ShouldBeEmpty();
             (await topics.GetListAsync()).ShouldBeEmpty();
+        });
+
+        await AsTenantAsync(TenantA, async () =>
+        {
+            var myCategories = await categories.GetListAsync();
+            var myTopics = await topics.GetListAsync();
+
+            myCategories.Count.ShouldBe(1);
+            myCategories[0].Name.ShouldBe("Spanish");
+            myCategories[0].TenantId.ShouldBe(TenantA);
+
+            myTopics.Count.ShouldBe(1);
+            myTopics[0].Name.ShouldBe("Listening");
+            myTopics[0].TenantId.ShouldBe(TenantA);
         });
     }
 
@@ -198,6 +274,20 @@ public class TenantIsolationTests : InternshipManagementSystemEntityFrameworkCor
         {
             (await groups.GetListAsync()).ShouldBeEmpty();
             (await answers.GetListAsync()).ShouldBeEmpty();
+        });
+
+        await AsTenantAsync(TenantA, async () =>
+        {
+            var myGroups = await groups.GetListAsync();
+            var myAnswers = await answers.GetListAsync();
+
+            myGroups.Count.ShouldBe(1);
+            myGroups[0].Name.ShouldBe("Spanish B1 — Autumn 2026");
+            myGroups[0].TenantId.ShouldBe(TenantA);
+
+            myAnswers.Count.ShouldBe(1);
+            myAnswers[0].Response.ShouldBe("\"a\"");
+            myAnswers[0].TenantId.ShouldBe(TenantA);
         });
     }
 

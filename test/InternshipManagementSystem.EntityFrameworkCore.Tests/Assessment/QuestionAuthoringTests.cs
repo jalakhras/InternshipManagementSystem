@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment;
@@ -320,11 +320,26 @@ public class QuestionAuthoringTests : InternshipManagementSystemEntityFrameworkC
             var questions = GetRequiredService<IRepository<Question, Guid>>();
 
             // A hundred candidates have answered it, and almost all got it wrong,
-            // because the key was on the wrong option.
+            // because the key was on the wrong option. All three statistics are
+            // seeded, including the discrimination index: it used to be left at
+            // its default, so the assertion that the reset clears it was asserting
+            // a null that was already null before the update ran. A reset that
+            // cleared two of three — which is the shape a partial reset actually
+            // takes — passed.
             var entity = await questions.GetAsync(question.Id);
             entity.TimesAnswered = 100;
             entity.DifficultyIndex = 0.04m;
+            entity.DiscriminationIndex = -0.11m;
             await questions.UpdateAsync(entity, autoSave: true);
+
+            // The fixture is in the state the rest of this test describes. Without
+            // this the seeding above can silently stop taking effect and every
+            // assertion below still passes.
+            var before = await questions.GetAsync(question.Id);
+
+            before.TimesAnswered.ShouldBe(100);
+            before.DifficultyIndex.ShouldBe(0.04m);
+            before.DiscriminationIndex.ShouldBe(-0.11m);
 
             // The author spots it and moves the key to Cairo.
             await _questions.UpdateAsync(question.Id, new CreateUpdateQuestionDto

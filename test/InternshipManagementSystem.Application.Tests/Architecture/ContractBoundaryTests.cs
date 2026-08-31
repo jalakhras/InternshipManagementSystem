@@ -1,7 +1,9 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using InternshipManagementSystem.Assessment.Delivery.Dtos;
 using InternshipManagementSystem.Assessment.Exams;
 using Shouldly;
@@ -33,11 +35,47 @@ public class ContractBoundaryTests
         var contracts = typeof(TakerQuestionDto).Assembly;
         var entities = AssessmentEntities().ToHashSet();
 
+        // The load-bearing assertion, and the one this test did not make. Contracts
+        // references Domain.Shared and nothing else, so a DTO property typed as a
+        // domain entity does not compile — which meant the scan below ran 78 DTOs
+        // and 616 properties against 21 types that could not appear in any of them,
+        // and could not have failed however carelessly anybody wrote a DTO. It was
+        // restating the compiler.
+        //
+        // What is worth defending is the reason the compiler can say no: the
+        // reference that is not there. Read off the project file rather than off
+        // the assembly, because `GetReferencedAssemblies` lists what the compiler
+        // actually emitted a reference to — add the ProjectReference alone and it
+        // is trimmed away unused, so the assembly cannot tell you the door has been
+        // unlocked, only that somebody has already walked through it. The project
+        // file can, which is a build earlier and one line to review.
+        var references = ProjectReferencesOfContracts();
+
+        references.ShouldNotContain(
+            "InternshipManagementSystem.Domain",
+            "Application.Contracts must not reference Domain. That reference is the " +
+            "only thing that makes it possible to type a DTO property as an entity, " +
+            "and the scan below cannot catch anything until it exists — so if it is " +
+            "wanted, it is a decision to record, not a convenience to add. " +
+            $"Found: {string.Join(", ", references)}");
+
+        references.ShouldNotContain(
+            "InternshipManagementSystem.EntityFrameworkCore",
+            "Application.Contracts must not reference the persistence layer. " +
+            $"Found: {string.Join(", ", references)}");
+
         var violations = new List<string>();
 
         var dtos = contracts.GetTypes()
             .Where(t => t.IsClass && !t.IsNested)
-            .Where(t => t.Namespace?.StartsWith(Root) == true);
+            .Where(t => t.Namespace?.StartsWith(Root) == true)
+            .ToList();
+
+        // The search space, before anything is concluded from its emptiness. Both
+        // sides of the comparison have to be populated for the loop to mean
+        // anything, and a namespace rename on either side would silently empty one.
+        dtos.Count.ShouldBeGreaterThan(50);
+        entities.Count.ShouldBeGreaterThan(15);
 
         foreach (var dto in dtos)
         {
@@ -98,6 +136,42 @@ public class ContractBoundaryTests
             "CodeExpectedOutput to the browser, which made every other anti-cheating " +
             "measure decorative:" +
             Environment.NewLine + string.Join(Environment.NewLine, violations));
+    }
+
+    /// <summary>
+    /// The project references declared by Application.Contracts, by their bare
+    /// project name, read from the csproj itself.
+    /// <para>
+    /// Walks up from the test binary to the directory holding the solution, so it
+    /// does not depend on how deep the build output happens to be. If the file
+    /// cannot be found the test fails rather than passing over an empty list — an
+    /// architecture check that quietly stops reading the thing it checks is the
+    /// failure mode this whole file is being repaired for.
+    /// </para>
+    /// </summary>
+    private static List<string> ProjectReferencesOfContracts()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory is not null && !directory.EnumerateFiles("*.sln").Any())
+        {
+            directory = directory.Parent;
+        }
+
+        directory.ShouldNotBeNull("Could not find the solution directory from " + AppContext.BaseDirectory);
+
+        var csproj = Path.Combine(
+            directory!.FullName,
+            "src",
+            "InternshipManagementSystem.Application.Contracts",
+            "InternshipManagementSystem.Application.Contracts.csproj");
+
+        File.Exists(csproj).ShouldBeTrue("Expected the contracts project file at " + csproj);
+
+        return Regex
+            .Matches(File.ReadAllText(csproj), @"<ProjectReference\s+Include=""([^""]+)""")
+            .Select(m => Path.GetFileNameWithoutExtension(m.Groups[1].Value))
+            .ToList();
     }
 
     private static IEnumerable<Type> AssessmentEntities() =>

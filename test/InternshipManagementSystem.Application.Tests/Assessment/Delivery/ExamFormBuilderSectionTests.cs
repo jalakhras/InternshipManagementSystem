@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using InternshipManagementSystem.Assessment.Exams;
@@ -247,6 +247,11 @@ public class ExamFormBuilderSectionTests
         var exam = Exam(Section(Listening, "Listening", order: 0));
 
         var paper = _builder.Build(exam, Bank((Listening, 3)), Guid.NewGuid(), null, seed: 2);
+
+        // The size first. ShouldAllBe is true of an empty list, so a Build that
+        // returned nothing passed the line below — and a paper with no questions
+        // in it is the one failure a candidate cannot work around.
+        paper.Count.ShouldBe(3);
 
         // Without this column nothing downstream can tell one part of a paper
         // from another, which is what made sections authorable and undeliverable.

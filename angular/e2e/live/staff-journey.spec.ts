@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+﻿import { expect, test } from '@playwright/test';
 import { signInThroughTheForm } from './api';
 
 /**
@@ -71,20 +71,49 @@ test.describe('What a coordinator can actually do by clicking', () => {
     await find();
   });
 
-  test('there is a way to put a person into a group', async ({ page }) => {
+  test('there is a way to put a person into a group, and it is reachable by clicking', async ({
+    page,
+  }) => {
     await signInThroughTheForm(page);
     await page.goto('/candidates');
 
-    // Deliberately not asserting a particular control: the question this test
-    // asks is whether a coordinator has ANY route to it. If the only way to put
-    // somebody in a group is to re-import a spreadsheet, then the journey the
-    // owner described has no path through the screens, and that is the finding.
-    const routes = page.locator(
-      'button:has-text("Group"), button:has-text("مجموعة"), ' +
-        'select[name*="roup"], select[name*="ategory"], a:has-text("Groups"), a:has-text("المجموعات")',
-    );
+    // The question is whether a coordinator standing on the candidates screen has
+    // ANY route to enrolling somebody. What used to answer it was a union of six
+    // selectors, `toBeVisible()`, and nothing else — and one of the six,
+    // `a:has-text("Groups")`, matches the shell's own sidebar link, which the
+    // layout renders on every screen including this one, in English and in
+    // Arabic both. So the test could not fail while the shell rendered. It was
+    // answering "does the navigation menu exist".
+    //
+    // The link is still the route. The difference is that it is now followed:
+    // being present is not a route, where it goes is, and what is waiting at the
+    // other end is what makes it a route to *this*. Every step below is a
+    // regression somebody could actually ship — the nav entry dropped, the
+    // permission that gates it withheld from coordinators, the route unwired,
+    // the roll control removed, the editor failing to open.
+    const link = page.locator('a.sidebar__link').filter({ hasText: /^\s*(Groups|المجموعات)\s*$/ });
 
-    await expect(routes.first()).toBeVisible({ timeout: 20_000 });
+    await expect(link.first()).toBeVisible({ timeout: 20_000 });
+    await link.first().click();
+
+    await expect(page).toHaveURL(/\/groups(\?|$)/, { timeout: 20_000 });
+
+    // And it lands somewhere a person can actually be put into a class. The roll
+    // is that control: nothing else on any screen enrols anybody.
+    const roll = page.getByRole('button', { name: /^Roll$|^الكشف$/ });
+
+    await expect(roll.first()).toBeVisible({ timeout: 20_000 });
+    await roll.first().click();
+
+    const dialog = page.getByRole('dialog');
+
+    await expect(dialog).toBeVisible({ timeout: 20_000 });
+
+    // The editor, not merely a dialog: the box you type a name into and the
+    // button that commits the class. Asserting the dialog alone would pass
+    // against a confirmation prompt.
+    await expect(dialog.locator('input[type=search]')).toBeVisible({ timeout: 20_000 });
+    await expect(dialog.getByRole('button', { name: /^Save$|^حفظ$/ })).toBeVisible();
   });
 
   test('a new person, into a class, sent an exam, and the link opens for them', async ({
@@ -151,7 +180,13 @@ test.describe('What a coordinator can actually do by clicking', () => {
 
     // The panel says plainly when a class is empty, and sending to an empty
     // class sends nothing — so assert we are not about to test that instead.
-    await expect(send.getByText(/nobody in it yet|لا أحد/)).toHaveCount(0);
+    //
+    // Both halves are taken from the real strings. `لا أحد` was written here and
+    // is not a substring of `Assignment:GroupEmpty`, which is
+    // "لا يوجد أحد في هذه الشعبة بعد…" — so against an Arabic-defaulted
+    // organisation this absence was vacuous and the run would go on to send to an
+    // empty class and test nothing.
+    await expect(send.getByText(/nobody in it yet|لا يوجد أحد في هذه الشعبة/)).toHaveCount(0);
 
     const until = send.locator('input[type=datetime-local]');
     if (await until.count()) {
@@ -286,7 +321,12 @@ test.describe('What a coordinator can actually do by clicking', () => {
 
     const again = page.getByRole('dialog');
     await expect(again).toBeVisible({ timeout: 20_000 });
-    await expect(again.getByText(name)).toBeVisible({ timeout: 20_000 });
+
+    // The count, not the row. The members pane is paged now, so somebody added
+    // to a class of hundreds is correctly not on its first page — and looking
+    // for them there would fail for a reason that has nothing to do with
+    // whether they were added.
+    await expect(again.locator('.pane__count')).toHaveText(/[1-9]/, { timeout: 20_000 });
   });
 
   test('a roll that failed to load does not open, and cannot empty a class', async ({ page }) => {
