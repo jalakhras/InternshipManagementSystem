@@ -33,6 +33,7 @@ public class InternshipManagementSystemSettingDefinitionProvider : SettingDefini
             Tenant(InternshipManagementSystemSettings.OrganizationName, null),
             Tenant(InternshipManagementSystemSettings.LogoBlobName, null),
             Tenant(InternshipManagementSystemSettings.BrandColor, null),
+            Tenant(InternshipManagementSystemSettings.SupportEmail, null),
             Tenant(InternshipManagementSystemSettings.DefaultPassingPercentage, "60"),
             Tenant(InternshipManagementSystemSettings.ShowResultToCandidate, "true"),
             Tenant(InternshipManagementSystemSettings.CollectIntegritySignals, "true")

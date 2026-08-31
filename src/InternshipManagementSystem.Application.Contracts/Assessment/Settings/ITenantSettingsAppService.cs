@@ -45,6 +45,19 @@ public class TenantSettingsDto
     public string? LogoBlobName { get; set; }
 
     /// <summary>
+    /// Where a candidate writes when something goes wrong during an exam.
+    /// <para>
+    /// Shown on the screen they open their link on and on the paper itself. The
+    /// only address a candidate could see was ours, and they have no
+    /// relationship with us: the centre invited them and the centre holds their
+    /// result. Optional — left empty, nothing is shown.
+    /// </para>
+    /// </summary>
+    [EmailAddress]
+    [StringLength(256)]
+    public string? SupportEmail { get; set; }
+
+    /// <summary>
     /// An accent colour, as a hex value, applied over the design tokens.
     /// <para>
     /// One colour rather than a palette. A tenant that can set every colour can

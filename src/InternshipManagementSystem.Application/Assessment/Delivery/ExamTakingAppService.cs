@@ -188,6 +188,18 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             preview.OrganizationBrandColor = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.BrandColor);
 
+            // Where to write when something goes wrong. Read tenant-only, for
+            // the reason the logo is: a candidate handed the host's address is
+            // handed ours, and writing to us about a paper we do not run is a
+            // message nobody can answer.
+            preview.OrganizationSupportEmail = CurrentTenant.Id is null
+                ? await SettingProvider.GetOrNullAsync(
+                    InternshipManagementSystemSettings.SupportEmail)
+                : await SettingManager.GetOrNullForTenantAsync(
+                    InternshipManagementSystemSettings.SupportEmail,
+                    CurrentTenant.Id.Value,
+                    fallback: false);
+
             // This organisation's own logo only. Inheriting the host's gives a
             // candidate their academy's name beside a broken image, because the
             // file lives in the host's blob partition and their link cannot
@@ -863,8 +875,36 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             Answered = form.Select(f => answeredSet.Contains(f.QuestionId)).ToList(),
             IsSubmitted = attempt.IsSubmitted,
             AllowBackNavigation = exam.AllowBackNavigation,
-            OneQuestionAtATime = exam.OneQuestionAtATime
+            OneQuestionAtATime = exam.OneQuestionAtATime,
+
+            // Carried on every poll, because the moment it is needed is the
+            // moment the first screen is long gone: somebody mid-paper whose
+            // connection has just come back, or whose recording will not start.
+            OrganizationSupportEmail = await SupportAddressAsync(attempt.TenantId)
         };
+    }
+
+    /// <summary>
+    /// The organisation's own support address, or nothing.
+    /// <para>
+    /// Tenant-only, for the reason the logo is read that way. A candidate handed
+    /// the host's address is handed ours, and a message to us about a paper we
+    /// do not run is one nobody can answer. An organisation that published none
+    /// has said so by leaving it empty.
+    /// </para>
+    /// </summary>
+    private async Task<string?> SupportAddressAsync(Guid? tenantId)
+    {
+        using (CurrentTenant.Change(tenantId))
+        {
+            return tenantId is null
+                ? await SettingProvider.GetOrNullAsync(
+                    InternshipManagementSystemSettings.SupportEmail)
+                : await SettingManager.GetOrNullForTenantAsync(
+                    InternshipManagementSystemSettings.SupportEmail,
+                    tenantId.Value,
+                    fallback: false);
+        }
     }
 
     private async Task<AttemptResultDto> BuildResultAsync(Guid attemptId)

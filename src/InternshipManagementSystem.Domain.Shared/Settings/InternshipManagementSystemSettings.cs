@@ -73,6 +73,23 @@ public static class InternshipManagementSystemSettings
     /// <summary>Brand accent colour as a hex value, applied over the design tokens.</summary>
     public const string BrandColor = Prefix + ".BrandColor";
 
+    /// <summary>
+    /// Where a candidate goes when something goes wrong mid-exam.
+    /// <para>
+    /// Somebody's connection drops twenty minutes into a paper, or the recording
+    /// will not start, or they cannot read the question. Until now the only
+    /// address anywhere on their screen was ours — and they have no relationship
+    /// with us at all. The centre invited them, the centre holds their result,
+    /// and the centre is the only party that can do anything about it.
+    /// </para>
+    /// <para>
+    /// Optional. An organisation that would rather not publish an address to
+    /// candidates leaves it empty and nothing is shown, which is better than
+    /// showing one nobody reads.
+    /// </para>
+    /// </summary>
+    public const string SupportEmail = Prefix + ".SupportEmail";
+
     // ---- Assessment defaults ----
 
     /// <summary>Pass mark applied to a new exam unless its author overrides it.</summary>

@@ -36,6 +36,8 @@ public class TenantSettingsAppService : ApplicationService, ITenantSettingsAppSe
             LogoBlobName = await OwnLogoAsync(),
             BrandColor = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.BrandColor),
+            SupportEmail = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.SupportEmail),
             DefaultLanguage = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.DefaultLanguage),
             TimeZone = await SettingProvider.GetOrNullAsync(
@@ -59,6 +61,7 @@ public class TenantSettingsAppService : ApplicationService, ITenantSettingsAppSe
         await SetAsync(InternshipManagementSystemSettings.OrganizationName, Clean(input.OrganizationName));
         await SetAsync(InternshipManagementSystemSettings.LogoBlobName, Clean(input.LogoBlobName));
         await SetAsync(InternshipManagementSystemSettings.BrandColor, Clean(input.BrandColor));
+        await SetAsync(InternshipManagementSystemSettings.SupportEmail, Clean(input.SupportEmail));
         await SetAsync(InternshipManagementSystemSettings.DefaultLanguage, Clean(input.DefaultLanguage));
         await SetAsync(InternshipManagementSystemSettings.TimeZone, Clean(input.TimeZone));
 

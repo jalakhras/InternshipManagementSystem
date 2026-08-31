@@ -40,6 +40,23 @@
         <span class="field__hint">{{ t('::Settings:Logo:Hint') }}</span>
       </div>
 
+      <!-- Where a candidate goes when something goes wrong mid-exam. Beside the
+           name and the mark, because it is the third thing a candidate sees of
+           this organisation and the only one they act on. -->
+      <label class="field">
+        <span class="field__label">{{ t('::Settings:SupportEmail') }}</span>
+        <input
+          type="email"
+          class="form-control astro-ltr"
+          maxlength="256"
+          name="supportEmail"
+          [disabled]="readOnly()"
+          [placeholder]="t('::Settings:SupportEmail:Placeholder')"
+          [ngModel]="form().supportEmail ?? ''"
+          (ngModelChange)="patch('supportEmail', $event)" />
+        <span class="field__hint">{{ t('::Settings:SupportEmail:Hint') }}</span>
+      </label>
+
       <label class="field field--narrow">
         <span class="field__label">{{ t('::Settings:BrandColor') }}</span>
         <input

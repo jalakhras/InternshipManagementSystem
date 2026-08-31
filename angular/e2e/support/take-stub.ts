@@ -74,7 +74,7 @@ export interface TakeStubOptions {
   rubric?: { name: string; maxScore: number }[];
 
   /** The centre whose exam this is, as the candidate's first screen shows it. */
-  organization?: { name?: string; logoUrl?: string };
+  organization?: { name?: string; logoUrl?: string; supportEmail?: string };
 }
 
 export interface TakeStub {
@@ -201,6 +201,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       candidateName: 'Layla',
       organizationName: options.organization?.name,
       organizationLogoUrl: options.organization?.logoUrl,
+      organizationSupportEmail: options.organization?.supportEmail,
       timeLimitInMinutes: 30,
       questionCount: total,
       attemptsAllowed: 2,
@@ -222,6 +223,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       isSubmitted: submitted,
       allowBackNavigation: options.allowBackNavigation ?? true,
       oneQuestionAtATime: true,
+      organizationSupportEmail: options.organization?.supportEmail,
     };
   }
 

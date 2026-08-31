@@ -451,3 +451,14 @@ textarea,
   color: var(--text-secondary);
   white-space: nowrap;
 }
+
+// Where to write if something goes wrong. At the foot of the paper, quiet, and
+// never between the candidate and the question they are answering.
+.support {
+  margin-block: var(--astro-space-4) 0;
+  color: var(--text-muted);
+  font-size: var(--astro-text-sm);
+  text-align: center;
+}
+
+.support__address { color: inherit; }

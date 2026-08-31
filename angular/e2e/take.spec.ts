@@ -612,6 +612,40 @@ test.describe('Taking an exam', () => {
     await expect(page.locator('astro-mark')).toHaveCount(0);
   });
 
+  test('a candidate is told where to write when something goes wrong', async ({ page }) => {
+    await stubTake(page, {
+      organization: { name: 'Riyadh Language Centre', supportEmail: 'help@centre.test' },
+    });
+
+    await page.goto(`/exam/${TOKEN}`);
+
+    // Before they start.
+    await expect(page.getByRole('link', { name: 'help@centre.test' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // And on the paper itself, which is the half that matters. The moment this
+    // is needed is the moment the first screen is long gone: the connection
+    // dropped, or the recording will not start, and the clock is running. The
+    // only address anywhere on this page was ours — and a candidate has no
+    // relationship with us at all.
+    await expect(page.getByRole('link', { name: 'help@centre.test' })).toBeVisible();
+  });
+
+  test('a centre that published no address shows none', async ({ page }) => {
+    await stubTake(page, { organization: { name: 'Riyadh Language Centre' } });
+
+    await page.goto(`/exam/${TOKEN}`);
+    await page.getByRole('button', { name: 'Start the exam' }).click();
+    await expect(page.getByText('Question 1 of 3')).toBeVisible();
+
+    // Silence is an answer. An organisation that would rather not publish an
+    // address to candidates has said so, and offering ours instead overrules
+    // them and sends their candidate to a party that cannot help.
+    await expect(page.getByText('Trouble with this exam')).toHaveCount(0);
+  });
+
   test('a file is the answer, and the answer carries it', async ({ page }) => {
     const stub = await stubTake(page, { fileUpload: true });
 

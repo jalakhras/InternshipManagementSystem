@@ -144,3 +144,13 @@
   color: var(--text-secondary);
   font-weight: var(--astro-weight-medium);
 }
+
+// Where to write if something goes wrong. Quiet, and never in the way of the
+// button somebody came here to press.
+.support {
+  margin-block: var(--astro-space-3) 0;
+  color: var(--text-secondary);
+  font-size: var(--astro-text-sm);
+}
+
+.support__address { color: inherit; }

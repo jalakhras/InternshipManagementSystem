@@ -13,6 +13,15 @@ export interface TenantSettings {
   /** One accent colour, as hex. Not a palette: the rest of the contrast is not theirs to break. */
   brandColor?: string | null;
 
+  /**
+   * Where a candidate writes when something goes wrong during an exam.
+   *
+   * The only address on a candidate's screen used to be ours, and they have no
+   * relationship with us: the centre invited them and the centre holds their
+   * result. Optional — left empty, nothing is shown to anybody.
+   */
+  supportEmail?: string | null;
+
   defaultLanguage?: string | null;
   timeZone?: string | null;
 

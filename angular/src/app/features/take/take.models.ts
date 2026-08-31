@@ -49,6 +49,9 @@ export interface ExamPreview {
   /** Painted onto the page, so the candidate is in the organisation's space. */
   organizationBrandColor?: string;
 
+  /** Where to write if something goes wrong, when the centre has said. */
+  organizationSupportEmail?: string;
+
   /** Minted on opening the link. Worth one attempt, and only in memory. */
   sessionToken?: string;
 }
@@ -137,6 +140,14 @@ export interface AttemptState {
   isSubmitted: boolean;
   allowBackNavigation: boolean;
   oneQuestionAtATime: boolean;
+
+  /**
+   * Where to write if something goes wrong, when the centre has said.
+   *
+   * On the state and not only on the entry screen, because the moment it is
+   * needed is the moment that screen is long gone.
+   */
+  organizationSupportEmail?: string;
 
   /**
    * Returned by the start, and it replaces the one from the entry screen.

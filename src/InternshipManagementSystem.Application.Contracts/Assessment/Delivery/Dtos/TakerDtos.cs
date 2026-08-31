@@ -39,6 +39,17 @@ public class ExamPreviewDto
     public string? OrganizationLogoUrl { get; set; }
 
     /// <summary>
+    /// Where to write if something goes wrong, when the organisation has said.
+    /// <para>
+    /// A candidate whose connection drops mid-paper, or whose recording will not
+    /// start, had nowhere to go: the only address anywhere on their screen was
+    /// ours, and they have no relationship with us. The centre invited them and
+    /// the centre holds their result.
+    /// </para>
+    /// </summary>
+    public string? OrganizationSupportEmail { get; set; }
+
+    /// <summary>
     /// The organisation's accent colour, so the screen is painted in it.
     /// <para>
     /// Sent to the candidate for the same reason the name and the mark are: they
@@ -196,6 +207,17 @@ public class AttemptStateDto
 
     public bool AllowBackNavigation { get; set; }
     public bool OneQuestionAtATime { get; set; }
+
+    /// <summary>
+    /// Where to write if something goes wrong, when the organisation has said.
+    /// <para>
+    /// Carried on the state as well as on the preview, because the moment it is
+    /// needed is the moment the preview is long gone: somebody twenty minutes
+    /// into a paper whose connection has just dropped, or whose recording will
+    /// not start. Reaching it must not depend on having kept the first screen.
+    /// </para>
+    /// </summary>
+    public string? OrganizationSupportEmail { get; set; }
 
     /// <summary>
     /// The credential for the rest of this sitting. Set by the start; null on the

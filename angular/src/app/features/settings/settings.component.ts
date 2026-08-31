@@ -112,6 +112,7 @@ export class SettingsComponent {
 const blank = (): TenantSettings => ({
   organizationName: null,
   logoBlobName: null,
+  supportEmail: null,
   brandColor: null,
   defaultLanguage: 'ar',
   timeZone: 'Asia/Riyadh',

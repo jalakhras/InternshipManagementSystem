@@ -96,6 +96,9 @@ export class TakeSittingComponent {
 
   readonly answerHost = viewChild('answerHost', { read: ViewContainerRef });
 
+  /** The centre's own address, when it published one. Most have not. */
+  readonly supportEmail = computed(() => this.state()?.organizationSupportEmail ?? '');
+
   /**
    * What this answer is marked on, when the author wrote it down.
    *

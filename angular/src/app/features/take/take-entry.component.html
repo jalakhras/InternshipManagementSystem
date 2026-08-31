@@ -77,6 +77,16 @@
           </div>
         </dl>
 
+        @if (exam.organizationSupportEmail; as address) {
+          <!-- Before they start, and again on the paper itself. A candidate who
+               loses their connection needs an address they can reach without
+               getting back into an exam they cannot get back into. -->
+          <p class="support">
+            {{ t('::Take:Support:Before') }}
+            <a class="support__address astro-ltr" [href]="'mailto:' + address">{{ address }}</a>
+          </p>
+        }
+
         <ul class="rules">
           <li>{{ t('::Take:Rule:Timer') }}</li>
           <li>{{ t('::Take:Rule:Autosave') }}</li>

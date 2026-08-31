@@ -172,6 +172,19 @@
     }
   </main>
 
+  @if (supportEmail(); as address) {
+    <!-- Small, at the foot of the paper, and reachable without leaving it.
+         The moment somebody needs this is the moment they cannot get back to
+         the screen they opened the link on: the connection dropped, or the
+         recording will not start, and the clock is running. Until now the only
+         address anywhere on this page was ours, and they have no relationship
+         with us — the centre invited them and the centre holds their result. -->
+    <p class="support">
+      {{ t('::Take:Support:During') }}
+      <a class="support__address astro-ltr" [href]="'mailto:' + address">{{ address }}</a>
+    </p>
+  }
+
   <!-- What is left, and a way to reach it. Numbers only: a map of a paper must
        not say anything about the questions on it. -->
   @if (map().length > 1) {
