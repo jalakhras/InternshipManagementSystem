@@ -49,7 +49,24 @@ public class AttemptAdminAppService : ApplicationService, IAttemptAdminAppServic
         _grading = grading;
     }
 
+    /// <summary>
+    /// Both, and the second is not redundant.
+    /// <para>
+    /// Every row here is a result summary, built by the results service so that
+    /// a running sitting and a finished one are described by the same code. So
+    /// watching sittings really does mean seeing results, and the class-level
+    /// guard on that service enforces it whether this attribute says so or not.
+    /// </para>
+    /// <para>
+    /// Written down because it was invisible: a role granted <c>Attempts.View</c>
+    /// alone — which is exactly what the permission screen offers — was refused
+    /// at the moment of use, by a guard on a service it never asked for. A
+    /// requirement the product enforces and does not state is a requirement
+    /// nobody can satisfy on purpose.
+    /// </para>
+    /// </summary>
     [Authorize(InternshipManagementSystemPermissions.Attempts.View)]
+    [Authorize(InternshipManagementSystemPermissions.Results.View)]
     public async Task<PagedResultDto<ResultRowDto>> GetRunningAsync(RunningAttemptRequestDto input)
     {
         var now = Clock.Now;
@@ -103,7 +120,9 @@ public class AttemptAdminAppService : ApplicationService, IAttemptAdminAppServic
         return new PagedResultDto<ResultRowDto>(totalCount, rows);
     }
 
+    /// <summary>Requires seeing results too, for the reason given above.</summary>
     [Authorize(InternshipManagementSystemPermissions.Attempts.ForceSubmit)]
+    [Authorize(InternshipManagementSystemPermissions.Results.View)]
     public async Task<ResultRowDto> ForceSubmitAsync(Guid attemptId, ForceSubmitDto input)
     {
         var attempt = await _attempts.GetAsync(attemptId);

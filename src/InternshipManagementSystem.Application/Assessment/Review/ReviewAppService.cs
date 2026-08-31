@@ -7,6 +7,7 @@ using InternshipManagementSystem.Assessment.Exams;
 using InternshipManagementSystem.Assessment.Grading;
 using InternshipManagementSystem.Assessment.People;
 using InternshipManagementSystem.Assessment.Review.Dtos;
+using InternshipManagementSystem.Localization;
 using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +51,12 @@ public class ReviewAppService : ApplicationService, IReviewAppService
         _candidates = candidates;
         _signals = signals;
         _grading = grading;
+
+        // This class derives from ApplicationService rather than from
+        // InternshipManagementSystemAppService, so `L` has to be pointed at the
+        // product's own resource explicitly or the integrity sentences below
+        // resolve against ABP's DefaultResource and come back as bare keys.
+        LocalizationResource = typeof(InternshipManagementSystemResource);
     }
 
     /// <summary>Oldest first: a candidate waiting longest is served first.</summary>
@@ -88,6 +95,16 @@ public class ReviewAppService : ApplicationService, IReviewAppService
             .Select(g => new { AttemptId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.AttemptId, x => x.Count);
 
+        // The same rule the results roster applies, applied here too.
+        //
+        // A count of "this candidate pasted four times" is an accusation, and
+        // the roster withholds it from anyone without the permission that guards
+        // it. This queue emitted it to anyone who could open the queue at all —
+        // so the number a marker was not trusted with on one screen arrived
+        // unasked on another. A rule enforced in one place is not a rule.
+        var showIntegrity = await AuthorizationService.IsGrantedAsync(
+            InternshipManagementSystemPermissions.Review.ViewIntegritySignals);
+
         var items = page.Select(p => new ReviewQueueItemDto
         {
             AttemptId = p.attempt.Id,
@@ -97,7 +114,7 @@ public class ReviewAppService : ApplicationService, IReviewAppService
             PendingCount = pendingCounts.TryGetValue(p.attempt.Id, out var c) ? c : 0,
             ProvisionalScore = p.attempt.Score,
             MaxScore = p.attempt.MaxScore,
-            IntegrityFlagCount = p.attempt.IntegrityFlagCount
+            IntegrityFlagCount = showIntegrity ? p.attempt.IntegrityFlagCount : 0
         }).ToList();
 
         return new PagedResultDto<ReviewQueueItemDto>(totalCount, items);
@@ -244,21 +261,22 @@ public class ReviewAppService : ApplicationService, IReviewAppService
         {
             var count = group.Count();
 
+            var magnitude = group.Sum(s => s.Magnitude ?? 0);
+
+            // Read, not computed. These were seven interpolated English sentences
+            // in a product whose default language is Arabic, sitting underneath a
+            // heading and a lede that were both translated — so a marker working
+            // in Arabic got Arabic chrome and an English list. The resource is the
+            // only place a sentence a person reads is allowed to live.
             report.Observations.Add(group.Key switch
             {
-                IntegritySignalType.Paste =>
-                    $"{count} paste event(s), totalling {group.Sum(s => s.Magnitude ?? 0)} characters.",
-                IntegritySignalType.WindowBlur =>
-                    $"Left the exam window {count} time(s), for {group.Sum(s => s.Magnitude ?? 0)} seconds in total.",
-                IntegritySignalType.ImplausibleSpeed =>
-                    $"{count} answer(s) submitted faster than the text length suggests is possible.",
-                IntegritySignalType.NoCorrections =>
-                    $"{count} long answer(s) typed with no corrections.",
-                IntegritySignalType.DevToolsOpened =>
-                    $"Developer tools appeared to open {count} time(s). Recorded only — this is not blocked, and cannot reliably be.",
-                IntegritySignalType.PageReloaded =>
-                    $"Reloaded the page {count} time(s).",
-                _ => $"{count} observation(s) of type {group.Key}."
+                IntegritySignalType.Paste => L["Review:Observation:Paste", count, magnitude],
+                IntegritySignalType.WindowBlur => L["Review:Observation:WindowBlur", count, magnitude],
+                IntegritySignalType.ImplausibleSpeed => L["Review:Observation:ImplausibleSpeed", count],
+                IntegritySignalType.NoCorrections => L["Review:Observation:NoCorrections", count],
+                IntegritySignalType.DevToolsOpened => L["Review:Observation:DevToolsOpened", count],
+                IntegritySignalType.PageReloaded => L["Review:Observation:PageReloaded", count],
+                _ => L["Review:Observation:Other", count, group.Key]
             });
         }
 

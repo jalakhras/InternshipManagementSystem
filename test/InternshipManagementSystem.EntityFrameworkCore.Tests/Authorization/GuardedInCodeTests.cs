@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using InternshipManagementSystem.Assessment;
 using InternshipManagementSystem.Assessment.People.Dtos;
 using InternshipManagementSystem.Assessment.Delivery.Dtos;
+using InternshipManagementSystem.Assessment.Review;
+using InternshipManagementSystem.Assessment.Review.Dtos;
 using InternshipManagementSystem.Assessment.Results;
 using InternshipManagementSystem.Assessment.Results.Dtos;
 using InternshipManagementSystem.IdentityManagement;
@@ -222,6 +224,61 @@ public class GuardedInCodeTests : AssessmentPermissionTestBase
             var withheld = await results.GetListAsync(new ResultListRequestDto { Filter = sitting.Email });
 
             withheld.Items.Single().IntegrityFlagCount.ShouldBe(0);
+        });
+    }
+
+    [Fact]
+    public async Task The_marking_queue_redacts_the_same_number_the_roster_does()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var review = GetRequiredService<IReviewAppService>();
+
+            // Everything, to build the sitting: this test is about what the
+            // queue reveals, not about who may author an exam.
+            GrantEverything();
+
+            var examId = await PublishedExamAsync("queue-integrity");
+            var sitting = await StartedSittingAsync(examId, "queue-integrity");
+
+            await Taking.ReportSignalAsync(sitting.SessionToken, new ReportIntegritySignalDto
+            {
+                Type = IntegritySignalType.WindowBlur,
+            });
+
+            // Answered and submitted, so it is waiting on a marker and therefore
+            // in the queue at all. An empty queue would make redaction and
+            // truthfulness indistinguishable.
+            var question = await Taking.GetQuestionAsync(sitting.SessionToken, 0);
+
+            await Taking.SaveAnswerAsync(sitting.SessionToken, new SaveAnswerDto
+            {
+                QuestionId = question.Id,
+                Response = "Because the level held on the retest.",
+            });
+
+            await Taking.SubmitAsync(sitting.SessionToken);
+
+            GrantOnly(
+                InternshipManagementSystemPermissions.Review.Default,
+                InternshipManagementSystemPermissions.Review.ViewQueue,
+                InternshipManagementSystemPermissions.Review.ViewIntegritySignals);
+
+            var shown = await review.GetQueueAsync(new ReviewQueueRequestDto { MaxResultCount = 50 });
+
+            shown.Items.Single(i => i.AttemptId == sitting.AttemptId).IntegrityFlagCount.ShouldBe(1);
+
+            // The results roster withholds this from anyone without the
+            // permission that guards it, and the queue did not — so the number a
+            // marker was not trusted with on one screen arrived unasked on
+            // another. A rule enforced in one place is not a rule.
+            GrantOnly(
+                InternshipManagementSystemPermissions.Review.Default,
+                InternshipManagementSystemPermissions.Review.ViewQueue);
+
+            var withheld = await review.GetQueueAsync(new ReviewQueueRequestDto { MaxResultCount = 50 });
+
+            withheld.Items.Single(i => i.AttemptId == sitting.AttemptId).IntegrityFlagCount.ShouldBe(0);
         });
     }
 
