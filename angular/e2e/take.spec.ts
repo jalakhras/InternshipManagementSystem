@@ -701,4 +701,28 @@ test.describe('Taking an exam', () => {
     // written feedback at all.
     await expect(page.locator('.feedback')).toHaveCount(0);
   });
+
+  test('the candidate panels are laid out by this product, not by Bootstrap', async ({ page }) => {
+    await stubTake(page);
+
+    await page.goto(`/exam/${TOKEN}`);
+    await expect(page.getByRole('button', { name: 'Start the exam' })).toBeVisible();
+
+    // Bootstrap is loaded and owns `.card`. These panels used to carry that
+    // name while declaring no display of their own, so Bootstrap's
+    // `display: flex` won and the layout of the first screen a candidate ever
+    // sees came from a stylesheet nobody here wrote. It read as correct wherever
+    // flex happened to resemble block, which is why nobody caught it by looking.
+    //
+    // Measured rather than read: the class name can be renamed back by accident,
+    // and only the computed value says who is in charge.
+    await expect(page.locator('.card')).toHaveCount(0);
+
+    const display = await page
+      .locator('.sheet')
+      .first()
+      .evaluate(el => getComputedStyle(el).display);
+
+    expect(display).not.toBe('flex');
+  });
 });

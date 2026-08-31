@@ -5,12 +5,12 @@
       <p>{{ t('::Loading') }}</p>
     </div>
   } @else if (error(); as message) {
-    <div class="card" role="alert">
+    <div class="sheet" role="alert">
       <h1>{{ t('::CouldNotLoad') }}</h1>
       <p class="muted">{{ message }}</p>
     </div>
   } @else if (result(); as outcome) {
-    <div class="card">
+    <div class="sheet">
       <p class="submitted">{{ t('::Take:SubmittedAt') }} {{ outcome.submittedAt | date: 'y/MM/dd HH:mm' }}</p>
       <h1 class="title">{{ outcome.examTitle }}</h1>
 

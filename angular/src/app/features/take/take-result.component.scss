@@ -6,7 +6,15 @@
   background: var(--surface-page);
 }
 
-.card {
+/**
+ * Named `sheet`, not `card`.
+ *
+ * Bootstrap is loaded and owns `.card`, and its rule sets `display: flex` — a
+ * property this block never declares, so Bootstrap's won every time and the
+ * layout came from a stylesheet nobody here wrote. It read as correct on the
+ * screens where flex happened to look like block, which is why it survived.
+ */
+.sheet {
   inline-size: min(42rem, 100%);
   margin-block-start: var(--astro-space-6);
   padding: var(--astro-space-7);
