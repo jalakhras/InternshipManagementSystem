@@ -432,4 +432,90 @@ test.describe('Question builder', () => {
 
     await expect(page.getByText(/serves every exam at its level/)).toBeVisible();
   });
+
+  test('pressing save twice on a new question writes one question, not two', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+
+    const posted: unknown[] = [];
+    const put: unknown[] = [];
+
+    // The stored question, for when the form comes back to it by address.
+    await page.route(`**/api/assessment/questions/${QUESTION_ID}`, route => {
+      if (route.request().method() === 'PUT') {
+        put.push(route.request().postDataJSON());
+      }
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: QUESTION_ID,
+          examId: EXAM_ID,
+          type: 'single-choice',
+          text: 'ما عاصمة السعوديّة؟',
+          score: 1,
+          difficulty: 1,
+          isActive: true,
+          payload: JSON.stringify({ options: [] }),
+        }),
+      });
+    });
+
+    await stubQuestions(page);
+    await stubSections(page, []);
+
+    // Registered after the shared stub on purpose: Playwright matches the last
+    // route registered first, and that stub answers this path too.
+    await page.route('**/api/assessment/questions', route => {
+      if (route.request().method() !== 'POST') {
+        return route.fallback();
+      }
+
+      posted.push(route.request().postDataJSON());
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: QUESTION_ID, examId: EXAM_ID }),
+      });
+    });
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/new`);
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+    await page.getByLabel('Question text').fill('ما عاصمة السعوديّة؟');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    // The address now names the question that exists. It did not, and the cost
+    // was a duplicate: the form still believed it was writing a new one, so a
+    // second press wrote a second copy into the bank.
+    //
+    // Not a rare mistake — it is what a person does when a save takes a second
+    // and nothing on the screen says it worked.
+    await expect(page).toHaveURL(new RegExp(`questions/${QUESTION_ID}$`));
+
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect.poll(() => put.length, { timeout: 10_000 }).toBe(1);
+
+    // One question written, however many times Save was pressed.
+    expect(posted.length).toBe(1);
+  });
+
+  test('an author who has just written a question is told, and can write the next one', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await stubSections(page, []);
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/new`);
+    await page.getByRole('button', { name: /Single choice/ }).click();
+
+    // Somebody writing a paper writes ten questions, not one. Sending them back
+    // to the list after each costs a click every time and loses what they had
+    // set — the type, the part, the topic — so the way onward is offered
+    // rather than forced.
+    await expect(page.getByRole('link', { name: 'Add another question' })).toBeVisible();
+
+    // And the way back, for when they are finished.
+    await expect(page.getByRole('link', { name: 'Back to the question bank' })).toBeVisible();
+  });
 });

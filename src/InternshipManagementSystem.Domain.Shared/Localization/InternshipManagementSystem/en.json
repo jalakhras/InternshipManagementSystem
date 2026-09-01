@@ -513,6 +513,8 @@
     "Permission:ViewQueue": "View queue",
     "Previous": "Previous",
     "Question:Accepts": "Accepts {0} — {1}",
+    "Question:AddAnother": "Add another question",
+    "Question:BackToBank": "Back to the question bank",
     "Question:Add": "Add question",
     "Question:AddOption": "Add option",
     "Question:Answer": "The answer",

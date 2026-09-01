@@ -513,6 +513,8 @@
     "Permission:ViewQueue": "عرض الطابور",
     "Previous": "السابق",
     "Question:Accepts": "يقبل {0} — {1}",
+    "Question:AddAnother": "حفظ ثمّ إضافة سؤالٍ آخر",
+    "Question:BackToBank": "العودة إلى بنك الأسئلة",
     "Question:Add": "إضافة سؤال",
     "Question:AddOption": "إضافة خيار",
     "Question:Answer": "الإجابة",

@@ -280,6 +280,22 @@
       <button type="submit" class="btn btn-primary" [disabled]="saving()">
         {{ saving() ? t('::Saving') : t('::Save') }}
       </button>
+
+      <!-- The path an author actually takes. Somebody writing a paper adds ten
+           questions, not one, and sending them back to the list after each
+           costs a click every time and loses what they had set: the type, the
+           part, the topic. -->
+      <a class="btn btn-outline-secondary" [routerLink]="['/exams', examId(), 'questions', 'new']">
+        {{ t('::Question:AddAnother') }}
+      </a>
+
+      <a class="btn btn-link" [routerLink]="['/exams', examId(), 'questions']">
+        {{ t('::Question:BackToBank') }}
+      </a>
+
+      @if (saved()) {
+        <span class="saved" role="status">{{ t('::Saved') }}</span>
+      }
     </div>
   </form>
 }

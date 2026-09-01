@@ -10,6 +10,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { RichTextComponent } from '../../shared/ui/rich-text.component';
 import { MediaFieldComponent } from '../../shared/ui/media-field.component';
 
@@ -42,7 +43,7 @@ import { QuestionSectionsService } from './question-sections.service';
 @Component({
   selector: 'astro-question-form',
   standalone: true,
-  imports: [FormsModule, RichTextComponent, MediaFieldComponent],
+  imports: [FormsModule, RichTextComponent, MediaFieldComponent, RouterLink],
   templateUrl: './question-form.component.html',
   styleUrl: './question-form.component.scss',
 })
@@ -78,7 +79,12 @@ export class QuestionFormComponent {
   private readonly editorHost = viewChild('editorHost', { read: ViewContainerRef });
 
   readonly types = signal<QuestionTypeDescriptor[]>([]);
+  private readonly router = inject(Router);
+
   readonly saving = signal(false);
+
+  /** Said out loud after a save, because silence reads as failure. */
+  readonly saved = signal(false);
   readonly error = signal<string | null>(null);
 
   /** Type is chosen first: it decides the shape of everything below it. */
@@ -295,6 +301,8 @@ export class QuestionFormComponent {
   }
 
   patch<K extends keyof CreateUpdateQuestionDto>(key: K, value: CreateUpdateQuestionDto[K]): void {
+    this.saved.set(false);
+
     this.form.update(f => ({ ...f, [key]: value }));
   }
 
@@ -332,7 +340,34 @@ export class QuestionFormComponent {
       : this.questions.create(this.form());
 
     request.subscribe({
-      next: () => this.saving.set(false),
+      next: stored => {
+        this.saving.set(false);
+        this.saved.set(true);
+
+        // Editing: they came from the list to change one thing, and it is
+        // changed. Keeping them on a form they are finished with makes them
+        // find their own way back.
+        if (id) {
+          this.router.navigate(['/exams', this.examId(), 'questions']);
+
+          return;
+        }
+
+        // Creating: the form now holds a question that exists, and the address
+        // has to say so.
+        //
+        // It did not, and the cost was a duplicate: after a successful create
+        // the form still believed it was writing a new question, so a second
+        // press wrote a second copy into the bank. That is not a rare mistake —
+        // it is what a person does when a save takes a second and nothing on
+        // the screen says it worked.
+        //
+        // `replaceUrl` because the address they were on no longer describes
+        // anything: reloading it would offer to create the question again.
+        this.router.navigate(
+          ['/exams', this.examId(), 'questions', stored.id],
+          { replaceUrl: true });
+      },
       error: err => {
         // The server refuses a payload no grader could read, and its message is
         // already a localised sentence — pass it through rather than inventing one.
