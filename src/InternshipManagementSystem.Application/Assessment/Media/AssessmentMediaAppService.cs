@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using InternshipManagementSystem.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
@@ -163,13 +163,13 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
     public async Task<MediaUploadResultDto> UploadAnswerAsync(IFormFile file, string sessionToken)
     {
         var claims = _sessions.Read(sessionToken)
-            ?? throw new AbpAuthorizationException("The exam session is invalid or has expired.");
+            ?? throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamSessionExpired);
 
         if (claims.AttemptId == Guid.Empty)
         {
             // A session minted at the entry screen, before the attempt exists.
             // There is nothing to attach a file to yet.
-            throw new AbpAuthorizationException("The exam has not been started.");
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamNotStarted);
         }
 
         // The sitting has to still be open, and this is the check that makes a
@@ -266,7 +266,7 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
         // through URLs and a stored name is not automatically a trusted one.
         if (blobName.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(blobName))
         {
-            throw new AbpAuthorizationException("Invalid blob name.");
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.MediaNameInvalid);
         }
 
         var granted = _sessions.ReadMediaGrant(grant, blobName);
@@ -329,7 +329,7 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
         // the wrong way round for the two of them to differ.
         if (blobName.Contains("..", StringComparison.Ordinal) || Path.IsPathRooted(blobName))
         {
-            throw new AbpAuthorizationException("Invalid blob name.");
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.MediaNameInvalid);
         }
 
         await _blobs.DeleteAsync(blobName);

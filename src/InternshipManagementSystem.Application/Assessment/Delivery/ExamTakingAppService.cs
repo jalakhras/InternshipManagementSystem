@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -589,7 +589,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
     private ExamSessionClaims RequireSession(string sessionToken) =>
         _sessions.Read(sessionToken)
-        ?? throw new AbpAuthorizationException("The exam session is invalid or has expired.");
+        ?? throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamSessionExpired);
 
     private static void ApplyAnswer(Answer answer, SaveAnswerDto input, DateTime now)
     {
@@ -1183,7 +1183,7 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 
         if (attempt.CandidateId != claims.CandidateId || attempt.TenantId != claims.TenantId)
         {
-            throw new AbpAuthorizationException("This session does not belong to that attempt.");
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamSessionMismatch);
         }
 
         return attempt;

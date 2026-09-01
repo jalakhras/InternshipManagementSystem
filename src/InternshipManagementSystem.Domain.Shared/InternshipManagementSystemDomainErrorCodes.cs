@@ -1,4 +1,4 @@
-namespace InternshipManagementSystem;
+﻿namespace InternshipManagementSystem;
 
 /// <summary>
 /// Business error codes. Each maps to a localised message, so the person on the
@@ -83,6 +83,30 @@ public static class InternshipManagementSystemDomainErrorCodes
 
     // ---- Exam links ----
     public const string ExamLinkInvalid = "IMS:ExamLink:Invalid";
+
+    /// <summary>
+    /// The candidate's exam session is missing, unreadable or past its life.
+    /// <para>
+    /// A business error rather than an authorization one, and the difference is
+    /// not academic. An authorization failure on an unauthenticated request makes
+    /// ASP.NET Core challenge the default scheme, and the default scheme here is
+    /// a cookie — so the answer to "my exam session expired" was <c>302</c> to
+    /// <c>/Account/Login</c>. A candidate has no account. They were being sent to
+    /// sign in to something that does not exist for them, mid-exam, and the
+    /// browser followed the redirect and got a page of HTML where the app
+    /// expected JSON.
+    /// </para>
+    /// </summary>
+    public const string ExamSessionExpired = "IMS:Take:SessionExpired";
+
+    /// <summary>The session is real but belongs to a different sitting.</summary>
+    public const string ExamSessionMismatch = "IMS:Take:SessionMismatch";
+
+    /// <summary>A file was offered before the sitting it would belong to exists.</summary>
+    public const string ExamNotStarted = "IMS:Take:NotStarted";
+
+    /// <summary>A media name that is not one this product wrote.</summary>
+    public const string MediaNameInvalid = "IMS:Media:NameInvalid";
     public const string ExamLinkExpired = "IMS:ExamLink:Expired";
     public const string ExamLinkRevoked = "IMS:ExamLink:Revoked";
     public const string ExamLinkAttemptsExhausted = "IMS:ExamLink:AttemptsExhausted";

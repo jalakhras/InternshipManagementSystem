@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -111,8 +111,15 @@ public class AnswerUploadTests : InternshipManagementSystemEntityFrameworkCoreTe
     {
         await AsTenantAsync(async () =>
         {
-            await Should.ThrowAsync<AbpAuthorizationException>(async () =>
+            // A business refusal rather than an authorization one, and the type is
+            // not a detail: an authorization failure on an unauthenticated request
+            // makes ASP.NET Core challenge the default scheme — a cookie here — so
+            // the answer to a candidate's expired session was 302 to a staff
+            // sign-in page. The exception type decided that, not any line of code.
+            var refusal = await Should.ThrowAsync<BusinessException>(async () =>
                 await _media.UploadAnswerAsync(File("anything.pdf"), "not-a-token"));
+
+            refusal.Code.ShouldBe(InternshipManagementSystemDomainErrorCodes.ExamSessionExpired);
         });
     }
 
@@ -127,8 +134,10 @@ public class AnswerUploadTests : InternshipManagementSystemEntityFrameworkCoreTe
             // The entry screen's session names no attempt — the exam has not been
             // started. There is nothing to attach a file to, and accepting one
             // would let anybody holding a link write to disk without ever sitting.
-            await Should.ThrowAsync<AbpAuthorizationException>(async () =>
+            var refusal = await Should.ThrowAsync<BusinessException>(async () =>
                 await _media.UploadAnswerAsync(File("early.pdf"), preview.SessionToken!));
+
+            refusal.Code.ShouldBe(InternshipManagementSystemDomainErrorCodes.ExamNotStarted);
         });
     }
 
