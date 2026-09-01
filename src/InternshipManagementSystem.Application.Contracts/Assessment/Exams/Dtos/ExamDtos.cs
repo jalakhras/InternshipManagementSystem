@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
@@ -59,9 +59,20 @@ public class CreateUpdateExamDto
     [Range(1, 600)]
     public int TimeLimitInMinutes { get; set; } = 60;
 
-    /// <summary>A percentage, not an absolute mark: forms differ in length.</summary>
+    /// <summary>
+    /// A percentage, not an absolute mark: forms differ in length.
+    /// <para>
+    /// Nullable so that "the author did not say" can be told apart from "the
+    /// author chose sixty". The organisation's own default is described on its
+    /// settings screen as being <i>applied to any new exam unless its author
+    /// changes it</i> — and it was applied to nothing at all, because a fixed
+    /// sixty in this contract left nothing for it to fill. A setting written on
+    /// a screen and read by no code is a promise the product does not keep, and
+    /// this is the second one of those found in the same settings screen.
+    /// </para>
+    /// </summary>
     [Range(1, 100)]
-    public decimal PassingPercentage { get; set; } = 60m;
+    public decimal? PassingPercentage { get; set; }
 
     [Range(1, 500)]
     public int? QuestionsPerForm { get; set; }

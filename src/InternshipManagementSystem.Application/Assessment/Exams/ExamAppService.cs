@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +11,8 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using System.Globalization;
+using InternshipManagementSystem.Settings;
 
 namespace InternshipManagementSystem.Assessment.Exams;
 
@@ -147,7 +149,7 @@ public class ExamAppService : ApplicationService, IExamAppService
         ValidateSchedule(input);
 
         var exam = new Exam(GuidGenerator.Create(), CurrentTenant.Id, input.Title, input.TimeLimitInMinutes);
-        Apply(exam, input);
+        Apply(exam, input, await PassingPercentageFor(input));
 
         await _exams.InsertAsync(exam, autoSave: true);
 
@@ -160,7 +162,12 @@ public class ExamAppService : ApplicationService, IExamAppService
         ValidateSchedule(input);
 
         var exam = await _exams.GetAsync(id);
-        Apply(exam, input);
+
+        // An edit that does not mention the pass mark leaves it alone. Reaching
+        // for the organisation's default here would silently move the mark on an
+        // exam somebody had already set deliberately — and on a published exam,
+        // move it under candidates who have already sat it.
+        Apply(exam, input, input.PassingPercentage ?? exam.PassingPercentage);
 
         await _exams.UpdateAsync(exam, autoSave: true);
 
@@ -452,7 +459,43 @@ public class ExamAppService : ApplicationService, IExamAppService
 
     // ------------------------------------------------------------------ helpers
 
-    private static void Apply(Exam exam, CreateUpdateExamDto input)
+    /// <summary>
+    /// The pass mark for a new exam: what the author asked for, or the
+    /// organisation's own default when they did not ask.
+    /// <para>
+    /// The settings screen describes that default as being <i>applied to any new
+    /// exam unless its author changes it</i>. It was applied to nothing: the
+    /// contract carried a fixed sixty, so there was never a gap for the setting
+    /// to fill, and an organisation that set seventy went on producing exams
+    /// that passed at sixty. Nothing failed, nothing warned, and the screen went
+    /// on stating the rule.
+    /// </para>
+    /// <para>
+    /// Sixty remains the answer when the organisation has set nothing, which is
+    /// where the number came from in the first place.
+    /// </para>
+    /// </summary>
+    private async Task<decimal> PassingPercentageFor(CreateUpdateExamDto input)
+    {
+        if (input.PassingPercentage is { } chosen)
+        {
+            return chosen;
+        }
+
+        // Read the way the settings screen writes it: a raw string, parsed with
+        // the invariant culture. Parsing it any other way would make an
+        // organisation's seventy mean nothing on a machine whose decimal
+        // separator is a comma.
+        var raw = await SettingProvider.GetOrNullAsync(
+            InternshipManagementSystemSettings.DefaultPassingPercentage);
+
+        return decimal.TryParse(raw, NumberStyles.Number, CultureInfo.InvariantCulture, out var stored)
+            && stored is >= 1m and <= 100m
+                ? stored
+                : 60m;
+    }
+
+    private static void Apply(Exam exam, CreateUpdateExamDto input, decimal passingPercentage)
     {
         exam.Title = input.Title;
         exam.Description = input.Description;
@@ -460,7 +503,7 @@ public class ExamAppService : ApplicationService, IExamAppService
         exam.LevelId = input.LevelId;
         exam.Mode = input.Mode;
         exam.TimeLimitInMinutes = input.TimeLimitInMinutes;
-        exam.PassingPercentage = input.PassingPercentage;
+        exam.PassingPercentage = passingPercentage;
         exam.QuestionsPerForm = input.QuestionsPerForm;
         exam.ShuffleQuestions = input.ShuffleQuestions;
         exam.ShuffleOptions = input.ShuffleOptions;
