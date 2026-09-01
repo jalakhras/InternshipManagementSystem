@@ -1205,14 +1205,72 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
     /// </summary>
     private async Task<Attempt> LoadOwnAttemptAsync(ExamSessionClaims claims)
     {
-        var attempt = await _attempts.GetAsync(claims.AttemptId);
+        // Found rather than fetched, because it may genuinely be gone: the
+        // monitor lists running sittings and offers to throw one away, and the
+        // person it happens to is answering a question at the time. Fetching
+        // handed them the data layer's own sentence — a .NET type name and a
+        // GUID — which tells somebody sitting an exam nothing they can act on,
+        // not even whether it was their fault.
+        var attempt = await _attempts.FindAsync(claims.AttemptId);
+
+        if (attempt is null)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.AttemptNoLongerExists);
+        }
 
         if (attempt.CandidateId != claims.CandidateId || attempt.TenantId != claims.TenantId)
         {
             throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamSessionMismatch);
         }
 
+        await RefuseRevokedLinkAsync(attempt);
+
         return attempt;
+    }
+
+    /// <summary>
+    /// Stops a sitting whose link has been revoked.
+    /// <para>
+    /// Revoking is described in this codebase as killing a link "that leaked or
+    /// went to the wrong person", and it did nothing of the sort to a sitting
+    /// already under way. The session token is self-contained and signed, so
+    /// nothing on the way in asked whether the link behind it still stood: the
+    /// person holding a leaked link carried on answering, and submitted.
+    /// </para>
+    /// <para>
+    /// Which is the case revoking exists for. A link that leaked and is not being
+    /// used needs no emergency; the emergency is somebody using it now, and the
+    /// stop did not stop them.
+    /// </para>
+    /// <para>
+    /// Checked here rather than at the door, because the door is opened once and
+    /// a sitting lasts hours. One lookup by primary key on each call, on a path
+    /// that already makes several — the cost of the check is not what makes it
+    /// worth having; the hours between opening the paper and handing it in are.
+    /// </para>
+    /// <para>
+    /// Nothing is discarded. The answers written so far stay exactly where they
+    /// are, and what becomes of the attempt is a decision for the people who
+    /// revoked the link — the monitor can end it or throw it away, and both of
+    /// those are deliberate acts by somebody who knows why.
+    /// </para>
+    /// </summary>
+    private async Task RefuseRevokedLinkAsync(Attempt attempt)
+    {
+        if (attempt.ExamLinkId is not { } linkId)
+        {
+            return;
+        }
+
+        var revoked = await (await _links.GetQueryableAsync())
+            .Where(l => l.Id == linkId)
+            .Select(l => l.IsRevoked)
+            .FirstOrDefaultAsync();
+
+        if (revoked)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.ExamLinkRevoked);
+        }
     }
 
     /// <summary>

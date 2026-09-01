@@ -115,6 +115,27 @@ public static class InternshipManagementSystemDomainErrorCodes
     /// expected JSON.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// The sitting this session names is gone: somebody discarded it while the
+    /// candidate was still in it.
+    /// <para>
+    /// The monitor lists running sittings and offers to throw one away, so this
+    /// is a supported thing to do rather than an accident — and the person it
+    /// happens to was answering a question at the time. What they got was the
+    /// data layer's own words:
+    /// </para>
+    /// <para>
+    /// <c>There is no such an entity. Entity type:
+    /// InternshipManagementSystem.Assessment.Delivery.Attempt, id: 9a9425a4-…</c>
+    /// </para>
+    /// <para>
+    /// A .NET type name and a GUID, to somebody sitting an exam. They cannot act
+    /// on it, cannot tell whether it was their fault, and cannot tell whether
+    /// their work survived.
+    /// </para>
+    /// </summary>
+    public const string AttemptNoLongerExists = "IMS:Take:AttemptDiscarded";
+
     public const string ExamSessionExpired = "IMS:Take:SessionExpired";
 
     /// <summary>The session is real but belongs to a different sitting.</summary>

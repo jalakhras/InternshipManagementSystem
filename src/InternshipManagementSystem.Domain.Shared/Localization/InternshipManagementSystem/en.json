@@ -353,6 +353,7 @@
     "IMS:ExamLink:Invalid": "This link is not valid.",
     "IMS:Question:DuplicateText": "This exam already has a question that reads the same. Check it, or save this one anyway if you mean to.",
     "IMS:Take:SessionExpired": "Your exam session has ended. Open the exam link you were sent again to carry on.",
+    "IMS:Take:AttemptDiscarded": "This sitting was ended by the organisation running it. Contact them to find out what happens next.",
     "IMS:Take:SessionMismatch": "This session belongs to a different sitting. Open the exam link you were sent again.",
     "IMS:Take:NotStarted": "The exam has not started, so there is nothing for a file to belong to.",
     "IMS:Media:NameInvalid": "That file name is not valid.",
