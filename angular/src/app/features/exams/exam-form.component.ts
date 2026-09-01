@@ -19,6 +19,7 @@ import { TranslateService } from '../../core/translate.service';
 import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 import { StatusChipComponent } from '../../shared/ui/status-chip.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
+import { failureReason } from '../../core/failure';
 
 /**
  * Creating and editing an exam.
@@ -354,7 +355,11 @@ export class ExamFormComponent {
    * inventing a generic one here.
    */
   private reason(err: unknown): string {
-    const e = err as { error?: { error?: { message?: string } }; message?: string };
-    return e?.error?.error?.message ?? e?.message ?? this.t('::UnknownError');
+    // The shared reader, not a local copy of the decision. This screen kept its
+    // own, and its own still ended at HttpErrorResponse.message — an internal
+    // URL and a status code, shown to whoever was trying to get their work
+    // done. Nineteen screens were changed and these two were missed, which is
+    // the ordinary way a sweep leaves something behind.
+    return failureReason(err, this.t);
   }
 }

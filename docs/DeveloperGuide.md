@@ -1,4 +1,4 @@
-# دليل المطوّر | Developer Guide
+﻿# دليل المطوّر | Developer Guide
 
 **أسطرلاب** — منصّة التقييم والاختبارات. هذه الوثيقة للتشغيل محلّياً، ولمعرفة أين
 يُضاف كلّ شيء. أمّا النشر والحاويات ومتغيّرات البيئة ففي `deployment.md`.
@@ -191,6 +191,23 @@ docker/  tools/  docs/
 6. `python tools/check-localization.py` — المفتاح الناقص لا يُخطئ، إنّما يظهر في
    الشاشة مكان جملة.
 
+### حقلٌ جديد على كيان
+
+1. الخاصّيّة على الكيان في `Domain/`.
+2. التهيئة في `InternshipManagementSystemDbContext_Assessment.cs` إن احتاجت طولاً
+   أو دقّةً أو فهرساً.
+3. الترحيل:
+   `dotnet ef migrations add <اسم> --project src/InternshipManagementSystem.EntityFrameworkCore --startup-project src/InternshipManagementSystem.EntityFrameworkCore`
+4. `dotnet run --project src/InternshipManagementSystem.DbMigrator` — **إنشاء الترحيل
+   ليس تشغيله**، وهذه الخطوة هي التي تُنسى.
+5. `python tools/check-migrations.py`.
+
+> **القاعدة التي يكسرها هذا النوع من العمل**: الاختبارات تبني قاعدتها من النموذج
+> مباشرةً — SQLite تُنشَأ من `DbContext` — فلا يمرّ بها أيّ ترحيل. حقلٌ بلا ترحيل
+> يمرّ من ٤٦٩ اختباراً خلفيّاً ثمّ يصل الإنتاج عموداً غير موجود، ويظهر خطأَ SQL
+> على شاشة أحدهم. وترحيلٌ أُنشئ ولم يُشغَّل بقي في هذا المستودع يوماً كاملاً دون
+> أن يلحظه شيء.
+
 ### صلاحيّة جديدة
 
 1. الثابت في `Domain.Shared/Permissions/InternshipManagementSystemPermissions.cs`.
@@ -259,6 +276,8 @@ actually asserted.
 | `tools/smoke-routes.js` | هل كلّ مسار يطلبه العميل يُجيب فعلاً على خادم يعمل؟ |
 | `tools/probe-round-trip.js` | هل يحتفظ التعديل فعلاً بما أُرسل إليه؟ (كُتب بعد أن ردّ تغيير كلمة المرور ٢٠٠ ولم يُغيّر شيئاً) |
 | `tools/check-localization.py` | هل كلّ نصّ يطلبه العميل مُعرَّف عند الخادم؟ |
+| `tools/check-error-messages.py` | هل بقيت شاشةٌ تعرض رسالة Angular الداخليّة بدل جملةٍ يفهمها قارئها؟ كُتب بعد أن نجا أربعةُ مواضع من كنسٍ أُعلن اكتماله — لأنّ البحث كان عن `e.message` والكود يكتب `e?.message` |
+| `tools/check-migrations.py` | هل بقي في النموذج تغييرٌ لا يصفه ترحيل؟ الاختبارات تبني قاعدتها من النموذج لا من الترحيلات، فترحيلٌ ناقصٌ يمرّ خلالها كلّها — وقد مرّ: ترحيلٌ بقي يوماً في المستودع دون أن يُشغَّل في أيّ مكان |
 | `tools/load-test.js` | ما الذي يعيشه ممتحَنٌ واحد بينما يجلس تسعة وأربعون معه؟ |
 | `tools/seed-tenants.js` | ثلاث جهات ببيانات حقيقيّة — الادّعاء الأكثر تكراراً في هذا المنتج، وأقلّه اختباراً |
 | `tools/dedupe-identity.sql` · `purge-test-data.sql` | تنظيف ما خلّفته عيوب البذر |

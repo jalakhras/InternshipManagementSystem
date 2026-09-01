@@ -13,6 +13,7 @@ import { PageHeaderComponent } from '../../shared/ui/page-header.component';
 
 import { StatusChipComponent, StatusTone } from '../../shared/ui/status-chip.component';
 import { ModalDirective } from '../../shared/ui/modal.directive';
+import { failureReason } from '../../core/failure';
 
 /**
  * The exam list.
@@ -123,7 +124,7 @@ export class ExamListComponent {
       },
       error: err => {
         this.busyId.set(null);
-        this.actionError.set(err?.error?.error?.message ?? err?.message ?? this.t('::UnknownError'));
+        this.actionError.set(failureReason(err, this.t));
       },
     });
   }
@@ -159,7 +160,7 @@ export class ExamListComponent {
         error: err => {
           // The real reason, not a generic apology: it is the only thing that
           // tells the reader whether retrying will help.
-          this.error.set(err?.error?.error?.message ?? err?.message ?? this.t('::UnknownError'));
+          this.error.set(failureReason(err, this.t));
           this.loading.set(false);
         },
       });

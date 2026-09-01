@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output, signal } fro
 import { MediaService } from '../../core/media.service';
 import { RestService } from '@abp/ng.core';
 import { TranslateService } from '../../core/translate.service';
+import { failureReason } from '../../core/failure';
 
 /**
  * Attaches an image, a sound or a video to a question.
@@ -230,7 +231,7 @@ export class MediaFieldComponent {
 
           // The reason, because "upload failed" leaves an author guessing between
           // a file too large, a format we do not hold, and a network that dropped.
-          this.error.set(err?.error?.error?.message ?? err?.message ?? this.t('::UnknownError'));
+          this.error.set(failureReason(err, this.t));
         },
       });
   }

@@ -45,8 +45,6 @@ export class TakeResultComponent {
         this.loading.set(false);
       },
       error: err => {
-        const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
         this.error.set(takerFailure(err, this.t));
         this.loading.set(false);
       },

@@ -244,8 +244,6 @@ export class AudioAnswerComponent {
   }
 
   private reason(err: unknown): string {
-    const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
     return takerFailure(err, this.t);
   }
 }

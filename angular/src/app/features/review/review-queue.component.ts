@@ -84,8 +84,6 @@ export class ReviewQueueComponent {
           this.loading.set(false);
         },
         error: err => {
-          const problem = err as { error?: { error?: { message?: string } }; message?: string };
-
           this.error.set(failureReason(err, this.t));
           this.loading.set(false);
         },
