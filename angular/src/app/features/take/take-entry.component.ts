@@ -9,6 +9,7 @@ import { TakeService } from './take.service';
 import { ExamPreview } from './take.models';
 import { AstroMarkComponent } from '../../shared/ui/astro-mark.component';
 import { takerFailure } from './taker-failure';
+import { DirectionService } from '../../core/direction.service';
 
 /**
  * What a candidate sees when they follow their link.
@@ -118,6 +119,8 @@ export class TakeEntryComponent {
     });
   }
 
+  private readonly direction = inject(DirectionService);
+
   open(token: string): void {
     this.loading.set(true);
     this.error.set(null);
@@ -126,6 +129,17 @@ export class TakeEntryComponent {
       next: preview => {
         this.preview.set(preview);
         this.take.setSession(preview.sessionToken ?? null);
+
+        // The centre's own language, for somebody who has never chosen one. The
+        // setting's hint calls it what everyone gets before they choose, and it
+        // reached the staff shell and stopped there — so the one person in this
+        // product with no account, no stored preference and no way to have
+        // chosen was the one it never reached.
+        //
+        // The same call the shell makes, so the same rule holds: it does nothing
+        // to a candidate who has picked a language for themselves.
+        this.direction.useOrganisationDefault(preview.organizationDefaultLanguage);
+
         this.loading.set(false);
       },
       error: err => {

@@ -40,6 +40,24 @@ public class ExamPreviewDto
     public string? OrganizationLogoUrl { get; set; }
 
     /// <summary>
+    /// The language this organisation opens in, for somebody who has not chosen.
+    /// <para>
+    /// The setting's own hint calls it <i>what everyone gets before they
+    /// choose</i>, and it reached the staff shell and stopped there. A candidate
+    /// got whatever their browser asked for — and a candidate is the one person
+    /// in this product who has never chosen anything, has no account to carry a
+    /// preference, and is opening a link from a centre that already decided what
+    /// language it works in.
+    /// </para>
+    /// <para>
+    /// Sent beside the name, the mark and the address for the same reason those
+    /// are: it belongs to the organisation running the exam, not to the platform
+    /// hosting it.
+    /// </para>
+    /// </summary>
+    public string? OrganizationDefaultLanguage { get; set; }
+
+    /// <summary>
     /// Where to write if something goes wrong, when the organisation has said.
     /// <para>
     /// A candidate whose connection drops mid-paper, or whose recording will not

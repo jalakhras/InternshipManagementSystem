@@ -84,7 +84,13 @@ export interface TakeStubOptions {
   rubric?: { name: string; maxScore: number }[];
 
   /** The centre whose exam this is, as the candidate's first screen shows it. */
-  organization?: { name?: string; logoUrl?: string; supportEmail?: string };
+  organization?: {
+    name?: string;
+    logoUrl?: string;
+    supportEmail?: string;
+    /** What this centre opens in, for a candidate who has not chosen. */
+    defaultLanguage?: string;
+  };
 
   /**
    * Serve one named question type, with a display payload shaped the way the
@@ -230,6 +236,7 @@ export async function stubTake(page: Page, options: TakeStubOptions = {}): Promi
       candidateName: 'Layla',
       organizationName: options.organization?.name,
       organizationLogoUrl: options.organization?.logoUrl,
+      organizationDefaultLanguage: options.organization?.defaultLanguage,
       organizationSupportEmail: options.organization?.supportEmail,
       timeLimitInMinutes: 30,
       questionCount: total,

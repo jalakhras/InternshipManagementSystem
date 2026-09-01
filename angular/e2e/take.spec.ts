@@ -1092,4 +1092,31 @@ test.describe('Taking an exam', () => {
     // aorta where it has it, in both languages.
     expect(Math.abs(centre - at.x)).toBeLessThan(12);
   });
+
+  test('a candidate opens in the language their centre works in', async ({ page }) => {
+    // Everything about this person says they have not chosen: no account to
+    // carry a preference, no switcher they have ever used, and a link from a
+    // centre that already decided what language it works in. The setting's own
+    // hint calls it "what everyone gets before they choose", and it reached the
+    // staff shell and stopped there.
+    await stubTake(page, { culture: 'en', organization: { name: 'مركز اللغات', defaultLanguage: 'ar' } });
+
+    await page.goto(`/exam/${TOKEN}`);
+
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ar');
+  });
+
+  test('a candidate who chose a language for themselves keeps it', async ({ page }) => {
+    await stubTake(page, { culture: 'en', organization: { name: 'مركز اللغات', defaultLanguage: 'ar' } });
+
+    // The half that makes the rule safe. A centre's default is for somebody who
+    // has not chosen; switching the language under a person who did is not a
+    // default, it is overriding them.
+    await page.addInitScript(() => localStorage.setItem('astro.language', 'en'));
+
+    await page.goto(`/exam/${TOKEN}`);
+
+    await expect(page.locator('html')).toHaveAttribute('dir', 'ltr');
+  });
 });

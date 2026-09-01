@@ -214,6 +214,9 @@ public class ExamTakingAppService : ApplicationService, IExamTakingAppService
             preview.OrganizationBrandColor = await SettingProvider.GetOrNullAsync(
                 InternshipManagementSystemSettings.BrandColor);
 
+            preview.OrganizationDefaultLanguage = await SettingProvider.GetOrNullAsync(
+                InternshipManagementSystemSettings.DefaultLanguage);
+
             // Where to write when something goes wrong. Read tenant-only, for
             // the reason the logo is: a candidate handed the host's address is
             // handed ours, and writing to us about a paper we do not run is a

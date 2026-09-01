@@ -46,6 +46,9 @@ export interface ExamPreview {
   organizationName?: string;
   organizationLogoUrl?: string;
 
+  /** What this centre opens in, for a candidate who has not chosen a language. */
+  organizationDefaultLanguage?: string;
+
   /** Painted onto the page, so the candidate is in the organisation's space. */
   organizationBrandColor?: string;
 
