@@ -113,6 +113,25 @@ public class TakerQuestionProjector : ITransientDependency
                         .ToList();
 
                     dto.Options = OptionIdReader.ApplyOrder(options, savedOrder, o => o.Id);
+
+                    // How this question will be marked, for a multi-select only.
+                    //
+                    // The grader enforces one of three quite different rules, and
+                    // the taker was told none of them. That is not a cosmetic gap:
+                    // under `exact`, ticking a fourth uncertain box when three are
+                    // right costs the whole mark, so the rule decides how somebody
+                    // should answer. A rule that decides that has to be readable
+                    // before the answer, not inferred from the result afterwards.
+                    //
+                    // It names the rule, never the answer: which options are
+                    // correct, how many there are, and what any of them is worth
+                    // all stay behind.
+                    if (question.Type == QuestionTypes.MultiSelect)
+                    {
+                        dto.Display["scoring"] = spec.Weighted == true ? "weighted"
+                            : spec.AllowPartialCredit ? "partial"
+                            : "exact";
+                    }
                 }
 
                 break;

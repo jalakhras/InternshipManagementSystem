@@ -121,4 +121,25 @@ test.describe('Every question type, on a phone, in Arabic', () => {
       }
     });
   }
+
+  test('a multi-select says how it will be marked, before it is answered', async ({ page }) => {
+    await sit(page, 'multi-select');
+
+    // The grader voids the whole question for one wrong tick. Nothing said so,
+    // and the rule decides how a careful person answers: knowing it, they leave
+    // the box they are unsure of alone; not knowing it, they tick it.
+    //
+    // Read from the sentence the candidate actually gets, in their language.
+    await expect(page.locator('.choices__rule')).toHaveText(/اختر كلّ الإجابات الصحيحة/);
+    await expect(page.locator('.choices__rule')).toContainText('لم تختر خاطئاً');
+  });
+
+  test('a single-choice question does not carry a marking rule', async ({ page }) => {
+    await sit(page, 'single-choice');
+
+    // Pick one. There is nothing to explain, and a sentence under every question
+    // trains people to skip the sentence — which is how the one that matters
+    // gets skipped too.
+    await expect(page.locator('.choices__rule')).toHaveCount(0);
+  });
 });

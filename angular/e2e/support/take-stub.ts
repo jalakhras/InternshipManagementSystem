@@ -490,6 +490,13 @@ function readTexts(culture: string): Record<string, string> {
  */
 function displayFor(type: string): Record<string, unknown> {
   switch (type) {
+    // The rule the real projector sends for a multi-select whose author left
+    // both switches alone: all of the right ones, none of the wrong ones, or
+    // no mark. A stub that omits it would let the sitting screen stay silent
+    // about marking and still pass.
+    case 'multi-select':
+      return { scoring: 'exact' };
+
     case 'ordering':
       return {
         items: [

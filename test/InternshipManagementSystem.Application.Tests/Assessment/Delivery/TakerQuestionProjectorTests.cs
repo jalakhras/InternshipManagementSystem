@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -261,5 +261,94 @@ public class TakerQuestionProjectorTests
         var dto = _projector.Project(question, Slot(question.Id, order), null, 1, b => "/media/" + b);
 
         dto.Options.Select(o => o.Id).ShouldBe(new[] { "c", "a", "b" });
+    }
+
+    /// <summary>
+    /// The grader marks a multi-select by one of three quite different rules, and
+    /// which one it is decides how somebody should answer: under <c>exact</c>,
+    /// ticking a fourth box you are unsure of when three are right costs the whole
+    /// mark. None of that reached the person answering.
+    /// </summary>
+    [Theory]
+    [InlineData(false, false, "exact")]
+    [InlineData(true, false, "partial")]
+    [InlineData(false, true, "weighted")]
+    public void A_multi_select_says_how_it_will_be_marked(bool partial, bool weighted, string expected)
+    {
+        var payload = PayloadJson.Write(new ChoicePayload
+        {
+            AllowPartialCredit = partial,
+            Weighted = weighted ? true : null,
+            Options =
+            [
+                new OptionPayload { Id = "a", Text = "Right", IsCorrect = true, Weight = 1m },
+                new OptionPayload { Id = "b", Text = "Also right", IsCorrect = true, Weight = 1m },
+                new OptionPayload { Id = "c", Text = "Harmful", IsCorrect = false, Weight = -1m }
+            ]
+        });
+
+        var question = Question(QuestionTypes.MultiSelect, payload);
+        question.Payload = payload;
+
+        var dto = _projector.Project(question, Slot(question.Id), null, 1, b => "/media/" + b);
+
+        dto.Display["scoring"].ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Saying_how_a_multi_select_is_marked_does_not_say_what_the_answer_is()
+    {
+        var payload = PayloadJson.Write(new ChoicePayload
+        {
+            Weighted = true,
+            Options =
+            [
+                new OptionPayload { Id = "a", Text = "Right", IsCorrect = true, Weight = 0.75m },
+                new OptionPayload { Id = "b", Text = "Harmful", IsCorrect = false, Weight = -0.5m }
+            ]
+        });
+
+        var question = Question(QuestionTypes.MultiSelect, payload);
+        question.Payload = payload;
+
+        var wire = Wire(_projector.Project(question, Slot(question.Id), null, 1, b => "/media/" + b));
+
+        // The rule crosses.
+        wire.ShouldContain("weighted");
+
+        // Nothing that answers the question does. A weight is the answer written
+        // as a number: whoever reads 0.75 beside one option and -0.5 beside
+        // another has been handed the key.
+        wire.ShouldNotContain("isCorrect");
+        wire.ShouldNotContain("0.75");
+        wire.ShouldNotContain("-0.5");
+        wire.ShouldNotContain("weight\"");
+    }
+
+    [Fact]
+    public void Only_a_multi_select_is_marked_by_a_rule_worth_stating()
+    {
+        // Single choice and true/false have one rule and it is the obvious one.
+        // Printing a sentence about marking under every question would train
+        // people to skip the sentence, which is how the one that matters gets
+        // skipped too.
+        foreach (var type in new[] { QuestionTypes.SingleChoice, QuestionTypes.TrueFalse })
+        {
+            var payload = PayloadJson.Write(new ChoicePayload
+            {
+                Options =
+                [
+                    new OptionPayload { Id = "a", Text = "Right", IsCorrect = true },
+                    new OptionPayload { Id = "b", Text = "Wrong", IsCorrect = false }
+                ]
+            });
+
+            var question = Question(type, payload);
+            question.Payload = payload;
+
+            var dto = _projector.Project(question, Slot(question.Id), null, 1, b => "/media/" + b);
+
+            dto.Display.ContainsKey("scoring").ShouldBeFalse(type);
+        }
     }
 }

@@ -24,6 +24,13 @@ import { TakerQuestion } from '../take.models';
     <fieldset class="choices">
       <legend class="astro-visually-hidden">{{ t('::Take:ChooseAnswer') }}</legend>
 
+      <!-- Said before the answer, because it changes what a careful person does.
+           A taker who does not know that one wrong tick voids the question will
+           tick the box they are unsure about; one who knows will not. -->
+      @if (scoringRule(); as rule) {
+        <p class="choices__rule">{{ t('::Take:Scoring:' + rule) }}</p>
+      }
+
       @for (option of question().options; track option.id) {
         <label class="choice" [class.choice--picked]="isPicked(option.id)">
           <input
@@ -47,6 +54,15 @@ import { TakerQuestion } from '../take.models';
   `,
   styles: `
     :host { display: block; }
+
+    .choices__rule {
+      margin: 0 0 var(--space-3);
+      padding-inline-start: var(--space-3);
+      border-inline-start: 3px solid var(--astro-border);
+      color: var(--astro-fg-muted);
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
 
     .choices {
       display: grid;
@@ -143,6 +159,18 @@ export class ChoiceAnswerComponent {
   readonly picked = signal<string[]>([]);
 
   readonly isSingle = computed(() => this.question().type !== 'multi-select');
+
+  /**
+   * The marking rule for this question, as the server named it: `weighted`,
+   * `partial` or `exact`. Absent for every other type, and absent for a
+   * multi-select the server did not describe — in which case nothing is shown
+   * rather than a rule that might be the wrong one.
+   */
+  readonly scoringRule = computed(() => {
+    const rule = this.question().display?.['scoring'];
+
+    return rule === 'weighted' || rule === 'partial' || rule === 'exact' ? rule : null;
+  });
 
   private seeded = false;
 
