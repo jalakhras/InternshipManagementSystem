@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
+using Microsoft.AspNetCore.Identity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 
@@ -23,17 +24,20 @@ public class InternshipManagementSystemDbMigrationService : ITransientDependency
     private readonly IEnumerable<IInternshipManagementSystemDbSchemaMigrator> _dbSchemaMigrators;
     private readonly ITenantRepository _tenantRepository;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IdentityUserManager _userManager;
 
     public InternshipManagementSystemDbMigrationService(
         IDataSeeder dataSeeder,
         IEnumerable<IInternshipManagementSystemDbSchemaMigrator> dbSchemaMigrators,
         ITenantRepository tenantRepository,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IdentityUserManager userManager)
     {
         _dataSeeder = dataSeeder;
         _dbSchemaMigrators = dbSchemaMigrators;
         _tenantRepository = tenantRepository;
         _currentTenant = currentTenant;
+        _userManager = userManager;
 
         Logger = NullLogger<InternshipManagementSystemDbMigrationService>.Instance;
     }
@@ -104,6 +108,52 @@ public class InternshipManagementSystemDbMigrationService : ITransientDependency
             .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName, IdentityDataSeedContributor.AdminEmailDefaultValue)
             .WithProperty(IdentityDataSeedContributor.AdminPasswordPropertyName, IdentityDataSeedContributor.AdminPasswordDefaultValue)
         );
+
+        if (tenant is null)
+        {
+            await NameTheHostAdministratorAsync();
+        }
+    }
+
+    /// <summary>The name the platform operator signs in with.</summary>
+    private const string HostAdministratorUserName = "jassar";
+
+    /// <summary>
+    /// Gives the host administrator its name, every time the seed runs.
+    /// <para>
+    /// ABP's identity seeder creates the account as <c>admin</c> and looks for
+    /// that exact name to decide whether it already exists. So renaming the row
+    /// by hand does not hold: the next seed finds no <c>admin</c>, concludes
+    /// there is no administrator, and makes a second one — leaving two accounts
+    /// with full control of the platform, one of which nobody meant to have.
+    /// </para>
+    /// <para>
+    /// Renaming here instead, after the seeder has run and on every run, makes
+    /// the name a property of this deployment rather than a change somebody has
+    /// to remember to repeat. Idempotent by construction: if the account already
+    /// carries the name there is nothing to do, and if both names somehow exist
+    /// the seeded one is left alone rather than merged, because merging two
+    /// administrators is not something a migration should decide.
+    /// </para>
+    /// </summary>
+    private async Task NameTheHostAdministratorAsync()
+    {
+        if (await _userManager.FindByNameAsync(HostAdministratorUserName) is not null)
+        {
+            return;
+        }
+
+        var seeded = await _userManager.FindByNameAsync("admin");
+
+        if (seeded is null)
+        {
+            return;
+        }
+
+        (await _userManager.SetUserNameAsync(seeded, HostAdministratorUserName)).CheckErrors();
+
+        Logger.LogInformation(
+            "The host administrator signs in as {UserName}.", HostAdministratorUserName);
     }
 
     private bool AddInitialMigrationIfNotExist()
