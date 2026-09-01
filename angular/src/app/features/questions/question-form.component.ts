@@ -27,6 +27,7 @@ import { ExamSectionDto } from '../../core/api/structure.models';
 import { TranslateService } from '../../core/translate.service';
 import { PAYLOAD_EDITORS } from './payload/payload-editor';
 import { QuestionSectionsService } from './question-sections.service';
+import { failureReason } from '../../core/failure';
 
 /**
  * Writing a question.
@@ -85,6 +86,15 @@ export class QuestionFormComponent {
 
   /** Said out loud after a save, because silence reads as failure. */
   readonly saved = signal(false);
+
+  /**
+   * The server refused this text as a duplicate of another question in the exam.
+   *
+   * Held rather than acted on: the author is shown what the refusal was and
+   * decides. Saving anyway is a decision somebody made, which is the whole
+   * difference between this and having allowed the duplicate silently.
+   */
+  readonly duplicate = signal(false);
   readonly error = signal<string | null>(null);
 
   /** Type is chosen first: it decides the shape of everything below it. */
@@ -303,6 +313,12 @@ export class QuestionFormComponent {
   patch<K extends keyof CreateUpdateQuestionDto>(key: K, value: CreateUpdateQuestionDto[K]): void {
     this.saved.set(false);
 
+    // A changed question is no longer the one that was refused.
+    if (key === 'text') {
+      this.duplicate.set(false);
+    }
+
+
     this.form.update(f => ({ ...f, [key]: value }));
   }
 
@@ -326,7 +342,19 @@ export class QuestionFormComponent {
     }));
   }
 
-  save(): void {
+  /**
+   * Save the question the server just refused as a duplicate.
+   *
+   * The same request with the author's answer attached. The flag lives on the
+   * request rather than in the component's state so that it cannot leak into
+   * the next question they write: it is true for this press and no other.
+   */
+  saveAnyway(): void {
+    this.duplicate.set(false);
+    this.save(true);
+  }
+
+  save(allowDuplicateText = false): void {
     if (this.needsCategory()) {
       return;
     }
@@ -335,9 +363,11 @@ export class QuestionFormComponent {
     this.error.set(null);
 
     const id = this.questionId();
+    const body = allowDuplicateText ? { ...this.form(), allowDuplicateText: true } : this.form();
+
     const request = id
-      ? this.questions.update(id, this.form())
-      : this.questions.create(this.form());
+      ? this.questions.update(id, body)
+      : this.questions.create(body);
 
     request.subscribe({
       next: stored => {
@@ -369,6 +399,14 @@ export class QuestionFormComponent {
           { replaceUrl: true });
       },
       error: err => {
+        // One refusal has an answer the author can give, so it is offered rather
+        // than only reported: another question in this exam already reads the
+        // same. Everything else is a refusal they can only fix by changing what
+        // they wrote.
+        if (this.codeOf(err) === 'IMS:Question:DuplicateText') {
+          this.duplicate.set(true);
+        }
+
         // The server refuses a payload no grader could read, and its message is
         // already a localised sentence — pass it through rather than inventing one.
         this.error.set(this.reason(err));
@@ -377,8 +415,23 @@ export class QuestionFormComponent {
     });
   }
 
+  /**
+   * The server's own error code, when it sent one.
+   *
+   * Read rather than matched against the message: a message is written for a
+   * person and gets rewritten, and matching on it makes the behaviour depend on
+   * the wording — and on which language the reader happens to be in.
+   */
+  private codeOf(err: unknown): string | undefined {
+    return (err as { error?: { error?: { code?: string } } })?.error?.error?.code;
+  }
+
   private reason(err: unknown): string {
-    const e = err as { error?: { error?: { message?: string } }; message?: string };
-    return e?.error?.error?.message ?? e?.message ?? this.t('::UnknownError');
+    // The shared reader, not a local copy of the decision. This screen kept its
+    // own, and its own still ended at HttpErrorResponse.message — an internal
+    // URL and a status code, shown to whoever was trying to get their work
+    // done. Nineteen screens were changed and these two were missed, which is
+    // the ordinary way a sweep leaves something behind.
+    return failureReason(err, this.t);
   }
 }

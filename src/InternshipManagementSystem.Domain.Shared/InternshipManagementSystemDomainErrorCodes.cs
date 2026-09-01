@@ -82,6 +82,24 @@ public static class InternshipManagementSystemDomainErrorCodes
     public const string ExamBlueprintSectionNotInExam = "IMS:Exam:BlueprintSectionNotInExam";
 
     // ---- Exam links ----
+    /// <summary>
+    /// A question whose text already exists in this exam.
+    /// <para>
+    /// The product had already decided this was wrong — importing a sheet
+    /// silently skips a row whose text matches one already filed, and says so.
+    /// It simply did not enforce the same decision on the other way in, so
+    /// typing the question twice was allowed and importing it twice was not.
+    /// </para>
+    /// <para>
+    /// Refused rather than warned, and reversible rather than absolute: the
+    /// author is told, and may say to save it anyway. Two questions can share
+    /// their wording legitimately — the same stem against two different
+    /// diagrams — and a rule that cannot be overridden turns a good default
+    /// into a wall.
+    /// </para>
+    /// </summary>
+    public const string QuestionDuplicateText = "IMS:Question:DuplicateText";
+
     public const string ExamLinkInvalid = "IMS:ExamLink:Invalid";
 
     /// <summary>

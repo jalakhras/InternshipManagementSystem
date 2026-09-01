@@ -296,6 +296,15 @@
       @if (saved()) {
         <span class="saved" role="status">{{ t('::Saved') }}</span>
       }
+
+      <!-- Offered only after the server has refused this exact text. The author
+           is told what they would be duplicating and decides — which is the
+           whole difference between this and having allowed it silently. -->
+      @if (duplicate()) {
+        <button type="button" class="btn btn-outline-danger" (click)="saveAnyway()">
+          {{ t('::Question:SaveAnyway') }}
+        </button>
+      }
     </div>
   </form>
 }

@@ -423,6 +423,124 @@ public class QuestionAuthoringTests : InternshipManagementSystemEntityFrameworkC
         });
     }
 
+    [Fact]
+    public async Task The_same_question_typed_twice_into_one_exam_is_refused()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+            await AddValidQuestionAsync(exam.Id);
+
+            // The product had already decided this: importing a sheet skips a row
+            // whose text matches one already filed. Typing it was allowed, so the
+            // rule held or did not hold depending on which door the author used.
+            var refusal = await Should.ThrowAsync<BusinessException>(
+                () => AddValidQuestionAsync(exam.Id));
+
+            refusal.Code.ShouldBe(InternshipManagementSystemDomainErrorCodes.QuestionDuplicateText);
+        });
+    }
+
+    [Fact]
+    public async Task Alef_spelled_differently_is_still_the_same_question()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+
+            await WriteAsync(exam.Id, "ما أفضل مستوى دعم؟");
+
+            // An author retyping a question does not retype it identically. Without
+            // the same normalisation the import uses, one spelling of alef is all it
+            // takes for the rule to catch nothing it was written to catch.
+            var refusal = await Should.ThrowAsync<BusinessException>(
+                () => WriteAsync(exam.Id, "ما افضل مستوى دعم؟"));
+
+            refusal.Code.ShouldBe(InternshipManagementSystemDomainErrorCodes.QuestionDuplicateText);
+        });
+    }
+
+    [Fact]
+    public async Task An_author_who_means_to_duplicate_may()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+            await AddValidQuestionAsync(exam.Id);
+
+            // The same stem against two different diagrams is a real question worth
+            // asking twice. A default with no way past it is a wall, not a default.
+            var second = await WriteAsync(exam.Id, "Which is a support level?", allowDuplicate: true);
+
+            second.Id.ShouldNotBe(Guid.Empty);
+        });
+    }
+
+    [Fact]
+    public async Task Two_exams_may_ask_the_same_question()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var first = await CreateExamAsync();
+            var second = await CreateExamAsync();
+
+            await AddValidQuestionAsync(first.Id);
+
+            // Scoped to one exam on purpose. Questions shared between exams are what
+            // the shared bank exists for, and a rule that refused it would break the
+            // feature rather than protect anything.
+            await AddValidQuestionAsync(second.Id);
+        });
+    }
+
+    [Fact]
+    public async Task Editing_a_question_does_not_find_itself()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var exam = await CreateExamAsync();
+            var written = await WriteAsync(exam.Id, "Which is a support level?");
+
+            // Saving an edit that leaves the text alone must not report the question
+            // as a duplicate of itself — which is what a rule written without this
+            // does, and it makes every question in the bank uneditable.
+            var updated = await _questions.UpdateAsync(written.Id, new CreateUpdateQuestionDto
+            {
+                ExamId = exam.Id,
+                Type = QuestionTypes.SingleChoice,
+                Text = "Which is a support level?",
+                Score = 2m,
+                Payload = PayloadJson.Write(new ChoicePayload
+                {
+                    Options =
+                    [
+                        new OptionPayload { Id = "a", Text = "1.0820", IsCorrect = true },
+                        new OptionPayload { Id = "b", Text = "1.0980", IsCorrect = false },
+                    ],
+                }),
+            });
+
+            updated.Score.ShouldBe(2m);
+        });
+    }
+
+    private async Task<QuestionDto> WriteAsync(Guid examId, string text, bool allowDuplicate = false) =>
+        await _questions.CreateAsync(new CreateUpdateQuestionDto
+        {
+            ExamId = examId,
+            Type = QuestionTypes.SingleChoice,
+            Text = text,
+            AllowDuplicateText = allowDuplicate,
+            Payload = PayloadJson.Write(new ChoicePayload
+            {
+                Options =
+                [
+                    new OptionPayload { Id = "a", Text = "1.0820", IsCorrect = true },
+                    new OptionPayload { Id = "b", Text = "1.0980", IsCorrect = false },
+                ],
+            }),
+        });
+
     private async Task<ExamDto> CreateExamAsync() =>
         await _exams.CreateAsync(new CreateUpdateExamDto
         {

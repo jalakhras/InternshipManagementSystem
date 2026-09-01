@@ -518,4 +518,64 @@ test.describe('Question builder', () => {
     // And the way back, for when they are finished.
     await expect(page.getByRole('link', { name: 'Back to the question bank' })).toBeVisible();
   });
+
+  test('a question this exam already asks is refused, and the author may still mean it', async ({ page }) => {
+    await stubAbp(page, { culture: 'en', grantedPolicies: ALL_POLICIES });
+    await stubQuestions(page);
+    await stubSections(page, []);
+
+    const bodies: { allowDuplicateText?: boolean }[] = [];
+
+    await page.route('**/api/assessment/questions', route => {
+      if (route.request().method() !== 'POST') {
+        return route.fallback();
+      }
+
+      const body = route.request().postDataJSON();
+      bodies.push(body);
+
+      // The server refuses the first press and accepts the second, which is the
+      // whole behaviour: the flag is the author's answer, not a retry.
+      if (!body.allowDuplicateText) {
+        return route.fulfill({
+          status: 403,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error: {
+              code: 'IMS:Question:DuplicateText',
+              message: 'This exam already has a question that reads the same.',
+            },
+          }),
+        });
+      }
+
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: QUESTION_ID, examId: EXAM_ID }),
+      });
+    });
+
+    await gotoApp(page, `/exams/${EXAM_ID}/questions/new`);
+
+    await page.getByRole('button', { name: /Single choice/ }).click();
+    await page.getByLabel('Question text').fill('ما عاصمة السعوديّة؟');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    // Told what the refusal was, in the server's own words.
+    await expect(page.getByText(/already has a question that reads the same/)).toBeVisible();
+
+    // And offered the one answer they can actually give. A refusal with no way
+    // past it stops an author whose two questions share a stem and differ only
+    // in the diagram beside them.
+    const anyway = page.getByRole('button', { name: 'Save it anyway' });
+    await expect(anyway).toBeVisible();
+
+    await anyway.click();
+    await expect.poll(() => bodies.length).toBe(2);
+
+    // The flag belongs to this press and no other.
+    expect(bodies[0].allowDuplicateText).toBeFalsy();
+    expect(bodies[1].allowDuplicateText).toBe(true);
+  });
 });

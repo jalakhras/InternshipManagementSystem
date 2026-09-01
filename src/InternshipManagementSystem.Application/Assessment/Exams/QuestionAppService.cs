@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -179,6 +179,8 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
 
         await RequireSectionBelongsToAsync(input.ExamId, input.ExamSectionId);
 
+        await RefuseDuplicateTextAsync(input, existingQuestionId: null);
+
         // Sanitised before the entity ever holds it, not only in Apply below.
         // Two assignments of the same field is how a reorder quietly reopens a hole.
         var question = new Question(
@@ -212,6 +214,8 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         // ExamId — so the body's exam is a claim and the entity's is the fact.
         await RequireSectionBelongsToAsync(question.ExamId, input.ExamSectionId);
 
+        await RefuseDuplicateTextAsync(input, existingQuestionId: question.Id);
+
         // What counted as correct before this edit, as the marker's screen would
         // render it. Compared against what counts as correct after, so a change
         // to the key is told apart from a change to the wording.
@@ -230,6 +234,72 @@ public class QuestionAppService : ApplicationService, IQuestionAppService
         await _questions.UpdateAsync(question, autoSave: true);
 
         return await GetAsync(question.Id);
+    }
+
+    /// <summary>
+    /// Refuses a question whose text already reads the same as another in this exam.
+    /// <para>
+    /// The product had already made this decision and enforced it on one of the
+    /// two ways in: importing a sheet skips a row whose text matches one already
+    /// filed, and reports the row. Typing the same question twice was allowed.
+    /// One rule enforced on one path is not a rule — it is an accident of which
+    /// door somebody used.
+    /// </para>
+    /// <para>
+    /// Compared after the same normalisation the import uses, so the spellings
+    /// of alef and the teh marbuta do not make two questions out of one. An
+    /// author who types the question again will not have typed it identically.
+    /// </para>
+    /// <para>
+    /// Refused, not warned, and overridable rather than absolute: the same stem
+    /// can legitimately appear against two different diagrams, and a rule with
+    /// no way past it turns a good default into a wall. So the author is told
+    /// what they are about to duplicate, and may send it again saying to do it
+    /// anyway.
+    /// </para>
+    /// <para>
+    /// Scoped to one exam. Two exams sharing a question is what the shared bank
+    /// is for, and refusing that would break the feature this product sells.
+    /// </para>
+    /// <para>
+    /// A deactivated question still counts. It is in the bank, an author can see
+    /// it, and reviving it is one switch — so writing its text again is far more
+    /// likely to be the duplicate this exists to catch than a deliberate act.
+    /// The author who did mean it says so, and the cost of being wrong here is
+    /// one extra press rather than a duplicate nobody notices.
+    /// </para>
+    /// </summary>
+    private async Task RefuseDuplicateTextAsync(CreateUpdateQuestionDto input, Guid? existingQuestionId)
+    {
+        if (input.AllowDuplicateText || input.ExamId is not { } examId)
+        {
+            return;
+        }
+
+        var wanted = QuestionCsvParser.Normalise(RichTextSanitiser.Sanitise(input.Text));
+
+        if (wanted.Length == 0)
+        {
+            return;
+        }
+
+        // Text only, and only this exam's own questions: the comparison cannot be
+        // done in SQL because the normalisation is ours, so the less that is
+        // loaded to do it in memory the better.
+        var siblings = await (await _questions.GetQueryableAsync())
+            .Where(q => q.ExamId == examId)
+            .Select(q => new { q.Id, q.Text })
+            .ToListAsync();
+
+        var clash = siblings.FirstOrDefault(q =>
+            q.Id != existingQuestionId &&
+            QuestionCsvParser.Normalise(q.Text) == wanted);
+
+        if (clash is not null)
+        {
+            throw new BusinessException(InternshipManagementSystemDomainErrorCodes.QuestionDuplicateText)
+                .WithData("QuestionId", clash.Id);
+        }
     }
 
     /// <summary>

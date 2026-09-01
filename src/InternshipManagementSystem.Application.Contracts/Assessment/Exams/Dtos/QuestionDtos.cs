@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
@@ -74,6 +74,16 @@ public class QuestionDto : AuditedEntityDto<Guid>
 
 public class CreateUpdateQuestionDto
 {
+    /// <summary>
+    /// Save even though another question in this exam already reads the same.
+    /// <para>
+    /// False on the first attempt, always. The author is told what they are
+    /// about to duplicate and sends it again with this set, so the duplicate is
+    /// a decision somebody made rather than one nobody noticed.
+    /// </para>
+    /// </summary>
+    public bool AllowDuplicateText { get; set; }
+
     /// <summary>The domain to file this question under when it is written into the bank.</summary>
     public Guid? CategoryId { get; set; }
 
