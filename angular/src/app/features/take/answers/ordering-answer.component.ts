@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { TranslateService } from '../../../core/translate.service';
 import { TakerQuestion } from '../take.models';
 
@@ -19,6 +19,10 @@ import { TakerQuestion } from '../take.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [],
   template: `
+    @if (allOrNothing()) {
+      <p class="scoring-rule">{{ t('::Take:Scoring:all') }}</p>
+    }
+
     <ol class="items">
       @for (item of items(); track item.id; let i = $index) {
         <li class="item">
@@ -47,6 +51,14 @@ import { TakerQuestion } from '../take.models';
     </ol>
   `,
   styles: `
+    .scoring-rule {
+      margin: 0 0 var(--space-3);
+      padding-inline-start: var(--space-3);
+      border-inline-start: 3px solid var(--astro-border);
+      color: var(--astro-fg-muted);
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
     :host { display: block; }
 
     .items {
@@ -100,6 +112,16 @@ import { TakerQuestion } from '../take.models';
 })
 export class OrderingAnswerComponent {
   readonly t = inject(TranslateService).t;
+
+  /**
+   * True when this question pays nothing for a partly right answer.
+   *
+   * Said only in that case. Being paid for the parts you placed correctly is
+   * what a person assumes, so saying it adds nothing; being paid nothing for
+   * four of five is not, and somebody who knew would have spent their last
+   * minutes differently.
+   */
+  readonly allOrNothing = computed(() => this.question().display?.['scoring'] === 'all');
 
   readonly question = input.required<TakerQuestion>();
   readonly response = input<string | undefined>();

@@ -148,6 +148,19 @@ public class TakerQuestionProjector : ITransientDependency
                         .ToList();
 
                     dto.Display["items"] = OptionIdReader.ApplyOrder(items, savedOrder, i => i.id);
+
+                    // Only when partial credit is off, and only because that is
+                    // the answer nobody expects. Getting three of five into place
+                    // and being paid for three is what a person assumes; getting
+                    // three of five and being paid nothing is not, and they would
+                    // have spent their remaining minutes differently had they
+                    // known. Printing the expected rule too would train people to
+                    // skip the sentence — which is how the one that matters gets
+                    // skipped.
+                    if (!spec.AllowPartialCredit)
+                    {
+                        dto.Display["scoring"] = "all";
+                    }
                 }
 
                 break;
@@ -169,6 +182,12 @@ public class TakerQuestionProjector : ITransientDependency
                         .ToList();
 
                     dto.Display["right"] = OptionIdReader.ApplyOrder(right, savedOrder, r => r.id);
+
+                    // As with ordering: said only when it would surprise.
+                    if (!spec.AllowPartialCredit)
+                    {
+                        dto.Display["scoring"] = "all";
+                    }
                 }
 
                 break;

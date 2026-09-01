@@ -351,4 +351,62 @@ public class TakerQuestionProjectorTests
             dto.Display.ContainsKey("scoring").ShouldBeFalse(type);
         }
     }
+
+    /// <summary>
+    /// Ordering and matching pay nothing for a partly right answer when their
+    /// author turns partial credit off — and being paid nothing for four of five
+    /// is not what anybody assumes. Somebody who knew would have spent their last
+    /// minutes differently.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestionTypes.Ordering)]
+    [InlineData(QuestionTypes.Matching)]
+    public void All_or_nothing_on_a_partly_right_answer_is_said_before_it_is_answered(string type)
+    {
+        var question = Question(type, OrderingOrMatching(type, partial: false));
+        question.Payload = OrderingOrMatching(type, partial: false);
+
+        var dto = _projector.Project(question, Slot(question.Id), null, 1, b => "/media/" + b);
+
+        dto.Display["scoring"].ShouldBe("all");
+    }
+
+    [Theory]
+    [InlineData(QuestionTypes.Ordering)]
+    [InlineData(QuestionTypes.Matching)]
+    public void The_rule_people_already_assume_is_not_printed_under_the_question(string type)
+    {
+        // Paid for the parts you got right is the assumption. Saying it adds
+        // nothing and trains people to skip the sentence, which is how the one
+        // that matters gets skipped too.
+        var question = Question(type, OrderingOrMatching(type, partial: true));
+        question.Payload = OrderingOrMatching(type, partial: true);
+
+        var dto = _projector.Project(question, Slot(question.Id), null, 1, b => "/media/" + b);
+
+        dto.Display.ContainsKey("scoring").ShouldBeFalse(type);
+    }
+
+    private static string OrderingOrMatching(string type, bool partial) =>
+        type == QuestionTypes.Ordering
+            ? PayloadJson.Write(new OrderingPayload
+            {
+                AllowPartialCredit = partial,
+                Items =
+                [
+                    new OrderingItem { Id = "i1", Text = "First", CorrectPosition = 0 },
+                    new OrderingItem { Id = "i2", Text = "Second", CorrectPosition = 1 }
+                ]
+            })
+            : PayloadJson.Write(new MatchingPayload
+            {
+                AllowPartialCredit = partial,
+                Pairs =
+                [
+                    new MatchingPair
+                    {
+                        LeftId = "l1", LeftText = "Riyadh", RightId = "r1", RightText = "Saudi Arabia"
+                    }
+                ]
+            });
 }

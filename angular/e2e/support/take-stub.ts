@@ -499,6 +499,8 @@ function displayFor(type: string): Record<string, unknown> {
 
     case 'ordering':
       return {
+        // Partial credit off, which is what makes the rule worth saying.
+        scoring: 'all',
         items: [
           { id: 'i1', text: 'افتح الرسالة' },
           { id: 'i2', text: 'تحقّق من المرسِل' },
@@ -508,6 +510,7 @@ function displayFor(type: string): Record<string, unknown> {
 
     case 'matching':
       return {
+        scoring: 'all',
         left: [
           { id: 'l1', text: 'الرياض' },
           { id: 'l2', text: 'القاهرة' },

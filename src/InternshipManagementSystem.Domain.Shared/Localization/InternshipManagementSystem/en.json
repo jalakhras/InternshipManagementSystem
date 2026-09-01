@@ -1042,6 +1042,7 @@
     "Take:Scoring:exact": "Choose every correct answer. The mark is given only if you choose them all and choose nothing wrong.",
     "Take:Scoring:partial": "Choose every correct answer. You earn a share of the mark for what you get right, but a single wrong choice loses the whole mark for this question.",
     "Take:Scoring:weighted": "Choose every correct answer. Each option carries its own weight and some subtract — the question can never score below zero.",
+    "Take:Scoring:all": "The question scores only if the whole answer is right; no partial mark is given.",
     "Exam:Group:Schedule": "When it can be sat",
     "Exam:Group:Schedule:Lede": "Leave this off and the exam is open from the moment it is published. Turn it on and it opens and closes at the hours you set here.",
     "Exam:Scheduled": "Only open between two times",

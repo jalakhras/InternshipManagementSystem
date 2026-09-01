@@ -142,4 +142,14 @@ test.describe('Every question type, on a phone, in Arabic', () => {
     // gets skipped too.
     await expect(page.locator('.choices__rule')).toHaveCount(0);
   });
+
+  for (const type of ['ordering', 'matching']) {
+    test(`${type} says when a partly right answer earns nothing`, async ({ page }) => {
+      await sit(page, type);
+
+      // Four of five in place and no mark for any of them is not what a person
+      // assumes, and by the time the result says so the exam is over.
+      await expect(page.locator('.scoring-rule')).toContainText('لا تُمنح درجةٌ جزئيّة');
+    });
+  }
 });
