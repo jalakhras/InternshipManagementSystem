@@ -14,6 +14,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
 using Volo.Abp.BlobStoring;
+using Volo.Abp.Auditing;
 
 namespace InternshipManagementSystem.Assessment.Media;
 
@@ -159,6 +160,9 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
     /// traceable to a sitting when somebody disputes a mark.
     /// </para>
     /// </summary>
+    // Not audited: the session token is the candidate's whole credential, and
+    // an audit row would hold it in plain text for the life of the sitting.
+    [DisableAuditing]
     [AllowAnonymous]
     public async Task<MediaUploadResultDto> UploadAnswerAsync(IFormFile file, string sessionToken)
     {
@@ -260,6 +264,9 @@ public class AssessmentMediaAppService : ApplicationService, IAssessmentMediaApp
     /// </para>
     /// </summary>
     [AllowAnonymous]
+    // The grant is signed and names one blob, but it is still a credential a
+    // reader of the audit table could use while the sitting lasts.
+    [DisableAuditing]
     public async Task<Stream?> GetAsync(string blobName, string? grant = null)
     {
         // Rejects any traversal attempt on the read side too, since blob names travel

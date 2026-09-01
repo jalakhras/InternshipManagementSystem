@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Auditing;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Data;
@@ -31,6 +32,31 @@ namespace InternshipManagementSystem.Assessment.Delivery;
 /// every candidate and the feature never worked.
 /// </para>
 /// </summary>
+/// <remarks>
+/// <b>Not audited.</b> ABP's audit log records a call's parameters, and every
+/// method here is handed the candidate's session token — which this product
+/// states plainly is their whole credential: they have no account, and the
+/// token is the only thing that says who they are. Writing it into
+/// <c>AbpAuditLogActions.Parameters</c> put a live credential in a table, in
+/// plain text, for as long as the sitting lasts plus five minutes. Anybody able
+/// to read that table could have taken the exam as them.
+/// <para>
+/// The answers went with it. <c>SaveAnswerAsync</c> was storing a second copy of
+/// every response in the audit table, and the copy was outside everything the
+/// product does to keep its promises about it: deleting an organisation clears
+/// nineteen assessment tables and the files beside them, and does not touch the
+/// audit log. "Everything recorded about you is removed" was true of the copy
+/// the product knew about.
+/// </para>
+/// <para>
+/// Nothing is lost by not auditing here. What a dispute actually rests on is the
+/// product's own record — the answer rows, the attempt's timings, the integrity
+/// signals — and all of it is written deliberately, kept deliberately, and
+/// removed deliberately. The audit row was a duplicate that outlived its
+/// original.
+/// </para>
+/// </remarks>
+[DisableAuditing]
 [AllowAnonymous]
 public class ExamTakingAppService : ApplicationService, IExamTakingAppService
 {

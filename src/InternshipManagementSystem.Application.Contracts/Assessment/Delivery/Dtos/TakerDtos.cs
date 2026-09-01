@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Volo.Abp.Auditing;
 
 namespace InternshipManagementSystem.Assessment.Delivery.Dtos;
 
@@ -238,7 +239,25 @@ public class SaveAnswerDto
 {
     public Guid QuestionId { get; set; }
 
-    /// <summary>Response JSON shaped by the question type.</summary>
+    /// <summary>
+    /// Response JSON shaped by the question type.
+    /// <para>
+    /// Kept out of the audit log. Every save was writing a second copy of the
+    /// candidate's answer into <c>AbpAuditLogActions.Parameters</c>, and that
+    /// copy sat outside everything the product does to keep its word about the
+    /// first: deleting an organisation clears nineteen assessment tables and the
+    /// files beside them, and never touches the audit log. "Everything recorded
+    /// about you is removed" was true only of the copy the product knew it had.
+    /// </para>
+    /// <para>
+    /// Marked here rather than on the controller. ABP filters a value out of an
+    /// audit row by the property it came from; the same attribute on a
+    /// controller class was measured and changed nothing, and the row kept the
+    /// answer. The audit row itself stays — who called what, and when, is worth
+    /// keeping and costs nobody anything.
+    /// </para>
+    /// </summary>
+    [DisableAuditing]
     public string? Response { get; set; }
 
     /// <summary>Blob name when the answer is an uploaded file or a recording.</summary>
