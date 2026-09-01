@@ -34,6 +34,9 @@ export interface ResultRow {
   isPassed: boolean;
 
   endReason: string;
+
+  /** What the person who ended the sitting wrote. Staff-facing, and often absent. */
+  endedByReason?: string;
   integrityFlagCount: number;
   durationInMinutes: number;
 }

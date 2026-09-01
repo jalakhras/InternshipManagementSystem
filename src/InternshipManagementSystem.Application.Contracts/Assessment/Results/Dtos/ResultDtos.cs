@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Volo.Abp.Application.Dtos;
 
@@ -45,6 +45,24 @@ public class ResultRowDto
 
     /// <summary>How the sitting ended: submitted, timed out, abandoned.</summary>
     public string EndReason { get; set; } = default!;
+
+    /// <summary>
+    /// What the person who ended the sitting wrote, when an administrator ended it.
+    /// <para>
+    /// The monitor asks for this under a label that says <i>the reason (is
+    /// recorded)</i>, and it was recorded — into a column no screen and no
+    /// endpoint ever read back. A record nobody can retrieve is not a record,
+    /// and the word "recorded" was doing work it could not do: the coordinator
+    /// who ends a sitting because the candidate asked to stop writes it down,
+    /// and on the day that is disputed nobody can find it.
+    /// </para>
+    /// <para>
+    /// Staff-facing. It is written by one member of staff for another — a note
+    /// about a browser that froze, a room that was evacuated — and it goes where
+    /// the result is read, not to the candidate.
+    /// </para>
+    /// </summary>
+    public string? EndedByReason { get; set; }
 
     /// <summary>Signals worth a second look, counted rather than listed here.</summary>
     public int IntegrityFlagCount { get; set; }

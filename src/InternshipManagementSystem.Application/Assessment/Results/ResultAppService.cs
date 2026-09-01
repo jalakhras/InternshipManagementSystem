@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -710,6 +710,7 @@ public class ResultAppService : ApplicationService, IResultAppService
                 ScorePercentage = attempt.ScorePercentage,
                 IsPassed = attempt.IsPassed,
                 EndReason = attempt.EndReason.ToString(),
+                EndedByReason = attempt.EndedByReason,
 
                 // Withheld from anyone without the permission that guards them
                 // elsewhere. A count of "this candidate pasted four times" is an

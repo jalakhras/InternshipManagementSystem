@@ -40,6 +40,28 @@ export class ResultDetailComponent {
   readonly hasTopics = computed(() => (this.detail()?.byTopic.length ?? 0) > 0);
 
   /**
+   * Whether this paper ended in a way that changes how its score should be read.
+   *
+   * A candidate who pressed submit needs no explaining, and a line saying so on
+   * every result is noise on the screen a coordinator reads most. The three that
+   * are worth saying are the three where the paper stopped before the person
+   * was finished with it: time ran out here or on the server, or somebody ended
+   * the sitting.
+   *
+   * None of it was shown at all. The reason crossed the wire and no template
+   * rendered it, so a paper cut short read exactly like one that was completed —
+   * and the note the coordinator was asked to write, under a label promising it
+   * would be recorded, was written into a column nothing read back.
+   */
+  readonly endedUnusually = computed(() => {
+    const reason = this.detail()?.summary.endReason;
+
+    return reason === 'TimedOutInBrowser'
+        || reason === 'TimedOutOnServer'
+        || reason === 'EndedByAdministrator';
+  });
+
+  /**
    * Whether this paper had parts at all.
    *
    * Unlike the topic block there is no "no sections yet" note for the empty

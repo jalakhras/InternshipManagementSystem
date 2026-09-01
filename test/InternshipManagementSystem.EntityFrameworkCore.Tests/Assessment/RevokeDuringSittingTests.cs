@@ -10,6 +10,7 @@ using InternshipManagementSystem.Assessment.Exams.Dtos;
 using InternshipManagementSystem.Assessment.Grading;
 using InternshipManagementSystem.Assessment.People;
 using InternshipManagementSystem.Assessment.People.Dtos;
+using InternshipManagementSystem.Assessment.Results;
 using Shouldly;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -188,6 +189,31 @@ public class RevokeDuringSittingTests : InternshipManagementSystemEntityFramewor
             //
             // A .NET type name and a GUID, shown to somebody sitting an exam.
             refused.Code.ShouldBe(InternshipManagementSystemDomainErrorCodes.AttemptNoLongerExists);
+        });
+    }
+
+    [Fact]
+    public async Task The_note_a_coordinator_is_asked_to_write_can_be_read_back()
+    {
+        await AsTenantAsync(async () =>
+        {
+            var sent = await SendAsync("ended-a");
+            var preview = await _taking.OpenLinkAsync(sent.Token);
+            var state = await _taking.StartAsync(preview.SessionToken!);
+
+            await GetRequiredService<IAttemptAdminAppService>().ForceSubmitAsync(
+                state.AttemptId, new ForceSubmitDto { Reason = "The room was evacuated." });
+
+            var result = await GetRequiredService<IResultAppService>().GetAsync(state.AttemptId);
+
+            // The monitor asks for this under a label reading "the reason (is
+            // recorded)". It was recorded — into a column no screen and no
+            // endpoint read back, so on the day it mattered nobody could find it.
+            result.Summary.EndedByReason.ShouldBe("The room was evacuated.");
+
+            // And the fact itself, which was never shown either: a paper that was
+            // cut short read exactly like one somebody finished.
+            result.Summary.EndReason.ShouldBe(nameof(AttemptEndReason.EndedByAdministrator));
         });
     }
 

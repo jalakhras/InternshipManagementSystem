@@ -37,6 +37,26 @@
       <span class="stat__label">{{ t('::Results:Outcome') }}</span>
     </div>
 
+    <!-- Said only when it would change how the number is read. A paper the
+         candidate submitted needs no explaining; a paper that was cut short
+         reads exactly like a completed one, and a low score on it means
+         something else entirely. -->
+    @if (endedUnusually()) {
+      <div class="stat">
+        <span class="stat__value stat__value--note">
+          {{ t('::EndReason:' + result.summary.endReason) }}
+        </span>
+        <span class="stat__label">{{ t('::Results:EndedHow') }}</span>
+
+        @if (result.summary.endedByReason; as note) {
+          <!-- Written by one member of staff for another, under a label
+               promising it would be recorded. It was — into a column nothing
+               read back. -->
+          <p class="stat__note">{{ note }}</p>
+        }
+      </div>
+    }
+
     <div class="stat">
       <span class="stat__value astro-numeric">{{ result.summary.durationInMinutes }}</span>
       <span class="stat__label">{{ t('::Results:Duration') }}</span>
