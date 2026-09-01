@@ -1,0 +1,2002 @@
+[
+  {
+    "id": "TC001",
+    "title": "Start an exam from a secure invitation link",
+    "description": "A candidate opens a valid invitation link, reviews the exam details, starts the sitting, and enters the timed exam experience.",
+    "category": "Sitting an exam from a link",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/:token"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam details are displayed"
+      },
+      {
+        "type": "action",
+        "description": "Click the start exam action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam sitting begins"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Start an exam sitting and answer supported question types",
+    "description": "A candidate can start a sitting, answer the supported question types, and keep those answers while moving through the exam.",
+    "category": "Candidate exam taking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/{{INVITATION_TOKEN}}"
+      },
+      {
+        "type": "action",
+        "description": "Start the sitting"
+      },
+      {
+        "type": "action",
+        "description": "Answer a multiple choice question"
+      },
+      {
+        "type": "action",
+        "description": "Answer a text question"
+      },
+      {
+        "type": "action",
+        "description": "Answer a numeric question"
+      },
+      {
+        "type": "action",
+        "description": "Answer a matching or ordering question"
+      },
+      {
+        "type": "action",
+        "description": "Move through the exam pages"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the entered answers remain present"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Open an exam invitation and review the exam details",
+    "description": "A candidate can open a secure invitation link and see the exam details before starting the sitting.",
+    "category": "Candidate exam taking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/{{INVITATION_TOKEN}}"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam invitation details are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the candidate can start the sitting"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Submit an exam with all answers completed and see the final outcome",
+    "description": "A candidate completes the sitting, submits it, and sees either the released result or the withheld-results message.",
+    "category": "Sitting an exam from a link",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/:token"
+      },
+      {
+        "type": "action",
+        "description": "Click the start exam action"
+      },
+      {
+        "type": "action",
+        "description": "Answer the available questions"
+      },
+      {
+        "type": "action",
+        "description": "Submit the exam"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the final outcome is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify either a released result or a withheld-results message is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Finish a sitting and see the released result",
+    "description": "A candidate can submit the exam and, when results are released, view the result summary instead of a withheld message.",
+    "category": "Candidate exam taking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/{{INVITATION_TOKEN}}"
+      },
+      {
+        "type": "action",
+        "description": "Start the sitting"
+      },
+      {
+        "type": "action",
+        "description": "Answer the exam questions"
+      },
+      {
+        "type": "action",
+        "description": "Submit the exam"
+      },
+      {
+        "type": "action",
+        "description": "Open the result page for the same invitation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the released result is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Answer supported questions and keep progress while moving through the exam",
+    "description": "A candidate answers questions using the supported controls and can move through the question map without losing entered responses.",
+    "category": "Sitting an exam from a link",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/:token"
+      },
+      {
+        "type": "action",
+        "description": "Click the start exam action"
+      },
+      {
+        "type": "action",
+        "description": "Answer a multiple choice question"
+      },
+      {
+        "type": "action",
+        "description": "Move to another question from the question map"
+      },
+      {
+        "type": "action",
+        "description": "Return to the earlier question from the question map"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the previously entered answer is still present"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify question navigation is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "See the timer while taking the exam",
+    "description": "A candidate can start a sitting and see that the exam is controlled by an active countdown timer during the attempt.",
+    "category": "Candidate exam taking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/{{INVITATION_TOKEN}}"
+      },
+      {
+        "type": "action",
+        "description": "Start the sitting"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam countdown timer is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sitting remains active"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Sign in as staff and reach the exam catalogue",
+    "description": "A staff user signs in successfully and lands in the application with access to staff pages such as the exam catalogue.",
+    "category": "Signing in as staff",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Enter {{LOGIN_USER}} as the username"
+      },
+      {
+        "type": "action",
+        "description": "Enter {{LOGIN_PASSWORD}} as the password"
+      },
+      {
+        "type": "action",
+        "description": "Sign in"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the staff dashboard is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify staff navigation to the exam catalogue is available"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Warn before submitting an unanswered exam",
+    "description": "A candidate who tries to submit with blank answers sees a warning and can return to the sitting without losing the exam state.",
+    "category": "Candidate exam taking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/{{INVITATION_TOKEN}}"
+      },
+      {
+        "type": "action",
+        "description": "Start the sitting"
+      },
+      {
+        "type": "action",
+        "description": "Leave one or more required answers blank"
+      },
+      {
+        "type": "action",
+        "description": "Submit the exam"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a blank-answer warning is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sitting remains open"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Warn before submitting with blank answers",
+    "description": "A candidate who has left questions unanswered receives a warning before final submission and can continue instead of losing progress immediately.",
+    "category": "Sitting an exam from a link",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/:token"
+      },
+      {
+        "type": "action",
+        "description": "Click the start exam action"
+      },
+      {
+        "type": "action",
+        "description": "Leave at least one question unanswered"
+      },
+      {
+        "type": "action",
+        "description": "Submit the exam"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a blank-answer warning is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam remains available for completion"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "See a withheld result message after submission",
+    "description": "A candidate can submit an exam and see a withheld-result message when results have not been released.",
+    "category": "Candidate exam taking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/{{INVITATION_TOKEN}}"
+      },
+      {
+        "type": "action",
+        "description": "Start the sitting"
+      },
+      {
+        "type": "action",
+        "description": "Answer the exam questions"
+      },
+      {
+        "type": "action",
+        "description": "Submit the exam"
+      },
+      {
+        "type": "action",
+        "description": "Open the result page for the same invitation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a withheld result message is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "End a sitting early with a reason",
+    "description": "This verifies that staff can end an active sitting early after providing a reason and that the sitting is no longer shown as running.",
+    "category": "Watching and marking sittings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the running sittings view"
+      },
+      {
+        "type": "action",
+        "description": "Select an active sitting to manage"
+      },
+      {
+        "type": "action",
+        "description": "End the sitting early and provide a reason"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sitting is no longer listed as running"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a confirmation of the early end is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Continue working while the exam timer counts down",
+    "description": "A candidate sees the remaining time decrease during the sitting, confirming the exam is controlled by the server clock.",
+    "category": "Sitting an exam from a link",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/:token"
+      },
+      {
+        "type": "action",
+        "description": "Click the start exam action"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the remaining time is displayed"
+      },
+      {
+        "type": "action",
+        "description": "Wait for a short interval"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the remaining time has decreased"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Publish a complete exam",
+    "description": "A staff author can publish an exam after completing its setup and see the exam marked as published.",
+    "category": "Authoring an exam and its questions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /exams"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing exam"
+      },
+      {
+        "type": "action",
+        "description": "Publish the exam"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam is marked as published"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Award marks and feedback to a written answer",
+    "description": "This verifies that staff can enter marks and feedback for a written response and save the review successfully.",
+    "category": "Watching and marking sittings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the review queue"
+      },
+      {
+        "type": "action",
+        "description": "Open an unmarked written answer"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid mark for the answer"
+      },
+      {
+        "type": "action",
+        "description": "Fill in feedback for the candidate"
+      },
+      {
+        "type": "action",
+        "description": "Save the review"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the review is marked as saved"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the answer leaves the unmarked queue"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Create and save a new exam",
+    "description": "A staff author can create an exam with core settings and see it appear in the exam catalogue.",
+    "category": "Authoring an exam and its questions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /exams"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new exam"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the exam title with a unique name"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid duration"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid pass mark"
+      },
+      {
+        "type": "action",
+        "description": "Save the exam"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the exam appears in the catalogue"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Discard a sitting that should not count",
+    "description": "This verifies that staff can discard a sitting from the running monitor and that it is removed from the active list.",
+    "category": "Watching and marking sittings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the running sittings view"
+      },
+      {
+        "type": "action",
+        "description": "Select an active sitting to manage"
+      },
+      {
+        "type": "action",
+        "description": "Discard the sitting"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sitting is removed from the running list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a discard confirmation is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Add a question to an exam",
+    "description": "A staff author can add a question to an existing exam and see it listed in the exam question bank.",
+    "category": "Authoring an exam and its questions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /exams"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing exam"
+      },
+      {
+        "type": "action",
+        "description": "Open the questions view for the exam"
+      },
+      {
+        "type": "action",
+        "description": "Start adding a new question"
+      },
+      {
+        "type": "action",
+        "description": "Select a question type"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the question editor with valid content"
+      },
+      {
+        "type": "action",
+        "description": "Save the question"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new question appears in the question bank"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Show only pages allowed by the signed-in staff role",
+    "description": "A signed-in staff user sees access limited to the pages allowed by their role when navigating the application.",
+    "category": "Signing in as staff",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /"
+      },
+      {
+        "type": "action",
+        "description": "Enter {{LOGIN_USER}} as the username"
+      },
+      {
+        "type": "action",
+        "description": "Enter {{LOGIN_PASSWORD}} as the password"
+      },
+      {
+        "type": "action",
+        "description": "Sign in"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the signed-in staff home is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify restricted staff areas are not shown when the role does not permit them"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Monitor a running sitting",
+    "description": "This verifies that staff can open the running sittings view and see an active sitting with its remaining time.",
+    "category": "Watching and marking sittings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the running sittings view"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a list of running sittings is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify remaining time information is displayed for a sitting"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Create an assignment for a person and copy the secure link",
+    "description": "A coordinator can assign an exam to a person, generate a secure link, and see the link returned for sharing.",
+    "category": "Sending an exam to people",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /assignments"
+      },
+      {
+        "type": "action",
+        "description": "Choose an exam"
+      },
+      {
+        "type": "action",
+        "description": "Search for a person by a name fragment"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid expiry"
+      },
+      {
+        "type": "action",
+        "description": "Set the number of attempts"
+      },
+      {
+        "type": "action",
+        "description": "Send the assignment"
+      },
+      {
+        "type": "action",
+        "description": "Copy the returned secure link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the assignment link is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC022",
+    "title": "Build and save the exam blueprint",
+    "description": "A staff author can open the blueprint view, define sections and rules, and save the exam layout.",
+    "category": "Authoring an exam and its questions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /exams"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing exam"
+      },
+      {
+        "type": "action",
+        "description": "Open the blueprint view for the exam"
+      },
+      {
+        "type": "action",
+        "description": "Add a section to the blueprint"
+      },
+      {
+        "type": "action",
+        "description": "Add a rule that draws from the shared bank"
+      },
+      {
+        "type": "action",
+        "description": "Save the blueprint"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the blueprint sections are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC023",
+    "title": "Create an assignment for a class",
+    "description": "A coordinator can assign an exam to a class and see the generated links for the class recipients.",
+    "category": "Sending an exam to people",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /assignments"
+      },
+      {
+        "type": "action",
+        "description": "Choose an exam"
+      },
+      {
+        "type": "action",
+        "description": "Choose a class recipient"
+      },
+      {
+        "type": "action",
+        "description": "Set a valid expiry"
+      },
+      {
+        "type": "action",
+        "description": "Set the number of attempts"
+      },
+      {
+        "type": "action",
+        "description": "Send the assignment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the class assignment links are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC024",
+    "title": "Review written responses and save feedback",
+    "description": "A marker can open a submission in the review queue, enter marks and feedback, and save the review successfully.",
+    "category": "Running results monitoring and manual grading",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /review"
+      },
+      {
+        "type": "action",
+        "description": "Open a submission ready for marking"
+      },
+      {
+        "type": "action",
+        "description": "Enter marks for the response"
+      },
+      {
+        "type": "action",
+        "description": "Enter feedback for the response"
+      },
+      {
+        "type": "action",
+        "description": "Save the review"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved review is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC025",
+    "title": "Add a new organisation with its first administrator",
+    "description": "This verifies that a host administrator can create a new organisation and provide the first administrator credentials in the same flow.",
+    "category": "Host administration of organisations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open organisations management"
+      },
+      {
+        "type": "action",
+        "description": "Start creating a new organisation"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the organisation details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the first administrator email field with a valid address"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the first administrator password field with a valid password"
+      },
+      {
+        "type": "action",
+        "description": "Save the new organisation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new organisation appears in the organisations list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a creation confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC026",
+    "title": "Monitor a running sitting and force-submit it",
+    "description": "A reviewer or coordinator can find an active sitting in the running results view and force-submit it when needed.",
+    "category": "Running results monitoring and manual grading",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /results/running"
+      },
+      {
+        "type": "action",
+        "description": "Open an active sitting"
+      },
+      {
+        "type": "action",
+        "description": "Force-submit the sitting"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the sitting is no longer active"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC027",
+    "title": "Open a written answer for manual marking",
+    "description": "This verifies that staff can move from the review queue into a candidate answer that requires marking.",
+    "category": "Watching and marking sittings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the review queue"
+      },
+      {
+        "type": "action",
+        "description": "Open an unmarked written answer"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the answer marking view is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the candidate response is visible for review"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC028",
+    "title": "Import questions from CSV and review the preview",
+    "description": "A staff author can import questions from a CSV file and review the parsed preview before committing.",
+    "category": "Authoring an exam and its questions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /exams"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing exam"
+      },
+      {
+        "type": "action",
+        "description": "Open the questions view for the exam"
+      },
+      {
+        "type": "action",
+        "description": "Start the CSV import flow"
+      },
+      {
+        "type": "action",
+        "description": "Choose a valid questions CSV file"
+      },
+      {
+        "type": "action",
+        "description": "Continue to the import preview"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the imported questions preview is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC029",
+    "title": "Delete an organisation after confirmation",
+    "description": "This verifies that a host administrator can delete an organisation only after typing its name to confirm.",
+    "category": "Host administration of organisations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open organisations management"
+      },
+      {
+        "type": "action",
+        "description": "Select an organisation to delete"
+      },
+      {
+        "type": "action",
+        "description": "Start the delete organisation flow"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the organisation name to confirm deletion"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the organisation is removed from the list"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a deletion confirmation is visible"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC030",
+    "title": "Reissue a lost assignment link",
+    "description": "A coordinator can reissue an existing assignment link and see a fresh link returned for the recipient.",
+    "category": "Sending an exam to people",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /assignments"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing assignment"
+      },
+      {
+        "type": "action",
+        "description": "Reissue the assignment link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a new secure link is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC031",
+    "title": "Create a candidate and find them by search",
+    "description": "A staff member can add a candidate and later find them by searching with a name fragment.",
+    "category": "Managing candidates and classes",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /candidates"
+      },
+      {
+        "type": "action",
+        "description": "Add a new candidate"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the candidate name with a unique value"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the candidate address with a valid value"
+      },
+      {
+        "type": "action",
+        "description": "Save the candidate"
+      },
+      {
+        "type": "action",
+        "description": "Search for the candidate by a fragment of the name"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the candidate appears in the search results"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC032",
+    "title": "Save organisation identity and defaults",
+    "description": "This verifies that administrators can update the organisation name, brand colour, support address, time zone, and result-release defaults, then save them.",
+    "category": "Configuring the organisation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open organisation settings"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the organisation name field with a new valid name"
+      },
+      {
+        "type": "action",
+        "description": "Select a brand colour"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the support address field with a valid address"
+      },
+      {
+        "type": "action",
+        "description": "Select a time zone"
+      },
+      {
+        "type": "action",
+        "description": "Save the settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated organisation settings are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a save confirmation is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC033",
+    "title": "Revoke a leaked assignment link",
+    "description": "A coordinator can revoke an assignment link and see that the link is no longer available for use.",
+    "category": "Sending an exam to people",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /assignments"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing assignment"
+      },
+      {
+        "type": "action",
+        "description": "Revoke the assignment link"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the assignment is marked as revoked"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC034",
+    "title": "See why publishing is refused",
+    "description": "A staff author can attempt to publish an incomplete exam and read the refusal reasons that explain what is missing.",
+    "category": "Authoring an exam and its questions",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /exams"
+      },
+      {
+        "type": "action",
+        "description": "Create a new exam with incomplete setup"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to publish the exam"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify publish refusal reasons are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC035",
+    "title": "Reveal a saved review in the queue after marking",
+    "description": "This verifies that a reviewed answer no longer appears as awaiting marking and the reviewer can continue to the next item.",
+    "category": "Watching and marking sittings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open the review queue"
+      },
+      {
+        "type": "action",
+        "description": "Open an unmarked written answer"
+      },
+      {
+        "type": "action",
+        "description": "Fill in a valid mark for the answer"
+      },
+      {
+        "type": "action",
+        "description": "Fill in feedback for the candidate"
+      },
+      {
+        "type": "action",
+        "description": "Save the review"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the next review item or empty queue state is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the saved review is no longer pending"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC036",
+    "title": "Import candidates from CSV and review the preview",
+    "description": "A staff member can import candidates from a CSV file and inspect the preview before confirming the import.",
+    "category": "Managing candidates and classes",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /candidates"
+      },
+      {
+        "type": "action",
+        "description": "Start the candidate CSV import flow"
+      },
+      {
+        "type": "action",
+        "description": "Choose a valid candidates CSV file"
+      },
+      {
+        "type": "action",
+        "description": "Continue to the import preview"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the candidate import preview is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC037",
+    "title": "Assign candidates to a class",
+    "description": "A staff member can open a class, select members, and save the updated class membership.",
+    "category": "Managing candidates and classes",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /groups"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing class"
+      },
+      {
+        "type": "action",
+        "description": "Select members for the class"
+      },
+      {
+        "type": "action",
+        "description": "Save the class membership changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated class members are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC038",
+    "title": "View results and section breakdown for a completed exam",
+    "description": "A staff member can open the results view and see the overall results together with the per-section breakdown.",
+    "category": "Results dashboard and breakdown",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /results"
+      },
+      {
+        "type": "action",
+        "description": "Open a completed exam result"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the overall result is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the section breakdown is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC039",
+    "title": "Enter organisation settings",
+    "description": "This verifies that administrators can open organisation settings and view the editable configuration fields.",
+    "category": "Configuring the organisation",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open organisation settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the organisation settings form is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify branding and support fields are available"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC040",
+    "title": "Create a staff user and assign roles",
+    "description": "A coordinator can create a staff user and assign roles so the user appears in the staff list with permissions configured.",
+    "category": "Staff user and role administration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /users"
+      },
+      {
+        "type": "action",
+        "description": "Create a new staff user"
+      },
+      {
+        "type": "action",
+        "description": "Assign one or more roles"
+      },
+      {
+        "type": "action",
+        "description": "Save the staff user"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new staff user is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC041",
+    "title": "Update organisation settings",
+    "description": "A staff member can change the organisation settings and see the updated values retained on the page.",
+    "category": "Organization settings",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /settings"
+      },
+      {
+        "type": "action",
+        "description": "Change the organisation name or defaults"
+      },
+      {
+        "type": "action",
+        "description": "Save the settings"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated settings are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC042",
+    "title": "Search for a candidate using an Arabic transliteration fragment",
+    "description": "A staff member can find a candidate when searching by an alternate Arabic transliteration or name fragment.",
+    "category": "Managing candidates and classes",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /candidates"
+      },
+      {
+        "type": "action",
+        "description": "Search using an Arabic transliteration fragment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching candidates are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC043",
+    "title": "Search organisations on the host list",
+    "description": "This verifies that a host administrator can search the organisation list and see matching results.",
+    "category": "Host administration of organisations",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the link to open organisations management"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the search field with a distinctive organisation fragment"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify matching organisations are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify non-matching organisations are hidden"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC044",
+    "title": "Open an exam link that can no longer be used",
+    "description": "A candidate opening an invalid or expired invitation link sees an access problem instead of the exam.",
+    "category": "Sitting an exam from a link",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /exam/:token"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an invalid or expired link message is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC045",
+    "title": "Create a new organisation with its first administrator",
+    "description": "A host administrator can create an organisation and assign the first administrator during setup.",
+    "category": "Host-only multi-organisation management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the host administrator username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the host administrator password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /organisations"
+      },
+      {
+        "type": "action",
+        "description": "Create a new organisation"
+      },
+      {
+        "type": "action",
+        "description": "Assign the first administrator"
+      },
+      {
+        "type": "action",
+        "description": "Save the organisation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new organisation is displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC046",
+    "title": "Manage catalog vocabulary values",
+    "description": "A staff member can open the catalog and update vocabulary items used by the organisation.",
+    "category": "Catalog management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /catalog"
+      },
+      {
+        "type": "action",
+        "description": "Edit a catalog item"
+      },
+      {
+        "type": "action",
+        "description": "Save the catalog item"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated catalog item is displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC047",
+    "title": "Review role permissions",
+    "description": "A coordinator can open the roles page and inspect the permissions configured for a role.",
+    "category": "Staff user and role administration",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the staff password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /roles"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing role"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the role permissions are displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC048",
+    "title": "Delete an organisation after confirming the warning",
+    "description": "A host administrator can confirm deletion of an organisation and see it removed from the list.",
+    "category": "Host-only multi-organisation management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the host administrator username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the host administrator password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /organisations"
+      },
+      {
+        "type": "action",
+        "description": "Open an existing organisation"
+      },
+      {
+        "type": "action",
+        "description": "Delete the organisation"
+      },
+      {
+        "type": "action",
+        "description": "Confirm the deletion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the organisation is removed from the list"
+      }
+    ],
+    "priority": "Low"
+  }
+]
